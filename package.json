@@ -9,13 +9,15 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "zenml-studio.helloWorld",
-        "title": "Hello World"
+        "command": "zenml.showActiveStack",
+        "title": "Show Active ZenML Stack"
       }
     ]
   },
