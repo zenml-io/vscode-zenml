@@ -1,0 +1,42 @@
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.sass-cache
+.eslintcache
+lib-cov
+*.seed
+*.log
+*.csv
+*.dat
+*.out
+*.pid
+*.gz
+pids
+logs
+results
+
+.vscode-test/
+
+.npm/
+node_modules/
+package-lock.json
+npm-debug.log
+
+# Build outputs
+dist/
+out/
+build/
+*.tsbuildinfo
+
+.history/
+*.log*
+
+# env
+.env
+.env*
+
+# Output of 'npm pack'
+*.tgz
+
+
