@@ -21,7 +21,7 @@ cd vscode-zenml
 
 ### 3. Set Up a ZenML Stack (if you don't already have one)
 
-For testing the extension, you'll need an actual stack to test commands on. For a quick setup, follow the [ZenML "A starter project" guide](https://docs.zenml.io/user-guide/starter-guide/starter-project) to set up a starter project.
+For testing the extension, you'll need an actual stack to test commands on. For a quick setup, follow the [ZenML "A starter project" guide](https://docs.zenml.io/user-guide/starter-guide/starter-project) to set up a starter project. Also, remember to execute ZenML CLI commands outside of any virtual environments to maintain consistency with the expected command behavior.
 
 ## Pull Requests
 

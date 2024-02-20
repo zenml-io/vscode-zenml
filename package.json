@@ -1,7 +1,7 @@
 {
-  "name": "zenml-studio",
+  "name": "zenml",
   "publisher": "zenml",
-  "displayName": "ZenML Studio",
+  "displayName": "ZenML",
   "description": "",
   "version": "0.0.1",
   "engines": {
