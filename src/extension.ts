@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { ZenMLStatusBar } from './views/statusBar';
 
 export function activate(context: vscode.ExtensionContext) {
-	console.log('ZenML Studio is now active!');
+	console.log('ZenML extension is now active!');
 
 	const zenMLStatusBar = ZenMLStatusBar.getInstance();
 
