@@ -1,15 +1,18 @@
 import * as assert from 'assert';
-
-// You can import and use all API from the 'vscode' module
-// as well as import your extension to test it
 import * as vscode from 'vscode';
-// import * as myExtension from '../../extension';
 
 suite('Extension Test Suite', () => {
-	vscode.window.showInformationMessage('Start all tests.');
+	test('Extension should be present', () => {
+		assert.ok(vscode.extensions.getExtension('zenml.zenml-studio'));
+	});
 
-	test('Sample test', () => {
-		assert.strictEqual(-1, [1, 2, 3].indexOf(5));
-		assert.strictEqual(-1, [1, 2, 3].indexOf(0));
+	test('Extension should activate', async () => {
+		const extension = vscode.extensions.getExtension('zenml.zenml-studio');
+		if (extension) {
+			await extension.activate();
+			assert.ok(extension.isActive, 'Extension did not activate as expected.');
+		} else {
+			assert.fail('Extension zenml-studio could not be found.');
+		}
 	});
 });
