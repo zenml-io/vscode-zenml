@@ -6,7 +6,7 @@ The ZenML VSCode extension seamlessly integrates with the ZenML CLI to enhance y
 
 - **CLI Integration**: The extension runs ZenML CLI commands behind the scenes, connecting to whichever environment the CLI is currently linked to.
 - **Server Connection**: Currently, the extension does not manage server connections. Users are responsible for establishing or disconnecting from servers as needed. This includes spinning up local servers or connecting to remote ones.
-- **Status Bar Updates**: The extension updates the status bar every 30 seconds to display the server status (indicating whether you're connected to a local or remote server) and the currently active stack name. Users can also manually refresh the status to get the latest information.
+- **Status Bar Updates**: The extension updates the status bar every 30 seconds to display the server status (indicating whether you're connected to a local or remote server) and the currently active stack name. Users can also manually refresh the status (via click) to get the latest information.
 - **Upcoming Features**: The functionality to display server status in the status bar is part of an upcoming update. We aim to continuously expand the extension's capabilities based on user feedback and evolving needs.
 
 ## Quick Start Guide
