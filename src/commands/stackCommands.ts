@@ -8,5 +8,5 @@ import { Shell } from '../utils/shell';
  * @returns {Promise<string>} Promise resolving with the name of the current active stack.
  */
 export async function getActiveStack(execCLICommand: Function = Shell.execCLICommand): Promise<string> {
-  return await execCLICommand('zenml stack get');
+  return execCLICommand('zenml stack get');
 }
