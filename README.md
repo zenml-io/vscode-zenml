@@ -1,19 +1,31 @@
 # vscode-zenml
 
-VSCode extension for ZenML
+The ZenML VSCode extension seamlessly integrates with the ZenML CLI to enhance your MLOps workflow within VSCode. It is designed to accurately mirror the current state of your ZenML environment within your IDE, ensuring a smooth and integrated experience.
+
+## Current Features and Limitations
+
+- **CLI Integration**: The extension runs ZenML CLI commands behind the scenes, connecting to whichever environment the CLI is currently linked to.
+- **Server Connection**: Currently, the extension does not manage server connections. Users are responsible for establishing or disconnecting from servers as needed. This includes spinning up local servers or connecting to remote ones.
+- **Status Bar Updates**: The extension updates the status bar every 30 seconds to display the server status (indicating whether you're connected to a local or remote server) and the currently active stack name. Users can also manually refresh the status to get the latest information.
+- **Upcoming Features**: The functionality to display server status in the status bar is part of an upcoming update. We aim to continuously expand the extension's capabilities based on user feedback and evolving needs.
 
 ## Quick Start Guide
 
-Welcome to the VSCode ZenML extension development! This guide is designed to get you up and running quickly with the basics of the extension and how to contribute effectively.
+This guide is designed to get you up and running quickly with the basics of the extension and how to contribute effectively.
 
-1. **Fork and Clone the Repository**: Start by forking the [zenml-io/vscode-zenml repository](https://github.com/zenml-io/vscode-zenml) to your own GitHub account and clone it to your local machine:
+1. **Fork the Repository**: Start by forking the [zenml-io/vscode-zenml repository](https://github.com/zenml-io/vscode-zenml) to your own GitHub account.
+2. **Clone the Forked Repository**:
 
    ```bash
    git clone https://github.com/your-username/vscode-zenml.git
-   cd vscode-zenml
    ```
 
-2. **Set Up a ZenML Stack**: You'll need a ZenML stack for testing. Follow the [ZenML Starter Project guide](https://docs.zenml.io/user-guide/starter-guide/starter-project) for a quick setup. Remember, execute ZenML CLI commands outside any virtual environments.
+3. **Install Dependencies**:
+   ```bash
+   cd vscode-zenml
+   npm install
+   ```
+4. **Set Up a ZenML Stack**: You'll need a ZenML stack for testing. Follow the [ZenML Starter Project guide](https://docs.zenml.io/user-guide/starter-guide/starter-project) for a quick setup. Remember, execute ZenML CLI commands outside any virtual environments.
 
 ### Development
 
