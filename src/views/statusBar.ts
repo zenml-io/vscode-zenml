@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { getActiveStack } from '../commands/stackCommands';
+import { parseActiveStackName } from '../utils/helpers';
 
 export class ZenMLStatusBar {
   private static instance: ZenMLStatusBar;
@@ -42,8 +43,7 @@ export class ZenMLStatusBar {
        * The global active stack is: 'default'
        * 'default' is the actual string we want to display in the status bar.
        */
-      const match = activeStackCliOutput.match(/'([^']+)'/); // matches text within single quotes
-      const activeStack = match ? match[1] : 'Error parsing stack name';
+      const activeStack = parseActiveStackName(activeStackCliOutput);
       this.statusBar.text = `Active Stack: ${activeStack}`;
       this.statusBar.tooltip = 'Click to refresh the active ZenML stack';
       this.show();
