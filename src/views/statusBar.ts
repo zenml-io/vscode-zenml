@@ -36,13 +36,13 @@ export class ZenMLStatusBar {
   public updateStatusBar() {
     console.log('Updating ZenML active stack...');
 
-    getActiveStack().then((fullActiveStackText) => {
+    getActiveStack().then((activeStackCliOutput) => {
       /**
        * The cli command `zenml stack get` outputs the line below: 
        * The global active stack is: 'default'
        * 'default' is the actual string we want to display in the status bar.
        */
-      const match = fullActiveStackText.match(/'([^']+)'/); // matches text within single quotes
+      const match = activeStackCliOutput.match(/'([^']+)'/); // matches text within single quotes
       const activeStack = match ? match[1] : 'Error parsing stack name';
       this.statusBar.text = `Active Stack: ${activeStack}`;
       this.statusBar.tooltip = 'Click to refresh the active ZenML stack';
