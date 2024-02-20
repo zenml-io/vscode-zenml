@@ -2,72 +2,42 @@
 
 VSCode extension for ZenML
 
-Working name: "ZenML Studio"
+# Contributing to the ZenML Visual Studio Extension
 
-## Features
+This guide will help you set up your environment for development and testing.
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+## Setting Up Your Development Environment
 
-For example if there is an image subfolder under your extension project workspace:
+To contribute to the ZenML Studio extension, you'll need to set up a development environment. This includes forking and cloning the extension repository, and setting up a ZenML starter project for testing purposes.
 
-\!\[feature X\]\(images/feature-x.png\)
+### 1. Fork the Repository
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+Go to https://github.com/zenml-io/vscode-zenml and fork the repository to your own GitHub account.
 
-## Requirements
+### 2. Clone the Extension Repository
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+Clone the extension repository to your local machine:
 
-## Extension Settings
+```bash
+git clone https://github.com/your-username/vscode-zenml.git
+cd vscode-zenml
+```
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+### 3. Set Up a ZenML Starter Project
 
-For example:
+For testing the extension, you'll need an actual stack to test commands on. For a quick setup, follow the [ZenML "A starter project" guide](https://docs.zenml.io/user-guide/starter-guide/starter-project) to set up a starter project. If you don't have a specific directory structure in mind, consider creating a parent directory with two subdirectories: one for the extension and one for the ZenML starter project.
 
-This extension contributes the following settings:
+If you followed the guide, which instructs you to create a `zenml_starter` directory containing the stack, your directory structure will look like this:
 
-- `myExtension.enable`: Enable/disable this extension.
-- `myExtension.thing`: Set to `blah` to do something.
+```bash
+/your-workspace-directory
+    /vscode-zenml
+    /zenml_starter
+```
 
-## Known Issues
+`vscode-zenml`: The actual extension directory
+`zenml_starter`: The stack directory
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+## Pull Requests
 
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-- [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-- Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-- Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-- Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-- [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-- [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+Please follow the guidelines in [CONTRIBUTING.md](https://github.com/zenml-io/zenml/blob/main/CONTRIBUTING.md) from the root `zenml-io` repo.
