@@ -1,15 +1,15 @@
 .DS_Store
 Thumbs.db
 .vscode/
+.vscode-test/
 .idea/
-.sass-cache
 .eslintcache
 lib-cov
 *.log
+*.log*
 pids
 
-.vscode-test/
-
+# Node
 .npm/
 node_modules/
 package-lock.json
@@ -20,9 +20,7 @@ dist/
 out/
 build/
 *.tsbuildinfo
-
 .history/
-*.log*
 
 # env
 .env
