@@ -10,10 +10,10 @@ import * as path from 'path';
  * @returns {Promise<{isConnected: boolean, host?: string, port?: number}>} - A promise that resolves with an object containing server status information.
  */
 export async function checkZenMLServerStatus(shell: Shell): Promise<{ isConnected: boolean, host?: string, port?: number }> {
-  const scriptPath = path.join(__dirname, '..', 'python', 'check_server_status.py');
+  // const scriptPath = path.join(__dirname, '..', 'python', 'check_server_status.py');
 
   try {
-    const output = await shell.runPythonScript(scriptPath);
+    const output = await shell.runPythonScript('check_server_status.py');
     const serverStatusInfo = JSON.parse(output);
 
     return {

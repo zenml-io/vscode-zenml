@@ -1,5 +1,6 @@
 import { exec } from 'child_process';
 import * as vscode from 'vscode';
+import * as path from 'path';
 
 export class Shell {
   private venvPath: string | undefined;
@@ -63,11 +64,11 @@ export class Shell {
 
   /**
    * Runs a Python script using the configured virtual environment, or the system's default Python installation.
-   * @param {string} scriptPath - The path to the Python script to be executed.
+   * @param {string} scriptFilename - The path to the Python script to be executed.
    * @param {string[]} args - Arguments to pass to the Python script.
    * @returns {Promise<any>} - A promise that resolves with the JSON-parsed output of the script.
    */
-  public async runPythonScript(scriptPath: string, args: string[] = []): Promise<any> {
+  public async runPythonScript(scriptFilename: string, args: string[] = []): Promise<any> {
     if (!await this.checkZenMLInstallation() && !this.venvPath) {
       await this.promptForVenvPath();
     }
@@ -75,6 +76,8 @@ export class Shell {
     let pythonCommand = this.venvPath ?
       `${isWindows ? `${this.venvPath}\\Scripts\\python` : `${this.venvPath}/bin/python`}` :
       'python';
+
+    const scriptPath = this.getScriptPath(scriptFilename);
 
     return new Promise((resolve, reject) => {
       exec(`${pythonCommand} ${scriptPath} ${args.join(' ')}`, (error, stdout, stderr) => {
@@ -92,5 +95,15 @@ export class Shell {
         }
       });
     });
+  }
+
+  /**
+  * Resolves the full path to a Python script located in the extension's 'python' directory.
+  * @param {string} scriptName - The name of the script file.
+  * @returns {string} - The full path to the script.
+  */
+  public getScriptPath(scriptName: string): string {
+    const extensionPath = vscode.extensions.getExtension('zenml-io.zenml')?.extensionPath || '';
+    return path.join(extensionPath, 'python', scriptName);
   }
 }
