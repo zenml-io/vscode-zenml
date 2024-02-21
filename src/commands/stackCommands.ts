@@ -7,10 +7,10 @@ import * as path from 'path';
  * @returns {Promise<string>} Promise resolving with the name of the current active stack.
  */
 export async function getActiveStack(shell: Shell): Promise<string> {
-  const scriptPath = path.join(__dirname, '..', 'python', 'get_active_stack.py');
+  // const scriptPath = path.join(__dirname, '..', 'python', 'get_active_stack.py');
 
   try {
-    const output = await shell.runPythonScript(scriptPath);
+    const output = await shell.runPythonScript('get_active_stack.py');
     const stackInfo = JSON.parse(output);
     return stackInfo.name;
   } catch (error) {
