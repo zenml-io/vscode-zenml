@@ -1,12 +1,20 @@
 import { Shell } from '../utils/shell';
+import * as path from 'path';
 
 /**
- * Fetches the current active stack using the ZenML CLI.
- * 
- * @param {Function} execCLICommand - Optional. Custom function to execute CLI commands, intended
- *                                    for testing with mocks or stubs.
+ * Fetches the current active stack using the ZenML Python client.
+ * @param {Shell} shell - The shell instance to use for running the Python script.
  * @returns {Promise<string>} Promise resolving with the name of the current active stack.
  */
-export async function getActiveStack(execCLICommand: Function = Shell.execCLICommand): Promise<string> {
-  return execCLICommand('zenml stack get');
+export async function getActiveStack(shell: Shell): Promise<string> {
+  const scriptPath = path.join(__dirname, '..', 'python', 'get_active_stack.py');
+
+  try {
+    const output = await shell.runPythonScript(scriptPath);
+    const stackInfo = JSON.parse(output);
+    return stackInfo.name;
+  } catch (error) {
+    console.error('Failed to fetch active ZenML stack:', error);
+    throw new Error('Failed to fetch active ZenML stack');
+  }
 }
