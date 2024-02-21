@@ -5,12 +5,12 @@ import { Shell } from '../utils/shell';
 
 export class ZenMLStatusBar {
   private shell: Shell;
-
   private static instance: ZenMLStatusBar;
   private serverStatusItem: vscode.StatusBarItem;
   private activeStackItem: vscode.StatusBarItem;
 
-  private storeUrl: string = 'Server URL not available';
+  private host: string = '';
+  private port: number = 0;
   private activeStack: string = 'Loading...';
 
   constructor(shell: Shell) {
@@ -51,15 +51,15 @@ export class ZenMLStatusBar {
   }
 
   public async checkServerStatus() {
-    const { isConnected, storeUrl } = await checkZenMLServerStatus(this.shell);
-    this.storeUrl = storeUrl || 'Server URL not available';
-    this.updateServerStatusIndicator(isConnected);
+    const { isConnected, host, port } = await checkZenMLServerStatus(this.shell);
+    const serverAddress = isConnected ? `${host}:${port}` : 'Server not available';
+    this.updateServerStatusIndicator(isConnected, serverAddress);
   }
 
-  private updateServerStatusIndicator(isConnected: boolean) {
+  private updateServerStatusIndicator(isConnected: boolean, serverAddress: string) {
     this.serverStatusItem.text = isConnected ? `$(vm-active)` : `$(vm-connect)`;
     this.serverStatusItem.color = isConnected ? 'green' : '';
-    this.serverStatusItem.tooltip = isConnected ? `Server running at ${this.storeUrl}. Click to refresh status.` : 'Server not running. Click to refresh status.';
+    this.serverStatusItem.tooltip = isConnected ? `Server running at ${serverAddress}. Click to refresh status.` : 'Server not running. Click to refresh status.';
     this.serverStatusItem.show();
   }
 
