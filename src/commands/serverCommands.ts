@@ -3,13 +3,13 @@ import * as path from 'path';
 
 /**
  * Checks the status of the ZenML server by executing a Python script and parsing its output.
- * The python script uses the ZenML Python client, and identifies if the server is connected 
- * and differentiates between local and remote servers, as well as local databases.
- * 
+ * The python script leverages the ZenML Python client to determine if the server is connected,
+ * and retrieves the host and port of the server.
+ *
  * @param {Shell} shell - The Shell instance used to execute the Python script.
- * @returns {Promise<{isConnected: boolean, storeUrl?: string, storeType?: string}>} - A promise that resolves with an object containing server status information.
+ * @returns {Promise<{isConnected: boolean, host?: string, port?: number}>} - A promise that resolves with an object containing server status information.
  */
-export async function checkZenMLServerStatus(shell: Shell): Promise<{ isConnected: boolean, storeUrl?: string, storeType?: string }> {
+export async function checkZenMLServerStatus(shell: Shell): Promise<{ isConnected: boolean, host?: string, port?: number }> {
   const scriptPath = path.join(__dirname, '..', 'python', 'check_server_status.py');
 
   try {
@@ -18,8 +18,8 @@ export async function checkZenMLServerStatus(shell: Shell): Promise<{ isConnecte
 
     return {
       isConnected: serverStatusInfo.is_connected,
-      storeUrl: serverStatusInfo.store_url,
-      storeType: serverStatusInfo.store_type
+      host: serverStatusInfo.host,
+      port: serverStatusInfo.port
     };
 
   } catch (error) {
