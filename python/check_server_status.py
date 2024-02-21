@@ -1,37 +1,26 @@
 from pydantic import BaseModel
-from zenml.config.global_config import GlobalConfiguration
+from zenml.zen_server.utils import get_active_server_details
+from urllib.parse import urlparse
 
 
 class ServerStatusModel(BaseModel):
     is_connected: bool
-    store_type: str
-    store_url: str
+    host: str
+    port: int
 
 
 def check_server_status() -> str:
-    gc = GlobalConfiguration()
+    try:
+        url, port = get_active_server_details()
+        parsed_url = urlparse(url)
+        server_status = ServerStatusModel(
+            is_connected=True,
+            host=parsed_url.hostname,
+            port=parsed_url.port if port is None else port,
+        )
+    except RuntimeError:
+        server_status = ServerStatusModel(is_connected=False, host="", port=0)
 
-    is_connected = False
-    store_type = ""
-    store_url = ""
-
-    if gc.store:
-        store_url = gc.store.url
-        if gc.store.type == "rest":
-            is_connected = True
-            if "127.0.0.1" in store_url or "localhost" in store_url:
-                store_type = "local server"
-            else:
-                store_type = "remote server"
-        elif gc.store.type == "sql":
-            store_type = "local database"
-            is_connected = False
-    else:
-        is_connected = False
-
-    server_status = ServerStatusModel(
-        is_connected=is_connected, store_type=store_type, store_url=store_url
-    )
     return server_status.json(indent=4)
 
 
