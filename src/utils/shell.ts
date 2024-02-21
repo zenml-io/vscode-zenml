@@ -1,8 +1,17 @@
 import { exec } from 'child_process';
+import * as vscode from 'vscode';
 
 export class Shell {
+  private venvPath: string | undefined;
+
+  constructor() {
+    this.venvPath = vscode.workspace.getConfiguration('zenml-io.zenml').get('venvPath') as string | undefined;
+  }
+
   /**
    * Executes a CLI command and returns a promise that resolves with the command's stdout.
+   * @param {string} command - The command to be executed.
+   * @returns {Promise<string>} - A promise that resolves with the output of the command.
    */
   static execCLICommand(command: string): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -12,6 +21,75 @@ export class Shell {
           return;
         }
         resolve(stdout.trim());
+      });
+    });
+  }
+
+  /**
+   * Checks if ZenML is installed by attempting to import it in a Python script.
+   * @returns {Promise<boolean>} - A promise that resolves with true if ZenML is installed, false otherwise.
+   */
+  async checkZenMLInstallation(): Promise<boolean> {
+    const command = 'python -c "import zenml"';
+    return new Promise((resolve) => {
+      exec(command, (error) => {
+        if (error) {
+          resolve(false);
+        } else {
+          resolve(true);
+        }
+      });
+    });
+  }
+
+  /**
+   * Prompts the user to enter the path to their virtual environment if ZenML is not detected.
+   * Updates the extension's configuration with the provided path.
+   * @returns {Promise<void>} - A promise that resolves when the user has entered the path, or rejects if not provided.
+   */
+  async promptForVenvPath(): Promise<void> {
+    const venvPath = await vscode.window.showInputBox({
+      prompt: 'ZenML is not detected. Enter the path to the virtual environment where ZenML is installed:',
+      placeHolder: 'Path to virtual environment (leave empty if ZenML is installed globally)',
+    });
+
+    if (venvPath) {
+      await vscode.workspace.getConfiguration('zenml-io.zenml').update('venvPath', venvPath, true);
+      this.venvPath = venvPath;
+    } else {
+      throw new Error('ZenML installation path is required.');
+    }
+  }
+
+  /**
+   * Runs a Python script using the configured virtual environment, or the system's default Python installation.
+   * @param {string} scriptPath - The path to the Python script to be executed.
+   * @param {string[]} args - Arguments to pass to the Python script.
+   * @returns {Promise<any>} - A promise that resolves with the JSON-parsed output of the script.
+   */
+  public async runPythonScript(scriptPath: string, args: string[] = []): Promise<any> {
+    if (!await this.checkZenMLInstallation() && !this.venvPath) {
+      await this.promptForVenvPath();
+    }
+    const isWindows = process.platform === "win32";
+    let pythonCommand = this.venvPath ?
+      `${isWindows ? `${this.venvPath}\\Scripts\\python` : `${this.venvPath}/bin/python`}` :
+      'python';
+
+    return new Promise((resolve, reject) => {
+      exec(`${pythonCommand} ${scriptPath} ${args.join(' ')}`, (error, stdout, stderr) => {
+        console.log(`stdout: ${stdout}`);
+        if (error) {
+          console.error(`exec error: ${error}`);
+          reject(error);
+          return;
+        }
+        try {
+          resolve(stdout);
+        } catch (parseError) {
+          console.error(`Error parsing Python script output: ${parseError}`);
+          reject(parseError);
+        }
       });
     });
   }
