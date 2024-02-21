@@ -1,6 +1,6 @@
 {
   "name": "zenml",
-  "publisher": "zenml",
+  "publisher": "zenml-io",
   "displayName": "ZenML",
   "description": "",
   "version": "0.0.1",
@@ -17,10 +17,24 @@
   "contributes": {
     "commands": [
       {
-        "command": "zenml.showActiveStack",
-        "title": "Show Active ZenML Stack"
+        "command": "zenml.updateActiveStack",
+        "title": "Update Active ZenML Stack"
+      },
+      {
+        "command": "zenml.updateServerStatus",
+        "title": "Update ZenML Server Status"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "ZenML",
+      "properties": {
+        "zenml.venvPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the virtual environment where ZenML is installed. Leave empty if installed globally."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
@@ -36,6 +50,7 @@
   "devDependencies": {
     "@types/mocha": "^10.0.6",
     "@types/node": "18.x",
+    "@types/sinon": "^17.0.3",
     "@types/vscode": "^1.86.0",
     "@types/webpack": "^5.28.5",
     "@typescript-eslint/eslint-plugin": "^6.19.1",
@@ -44,6 +59,7 @@
     "@vscode/test-electron": "^2.3.9",
     "eslint": "^8.56.0",
     "resolve-ts-aliases": "^1.0.1",
+    "sinon": "^17.0.1",
     "ts-loader": "^9.5.1",
     "typescript": "^5.3.3",
     "webpack": "^5.90.0",
