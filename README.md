@@ -2,12 +2,20 @@
 
 The ZenML VSCode extension seamlessly integrates with the ZenML CLI to enhance your MLOps workflow within VSCode. It is designed to accurately mirror the current state of your ZenML environment within your IDE, ensuring a smooth and integrated experience.
 
-## Current Features and Limitations
+## Current Features
 
-- **CLI Integration**: The extension runs ZenML CLI commands behind the scenes, connecting to whichever environment the CLI is currently linked to.
+- **Direct Python Client Integration**: Moving beyond CLI-based interactions, the extension now uses the ZenML Python client to fetch information about the active stack and server status. This ensures accurate and reliable data retrieval.
+- **Data Processing**: Information retrieved via the Python client is saved as JSON, which simplifies data processing by the extension's TypeScript logic.
+- **Status Bar**: The status bar displays the currently active stack name, along with a dynamic icon that indicates the connection status to a local or remote server. The status bar is updated every 30 seconds, with the option to manually refresh it at any moment by simply clicking on it.
+
+## Limitations
+
 - **Server Connection**: Currently, the extension does not manage server connections. Users are responsible for establishing or disconnecting from servers as needed. This includes spinning up local servers or connecting to remote ones.
-- **Status Bar Updates**: The extension updates the status bar every 30 seconds to display the server status (indicating whether you're connected to a local or remote server) and the currently active stack name. Users can also manually refresh the status (via click) to get the latest information.
-- **Upcoming Features**: The functionality to display server status in the status bar is part of an upcoming update. We aim to continuously expand the extension's capabilities based on user feedback and evolving needs.
+- **Requires ZenML installation**: The extension necessitates either a global installation of ZenML or within a specific virtual environment to function correctly. The shell module within the extension actively checks for ZenML's presence and, if not found globally, will prompt the user to provide a path to a virtual environment where ZenML is installed. While this is designed to accommodate various user setups, it is still being tested to ensure its reliability across different operating systems and configurations.
+
+## **Upcoming Features**
+
+- Future updates will introduce a tree view feature, providing a clear and interactive overview of ML stacks and server details, enhancing insight into the user's MLOps environment.
 
 ## Quick Start Guide
 
