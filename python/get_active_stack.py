@@ -1,29 +1,7 @@
+# get_active_stack.py
 from zenml.client import Client
-from pydantic import BaseModel, UUID4, Field
-from typing import List, Dict
-
-
-class StackComponentModel(BaseModel):
-    id: UUID4
-    name: str
-    flavor: str
-    type: str
-
-
-class StackModel(BaseModel):
-    id: UUID4
-    name: str
-    components: Dict[str, List[StackComponentModel]] = Field(default_factory=dict)
-
-
-def serialize_stack_component(component) -> StackComponentModel:
-    """Serializes a single stack component to a StackComponentModel instance."""
-    return StackComponentModel(
-        id=component.id,
-        name=component.name,
-        flavor=component.flavor,
-        type=component.type,
-    )
+from pydantic import BaseModel
+from models import StackModel, serialize_stack_component
 
 
 def get_active_stack_info() -> str:
