@@ -81,7 +81,6 @@ export class Shell {
 
     return new Promise((resolve, reject) => {
       exec(`${pythonCommand} ${scriptPath} ${args.join(' ')}`, (error, stdout, stderr) => {
-        console.log(`stdout: ${stdout}`);
         if (error) {
           console.error(`exec error: ${error}`);
           reject(error);
