@@ -15,7 +15,7 @@ export async function checkZenMLServerStatus(shell: Shell): Promise<ServerStatus
     const serverStatusInfo = JSON.parse(output);
 
     return {
-      isConnected: serverStatusInfo.isConnected,
+      isConnected: serverStatusInfo.is_connected,
       host: serverStatusInfo.host,
       port: serverStatusInfo.port,
       storeType: serverStatusInfo.store_type,
