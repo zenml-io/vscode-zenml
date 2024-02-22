@@ -5,7 +5,7 @@ import { Shell } from '../../utils/shell';
 class MockShell extends Shell {
   public async runPythonScript(scriptPath: string, args: string[] = []): Promise<any> {
     const simulatedOutput = JSON.stringify({
-      is_connected: true,
+      isConnected: true,
       host: "http://127.0.0.1",
       port: 8237
     });
