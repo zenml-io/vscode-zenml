@@ -51,13 +51,22 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	const disconnectCommand = vscr('zenml.disconnectServer', async () => {
-		const success = await disconnectFromZenMLServer(shell);
-		if (success) {
-			vscode.window.showInformationMessage('Successfully disconnected from ZenML server.');
-		} else {
-			vscode.window.showErrorMessage('Failed to disconnect from ZenML server.');
-		}
+		await vscode.window.withProgress({
+			location: vscode.ProgressLocation.Notification,
+			title: "Disconnecting from ZenML server...",
+			cancellable: false
+		}, async (progress, token) => {
+			const success = await disconnectFromZenMLServer(shell);
+
+			if (success) {
+				vscode.window.showInformationMessage('Successfully disconnected from ZenML server.');
+				serverDataProvider.refresh();
+			} else {
+				vscode.window.showErrorMessage('Failed to disconnect from ZenML server.');
+			}
+		});
 	});
+
 
 
 	context.subscriptions.push(
