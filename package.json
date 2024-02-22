@@ -4,6 +4,7 @@
   "displayName": "ZenML",
   "description": "",
   "version": "0.0.1",
+  "main": "./dist/extension.js",
   "engines": {
     "vscode": "^1.86.0"
   },
@@ -13,18 +14,82 @@
   "activationEvents": [
     "onStartupFinished"
   ],
-  "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
+        "command": "zenml.connectServer",
+        "title": "Connect to Server"
+      },
+      {
+        "command": "zenml.disconnectServer",
+        "title": "Disconnect from Server"
+      },
+      {
         "command": "zenml.updateActiveStack",
-        "title": "Update Active ZenML Stack"
+        "title": "Refresh Active Stack"
       },
       {
         "command": "zenml.updateServerStatus",
-        "title": "Update ZenML Server Status"
+        "title": "Refresh Server Status"
+      },
+      {
+        "command": "zenml.refreshStackView",
+        "title": "Refresh Stack View"
+      },
+      {
+        "command": "zenml.refreshServerStatus",
+        "title": "Refresh Server Status"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "zenml",
+          "title": "ZenML",
+          "icon": "resources/logo.png"
+        }
+      ]
+    },
+    "views": {
+      "zenml": [
+        {
+          "id": "zenmlServerView",
+          "name": "Server",
+          "icon": "$(vm)"
+        },
+        {
+          "id": "zenmlStackView",
+          "name": "Stacks",
+          "icon": "$(layers)"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "when": "view == zenmlServerView",
+          "command": "zenml.connectServer",
+          "group": "navigation"
+        },
+        {
+          "when": "view == zenmlServerView",
+          "command": "zenml.disconnectServer",
+          "group": "navigation"
+        },
+        {
+          "when": "view == zenmlStackView",
+          "command": "zenml.refreshStackView",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "when": "view == zenmlServerView",
+          "command": "zenml.refreshServerStatus",
+          "group": "inline"
+        }
+      ]
+    },
     "configuration": {
       "title": "ZenML",
       "properties": {
@@ -58,7 +123,6 @@
     "@vscode/test-cli": "^0.0.4",
     "@vscode/test-electron": "^2.3.9",
     "eslint": "^8.56.0",
-    "resolve-ts-aliases": "^1.0.1",
     "sinon": "^17.0.1",
     "ts-loader": "^9.5.1",
     "typescript": "^5.3.3",
