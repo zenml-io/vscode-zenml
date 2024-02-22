@@ -1,23 +1,25 @@
 import * as vscode from 'vscode';
-import { getActiveStack } from '../commands/stackCommands';
-import { checkZenMLServerStatus } from '../commands/serverCommands';
-import { Shell } from '../utils/shell';
+import { getActiveStack } from '../../commands/stackCommands';
+import { Shell } from '../../utils/shell';
+import { ServerStatusService } from '../../services/ServiceStatusService';
 
 export class ZenMLStatusBar {
   private shell: Shell;
   private static instance: ZenMLStatusBar;
   private serverStatusItem: vscode.StatusBarItem;
   private activeStackItem: vscode.StatusBarItem;
+  private serverStatusService: ServerStatusService;
 
-  private host: string = '';
-  private port: number = 0;
   private activeStack: string = 'Loading...';
 
   constructor(shell: Shell) {
     this.shell = shell;
     this.serverStatusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
     this.activeStackItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 99);
-
+    this.serverStatusService = ServerStatusService.getInstance(this.shell);
+    this.serverStatusService.subscribe((status) => {
+      this.updateServerStatusIndicator(status.isConnected, `${status.host}:${status.port}`);
+    });
     this.refreshStatusBarState();
   }
 
@@ -30,30 +32,22 @@ export class ZenMLStatusBar {
 
 
   private refreshStatusBarState() {
-    this.checkServerStatus();
-    this.updateActiveStack();
+    this.refreshActiveStack();
     setInterval(() => {
-      this.checkServerStatus();
-      this.updateActiveStack();
+      this.refreshActiveStack();
     }, 30000);
   }
 
-  public async updateActiveStack() {
+  public async refreshActiveStack() {
     try {
       const activeStackName = await getActiveStack(this.shell);
       this.activeStack = activeStackName;
-      this.updateActiveStackText();
+      this.refreshActiveStackText();
     } catch (error) {
       console.error('Failed to fetch active ZenML stack:', error);
       this.activeStack = 'Error';
     }
-    this.updateActiveStackText();
-  }
-
-  public async checkServerStatus() {
-    const { isConnected, host, port } = await checkZenMLServerStatus(this.shell);
-    const serverAddress = isConnected ? `${host}:${port}` : 'Server not available';
-    this.updateServerStatusIndicator(isConnected, serverAddress);
+    this.refreshActiveStackText();
   }
 
   private updateServerStatusIndicator(isConnected: boolean, serverAddress: string) {
@@ -63,7 +57,7 @@ export class ZenMLStatusBar {
     this.serverStatusItem.show();
   }
 
-  private updateActiveStackText() {
+  private refreshActiveStackText() {
     this.activeStackItem.text = `${this.activeStack}`;
     this.activeStackItem.tooltip = 'Click to refresh the active ZenML stack';
     this.activeStackItem.show();
