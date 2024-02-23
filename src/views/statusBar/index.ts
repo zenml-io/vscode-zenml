@@ -1,24 +1,33 @@
-import * as vscode from 'vscode';
-import { getActiveStack } from '../../commands/stackCommands';
-import { Shell } from '../../utils/shell';
-import { ServerStatusService } from '../../services/ServiceStatusService';
+import * as vscode from "vscode";
+import { getActiveStack } from "../../commands/stack/utils";
+import { Shell } from "../../utils/Shell";
+import { ServerStatusService } from "../../services/ServiceStatusService";
 
-export class ZenMLStatusBar {
+export default class ZenMLStatusBar {
   private shell: Shell;
   private static instance: ZenMLStatusBar;
   private serverStatusItem: vscode.StatusBarItem;
   private activeStackItem: vscode.StatusBarItem;
   private serverStatusService: ServerStatusService;
 
-  private activeStack: string = 'Loading...';
+  private activeStack: string = "Loading...";
 
   constructor(shell: Shell) {
     this.shell = shell;
-    this.serverStatusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-    this.activeStackItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 99);
+    this.serverStatusItem = vscode.window.createStatusBarItem(
+      vscode.StatusBarAlignment.Right,
+      100
+    );
+    this.activeStackItem = vscode.window.createStatusBarItem(
+      vscode.StatusBarAlignment.Right,
+      99
+    );
     this.serverStatusService = ServerStatusService.getInstance(this.shell);
     this.serverStatusService.subscribe((status) => {
-      this.updateServerStatusIndicator(status.isConnected, `${status.host}:${status.port}`);
+      this.updateServerStatusIndicator(
+        status.isConnected,
+        `${status.host}:${status.port}`
+      );
     });
     this.refreshStatusBarState();
   }
@@ -29,7 +38,6 @@ export class ZenMLStatusBar {
     }
     return ZenMLStatusBar.instance;
   }
-
 
   private refreshStatusBarState() {
     this.refreshActiveStack();
@@ -44,22 +52,27 @@ export class ZenMLStatusBar {
       this.activeStack = activeStackName;
       this.refreshActiveStackText();
     } catch (error) {
-      console.error('Failed to fetch active ZenML stack:', error);
-      this.activeStack = 'Error';
+      console.error("Failed to fetch active ZenML stack:", error);
+      this.activeStack = "Error";
     }
     this.refreshActiveStackText();
   }
 
-  private updateServerStatusIndicator(isConnected: boolean, serverAddress: string) {
+  private updateServerStatusIndicator(
+    isConnected: boolean,
+    serverAddress: string
+  ) {
     this.serverStatusItem.text = isConnected ? `$(vm-active)` : `$(vm-connect)`;
-    this.serverStatusItem.color = isConnected ? 'green' : '';
-    this.serverStatusItem.tooltip = isConnected ? `Server running at ${serverAddress}. Click to refresh status.` : 'Server not running. Click to refresh status.';
+    this.serverStatusItem.color = isConnected ? "green" : "";
+    this.serverStatusItem.tooltip = isConnected
+      ? `Server running at ${serverAddress}. Click to refresh status.`
+      : "Server not running. Click to refresh status.";
     this.serverStatusItem.show();
   }
 
   private refreshActiveStackText() {
     this.activeStackItem.text = `${this.activeStack}`;
-    this.activeStackItem.tooltip = 'Click to refresh the active ZenML stack';
+    this.activeStackItem.tooltip = "Click to refresh the active ZenML stack";
     this.activeStackItem.show();
   }
 }
