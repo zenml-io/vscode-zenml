@@ -1,25 +1,26 @@
 import * as assert from "assert";
-import { ServerStatusService } from "../../services/ServiceStatusService";
+import { ServerStatusService } from "../../services/ServerStatusService";
 import { Shell } from "../../utils/Shell";
 
 class MockShell extends Shell {
-  public async runPythonScript(
-    scriptPath: string,
-    args: string[] = []
-  ): Promise<any> {
+  public async runPythonScript(scriptPath: string, args: string[] = []): Promise<string> {
     const simulatedOutput = JSON.stringify({
-      isConnected: true,
+      is_connected: true,
       host: "http://127.0.0.1",
       port: 8237,
+      storeType: "MockStoreType",
+      storeUrl: "MockStoreUrl",
     });
     return simulatedOutput;
   }
 }
 
+
 suite("Server Status Service Test Suite", () => {
   test("ServerStatusService correctly fetches server status", async () => {
     const mockShell = new MockShell();
     const serverStatusService = ServerStatusService.getInstance(mockShell);
+    await serverStatusService.updateStatus();
     const serverStatus = serverStatusService.getCurrentStatus();
 
     assert.strictEqual(
