@@ -1,7 +1,5 @@
 // src/services/ServerStatusService.ts
-import { checkZenMLServerStatus } from '../commands/serverCommands';
-import * as vscode from 'vscode';
-import { Shell } from '../utils/shell';
+import { Shell } from "../utils/Shell";
 
 interface ServerStatus {
   isConnected: boolean;
@@ -29,19 +27,42 @@ export class ServerStatusService {
     return ServerStatusService.instance;
   }
 
+  public getCurrentStatus(): ServerStatus {
+    return this.currentStatus;
+  }
+
+  private async checkZenMLServerStatus(): Promise<ServerStatus> {
+    try {
+      const output = await this.shell.runPythonScript("check_server_status.py");
+      const serverStatusInfo = JSON.parse(output);
+      return {
+        isConnected: serverStatusInfo.is_connected,
+        host: serverStatusInfo.host,
+        port: serverStatusInfo.port,
+        storeType: serverStatusInfo.store_type,
+        storeUrl: serverStatusInfo.store_url,
+      };
+    } catch (error) {
+      console.error(`Failed to check ZenML server status: ${error}`);
+      return { isConnected: false };
+    }
+  }
+
   private async pollServerStatus() {
     try {
-      const status = await checkZenMLServerStatus(this.shell);
-      if (this.currentStatus.isConnected !== status.isConnected ||
+      const status = await this.checkZenMLServerStatus();
+      if (
+        this.currentStatus.isConnected !== status.isConnected ||
         this.currentStatus.host !== status.host ||
         this.currentStatus.port !== status.port ||
         this.currentStatus.storeType !== status.storeType ||
-        this.currentStatus.storeUrl !== status.storeUrl) {
+        this.currentStatus.storeUrl !== status.storeUrl
+      ) {
         this.currentStatus = status;
         this.notifyListeners();
       }
     } catch (error) {
-      console.error('Error checking ZenML server status:', error);
+      console.error("Error checking ZenML server status:", error);
     }
     setTimeout(() => this.pollServerStatus(), 30000);
   }
@@ -52,6 +73,8 @@ export class ServerStatusService {
   }
 
   private notifyListeners() {
-    this.listeners.forEach(listener => listener(this.currentStatus));
+    this.listeners.forEach((listener) => listener(this.currentStatus));
   }
+
+
 }

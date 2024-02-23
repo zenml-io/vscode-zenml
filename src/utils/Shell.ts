@@ -1,12 +1,14 @@
-import { exec } from 'child_process';
-import * as vscode from 'vscode';
-import * as path from 'path';
-
+import { exec } from "child_process";
+import * as vscode from "vscode";
+import * as path from "path";
+//
 export class Shell {
   private venvPath: string | undefined;
 
   constructor() {
-    this.venvPath = vscode.workspace.getConfiguration('zenml-io.zenml').get('venvPath') as string | undefined;
+    this.venvPath = vscode.workspace
+      .getConfiguration("zenml-io.zenml")
+      .get("venvPath") as string | undefined;
   }
 
   /**
@@ -50,15 +52,19 @@ export class Shell {
    */
   async promptForVenvPath(): Promise<void> {
     const venvPath = await vscode.window.showInputBox({
-      prompt: 'ZenML is not detected. Enter the path to the virtual environment where ZenML is installed:',
-      placeHolder: 'Path to virtual environment (leave empty if ZenML is installed globally)',
+      prompt:
+        "ZenML is not detected. Enter the path to the virtual environment where ZenML is installed:",
+      placeHolder:
+        "Path to virtual environment (leave empty if ZenML is installed globally)",
     });
 
     if (venvPath) {
-      await vscode.workspace.getConfiguration('zenml-io.zenml').update('venvPath', venvPath, true);
+      await vscode.workspace
+        .getConfiguration("zenml-io.zenml")
+        .update("venvPath", venvPath, true);
       this.venvPath = venvPath;
     } else {
-      throw new Error('ZenML installation path is required.');
+      throw new Error("ZenML installation path is required.");
     }
   }
 
@@ -69,40 +75,47 @@ export class Shell {
    * @returns {Promise<any>} - A promise that resolves with the JSON-parsed output of the script.
    */
   public async runPythonScript(scriptFilename: string, args: string[] = []): Promise<any> {
-    if (!await this.checkZenMLInstallation() && !this.venvPath) {
+    if (!(await this.checkZenMLInstallation()) && !this.venvPath) {
       await this.promptForVenvPath();
     }
     const isWindows = process.platform === "win32";
-    let pythonCommand = this.venvPath ?
-      `${isWindows ? `${this.venvPath}\\Scripts\\python` : `${this.venvPath}/bin/python`}` :
-      'python';
+    let pythonCommand = this.venvPath
+      ? `${isWindows
+        ? `${this.venvPath}\\Scripts\\python`
+        : `${this.venvPath}/bin/python`
+      }`
+      : "python";
 
     const scriptPath = this.getScriptPath(scriptFilename);
 
     return new Promise((resolve, reject) => {
-      exec(`${pythonCommand} ${scriptPath} ${args.join(' ')}`, (error, stdout, stderr) => {
-        if (error) {
-          console.error(`exec error: ${error}`);
-          reject(error);
-          return;
+      exec(
+        `${pythonCommand} ${scriptPath} ${args.join(" ")}`,
+        (error, stdout, stderr) => {
+          if (error) {
+            console.error(`exec error: ${error}`);
+            reject(error);
+            return;
+          }
+          try {
+            resolve(stdout);
+          } catch (parseError) {
+            console.error(`Error parsing Python script output: ${parseError}`);
+            reject(parseError);
+          }
         }
-        try {
-          resolve(stdout);
-        } catch (parseError) {
-          console.error(`Error parsing Python script output: ${parseError}`);
-          reject(parseError);
-        }
-      });
+      );
     });
   }
 
   /**
-  * Resolves the full path to a Python script located in the extension's 'python' directory.
-  * @param {string} scriptName - The name of the script file.
-  * @returns {string} - The full path to the script.
-  */
+   * Resolves the full path to a Python script located in the extension's 'python' directory.
+   * @param {string} scriptName - The name of the script file.
+   * @returns {string} - The full path to the script.
+   */
   public getScriptPath(scriptName: string): string {
-    const extensionPath = vscode.extensions.getExtension('zenml-io.zenml')?.extensionPath || '';
-    return path.join(extensionPath, 'python', scriptName);
+    const extensionPath =
+      vscode.extensions.getExtension("zenml-io.zenml")?.extensionPath || "";
+    return path.join(extensionPath, "python", scriptName);
   }
 }
