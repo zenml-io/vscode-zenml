@@ -31,6 +31,11 @@ export class ServerStatusService {
     return this.currentStatus;
   }
 
+  public async updateStatus(): Promise<ServerStatus> {
+    await this.pollServerStatus();
+    return this.currentStatus;
+  }
+
   private async checkZenMLServerStatus(): Promise<ServerStatus> {
     try {
       const output = await this.shell.runPythonScript("check_server_status.py");
