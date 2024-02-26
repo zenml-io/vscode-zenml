@@ -64,14 +64,19 @@ export class ServerStatusService {
   private async checkZenMLServerStatus(): Promise<ServerStatus> {
     try {
       const output = await this.shell.runPythonScript("check_server_status.py");
-      const serverStatusInfo = JSON.parse(output);
-      return {
-        isConnected: serverStatusInfo.is_connected,
-        host: serverStatusInfo.host,
-        port: serverStatusInfo.port,
-        storeType: serverStatusInfo.store_type,
-        storeUrl: serverStatusInfo.store_url,
-      };
+      try {
+        const serverStatusInfo = JSON.parse(output);
+        return {
+          isConnected: serverStatusInfo.is_connected,
+          host: serverStatusInfo.host,
+          port: serverStatusInfo.port,
+          storeType: serverStatusInfo.store_type,
+          storeUrl: serverStatusInfo.store_url,
+        };
+      } catch (jsonError) {
+        console.error(`Failed to parse JSON from ZenML server status check: ${jsonError}`);
+        return { isConnected: false };
+      }
     } catch (error) {
       console.error(`Failed to check ZenML server status: ${error}`);
       return { isConnected: false };

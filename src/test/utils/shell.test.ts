@@ -14,10 +14,20 @@ class MockShell extends Shell {
       return Promise.reject(new Error("Mocked error"));
     }
   }
+
+  public executeCommand(command: string): Promise<string> {
+    return super.executeCommand(command);
+  }
 }
 
 suite("Shell Class Test Suite", () => {
+  let shell: MockShell;
+  let executeCommandStub: sinon.SinonStub;
+
   setup(() => {
+    shell = new MockShell();
+    executeCommandStub = sinon.stub(shell, 'executeCommand');
+
     getConfigurationStub = sinon
       .stub(vscode.workspace, "getConfiguration")
       .returns({
@@ -32,26 +42,30 @@ suite("Shell Class Test Suite", () => {
     sinon.restore();
   });
 
+
   test("checkZenMLInstallation returns false when not installed", async () => {
-    const shell = new MockShell();
-    sinon.stub(shell, "checkZenMLInstallation").resolves(false);
+    executeCommandStub.rejects(new Error("ZenML not found"));
 
     const isInstalled = await shell.checkZenMLInstallation();
-    assert.strictEqual(
-      isInstalled,
-      false,
-      "ZenML should not be detected as installed"
-    );
+
+    assert.strictEqual(isInstalled, false, "ZenML should not be detected as installed");
   });
 
   test("promptForVenvPath updates the configuration with the provided path", async () => {
-    showInputBoxStub.resolves("/mocked_path_to/zenml_venv");
+    const mockedPath = "/mocked/path/to/zenml_venv";
+    showInputBoxStub.resolves(mockedPath);
     const shell = new MockShell();
     await shell.promptForVenvPath();
 
     assert.ok(
       getConfigurationStub.calledWith("zenml-io.zenml"),
       "promptForVenvPath should update the configuration"
+    );
+
+    assert.strictEqual(
+      shell.venvPath,
+      mockedPath,
+      "Shell instance venvPath should be updated with the provided path"
     );
   });
 
