@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 
 export class Shell {
-  private venvPath: string | undefined;
+  public venvPath: string | undefined;
 
   /**
    * Constructs a new Shell instance.
@@ -18,22 +18,23 @@ export class Shell {
   }
 
   /**
-   * Executes a CLI command and returns a promise that resolves with the command's stdout.
-   * 
-   * @param {string} command - The command to be executed.
-   * @returns {Promise<string>} - A promise that resolves with the output of the command.
-   */
-  static execCLICommand(command: string): Promise<string> {
+ * Abstracts the execution of shell commands, making it easier to stub this behavior in tests.
+ * 
+ * @param command The shell command to execute.
+ * @returns A promise that resolves with the command's output or rejects with an error.
+ */
+  protected executeCommand(command: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      exec(command, (error, stdout, stderr) => {
+      exec(command, (error, stdout) => {
         if (error) {
           reject(error);
-          return;
+        } else {
+          resolve(stdout);
         }
-        resolve(stdout.trim());
       });
     });
   }
+
 
   /**
    * Checks if ZenML is installed by attempting to import it in a Python script.
@@ -42,15 +43,12 @@ export class Shell {
    */
   async checkZenMLInstallation(): Promise<boolean> {
     const command = 'python -c "import zenml"';
-    return new Promise((resolve) => {
-      exec(command, (error) => {
-        if (error) {
-          resolve(false);
-        } else {
-          resolve(true);
-        }
-      });
-    });
+    try {
+      await this.executeCommand(command);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   /**
