@@ -1,39 +1,43 @@
-// /src/views/server/ServerTreeItems.ts
 import * as vscode from "vscode";
+import { ServerStatus } from "../../../types/ServerTypes";
 
-export interface ServerStatus {
-  isConnected: boolean;
-  host?: string;
-  port?: number;
-  storeType?: string;
-  storeUrl?: string;
-}
-
+/**
+ * A specialized TreeItem for displaying details about a server's status.
+ */
 class ServerDetailTreeItem extends vscode.TreeItem {
+  /**
+  * Constructs a new ServerDetailTreeItem instance.
+  * 
+  * @param {string} label The detail label.
+  * @param {string} detail The detail value.
+  */
   constructor(label: string, detail: string) {
     super(`${label}: ${detail}`, vscode.TreeItemCollapsibleState.None);
   }
 }
 
 /**
- * Extended TreeItem for representing a server's status.
+ * TreeItem for representing and visualizing server status in a tree view. Includes details such as connectivity,
+ * host, and port as children items when connected, or storeType and storeUrl when disconnected.
  */
 export class ServerTreeItem extends vscode.TreeItem {
   public children: vscode.TreeItem[] | ServerDetailTreeItem[] | undefined;
 
-  constructor(
-    public readonly label: string,
-    public readonly serverStatus: ServerStatus
-  ) {
+  /**
+  * Constructs a new ServerTreeItem instance.
+  * 
+  * @param {string} label The label for the tree item.
+  * @param {ServerStatus} serverStatus The current status of the server.
+  */
+  constructor(public readonly label: string, public readonly serverStatus: ServerStatus) {
     super(
       label,
       serverStatus.isConnected
         ? vscode.TreeItemCollapsibleState.Expanded
         : vscode.TreeItemCollapsibleState.None
     );
-    this.description = `${
-      this.serverStatus.isConnected ? "Connected ✅" : "Disconnected ❌"
-    }`;
+    this.description = `${this.serverStatus.isConnected ? "Connected ✅" : "Disconnected ❌"
+      }`;
 
     this.children = [];
 
