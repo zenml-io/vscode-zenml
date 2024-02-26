@@ -1,10 +1,16 @@
 import { exec } from "child_process";
 import * as vscode from "vscode";
 import * as path from "path";
-//
+
 export class Shell {
   private venvPath: string | undefined;
 
+  /**
+   * Constructs a new Shell instance.
+   * Initializes the Shell instance with a virtual environment path (venvPath) from the VSCode workspace configuration.
+   * The `venvPath` is retrieved from the `zenml-io.zenml` configuration settings, which can be set by the user in their VSCode settings.
+   * If the `venvPath` setting is not configured, `venvPath` will be `undefined`.
+   */
   constructor() {
     this.venvPath = vscode.workspace
       .getConfiguration("zenml-io.zenml")
@@ -13,6 +19,7 @@ export class Shell {
 
   /**
    * Executes a CLI command and returns a promise that resolves with the command's stdout.
+   * 
    * @param {string} command - The command to be executed.
    * @returns {Promise<string>} - A promise that resolves with the output of the command.
    */
@@ -30,6 +37,7 @@ export class Shell {
 
   /**
    * Checks if ZenML is installed by attempting to import it in a Python script.
+   * 
    * @returns {Promise<boolean>} - A promise that resolves with true if ZenML is installed, false otherwise.
    */
   async checkZenMLInstallation(): Promise<boolean> {
@@ -48,6 +56,7 @@ export class Shell {
   /**
    * Prompts the user to enter the path to their virtual environment if ZenML is not detected.
    * Updates the extension's configuration with the provided path.
+   * 
    * @returns {Promise<void>} - A promise that resolves when the user has entered the path, or rejects if not provided.
    */
   async promptForVenvPath(): Promise<void> {
@@ -70,6 +79,7 @@ export class Shell {
 
   /**
    * Runs a Python script using the configured virtual environment, or the system's default Python installation.
+   * 
    * @param {string} scriptFilename - The path to the Python script to be executed.
    * @param {string[]} args - Arguments to pass to the Python script.
    * @returns {Promise<any>} - A promise that resolves with the JSON-parsed output of the script.
@@ -110,6 +120,7 @@ export class Shell {
 
   /**
    * Resolves the full path to a Python script located in the extension's 'python' directory.
+   * 
    * @param {string} scriptName - The name of the script file.
    * @returns {string} - The full path to the script.
    */
