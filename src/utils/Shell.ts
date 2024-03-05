@@ -67,7 +67,7 @@ export class Shell {
 
     if (venvPath) {
       await vscode.workspace
-        .getConfiguration("zenml-io.zenml")
+        .getConfiguration("zenml")
         .update("venvPath", venvPath, true);
       this.venvPath = venvPath;
     } else {
