@@ -18,7 +18,7 @@
     "commands": [
       {
         "command": "zenml.connectServer",
-        "title": "Deploy"
+        "title": "Connect"
       },
       {
         "command": "zenml.disconnectServer",
@@ -34,11 +34,33 @@
       },
       {
         "command": "zenml.refreshStackView",
-        "title": "Refresh Stack View"
+        "title": "Refresh Stack View",
+        "icon": "$(refresh)"
       },
       {
         "command": "zenml.refreshServerStatus",
-        "title": "Refresh Server Status"
+        "title": "Refresh Server Status",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "zenml.renameStack",
+        "title": "Rename Stack",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "zenml.copyStack",
+        "title": "Copy Stack",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "zenml.setActiveStack",
+        "title": "Set Active Stack",
+        "icon": "$(check)"
+      },
+      {
+        "command": "zenml.refreshPipelineView",
+        "title": "Refresh Pipeline View",
+        "icon": "$(refresh)"
       }
     ],
     "viewsContainers": {
@@ -61,6 +83,11 @@
           "id": "zenmlStackView",
           "name": "Stacks",
           "icon": "$(layers)"
+        },
+        {
+          "id": "zenmlPipelineView",
+          "name": "Pipeline Runs",
+          "icon": "$(beaker)"
         }
       ]
     },
@@ -80,6 +107,11 @@
           "when": "view == zenmlStackView",
           "command": "zenml.refreshStackView",
           "group": "navigation"
+        },
+        {
+          "when": "view == zenmlPipelineView",
+          "command": "zenml.refreshPipelineView",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
@@ -87,6 +119,21 @@
           "when": "view == zenmlServerView",
           "command": "zenml.refreshServerStatus",
           "group": "inline"
+        },
+        {
+          "when": "view == zenmlStackView && viewItem == stack",
+          "command": "zenml.setActiveStack",
+          "group": "inline@1"
+        },
+        {
+          "when": "view == zenmlStackView && viewItem == stack",
+          "command": "zenml.renameStack",
+          "group": "inline@2"
+        },
+        {
+          "command": "zenml.copyStack",
+          "when": "view == zenmlStackView && viewItem == stack",
+          "group": "inline@3"
         }
       ]
     },
@@ -97,6 +144,26 @@
           "type": "string",
           "default": "",
           "description": "Path to the virtual environment where ZenML is installed. Leave empty if installed globally."
+        },
+        "zenml.serverUrl": {
+          "type": "string",
+          "default": "",
+          "description": "ZenML Server URL"
+        },
+        "zenml.accessToken": {
+          "type": "string",
+          "default": "",
+          "description": "Access token for the ZenML server"
+        },
+        "zenml.activeStackId": {
+          "type": "string",
+          "default": "",
+          "description": "Active stack id for the ZenML server"
+        },
+        "zenml.activeStackName": {
+          "type": "string",
+          "default": "",
+          "description": "Active stack name for the ZenML server"
         }
       }
     }
@@ -115,7 +182,8 @@
   },
   "devDependencies": {
     "@types/mocha": "^10.0.6",
-    "@types/node": "18.x",
+    "@types/node": "^18.19.18",
+    "@types/proxyquire": "^1.3.31",
     "@types/sinon": "^17.0.3",
     "@types/vscode": "^1.86.0",
     "@types/webpack": "^5.28.5",
@@ -123,13 +191,19 @@
     "@typescript-eslint/parser": "^6.19.1",
     "@vscode/test-cli": "^0.0.4",
     "@vscode/test-electron": "^2.3.9",
+    "axios-mock-adapter": "^1.22.0",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.2.5",
+    "proxyquire": "^2.1.3",
     "sinon": "^17.0.1",
     "ts-loader": "^9.5.1",
+    "ts-mockito": "^2.6.1",
     "typescript": "^5.3.3",
     "webpack": "^5.90.0",
     "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "axios": "^1.6.7"
   }
 }
