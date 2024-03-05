@@ -102,7 +102,6 @@ export class PipelineDataProvider implements vscode.TreeDataProvider<vscode.Tree
    */
   public async refresh(): Promise<void> {
     const pipelineRuns = await this.fetchPipelineRuns();
-    console.log(pipelineRuns)
     this._onDidChangeTreeData.fire(undefined);
   }
 

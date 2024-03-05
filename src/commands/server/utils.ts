@@ -155,7 +155,7 @@ export async function disconnectFromZenMLServer(
 ): Promise<boolean> {
   try {
     const zenmlClient = ZenMLClient.getInstance();
-    await zenmlClient.request('get', '/logout')
+    await zenmlClient.request('get', '/logout');
 
     const config = vscode.workspace.getConfiguration('zenml');
     await config.update('serverUrl', undefined, vscode.ConfigurationTarget.Global);
