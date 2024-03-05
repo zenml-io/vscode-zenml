@@ -13,7 +13,7 @@ The ZenML VSCode extension seamlessly integrates with the ZenML CLI to enhance y
 ## New Additions
 
 - **Pipeline Runs View**: A dedicated view in the Activity Bar for monitoring and exploring pipeline runs.
-- **New Stack Commandss**: New commands for renaming stacks, and copying stacks are implemented through direct API calls.
+- **New Stack Commands**: New commands for renaming stacks, and copying stacks are implemented through direct API calls.
 
 ## Limitations
 
@@ -51,8 +51,8 @@ This guide is designed to get you up and running quickly with the basics of the 
 - Access the Testing view by clicking on the flask icon in the activity bar or using the hotkey `Ctrl/Cmd + Shift + T`. Within this view, you can initiate your tests by clicking the "Run All Tests" button.
 - The outcomes of your tests will be displayed in the Test Results view.
 - Make changes to `src/test/extension.test.ts` or create new test files inside the `test` folder.
-  - The provided test runner will only consider files matching the name pattern `**.test.ts`.
-  - You can create folders inside the `test` folder to structure your tests any way you want.
+- The provided test runner will only consider files matching the name pattern `**.test.ts`.
+- You can create folders inside the `test` folder to structure your tests any way you want.
 
 ### Contributing
 
