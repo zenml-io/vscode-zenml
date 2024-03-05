@@ -1,4 +1,16 @@
-import * as vscode from "vscode";
+// Copyright(c) ZenML GmbH 2024. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0(the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at:
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+// or implied.See the License for the specific language governing
+// permissions and limitations under the License.
+import * as vscode from 'vscode';
 import { StackComponent } from '../../../types/StackTypes';
 
 /**
@@ -6,47 +18,39 @@ import { StackComponent } from '../../../types/StackTypes';
  * This item can be expanded to show the components of the stack.
  */
 export class StackTreeItem extends vscode.TreeItem {
-  children: vscode.TreeItem[] | undefined;
+  public children: vscode.TreeItem[] | undefined;
+  public isActive: boolean;
 
-  /**
-   * Constructs a StackTreeItem instance.
-   * 
-   * @param {string} label The display label for the tree item.
-   * @param {string} stackId The unique identifier for the stack.
-   * @param {{ [key: string]: StackComponent[] }} components The components that belong to the stack, organized by type.
-   */
   constructor(
     public readonly label: string,
-    public readonly stackId: string,
-    components: { [key: string]: StackComponent[] }
+    public readonly id: string,
+    components: StackComponentTreeItem[],
+    isActive?: boolean
   ) {
     super(label, vscode.TreeItemCollapsibleState.Collapsed);
-    this.children = Object.entries(components).flatMap(([key, components]) =>
-      components.map((component: StackComponent) =>
-        new StackComponentTreeItem(`${key}: ${component.name}`, component)
-      )
-    );
-    this.tooltip = `${this.label} - Click for more details`;
-    this.contextValue = "stack";
+    this.children = components;
+    this.contextValue = 'stack';
+    this.isActive = isActive || false;
+
+    if (isActive) {
+      this.label = `${this.label} 🟢`;
+    }
+
   }
 }
 
 /**
- * A TreeItem specifically for displaying a stack component within the stack tree view.
+ * A TreeItem for displaying a stack component in the VSCode TreeView.
  */
 export class StackComponentTreeItem extends vscode.TreeItem {
-  /**
-   * Constructs a StackComponentTreeItem instance.
-   * 
-   * @param {string} label The display label for the tree item, typically the component name.
-   * @param {StackComponent} component The stack component this tree item represents.
-   */
-  constructor(
-    public readonly label: string,
-    private readonly component: StackComponent
-  ) {
-    super(label, vscode.TreeItemCollapsibleState.None);
-    this.description = `${this.component.type} (${this.component.flavor})`;
-    this.tooltip = `Type: ${this.component.type}, Flavor: ${this.component.flavor}`;
+  public workspaceId: string;
+
+  constructor(component: StackComponent, stackId: string) {
+    super(component.name, vscode.TreeItemCollapsibleState.None);
+    this.tooltip = `Type: ${component.type}, Flavor: ${component.flavor}`;
+    this.description = `${component.type} (${component.flavor})`;
+    this.workspaceId = component.workspaceId;
+    this.contextValue = 'stackComponent';
+    this.id = `${stackId}-${component.id}`;
   }
 }
