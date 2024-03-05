@@ -30,6 +30,9 @@ import {
  * 7. Once the access token is fetched, we store it in the global configuration.
  */
 
+/**
+ * Prompts the user to enter the ZenML server URL and stores it in the global configuration.
+ */
 export async function promptAndStoreServerUrl() {
   let serverUrl = await vscode.window.showInputBox({
     prompt: 'Enter the ZenML server URL',
@@ -45,6 +48,12 @@ export async function promptAndStoreServerUrl() {
   }
 }
 
+/**
+ * Fetches the server ID by making a GET request to the /info endpoint of the ZenML server.
+ * 
+ * @param {string} serverUrl - The URL of the ZenML server.
+ * @returns {Promise<string>} The server ID.
+ */
 async function fetchServerId(serverUrl: string): Promise<string> {
   try {
     const response = await axios.get(`${serverUrl}/api/v1/info`);
@@ -60,6 +69,9 @@ async function fetchServerId(serverUrl: string): Promise<string> {
   }
 }
 
+/**
+ * Initiates the device authorization flow with the ZenML server to obtain device and user codes.
+ */
 export async function initiateDeviceAuthorization() {
   const serverUrl = vscode.workspace.getConfiguration('zenml').get<string>('serverUrl') || '';
 
@@ -100,6 +112,14 @@ export async function initiateDeviceAuthorization() {
   }
 }
 
+/**
+ * Polls the ZenML server for an access token using the device authorization flow.
+ * 
+ * @param {string} serverUrl - The URL of the ZenML server.
+ * @param {string} deviceCode - The device code obtained from the server.
+ * @param {string} clientId - The client ID (server ID) obtained from the server.
+ * @returns {Promise<void>}
+ */
 export async function pollForAccessToken(
   serverUrl: string,
   deviceCode: string,
@@ -150,6 +170,14 @@ export async function pollForAccessToken(
   }
 }
 
+/**
+ * Disconnects from the ZenML server and clears related configuration and state in the application.
+ * 
+ * @param {ServerDataProvider} serverDataProvider - Provider for server data updates.
+ * @param {StackDataProvider} stackDataProvider - Provider for stack data updates.
+ * @param {PipelineDataProvider} pipelineDataProvider - Provider for pipeline data updates.
+ * @returns {Promise<boolean>} True if the disconnection was successful, false otherwise.
+ */
 export async function disconnectFromZenMLServer(
   serverDataProvider: ServerDataProvider,
   stackDataProvider: StackDataProvider,
