@@ -39,6 +39,7 @@ export class ServerDataProvider implements vscode.TreeDataProvider<vscode.TreeIt
     });
   }
 
+
   /**
    * Resets the tree view data by setting isActive to false and emitting an event with 'undefined'.
    */
@@ -101,4 +102,5 @@ export class ServerDataProvider implements vscode.TreeDataProvider<vscode.TreeIt
     }
     return undefined;
   }
+
 }
