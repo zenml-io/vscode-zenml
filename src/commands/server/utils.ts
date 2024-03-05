@@ -108,7 +108,7 @@ export async function pollForAccessToken(
   const loginUrl = `${serverUrl}/api/v1/login`;
   let attempts = 0;
   const maxAttempts = 60;
-  const intervalSeconds = 5;
+  let intervalSeconds = 5;
 
   while (attempts < maxAttempts) {
     try {
@@ -138,6 +138,8 @@ export async function pollForAccessToken(
         console.log('Authorization pending...');
         attempts++;
         await new Promise(resolve => setTimeout(resolve, intervalSeconds * 1000));
+        // Increase interval with backoff, cap at 60 seconds
+        intervalSeconds = Math.min(intervalSeconds * 2, 60);
       } else {
         console.error('Error polling for access token:', error);
         vscode.window.showErrorMessage(
