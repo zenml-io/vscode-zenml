@@ -138,6 +138,7 @@ export class Shell {
   public getScriptPath(scriptName: string): string {
     const extensionPath =
       vscode.extensions.getExtension("zenml-io.zenml")?.extensionPath || "";
+    // Ensure scriptName is validated or sanitized here
     return path.join(extensionPath, scriptName);
   }
 }
