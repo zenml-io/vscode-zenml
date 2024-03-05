@@ -40,13 +40,12 @@ const connectServer = async (
   await promptAndStoreServerUrl();
 
   const serverUrl = zenmlClient.getZenMLServerUrl();
-  console.log("serverUrl after prompting user to enter server URL: ", serverUrl)
+
   if (!serverUrl) {
     vscode.window.showErrorMessage('Server URL is required to connect.');
     return false;
   }
 
-  // Fetch Server ID and initiate device authorization
   return vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,

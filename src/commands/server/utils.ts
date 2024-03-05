@@ -161,7 +161,6 @@ export async function disconnectFromZenMLServer(
     await config.update('serverUrl', undefined, vscode.ConfigurationTarget.Global);
     await config.update('accessToken', undefined, vscode.ConfigurationTarget.Global);
 
-
     serverDataProvider.serverStatusService.resetStatus();
 
     serverDataProvider.reset();
