@@ -73,8 +73,12 @@ export const renameStack = async (node: StackTreeItem, stackDataProvider: StackD
         vscode.window.showInformationMessage('Stack renamed successfully.');
         stackDataProvider.refresh();
       } catch (error) {
-        console.error('Failed to rename stack:', error);
-        vscode.window.showErrorMessage('Failed to rename stack');
+        if (error.response) {
+          vscode.window.showErrorMessage(`Failed to rename stack: ${error.response.data.message}`);
+        } else {
+          console.error('Failed to rename stack:', error);
+          vscode.window.showErrorMessage('Failed to rename stack');
+        }
       }
     }
   );
@@ -105,6 +109,9 @@ export const copyStack = async (node: StackTreeItem, stackDataProvider: StackDat
       try {
         // Step 1: Fetch the stack the user wants to copy
         const stackResponse = await zenmlClient.request('get', `/stacks/${node.id}`);
+        if (!stackResponse || !stackResponse.metadata || !stackResponse.metadata.components) {
+          throw new Error('Stack data is incomplete or missing.');
+        }
         const originalStackComponents = stackResponse.metadata.components;
 
         // Step 2: Extract and map component types to their corresponding IDs
@@ -113,8 +120,16 @@ export const copyStack = async (node: StackTreeItem, stackDataProvider: StackDat
           componentMappings[componentType] = (components as any[]).map(component => component.id);
         }
 
+        // Validate component mappings before proceeding.
+        if (Object.keys(componentMappings).length === 0) {
+          throw new Error('No components found in the original stack.');
+        }
+
         // Step 3: Prepare the payload for the new stack
         const workspaceId = stackResponse.metadata.workspace.id;
+        if (!workspaceId) {
+          throw new Error('Workspace ID is missing.');
+        }
         const userId = stackResponse.body.user ? stackResponse.body.user.id : null;
 
         const newStackPayload = {
@@ -124,12 +139,20 @@ export const copyStack = async (node: StackTreeItem, stackDataProvider: StackDat
           workspace: workspaceId,
         };
 
-        await zenmlClient.request('post', `/workspaces/${workspaceId}/stacks`, newStackPayload);
+        // Step 4: Create the new stack
+        const copyStackResponse = await zenmlClient.request('post', `/workspaces/${workspaceId}/stacks`, newStackPayload);
+        if (!copyStackResponse || copyStackResponse.error) {
+          throw new Error('Failed to create the new stack.');
+        }
         vscode.window.showInformationMessage('Stack copied successfully.');
         stackDataProvider.refresh();
       } catch (error) {
-        console.error('Failed to copy stack:', error);
-        vscode.window.showErrorMessage(`Failed to copy stack: ${error}`);
+        if (error.response && error.response.data && error.response.data.message) {
+          vscode.window.showErrorMessage(`Failed to copy stack: ${error.response.data.message}`);
+        } else {
+          console.error('Failed to copy stack:', error);
+          vscode.window.showErrorMessage(`Failed to copy stack: ${error.message || error}`);
+        }
       }
     }
   );
