@@ -117,7 +117,7 @@ export class Shell {
   }
 
   /**
-   * Resolves the full path to a Python script located in the extension's 'python' directory.
+   * Resolves the full path to a Python script.
    * 
    * @param {string} scriptName - The name of the script file.
    * @returns {string} - The full path to the script.
@@ -125,6 +125,6 @@ export class Shell {
   public getScriptPath(scriptName: string): string {
     const extensionPath =
       vscode.extensions.getExtension("zenml-io.zenml")?.extensionPath || "";
-    return path.join(extensionPath, "python", scriptName);
+    return path.join(extensionPath, scriptName);
   }
 }
