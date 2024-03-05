@@ -26,11 +26,9 @@ This guide is designed to get you up and running quickly with the basics of the 
 
 1. **Fork the Repository**: Start by forking the [zenml-io/vscode-zenml repository](https://github.com/zenml-io/vscode-zenml) to your own GitHub account.
 2. **Clone the Forked Repository**:
-
    ```bash
    git clone https://github.com/your-username/vscode-zenml.git
    ```
-
 3. **Install Dependencies**:
    ```bash
    cd vscode-zenml
