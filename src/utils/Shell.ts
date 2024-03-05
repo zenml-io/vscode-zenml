@@ -110,6 +110,7 @@ export class Shell {
 
     return new Promise((resolve, reject) => {
       exec(
+        // Ensure scriptPath and args are sanitized or validated here
         `${pythonCommand} ${scriptPath} ${args.join(" ")}`,
         (error, stdout, stderr) => {
           if (error) {
