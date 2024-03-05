@@ -72,7 +72,7 @@ export const renameStack = async (node: StackTreeItem, stackDataProvider: StackD
         });
         vscode.window.showInformationMessage('Stack renamed successfully.');
         stackDataProvider.refresh();
-      } catch (error) {
+      } catch (error: any) {
         if (error.response) {
           vscode.window.showErrorMessage(`Failed to rename stack: ${error.response.data.message}`);
         } else {
@@ -146,7 +146,7 @@ export const copyStack = async (node: StackTreeItem, stackDataProvider: StackDat
         }
         vscode.window.showInformationMessage('Stack copied successfully.');
         stackDataProvider.refresh();
-      } catch (error) {
+      } catch (error: any) {
         if (error.response && error.response.data && error.response.data.message) {
           vscode.window.showErrorMessage(`Failed to copy stack: ${error.response.data.message}`);
         } else {
