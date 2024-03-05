@@ -10,18 +10,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-export interface StackComponent {
+export interface PipelineRun {
   id: string;
   name: string;
-  type: string;
-  flavor: string;
-  workspaceId: string;
-}
-
-export interface Stack {
-  id: string;
-  name: string;
-  components: Record<string, StackComponent[]>;
-  workspaceId: string;
-  isActive?: boolean;
+  status: string;
+  version: string;
+  stackName: string;
+  startTime: string;
+  endTime: string;
+  os: string;
+  osVersion: string;
+  pythonVersion: string;
 }
