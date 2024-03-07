@@ -45,7 +45,6 @@ export class StackDataProvider implements vscode.TreeDataProvider<vscode.TreeIte
     this._onDidChangeTreeData.fire(undefined);
   }
 
-
   /**
    * Reactivates the tree view data by setting isActive to true.
    */

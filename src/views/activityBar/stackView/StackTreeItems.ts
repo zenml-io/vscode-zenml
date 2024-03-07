@@ -35,7 +35,6 @@ export class StackTreeItem extends vscode.TreeItem {
     if (isActive) {
       this.label = `${this.label} 🟢`;
     }
-
   }
 }
 

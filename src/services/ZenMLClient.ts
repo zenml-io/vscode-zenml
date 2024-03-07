@@ -34,9 +34,9 @@ export class ZenMLClient {
   }
 
   /**
-  * Resets the ZenMLClient instance.
-  * This method sets the instance to undefined, forcing a reinitialization on the next getInstance() call.
-  */
+   * Resets the ZenMLClient instance.
+   * This method sets the instance to undefined, forcing a reinitialization on the next getInstance() call.
+   */
   public static resetInstance() {
     this.instance = null;
   }
@@ -77,7 +77,7 @@ export class ZenMLClient {
     const fullUrl = `${serverUrl}/api/v1${endpoint}`;
     const headers = {
       ...options?.headers,
-      ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
     };
 
     try {
@@ -86,7 +86,7 @@ export class ZenMLClient {
         method,
         url: fullUrl,
         data,
-        headers
+        headers,
       });
       return response.data;
     } catch (error: any) {
