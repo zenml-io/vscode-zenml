@@ -50,7 +50,7 @@ export async function promptAndStoreServerUrl() {
 
 /**
  * Fetches the server ID by making a GET request to the /info endpoint of the ZenML server.
- * 
+ *
  * @param {string} serverUrl - The URL of the ZenML server.
  * @returns {Promise<string>} The server ID.
  */
@@ -114,7 +114,7 @@ export async function initiateDeviceAuthorization() {
 
 /**
  * Polls the ZenML server for an access token using the device authorization flow.
- * 
+ *
  * @param {string} serverUrl - The URL of the ZenML server.
  * @param {string} deviceCode - The device code obtained from the server.
  * @param {string} clientId - The client ID (server ID) obtained from the server.
@@ -172,7 +172,7 @@ export async function pollForAccessToken(
 
 /**
  * Disconnects from the ZenML server and clears related configuration and state in the application.
- * 
+ *
  * @param {ServerDataProvider} serverDataProvider - Provider for server data updates.
  * @param {StackDataProvider} stackDataProvider - Provider for stack data updates.
  * @param {PipelineDataProvider} pipelineDataProvider - Provider for pipeline data updates.
@@ -184,9 +184,6 @@ export async function disconnectFromZenMLServer(
   pipelineDataProvider: PipelineDataProvider
 ): Promise<boolean> {
   try {
-    const zenmlClient = ZenMLClient.getInstance();
-    await zenmlClient.request('get', '/logout');
-
     const config = vscode.workspace.getConfiguration('zenml');
     await config.update('serverUrl', undefined, vscode.ConfigurationTarget.Global);
     await config.update('accessToken', undefined, vscode.ConfigurationTarget.Global);
