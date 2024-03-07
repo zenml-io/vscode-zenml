@@ -21,7 +21,7 @@ let showInputBoxStub: sinon.SinonStub;
 class MockShell extends Shell {
   runPythonScript(scriptPath: string, args: string[] = []): Promise<any> {
     if (scriptPath === 'valid_script.py') {
-      return Promise.resolve(JSON.stringify({ key: 'mocked_value' }));
+      return Promise.resolve({ key: 'mocked_value' });
     } else {
       return Promise.reject(new Error('Mocked error'));
     }
@@ -85,10 +85,13 @@ suite('Shell Class Test Suite', () => {
     } as any);
 
     const shell = new MockShell();
+    const expected = { key: 'mocked_value' };
+    executeCommandStub.resolves(JSON.stringify(expected));
     const result = await shell.runPythonScript('valid_script.py');
-    assert.strictEqual(
+
+    assert.deepStrictEqual(
       result,
-      JSON.stringify({ key: 'mocked_value' }),
+      expected,
       'runPythonScript should return the expected value'
     );
   });
