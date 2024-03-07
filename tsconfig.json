@@ -1,15 +1,13 @@
 {
-	"compilerOptions": {
-		"module": "Node16",
-		"target": "ES2022",
-		"lib": [
-			"ES2022"
-		],
-		"sourceMap": true,
-		"rootDir": "src",
-		"strict": true,
-		"skipLibCheck": true,
-	},
-	"exclude": ["node_modules"],
-	"include": ["./src/**/*.ts"]
+  "compilerOptions": {
+    "module": "Node16",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "sourceMap": true,
+    "rootDir": "src",
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "exclude": ["node_modules"],
+  "include": ["./src/**/*.ts"]
 }

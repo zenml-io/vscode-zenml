@@ -10,7 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import { ServerStatus } from "../types/ServerTypes";
+import { ServerStatus } from '../types/ServerTypes';
 import { ZenMLClient } from './ZenMLClient';
 
 export const INITIAL_ZENML_SERVER_STATUS: ServerStatus = {
@@ -33,8 +33,8 @@ export class ServerStatusService {
   private listeners: ((status: ServerStatus) => void)[] = [];
 
   /**
- * Private constructor to enforce singleton pattern. Initializes the service by starting to poll the server status from the Flask service.
- */
+   * Private constructor to enforce singleton pattern. Initializes the service by starting to poll the server status from the Flask service.
+   */
   private constructor() {
     this.isActive = true;
     this.pollServerStatus();
@@ -53,8 +53,8 @@ export class ServerStatusService {
   }
 
   /**
- * Reactivates the tree view data by setting isActive to true.
- */
+   * Reactivates the tree view data by setting isActive to true.
+   */
   public resetStatus() {
     this.isActive = false;
     this.currentStatus = { ...INITIAL_ZENML_SERVER_STATUS };
@@ -70,7 +70,7 @@ export class ServerStatusService {
 
   /**
    * Gets the current status of the ZenML server.
-   * 
+   *
    * @returns {ServerStatus} The current status of the ZenML server, including connectivity, host, port, store type, and store URL.
    */
   public getCurrentStatus(): ServerStatus {
@@ -80,7 +80,7 @@ export class ServerStatusService {
   /**
    * Asynchronously updates and returns the current status of the ZenML server.
    * This method forces a refresh of the server status by polling the ZenML server, updating the internal status, and then returning the updated status.
-   * 
+   *
    * @returns {Promise<ServerStatus>} A promise that resolves to the updated current status of the ZenML server.
    */
   public async updateStatus(): Promise<ServerStatus> {
@@ -151,7 +151,7 @@ export class ServerStatusService {
    * Subscribes a new listener for server status updates.
    * Each listener is a function that is called with the current server status as its argument whenever the server status is updated.
    * Immediately invokes the newly added listener with the current status upon subscription.
-   * 
+   *
    * @param {Function} listener A function that will be called with the ServerStatus object whenever the server status is updated.
    */
   public subscribe(listener: (status: ServerStatus) => void) {
@@ -164,6 +164,6 @@ export class ServerStatusService {
    * This method is called whenever the server status changes, ensuring that all listeners are informed of the most recent status.
    */
   private notifyListeners() {
-    this.listeners.forEach((listener) => listener(this.currentStatus));
+    this.listeners.forEach(listener => listener(this.currentStatus));
   }
 }

@@ -81,6 +81,7 @@ export class PipelineDataProvider implements vscode.TreeDataProvider<vscode.Tree
 
       return pipelineRuns.map(run => {
         const children = [
+          new PipelineRunTreeItem('run name', run.name),
           new PipelineRunTreeItem('stack', run.stackName),
           new PipelineRunTreeItem('start time', run.startTime),
           new PipelineRunTreeItem('end time', run.endTime),

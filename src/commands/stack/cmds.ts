@@ -140,7 +140,11 @@ export const copyStack = async (node: StackTreeItem, stackDataProvider: StackDat
         };
 
         // Step 4: Create the new stack
-        const copyStackResponse = await zenmlClient.request('post', `/workspaces/${workspaceId}/stacks`, newStackPayload);
+        const copyStackResponse = await zenmlClient.request(
+          'post',
+          `/workspaces/${workspaceId}/stacks`,
+          newStackPayload
+        );
         if (!copyStackResponse || copyStackResponse.error) {
           throw new Error('Failed to create the new stack.');
         }
