@@ -43,6 +43,11 @@ export async function promptAndStoreServerUrl() {
 
   if (serverUrl) {
     let cleanedServerUrl = serverUrl.replace(/\/$/, '');
+    // Validate the server URL format before storing
+    if (!/^https?:\/\/[^\s$.?#].[^\s]*$/.test(cleanedServerUrl)) {
+      vscode.window.showErrorMessage('Invalid server URL format.');
+      return;
+    }
     const config = vscode.workspace.getConfiguration('zenml');
     await config.update('serverUrl', cleanedServerUrl, vscode.ConfigurationTarget.Global);
   }
