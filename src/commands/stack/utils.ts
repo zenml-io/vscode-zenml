@@ -45,7 +45,8 @@ export async function switchZenMLStack(
       'set_active_stack',
       stackId,
     ]);
-    const { id, name } = JSON.parse(result);
+
+    const { id, name } = result;
     vscode.window.showInformationMessage(`Active stack set to: ${name}`);
     await storeActiveStack(id, name);
     return { id, name };
@@ -75,7 +76,8 @@ export async function getActiveStack(): Promise<{ id: string; name: string } | u
     const result = await shell.runPythonScript('src/commands/stack/operations.py', [
       'get_active_stack',
     ]);
-    const { id, name } = JSON.parse(result);
+
+    const { id, name } = result;
 
     if (id && name) {
       await storeActiveStack(id, name);
