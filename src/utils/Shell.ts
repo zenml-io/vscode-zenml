@@ -13,6 +13,7 @@
 import { exec } from 'child_process';
 import * as vscode from 'vscode';
 import * as path from 'path';
+import { ALLOWED_ARGS, ALLOWED_SCRIPTS } from './constants';
 
 export class Shell {
   public venvPath: string | undefined;
@@ -99,27 +100,53 @@ export class Shell {
       ? `${isWindows ? `${this.venvPath}\\Scripts\\python` : `${this.venvPath}/bin/python`}`
       : 'python';
 
-    const scriptPath = this.getScriptPath(scriptFilename);
+    if (!this.isValidScriptFilename(scriptFilename) || !this.isValidOperation(args[0])) {
+      throw new Error('Invalid script filename or arguments');
+    }
 
-    return new Promise((resolve, reject) => {
-      exec(
-        // Ensure scriptPath and args are sanitized or validated here
-        `${pythonCommand} ${scriptPath} ${args.join(' ')}`,
-        (error, stdout, stderr) => {
-          if (error) {
-            console.error(`exec error: ${error}`);
-            reject(error);
-            return;
-          }
-          try {
-            resolve(stdout);
-          } catch (parseError) {
-            console.error(`Error parsing Python script output: ${parseError}`);
-            reject(parseError);
-          }
-        }
-      );
+    const scriptPath = this.getScriptPath(scriptFilename);
+    const sanitizedArgs = this.sanitizeArgs(args);
+    const fullCommand = `${pythonCommand} ${scriptPath} ${sanitizedArgs}`;
+
+    return this.executeCommand(fullCommand).then(stdout => {
+      try {
+        return JSON.parse(stdout);
+      } catch (parseError) {
+        console.error(`Error parsing Python script output: ${parseError}`);
+        throw new Error(`Error parsing Python script output: ${parseError}`);
+      }
     });
+  }
+
+  /**
+   * Sanitizes the arguments array to prevent command injection.
+   * Each argument is wrapped in double quotes, and any existing double quotes in the argument are escaped.
+   *
+   * @param {string[]} args - The array of arguments to sanitize.
+   * @returns {string} - A string of sanitized arguments, ready to be passed to a shell command.
+   */
+  private sanitizeArgs(args: string[]): string {
+    return args.map(arg => `"${arg.replace(/"/g, '\\"')}"`).join(' ');
+  }
+
+  /**
+   * Validates the filename of the Python script against a list of allowed scripts.
+   *
+   * @param {string} filename - The filename of the Python script to validate.
+   * @returns {boolean} - True if the filename is in the list of allowed scripts, false otherwise.
+   */
+  private isValidScriptFilename(filename: string): boolean {
+    return ALLOWED_SCRIPTS.includes(filename);
+  }
+
+  /**
+   * Validates the first argument passed to the Python script against a list of allowed operations.
+   *
+   * @param {string} arg - The argument to validate.
+   * @returns {boolean} - True if the operation is allowed.
+   */
+  private isValidOperation(arg: string): boolean {
+    return ALLOWED_ARGS.includes(arg);
   }
 
   /**
@@ -130,7 +157,6 @@ export class Shell {
    */
   public getScriptPath(scriptName: string): string {
     const extensionPath = vscode.extensions.getExtension('zenml-io.zenml')?.extensionPath || '';
-    // Ensure scriptName is validated or sanitized here
     return path.join(extensionPath, scriptName);
   }
 }
