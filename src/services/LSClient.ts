@@ -12,7 +12,7 @@
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
-import { ZenServerDetails } from '../types/ServerStatusTypes';
+import { ZenServerDetails } from '../types/ServerInfoTypes';
 import { EventBus } from './EventBus';
 
 export class LSClient {
