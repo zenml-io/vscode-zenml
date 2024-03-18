@@ -58,14 +58,14 @@ RUNNER = pathlib.Path(__file__).parent / "lsp_runner.py"
 MAX_WORKERS = 5
 
 LSP_SERVER = ZenMLLanguageServer(
-    name="zenml-pytool-server", version="0.0.1", max_workers=MAX_WORKERS
+    name="zenml-lsp-server", version="0.0.1", max_workers=MAX_WORKERS
 )
 
 # **********************************************************
 # Tool specific code goes below this.
 # **********************************************************
 
-TOOL_MODULE = "zenml"
+TOOL_MODULE = "zenml-python"
 TOOL_DISPLAY = "ZenML Python Tool"
 
 # Default arguments always passed to zenml.
