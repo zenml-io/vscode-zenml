@@ -38,8 +38,8 @@ class ZenMLLanguageServer(LanguageServer):
                 # Installed version is less than the minimum required version
                 message = f"ZenML version {MIN_ZENML_VERSION} or higher is required. Found version {version_str}. Please upgrade ZenML."
                 self.send_custom_notification(
-                    "zenml/requirementNotMet",
-                    {"message": message},
+                    "zenml/ready",
+                    {"message": message, "version": version_str, "ready": False},
                 )
                 self.notify_user(message)
                 return False
@@ -48,7 +48,7 @@ class ZenMLLanguageServer(LanguageServer):
                 message = "ZenML is installed and meets the version requirement."
                 self.send_custom_notification(
                     "zenml/ready",
-                    {"message": message},
+                    {"message": message, "version": version_str, "ready": True},
                 )
                 self.notify_user(message)
                 return True
@@ -57,8 +57,8 @@ class ZenMLLanguageServer(LanguageServer):
             # ZenML is not installed
             message = "ZenML is not installed. Please install ZenML and reload VS Code."
             self.send_custom_notification(
-                "zenml/requirementNotMet",
-                {"message": message},
+                "zenml/ready",
+                {"message": message, "ready": False},
             )
             self.notify_user(message)
             return False

@@ -33,7 +33,7 @@
   "main": "./dist/extension.js",
   "serverInfo": {
     "name": "ZenML Python",
-    "module": "zenml"
+    "module": "zenml-python"
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
@@ -52,7 +52,7 @@
     "configuration": {
       "title": "ZenML",
       "properties": {
-        "zenml.args": {
+        "zenml-python.args": {
           "default": [],
           "description": "Arguments passed in. Each argument is a separate item in the array.",
           "items": {
@@ -61,7 +61,7 @@
           "scope": "resource",
           "type": "array"
         },
-        "zenml.path": {
+        "zenml-python.path": {
           "default": [],
           "scope": "resource",
           "items": {
@@ -69,7 +69,7 @@
           },
           "type": "array"
         },
-        "zenml.importStrategy": {
+        "zenml-python.importStrategy": {
           "default": "useBundled",
           "enum": [
             "useBundled",
@@ -82,7 +82,7 @@
           "scope": "window",
           "type": "string"
         },
-        "zenml.interpreter": {
+        "zenml-python.interpreter": {
           "default": [],
           "description": "When set to a path to python executable, extension will use that to launch the server and any subprocess.",
           "scope": "resource",
@@ -91,7 +91,7 @@
           },
           "type": "array"
         },
-        "zenml.showNotifications": {
+        "zenml-python.showNotifications": {
           "default": "off",
           "description": "Controls when notifications are shown by this extension.",
           "enum": [
@@ -145,7 +145,7 @@
       {
         "command": "zenml.restartServer",
         "title": "Restart LSP Server",
-        "category": "Extension Utilities"
+        "category": "ZenML"
       },
       {
         "command": "zenml.connectServer",
