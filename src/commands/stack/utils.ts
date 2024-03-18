@@ -11,48 +11,40 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
-import { ZenMLClient } from '../../services/ZenMLClient';
-import { Shell } from '../../utils/Shell';
-
-/**
- * Attempts to fetch the stack details for the given stack ID.
- *
- * @param {string} stackId The ID of the stack to fetch.
- * @returns {Promise<string>} The name of the stack.
- */
-export async function fetchStackDetails(stackId: string): Promise<string> {
-  const zenmlClient = ZenMLClient.getInstance();
-  const response = await zenmlClient.request('get', `/stacks/${stackId}`);
-  if (response && response.name) {
-    return response.name;
-  } else {
-    throw new Error('Failed to fetch stack details');
-  }
-}
+import { LSClient } from '../../services/LSClient';
+import { PYTOOL_MODULE } from '../../utils/constants';
+import { GetActiveStackResponse, SetActiveStackResponse } from '../../types/LSClientResponseTypes';
+import { showErrorMessage, showInformationMessage } from '../../utils/notifications';
 
 /**
  * Switches the active ZenML stack to the specified stack name.
  *
- * @param {string} stackId - The id of the ZenML stack to be activated.
+ * @param {string} stackNameOrId - The id or name of the ZenML stack to be activated.
  * @returns {Promise<{id: string, name: string}>} A promise that resolves with the id and name of the newly activated stack, or undefined on error.
  */
-export async function switchZenMLStack(
-  stackId: string
-): Promise<{ id: string; name: string } | undefined> {
-  const shell = new Shell();
+export const switchActiveStack = async (stackNameOrId: string): Promise<{ id: string; name: string } | undefined> => {
+  const lsClient = LSClient.getInstance().getLanguageClient();
+  if (!lsClient) {
+    throw new Error('Language client not found');
+  }
+
   try {
-    const result = await shell.runPythonScript('src/commands/stack/operations.py', [
-      'set_active_stack',
-      stackId,
-    ]);
+    const result = (await lsClient.sendRequest('workspace/executeCommand', {
+      command: `${PYTOOL_MODULE}.switchActiveStack`,
+      arguments: [stackNameOrId],
+    })) as SetActiveStackResponse;
+
+    if ('error' in result) {
+      console.log('Error in switchZenMLStack result', result);
+      throw new Error(result.error);
+    }
 
     const { id, name } = result;
-    vscode.window.showInformationMessage(`Active stack set to: ${name}`);
     await storeActiveStack(id, name);
     return { id, name };
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Error setting active stack: ${error}`);
-    vscode.window.showErrorMessage(`Failed to set active stack: ${error}`);
+    showErrorMessage(`Failed to set active stack: ${error.message}`);
   }
 }
 
@@ -62,33 +54,32 @@ export async function switchZenMLStack(
  *
  * @returns {Promise<{id: string, name: string}>} A promise that resolves with the id and name of the active stack, or undefined on error;
  */
-export async function getActiveStack(): Promise<{ id: string; name: string } | undefined> {
-  const config = vscode.workspace.getConfiguration('zenml');
-  const storedId = config.get<string>('activeStackId');
-  const storedName = config.get<string>('activeStackName');
+export const getActiveStack = async (): Promise<{ id: string; name: string } | undefined> => {
+  const lsClientInstance = LSClient.getInstance();
+  const lsClient = lsClientInstance.getLanguageClient();
 
-  if (storedId && storedName) {
-    return { id: storedId, name: storedName };
+  if (!lsClient) {
+    console.log('getActiveStack: Language client not ready yet.');
+    // showErrorMessage('Language server is not available.');
+    return;
   }
 
-  const shell = new Shell();
   try {
-    const result = await shell.runPythonScript('src/commands/stack/operations.py', [
-      'get_active_stack',
-    ]);
+    const result = (await lsClient.sendRequest('workspace/executeCommand', {
+      command: `${PYTOOL_MODULE}.getActiveStack`,
+    })) as GetActiveStackResponse;
+
+    if ('error' in result) {
+      throw new Error(result.error);
+    }
 
     const { id, name } = result;
-
-    if (id && name) {
-      await storeActiveStack(id, name);
-      vscode.window.showInformationMessage(`The global active stack is: ${name}`);
-      return { id, name };
-    } else {
-      vscode.window.showErrorMessage('Failed to retrieve the active ZenML stack information.');
-    }
-  } catch (error) {
+    await storeActiveStack(id, name);
+    return { id, name };
+  } catch (error: any) {
     console.error(`Error getting active stack information: ${error}`);
-    vscode.window.showErrorMessage(`Failed to get active stack information: ${error}`);
+    showErrorMessage(`Failed to get active stack information: ${error.message}`);
+    return undefined;
   }
 }
 
@@ -99,8 +90,16 @@ export async function getActiveStack(): Promise<{ id: string; name: string } | u
  * @param {string} name - The name of the ZenML stack to be stored.
  * @returns {Promise<void>} A promise that resolves when the stack information has been successfully stored.
  */
-export async function storeActiveStack(id: string, name: string): Promise<void> {
+export const storeActiveStack = async (id: string, name: string): Promise<void> => {
   const config = vscode.workspace.getConfiguration('zenml');
   await config.update('activeStackId', id, vscode.ConfigurationTarget.Global);
   await config.update('activeStackName', name, vscode.ConfigurationTarget.Global);
 }
+
+const stackUtils = {
+  switchActiveStack,
+  getActiveStack,
+  storeActiveStack,
+};
+
+export default stackUtils;
