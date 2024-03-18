@@ -10,7 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import { ServerStatus } from '../types/ServerTypes';
+import { ServerStatus } from '../types/ServerInfoTypes';
 import { ZenMLClient } from './ZenMLClient';
 
 export const INITIAL_ZENML_SERVER_STATUS: ServerStatus = {
