@@ -15,6 +15,7 @@ import { EventEmitter } from 'events';
 export class EventBus extends EventEmitter {
   private static instance: EventBus;
   public lsClientReady: boolean = false;
+  public zenmlClientAvailable: boolean = false;
 
   constructor() {
     super();
@@ -40,6 +41,7 @@ export class EventBus extends EventEmitter {
    */
   private subscribeToEvents(): void {
     this.on('lsClientReady', this.handleLsClientReady.bind(this));
+    this.on('zenmlClientAvailable', this.handleZenmlClientAvailable.bind(this));
   }
 
   /**
@@ -50,5 +52,15 @@ export class EventBus extends EventEmitter {
    */
   public handleLsClientReady(isReady: boolean): void {
     this.lsClientReady = isReady;
+  }
+
+  /**
+   * Handles the ZenML client available event.
+   *
+   * @param isAvailable A boolean indicating whether the ZenML client is available.
+   * @returns void
+   */
+  public handleZenmlClientAvailable(isAvailable: boolean): void {
+    this.zenmlClientAvailable = isAvailable;
   }
 }
