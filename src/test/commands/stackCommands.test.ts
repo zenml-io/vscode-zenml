@@ -17,12 +17,10 @@ import {
   copyStack,
   refreshActiveStack,
   renameStack,
-  setActiveStack,
 } from '../../commands/stack/cmds';
 import { ZenMLClient } from '../../services/ZenMLClient';
 import { StackDataProvider, StackTreeItem } from '../../views/activityBar';
 import ZenMLStatusBar from '../../views/statusBar';
-import { switchZenMLStack } from '../../commands/stack/utils';
 import { Shell } from '../../utils/Shell';
 import proxyquire from 'proxyquire';
 
