@@ -14,6 +14,7 @@ import * as vscode from 'vscode';
 import { StackTreeItem } from '../../views/activityBar';
 import { stackCommands } from './cmds';
 import { registerCommand } from '../../common/vscodeapi';
+import { ExtensionEnvironment } from '../../services/ExtensionEnvironment';
 
 /**
  * Registers stack-related commands for the extension.
@@ -21,36 +22,16 @@ import { registerCommand } from '../../common/vscodeapi';
  * @param {vscode.ExtensionContext} context - The context in which the extension operates, used for registering commands and managing their lifecycle.
  */
 export const registerStackCommands = (context: vscode.ExtensionContext) => {
-  const refreshStackView = registerCommand(
-    'zenml.refreshStackView',
-    async () => await stackCommands.refreshStackView()
-  );
+  const commands = [
+    registerCommand('zenml.refreshStackView', async () => await stackCommands.refreshStackView()),
+    registerCommand('zenml.refreshActiveStack', async () => await stackCommands.refreshActiveStack()),
+    registerCommand('zenml.renameStack', async (node: StackTreeItem) => await stackCommands.renameStack(node)),
+    registerCommand('zenml.setActiveStack', async (node: StackTreeItem) => await stackCommands.setActiveStack(node)),
+    registerCommand('zenml.copyStack', async (node: StackTreeItem) => await stackCommands.copyStack(node))
+  ];
 
-  const refreshActiveStack = registerCommand(
-    'zenml.refreshActiveStack',
-    async () => await stackCommands.refreshActiveStack()
-  );
-
-  const renameStack = registerCommand(
-    'zenml.renameStack',
-    async (node: StackTreeItem) => await stackCommands.renameStack(node)
-  );
-
-  const setActiveStack = registerCommand(
-    'zenml.setActiveStack',
-    async (node: StackTreeItem) => await stackCommands.setActiveStack(node)
-  );
-
-  const copyStack = registerCommand(
-    'zenml.copyStack',
-    async (node: StackTreeItem) => await stackCommands.copyStack(node)
-  );
-
-  context.subscriptions.push(
-    refreshStackView,
-    refreshActiveStack,
-    renameStack,
-    setActiveStack,
-    copyStack
-  );
+  commands.forEach(cmd => {
+    context.subscriptions.push(cmd);
+    ExtensionEnvironment.commandDisposables.push(cmd);
+  });
 };
