@@ -10,7 +10,6 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
-
 import logging
 import sys
 import pathlib
@@ -22,6 +21,7 @@ import json
 class ZenMLClient:
     def __init__(self):
         # Redirect stdout to suppress output from ZenML
+        # This is necessary to avoid printing logs to the console, which causes the lsp server to error out
         original_stdout = sys.stdout
         logging.basicConfig(stream=sys.stderr, level=logging.INFO)
         sys.stdout = open(os.devnull, "w")

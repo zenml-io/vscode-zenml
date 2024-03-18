@@ -33,6 +33,6 @@ export const PIPELINE_RUN_STATUS_ICONS: Record<string, string> = {
   initializing: 'loading~spin',
   failed: 'error',
   completed: 'check',
-  running: 'sync~spin',
+  running: 'clock',
   cached: 'history',
 };

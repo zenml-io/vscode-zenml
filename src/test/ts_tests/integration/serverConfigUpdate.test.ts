@@ -14,7 +14,7 @@ import * as sinon from 'sinon';
 import * as vscode from 'vscode';
 import assert from 'assert';
 import { EventBus } from '../../../services/EventBus';
-import { ZenServerDetails } from '../../../types/ServerStatusTypes';
+import { ZenServerDetails } from '../../../types/ServerInfoTypes';
 import { MOCK_REST_SERVER_DETAILS } from '../__mocks__/constants';
 import { MockLSClient } from '../__mocks__/MockLSClient';
 import { MockEventBus } from '../__mocks__/MockEventBus';
