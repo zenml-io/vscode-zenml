@@ -42,13 +42,14 @@ export class StackTreeItem extends vscode.TreeItem {
  * A TreeItem for displaying a stack component in the VSCode TreeView.
  */
 export class StackComponentTreeItem extends vscode.TreeItem {
-  public workspaceId: string;
-
-  constructor(component: StackComponent, stackId: string) {
+  constructor(
+    public component: StackComponent,
+    public stackId: string
+  ) {
     super(component.name, vscode.TreeItemCollapsibleState.None);
+
     this.tooltip = `Type: ${component.type}, Flavor: ${component.flavor}`;
     this.description = `${component.type} (${component.flavor})`;
-    this.workspaceId = component.workspaceId;
     this.contextValue = 'stackComponent';
     this.id = `${stackId}-${component.id}`;
   }
