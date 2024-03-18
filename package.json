@@ -3,64 +3,206 @@
   "publisher": "zenml-io",
   "displayName": "ZenML",
   "description": "",
+  "preview": true,
   "version": "0.0.1",
-  "main": "./dist/extension.js",
   "engines": {
     "vscode": "^1.86.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zenml-io/vscode-zenml"
+  },
   "categories": [
-    "Other"
+    "Machine Learning",
+    "Visualization"
   ],
   "activationEvents": [
-    "onStartupFinished"
+    "onStartupFinished",
+    "onLanguage:python",
+    "workspaceContains:*.py"
   ],
+  "extensionDependencies": [
+    "ms-python.python"
+  ],
+  "capabilities": {
+    "virtualWorkspaces": {
+      "supported": false,
+      "description": "Virtual Workspaces are not supported with <pytool-display-name>."
+    }
+  },
+  "main": "./dist/extension.js",
+  "serverInfo": {
+    "name": "ZenML Python",
+    "module": "zenml-python"
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool source-map --config ./webpack.config.js",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "format": "prettier --ignore-path .gitignore --write \"**/*.+(ts|json)\"",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test",
+    "vsce-package": "vsce package -o zenml.vsix"
+  },
   "contributes": {
+    "configuration": {
+      "title": "ZenML",
+      "properties": {
+        "zenml.args": {
+          "default": [],
+          "description": "Arguments passed in. Each argument is a separate item in the array.",
+          "items": {
+            "type": "string"
+          },
+          "scope": "resource",
+          "type": "array"
+        },
+        "zenml.path": {
+          "default": [],
+          "scope": "resource",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "zenml.importStrategy": {
+          "default": "useBundled",
+          "enum": [
+            "useBundled",
+            "fromEnvironment"
+          ],
+          "enumDescriptions": [
+            "Always use the bundled version of `<pytool-module>`.",
+            "Use `<pytool-module>` from environment, fallback to bundled version only if `<pytool-module>` not available in the environment."
+          ],
+          "scope": "window",
+          "type": "string"
+        },
+        "zenml.interpreter": {
+          "default": [],
+          "description": "When set to a path to python executable, extension will use that to launch the server and any subprocess.",
+          "scope": "resource",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "zenml.showNotifications": {
+          "default": "off",
+          "description": "Controls when notifications are shown by this extension.",
+          "enum": [
+            "off",
+            "onError",
+            "onWarning",
+            "always"
+          ],
+          "enumDescriptions": [
+            "All notifications are turned off, any errors or warning are still available in the logs.",
+            "Notifications are shown only in the case of an error.",
+            "Notifications are shown for errors and warnings.",
+            "Notifications are show for anything that the server chooses to show."
+          ],
+          "scope": "machine",
+          "type": "string"
+        },
+        "zenml.venvPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the virtual environment where ZenML is installed. Leave empty if installed globally."
+        },
+        "zenml.serverUrl": {
+          "type": "string",
+          "default": "",
+          "description": "ZenML Server URL"
+        },
+        "zenml.accessToken": {
+          "type": "string",
+          "default": "",
+          "description": "Access token for the ZenML server"
+        },
+        "zenml.activeStackId": {
+          "type": "string",
+          "default": "",
+          "description": "Active stack id for the ZenML server"
+        },
+        "zenml.activeStackName": {
+          "type": "string",
+          "default": "",
+          "description": "Active stack name for the ZenML server"
+        },
+        "zenml.zenmlClientReady": {
+          "type": "boolean",
+          "default": false,
+          "description": "ZenML Python client is ready"
+        }
+      }
+    },
     "commands": [
       {
+        "command": "zenml.restart",
+        "title": "Restart LSP Server",
+        "category": "Extension Utilities"
+      },
+      {
         "command": "zenml.connectServer",
-        "title": "Connect"
+        "title": "Connect",
+        "category": "ZenML Server"
       },
       {
         "command": "zenml.disconnectServer",
-        "title": "Disconnect"
-      },
-      {
-        "command": "zenml.updateActiveStack",
-        "title": "Refresh Active Stack"
-      },
-      {
-        "command": "zenml.updateServerStatus",
-        "title": "Refresh Server Status"
-      },
-      {
-        "command": "zenml.refreshStackView",
-        "title": "Refresh Stack View",
-        "icon": "$(refresh)"
+        "title": "Disconnect",
+        "category": "ZenML Server"
       },
       {
         "command": "zenml.refreshServerStatus",
         "title": "Refresh Server Status",
-        "icon": "$(refresh)"
+        "icon": "$(refresh)",
+        "category": "ZenML Server"
+      },
+      {
+        "command": "zenml.refreshStackView",
+        "title": "Refresh Stack View",
+        "icon": "$(refresh)",
+        "category": "ZenML Stacks"
+      },
+      {
+        "command": "zenml.getActiveStack",
+        "title": "Get Active Stack",
+        "category": "ZenML Stacks"
       },
       {
         "command": "zenml.renameStack",
         "title": "Rename Stack",
-        "icon": "$(edit)"
-      },
-      {
-        "command": "zenml.copyStack",
-        "title": "Copy Stack",
-        "icon": "$(copy)"
+        "icon": "$(edit)",
+        "category": "ZenML Stacks"
       },
       {
         "command": "zenml.setActiveStack",
         "title": "Set Active Stack",
-        "icon": "$(check)"
+        "icon": "$(check)",
+        "category": "ZenML Stacks"
+      },
+      {
+        "command": "zenml.copyStack",
+        "title": "Copy Stack",
+        "icon": "$(copy)",
+        "category": "ZenML"
       },
       {
         "command": "zenml.refreshPipelineView",
         "title": "Refresh Pipeline View",
-        "icon": "$(refresh)"
+        "icon": "$(refresh)",
+        "category": "ZenML Pipeline Runs"
+      },
+      {
+        "command": "zenml.deletePipelineRun",
+        "title": "Delete Pipeline Run",
+        "icon": "$(trash)",
+        "category": "ZenML Pipeline Runs"
       }
     ],
     "viewsContainers": {
@@ -104,6 +246,11 @@
           "group": "navigation"
         },
         {
+          "when": "view == zenmlServerView",
+          "command": "zenml.refreshServerStatus",
+          "group": "navigation"
+        },
+        {
           "when": "view == zenmlStackView",
           "command": "zenml.refreshStackView",
           "group": "navigation"
@@ -115,11 +262,6 @@
         }
       ],
       "view/item/context": [
-        {
-          "when": "view == zenmlServerView",
-          "command": "zenml.refreshServerStatus",
-          "group": "inline"
-        },
         {
           "when": "view == zenmlStackView && viewItem == stack",
           "command": "zenml.setActiveStack",
@@ -134,53 +276,17 @@
           "command": "zenml.copyStack",
           "when": "view == zenmlStackView && viewItem == stack",
           "group": "inline@3"
+        },
+        {
+          "command": "zenml.deletePipelineRun",
+          "when": "view == zenmlPipelineView && viewItem == pipelineRun",
+          "group": "inline"
         }
       ]
-    },
-    "configuration": {
-      "title": "ZenML",
-      "properties": {
-        "zenml.venvPath": {
-          "type": "string",
-          "default": "",
-          "description": "Path to the virtual environment where ZenML is installed. Leave empty if installed globally."
-        },
-        "zenml.serverUrl": {
-          "type": "string",
-          "default": "",
-          "description": "ZenML Server URL"
-        },
-        "zenml.accessToken": {
-          "type": "string",
-          "default": "",
-          "description": "Access token for the ZenML server"
-        },
-        "zenml.activeStackId": {
-          "type": "string",
-          "default": "",
-          "description": "Active stack id for the ZenML server"
-        },
-        "zenml.activeStackName": {
-          "type": "string",
-          "default": "",
-          "description": "Active stack name for the ZenML server"
-        }
-      }
     }
   },
-  "scripts": {
-    "vscode:prepublish": "npm run package",
-    "compile": "webpack",
-    "watch": "webpack --watch",
-    "package": "webpack --mode production --devtool hidden-source-map",
-    "compile-tests": "tsc -p . --outDir out",
-    "watch-tests": "tsc -p . -w --outDir out",
-    "pretest": "npm run compile-tests && npm run compile && npm run lint",
-    "format": "prettier --ignore-path .gitignore --write \"**/*.+(ts|json)\"",
-    "lint": "eslint src --ext ts",
-    "test": "vscode-test"
-  },
   "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
     "@types/mocha": "^10.0.6",
     "@types/node": "^18.19.18",
     "@types/proxyquire": "^1.3.31",
@@ -191,7 +297,7 @@
     "@typescript-eslint/parser": "^6.19.1",
     "@vscode/test-cli": "^0.0.4",
     "@vscode/test-electron": "^2.3.9",
-    "axios-mock-adapter": "^1.22.0",
+    "@vscode/vsce": "^2.24.0",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.2.5",
@@ -199,11 +305,18 @@
     "sinon": "^17.0.1",
     "ts-loader": "^9.5.1",
     "ts-mockito": "^2.6.1",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "tsconfig-paths-webpack-plugin": "^4.1.0",
+    "typemoq": "^2.1.0",
     "typescript": "^5.3.3",
     "webpack": "^5.90.0",
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "axios": "^1.6.7"
+    "@vscode/python-extension": "^1.0.5",
+    "axios": "^1.6.7",
+    "fs-extra": "^11.2.0",
+    "vscode-languageclient": "^9.0.1"
   }
 }

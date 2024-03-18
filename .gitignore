@@ -29,4 +29,13 @@ build/
 # Output of 'npm pack'
 *.tgz
 
+# From vscode-python-tools-extension-template
+*.vsix
+.venv/
+.vs/
+.nox/
+bundled/libs/
+**/__pycache__
+**/.pytest_cache
+**/.vs
 
