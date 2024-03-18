@@ -109,113 +109,107 @@ class ConfigFileChangeHandler(FileSystemEventHandler):
 
 def watch_zenml_config_yaml():
     config_dir_path = zenml_client.get_global_config_directory_path()
-    if config_dir_path != "Configuration directory does not exist.":
-        observer = Observer()
-        event_handler = ConfigFileChangeHandler()
-        observer.schedule(event_handler, config_dir_path, recursive=False)
-        observer.start()
-        log_to_output(f"Started watching {config_dir_path} for changes.")
+
+    if os.path.isdir(config_dir_path):
+        try:
+            os.listdir(config_dir_path)
+        except OSError as e:
+            log_error(
+                "Cannot start file watcher, configuration directory does not exist or is inaccessible."
+            )
+        else:
+            observer = Observer()
+            event_handler = ConfigFileChangeHandler()
+            observer.schedule(event_handler, config_dir_path, recursive=False)
+            observer.start()
+            log_to_output(f"Started watching {config_dir_path} for changes.")
     else:
-        log_error("Cannot start file watcher, configuration directory does not exist.")
+        log_error("Configuration directory path does not exist or is not a directory.")
 
 
 # **********************************************************
 # ZenML Client LSP Commands
 # **********************************************************
+def zenml_command(func):
+    def wrapper(*args, **kwargs):
+        if zenml_initialized and zenml_client:
+            return func(*args, **kwargs)
+        else:
+            return zenml_init_error
+
+    return wrapper
+
+
 @LSP_SERVER.command(f"{TOOL_MODULE}.getGlobalConfig")
+@zenml_command
 def get_global_configuration(*args, **kwargs) -> dict:
-    if zenml_initialized and zenml_client:
-        return zenml_client.get_global_configuration()
-    else:
-        return zenml_init_error
+    return zenml_client.get_global_configuration()
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.getGlobalConfigFilePath")
+@zenml_command
 def get_global_config_file_path(*args, **kwargs) -> str:
-    if zenml_initialized and zenml_client:
-        return zenml_client.get_global_config_file_path()
-    else:
-        return zenml_init_error
+    return zenml_client.get_global_config_file_path()
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.serverInfo")
+@zenml_command
 def get_server_info(*args, **kwargs) -> dict:
-    if zenml_initialized and zenml_client:
-        return zenml_client.get_server_info()
-    else:
-        return zenml_init_error
+    return zenml_client.get_server_info()
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.connect")
+@zenml_command
 def connect(args) -> dict:
-    if zenml_initialized and zenml_client:
-        return zenml_client.connect(args)
-    else:
-        return zenml_init_error
+    return zenml_client.connect(args)
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.disconnect")
+@zenml_command
 def disconnect(args) -> dict:
-    if zenml_initialized and zenml_client:
-        return zenml_client.disconnect(args)
-    else:
-        return zenml_init_error
+    return zenml_client.disconnect(args)
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.fetchStacks")
+@zenml_command
 def fetch_stacks(*args, **kwargs):
-    if zenml_initialized and zenml_client:
-        return zenml_client.fetch_stacks()
-    else:
-        return zenml_init_error
+    return zenml_client.fetch_stacks()
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.getActiveStack")
+@zenml_command
 def get_active_stack(*args, **kwargs) -> dict:
-    if zenml_initialized and zenml_client:
-        return zenml_client.get_active_stack()
-    else:
-        return zenml_init_error
+    return zenml_client.get_active_stack()
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.switchActiveStack")
+@zenml_command
 def set_active_stack(args) -> dict:
-    if zenml_initialized and zenml_client:
-        return zenml_client.set_active_stack(args)
-    else:
-        return zenml_init_error
+    return zenml_client.set_active_stack(args)
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.renameStack")
+@zenml_command
 def rename_stack(args) -> dict:
-    if zenml_initialized and zenml_client:
-        return zenml_client.rename_stack(args)
-    else:
-        return zenml_init_error
+    return zenml_client.rename_stack(args)
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.copyStack")
+@zenml_command
 def copy_stack(args) -> dict:
-    if zenml_initialized and zenml_client:
-        return zenml_client.copy_stack(args)
-    else:
-        return zenml_init_error
+    return zenml_client.copy_stack(args)
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.getPipelineRuns")
+@zenml_command
 def fetch_pipeline_runs(*args, **kwargs):
-    if zenml_initialized and zenml_client:
-        return zenml_client.fetch_pipeline_runs()
-    else:
-        return zenml_init_error
+    return zenml_client.fetch_pipeline_runs()
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.deletePipelineRun")
+@zenml_command
 def delete_pipeline_run(args) -> dict:
-    if zenml_initialized and zenml_client:
-        return zenml_client.delete_pipeline_run(args)
-    else:
-        return zenml_init_error
+    return zenml_client.delete_pipeline_run(args)
 
 
 # **********************************************************
