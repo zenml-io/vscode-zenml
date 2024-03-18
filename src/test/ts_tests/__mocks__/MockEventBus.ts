@@ -18,7 +18,7 @@ export class MockEventBus extends EventBus {
     super();
     this.on('lsClientReady', (isReady: boolean) => {
       this.lsClientReady = isReady;
-    })
+    });
   }
 
   /**
@@ -30,7 +30,7 @@ export class MockEventBus extends EventBus {
 
   /**
    * Simulates setting the LS Client readiness state.
-   * 
+   *
    * @param isReady A boolean indicating whether the LS Client is ready.
    * @returns void
    */

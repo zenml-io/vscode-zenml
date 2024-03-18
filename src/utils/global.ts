@@ -20,7 +20,7 @@ export const resetGlobalConfiguration = async () => {
   const config = vscode.workspace.getConfiguration('zenml');
   await config.update('serverUrl', '', vscode.ConfigurationTarget.Global);
   await config.update('accessToken', '', vscode.ConfigurationTarget.Global);
-}
+};
 
 /**
  * Retrieves the ZenML Server URL from the VSCode workspace configuration.
@@ -28,7 +28,7 @@ export const resetGlobalConfiguration = async () => {
 export const getZenMLServerUrl = (): string => {
   const config = vscode.workspace.getConfiguration('zenml');
   return config.get<string>('serverUrl') || '';
-}
+};
 
 /**
  * Retrieves the ZenML access token from the VSCode workspace configuration.
@@ -36,7 +36,7 @@ export const getZenMLServerUrl = (): string => {
 export const getZenMLAccessToken = (): string => {
   const config = vscode.workspace.getConfiguration('zenml');
   return config.get<string>('accessToken') || '';
-}
+};
 
 /**
  * Updates the ZenML Server URL and access token in the VSCode workspace configuration.
@@ -44,7 +44,9 @@ export const getZenMLAccessToken = (): string => {
  * @param {ZenServerStoreConfig} storeConfig - The new ZenML Server configuration to be updated.
  * @returns {Promise<void>} A promise that resolves after the configuration has been updated.
  */
-export const updateServerUrlAndToken = async (storeConfig: ZenServerStoreConfig | undefined): Promise<void> => {
+export const updateServerUrlAndToken = async (
+  storeConfig: ZenServerStoreConfig | undefined
+): Promise<void> => {
   let accessToken: string | undefined;
   const serverUrl = storeConfig?.url;
   if (storeConfig && storeConfig.type === 'rest' && storeConfig.url.startsWith('http:')) {
@@ -61,7 +63,7 @@ export const updateServerUrlAndToken = async (storeConfig: ZenServerStoreConfig 
     console.error(`Failed to update ZenML configuration: ${error.message}`);
     throw new Error('Failed to update ZenML Server URL and access token.');
   }
-}
+};
 
 /**
  * Updates the ZenML Server URL in the VSCode workspace configuration.
@@ -77,7 +79,7 @@ export const updateServerUrl = async (serverUrl: string): Promise<void> => {
     console.error(`Failed to update ZenML configuration: ${error.message}`);
     throw new Error('Failed to update ZenML Server URL.');
   }
-}
+};
 
 /**
  * Updates the ZenML access token in the VSCode workspace configuration.
@@ -93,4 +95,4 @@ export const updateAccessToken = async (accessToken: string): Promise<void> => {
     console.error(`Failed to update ZenML configuration: ${error.message}`);
     throw new Error('Failed to update ZenML access token.');
   }
-}
+};

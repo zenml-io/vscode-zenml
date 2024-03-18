@@ -20,14 +20,13 @@ export class LSClient {
   private client: LanguageClient | null = null;
   private eventBus: EventBus = EventBus.getInstance();
 
-  public constructor() { }
-
+  public constructor() {}
 
   /**
- * Gets the language client.
- * 
- * @returns {LanguageClient | null} The language client.
- */
+   * Gets the language client.
+   *
+   * @returns {LanguageClient | null} The language client.
+   */
   public getLanguageClient(): LanguageClient | null {
     return this.client;
   }
@@ -84,15 +83,14 @@ export class LSClient {
   }
 
   /**
- * Retrieves the singleton instance of LSClient.
- *
- * @returns {LSClient} The singleton instance.
- */
+   * Retrieves the singleton instance of LSClient.
+   *
+   * @returns {LSClient} The singleton instance.
+   */
   public static getInstance(): LSClient {
     if (!this.instance) {
       this.instance = new LSClient();
     }
     return this.instance;
   }
-
 }

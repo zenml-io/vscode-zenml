@@ -22,7 +22,9 @@ import { showErrorMessage, showInformationMessage } from '../../utils/notificati
  * @param {string} stackNameOrId - The id or name of the ZenML stack to be activated.
  * @returns {Promise<{id: string, name: string}>} A promise that resolves with the id and name of the newly activated stack, or undefined on error.
  */
-export const switchActiveStack = async (stackNameOrId: string): Promise<{ id: string; name: string } | undefined> => {
+export const switchActiveStack = async (
+  stackNameOrId: string
+): Promise<{ id: string; name: string } | undefined> => {
   const lsClient = LSClient.getInstance().getLanguageClient();
   if (!lsClient) {
     throw new Error('Language client not found');
@@ -46,7 +48,7 @@ export const switchActiveStack = async (stackNameOrId: string): Promise<{ id: st
     console.error(`Error setting active stack: ${error}`);
     showErrorMessage(`Failed to set active stack: ${error.message}`);
   }
-}
+};
 
 /**
  * Retrieves the currently active ZenML stack. If the active stack is stored in the global configuration,
@@ -81,7 +83,7 @@ export const getActiveStack = async (): Promise<{ id: string; name: string } | u
     showErrorMessage(`Failed to get active stack information: ${error.message}`);
     return undefined;
   }
-}
+};
 
 /**
  * Stores the specified ZenML stack id and name in the global configuration.
@@ -94,7 +96,7 @@ export const storeActiveStack = async (id: string, name: string): Promise<void> 
   const config = vscode.workspace.getConfiguration('zenml');
   await config.update('activeStackId', id, vscode.ConfigurationTarget.Global);
   await config.update('activeStackName', name, vscode.ConfigurationTarget.Global);
-}
+};
 
 const stackUtils = {
   switchActiveStack,

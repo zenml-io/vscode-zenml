@@ -16,7 +16,11 @@ import { LSClient } from '../../services/LSClient';
 import { getZenMLServerUrl } from '../../utils/global';
 import { PYTOOL_MODULE } from '../../utils/constants';
 import { EventBus } from '../../services/EventBus';
-import { ConnectServerResponse, GenericLSClientResponse, RestServerConnectionResponse } from '../../types/LSClientResponseTypes';
+import {
+  ConnectServerResponse,
+  GenericLSClientResponse,
+  RestServerConnectionResponse,
+} from '../../types/LSClientResponseTypes';
 import { showInformationMessage } from '../../utils/notifications';
 
 /**
@@ -82,7 +86,7 @@ const connectServer = async (): Promise<boolean> => {
       }
     );
   });
-}
+};
 
 /**
  * Disconnects from the ZenML server and clears related configuration and state in the application.
@@ -120,7 +124,7 @@ const disconnectServer = async (): Promise<void> => {
       }
     }
   );
-}
+};
 
 /**
  * Triggers a refresh of the server status within the UI components.
@@ -139,7 +143,7 @@ const refreshServerStatus = async (): Promise<void> => {
       showInformationMessage('Server status refreshed.');
     }
   );
-}
+};
 
 export const serverCommands = {
   connectServer,

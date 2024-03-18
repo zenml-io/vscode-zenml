@@ -16,7 +16,7 @@ import { Disposable, LogOutputChannel } from 'vscode';
 
 type Arguments = unknown[];
 class OutputChannelLogger {
-  constructor(private readonly channel: LogOutputChannel) { }
+  constructor(private readonly channel: LogOutputChannel) {}
 
   public traceLog(...data: Arguments): void {
     this.channel.appendLine(util.format(...data));

@@ -21,7 +21,7 @@ import * as vscode from 'vscode';
 export const showStatusBarInfoMessage = (message: string, duration: number = 5000): void => {
   const disposable = vscode.window.setStatusBarMessage(message);
   setTimeout(() => disposable.dispose(), duration);
-}
+};
 
 /**
  * Shows a warning message in the status bar for a specified duration.
@@ -32,7 +32,7 @@ export const showStatusBarInfoMessage = (message: string, duration: number = 500
 export const showStatusBarWarningMessage = (message: string, duration: number = 5000): void => {
   const disposable = vscode.window.setStatusBarMessage(`$(alert) ${message}`);
   setTimeout(() => disposable.dispose(), duration);
-}
+};
 
 /**
  * Shows an error message in the status bar for a specified duration.
@@ -43,7 +43,7 @@ export const showStatusBarWarningMessage = (message: string, duration: number = 
 export const showStatusBarErrorMessage = (message: string, duration: number = 5000): void => {
   const disposable = vscode.window.setStatusBarMessage(`$(error) ${message}`);
   setTimeout(() => disposable.dispose(), duration);
-}
+};
 
 /**
  * Shows a modal pop up information message.
@@ -52,7 +52,7 @@ export const showStatusBarErrorMessage = (message: string, duration: number = 50
  */
 export const showInformationMessage = (message: string): void => {
   vscode.window.showInformationMessage(message);
-}
+};
 
 /**
  * Shows a modal pop up error message,
@@ -61,4 +61,4 @@ export const showInformationMessage = (message: string): void => {
  */
 export const showErrorMessage = (message: string): void => {
   vscode.window.showErrorMessage(message);
-}
+};

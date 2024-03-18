@@ -14,7 +14,8 @@ import * as vscode from 'vscode';
 import { EventBus } from './services/EventBus';
 import { ExtensionEnvironment } from './services/ExtensionEnvironment';
 import { LSClient } from './services/LSClient';
-import { ZenServerDetails } from './types/ServerInfoTypes'; ``
+import { ZenServerDetails } from './types/ServerInfoTypes';
+``;
 import { updateServerUrlAndToken } from './utils/global';
 import { refreshUIComponents } from './utils/refresh';
 

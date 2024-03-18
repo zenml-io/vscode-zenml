@@ -25,7 +25,6 @@ export class MockStackDataProvider extends StackDataProvider {
   public refresh = sinon.stub().resolves();
 }
 
-
 export class MockServerDataProvider extends ServerDataProvider {
   public refreshCalled: boolean = false;
   public currentServerStatus: ServerStatus = INITIAL_ZENML_SERVER_STATUS;
@@ -38,7 +37,7 @@ export class MockServerDataProvider extends ServerDataProvider {
         isConnected: updatedServerConfig.storeConfig.type === 'rest',
         url: updatedServerConfig.storeConfig.url,
         store_type: updatedServerConfig.storeConfig.type,
-      }
+      };
     }
   }
 
@@ -47,4 +46,3 @@ export class MockServerDataProvider extends ServerDataProvider {
     this.currentServerStatus = INITIAL_ZENML_SERVER_STATUS;
   }
 }
-

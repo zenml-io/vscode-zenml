@@ -24,7 +24,7 @@ export class EventBus extends EventEmitter {
 
   /**
    * Retrieves the singleton instance of EventBus.
-   * 
+   *
    * @returns {EventBus} The singleton instance.
    */
   public static getInstance(): EventBus {

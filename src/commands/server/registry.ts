@@ -40,4 +40,4 @@ export const registerServerCommands = (context: vscode.ExtensionContext) => {
     disconnectServerCommand,
     refreshServerStatusCommand
   );
-}
+};

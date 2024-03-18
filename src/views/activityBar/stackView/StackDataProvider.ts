@@ -21,7 +21,7 @@ export class StackDataProvider implements vscode.TreeDataProvider<vscode.TreeIte
   private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined | null>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-  constructor() { }
+  constructor() {}
 
   /**
    * Retrieves the singleton instance of ServerDataProvider.

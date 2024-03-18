@@ -33,5 +33,3 @@ interface StackComponent {
 }
 
 export { Stack, Components, StackComponent };
-
-

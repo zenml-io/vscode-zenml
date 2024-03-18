@@ -35,8 +35,8 @@ suite('Server Commands Tests', () => {
     emitSpy = sandbox.spy(mockEventBus, 'emit');
     sandbox.stub(LSClient, 'getInstance').returns(mockLSClient);
     sandbox.stub(EventBus, 'getInstance').returns(mockEventBus);
-    showInputBoxStub = sandbox.stub(vscode.window, 'showInputBox')
-    showErrorMessageStub = sandbox.stub(vscode.window, 'showErrorMessage')
+    showInputBoxStub = sandbox.stub(vscode.window, 'showInputBox');
+    showErrorMessageStub = sandbox.stub(vscode.window, 'showErrorMessage');
 
     configurationMock = {
       get: sandbox.stub().withArgs('serverUrl').returns('https://zenml.example.com'),
@@ -52,10 +52,13 @@ suite('Server Commands Tests', () => {
   });
 
   test('connectServer successfully connects to the server', async () => {
-    sandbox.stub(mockLSClient.getLanguageClient(), 'sendRequest').withArgs('workspace/executeCommand', {
-      command: `${PYTOOL_MODULE}.connect`,
-      arguments: ['https://zenml.example.com'],
-    }).resolves({ message: 'Connected successfully', access_token: 'valid_token' });
+    sandbox
+      .stub(mockLSClient.getLanguageClient(), 'sendRequest')
+      .withArgs('workspace/executeCommand', {
+        command: `${PYTOOL_MODULE}.connect`,
+        arguments: ['https://zenml.example.com'],
+      })
+      .resolves({ message: 'Connected successfully', access_token: 'valid_token' });
 
     const result = await serverCommands.connectServer();
 
@@ -64,9 +67,12 @@ suite('Server Commands Tests', () => {
   });
 
   test('disconnectServer successfully disconnects from the server', async () => {
-    sandbox.stub(mockLSClient.getLanguageClient(), 'sendRequest').withArgs('workspace/executeCommand', {
-      command: `${PYTOOL_MODULE}.disconnect`,
-    }).resolves({ message: 'Disconnected successfully' });
+    sandbox
+      .stub(mockLSClient.getLanguageClient(), 'sendRequest')
+      .withArgs('workspace/executeCommand', {
+        command: `${PYTOOL_MODULE}.disconnect`,
+      })
+      .resolves({ message: 'Disconnected successfully' });
 
     await serverCommands.disconnectServer();
 
@@ -74,16 +80,18 @@ suite('Server Commands Tests', () => {
   });
 
   test('connectServer fails with incorrect URL', async () => {
-    sandbox.stub(mockLSClient.getLanguageClient(), 'sendRequest').withArgs('workspace/executeCommand', {
-      command: `${PYTOOL_MODULE}.connect`,
-      arguments: ['invalid.url'],
-    }).resolves({ error: 'Failed to connect' });
+    sandbox
+      .stub(mockLSClient.getLanguageClient(), 'sendRequest')
+      .withArgs('workspace/executeCommand', {
+        command: `${PYTOOL_MODULE}.connect`,
+        arguments: ['invalid.url'],
+      })
+      .resolves({ error: 'Failed to connect' });
 
     const result = await serverCommands.connectServer();
     assert.strictEqual(result, false, 'Should fail to connect to the server with incorrect URL');
     sinon.assert.calledOnce(showErrorMessageStub);
   });
-
 
   test('refreshServerStatus emits the refresh event', async () => {
     await serverCommands.refreshServerStatus();
