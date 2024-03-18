@@ -14,6 +14,7 @@ import * as vscode from 'vscode';
 import { PipelineTreeItem } from '../../views/activityBar';
 import { pipelineCommands } from './cmds';
 import { registerCommand } from '../../common/vscodeapi';
+import { ExtensionEnvironment } from '../../services/ExtensionEnvironment';
 
 /**
  * Registers pipeline-related commands for the extension.
@@ -21,15 +22,13 @@ import { registerCommand } from '../../common/vscodeapi';
  * @param {vscode.ExtensionContext} context - The context in which the extension operates, used for registering commands and managing their lifecycle.
  */
 export const registerPipelineCommands = (context: vscode.ExtensionContext) => {
-  const refreshPipelineView = registerCommand(
-    'zenml.refreshPipelineView',
-    async () => await pipelineCommands.refreshPipelineView()
-  );
+  const commands = [
+    registerCommand('zenml.refreshPipelineView', async () => await pipelineCommands.refreshPipelineView()),
+    registerCommand('zenml.deletePipelineRun', async (node: PipelineTreeItem) => await pipelineCommands.deletePipelineRun(node))
+  ]
 
-  const deletePipelineRun = registerCommand(
-    'zenml.deletePipelineRun',
-    async (node: PipelineTreeItem) => await pipelineCommands.deletePipelineRun(node)
-  );
-
-  context.subscriptions.push(refreshPipelineView, deletePipelineRun);
+  commands.forEach(cmd => {
+    context.subscriptions.push(cmd);
+    ExtensionEnvironment.commandDisposables.push(cmd);
+  });
 };

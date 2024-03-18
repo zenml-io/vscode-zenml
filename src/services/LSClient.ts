@@ -20,7 +20,7 @@ export class LSClient {
   private client: LanguageClient | null = null;
   private eventBus: EventBus = EventBus.getInstance();
 
-  public constructor() {}
+  public constructor() { }
 
   /**
    * Gets the language client.
@@ -69,6 +69,7 @@ export class LSClient {
     lsClient.onNotification('zenml/requirementNotMet', params => {
       console.log('ZenML Python Client Requirements Not Met. Check Console for Details.');
       vscode.window.showErrorMessage(params.message);
+      this.eventBus.emit('zenmlRequirementsNotMet');
     });
 
     lsClient.onNotification('zenml/configUpdated', async params => {

@@ -15,13 +15,15 @@ import { EventBus } from './services/EventBus';
 import { ExtensionEnvironment } from './services/ExtensionEnvironment';
 import { LSClient } from './services/LSClient';
 import { ZenServerDetails } from './types/ServerInfoTypes';
-``;
 import { updateServerUrlAndToken } from './utils/global';
 import { refreshUIComponents } from './utils/refresh';
+import { showInformationMessage } from './utils/notifications';
 
 export async function activate(context: vscode.ExtensionContext) {
   ExtensionEnvironment.initialize(context);
+  ExtensionEnvironment.registerRestartServer();
   ExtensionEnvironment.deferredInitialize();
+
 
   const eventBus = EventBus.getInstance();
   eventBus.on('lsClientReady', async (isReady: boolean) => {
@@ -34,10 +36,18 @@ export async function activate(context: vscode.ExtensionContext) {
 
   eventBus.on('zenmlClientAvailable', async (isAvailable: boolean) => {
     if (isAvailable) {
+      showInformationMessage('ZenML client is available. Reinitializing views and registering commands.');
+      ExtensionEnvironment.deferredInitialize();
       await refreshUIComponents();
       eventBus.emit('refreshServerStatus', true);
     }
   });
+
+  eventBus.on('zenmlRequirementsNotMet', async () => {
+    vscode.window.showErrorMessage('ZenML Extension needs a local installation of ZenML with version >= 0.55.2 to work properly. Please install/upgrade ZenML and try again.');
+    await ExtensionEnvironment.deactivateFeatures();
+
+  })
 
   eventBus.on('serverConfigUpdated', async (updatedServerConfig: ZenServerDetails) => {
     if (!eventBus.lsClientReady) {
@@ -46,6 +56,7 @@ export async function activate(context: vscode.ExtensionContext) {
     await updateServerUrlAndToken(updatedServerConfig.storeConfig);
     await refreshUIComponents(updatedServerConfig);
   });
+
 }
 
 /**

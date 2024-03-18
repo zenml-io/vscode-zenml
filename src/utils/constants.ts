@@ -12,7 +12,7 @@
 // permissions and limitations under the License.
 import { ServerStatus } from '../types/ServerInfoTypes';
 
-export const PYTOOL_MODULE = 'zenml-python';
+export const PYTOOL_MODULE = 'zenml';
 export const MIN_ZENML_VERSION = '0.55.2';
 export const ZENML_PYPI_URL = 'https://pypi.org/pypi/zenml/json';
 export const DEFAULT_LOCAL_ZENML_SERVER_URL = 'http://127.0.0.1:8237';

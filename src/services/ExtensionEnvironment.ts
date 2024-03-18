@@ -39,6 +39,9 @@ export interface IServerInfo {
 
 export class ExtensionEnvironment {
   private static context: vscode.ExtensionContext;
+  static commandDisposables: vscode.Disposable[] = [];
+  static viewDisposables: vscode.Disposable[] = [];
+
   private static outputChannel: vscode.LogOutputChannel;
   private static serverId: string;
   private static serverName: string;
@@ -93,7 +96,8 @@ export class ExtensionEnvironment {
   private static setupViewsAndCommands(): void {
     ZenMLStatusBar.getInstance();
     this.dataProviders.forEach((provider, viewId) => {
-      vscode.window.createTreeView(viewId, { treeDataProvider: provider });
+      const view = vscode.window.createTreeView(viewId, { treeDataProvider: provider });
+      this.viewDisposables.push(view);
     });
     this.registries.forEach(register => register(this.context));
   }
@@ -161,4 +165,24 @@ export class ExtensionEnvironment {
     const config = JSON.parse(content);
     return config.serverInfo as IServerInfo;
   }
+
+  /**
+   * Deactivates ZenML features when requirements not met.
+   * 
+   * @returns {Promise<void>} A promise that resolves to void.
+   */
+  static async deactivateFeatures(): Promise<void> {
+    this.commandDisposables.forEach(disposable => disposable.dispose());
+    this.commandDisposables = [];
+
+    this.viewDisposables.forEach(disposable => disposable.dispose());
+    this.viewDisposables = [];
+    console.log('Features deactivated due to unmet requirements.');
+  }
+
+  static registerRestartServer() {
+    this.context.subscriptions.push(vscode.commands.registerCommand('zenml.restartServer', async () => {
+      await runServer(this.serverId, this.serverName, this.outputChannel);
+    }));
+  };
 }

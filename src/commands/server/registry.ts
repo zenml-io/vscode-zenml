@@ -13,6 +13,7 @@
 import * as vscode from 'vscode';
 import { serverCommands } from './cmds';
 import { registerCommand } from '../../common/vscodeapi';
+import { ExtensionEnvironment } from '../../services/ExtensionEnvironment';
 
 /**
  * Registers server-related commands for the extension.
@@ -20,24 +21,14 @@ import { registerCommand } from '../../common/vscodeapi';
  * @param {vscode.ExtensionContext} context - The context in which the extension operates, used for registering commands and managing their lifecycle.
  */
 export const registerServerCommands = (context: vscode.ExtensionContext) => {
-  const connectServerCommand = registerCommand(
-    'zenml.connectServer',
-    async () => await serverCommands.connectServer()
-  );
+  const commands = [
+    registerCommand('zenml.connectServer', async () => await serverCommands.connectServer()),
+    registerCommand('zenml.disconnectServer', async () => await serverCommands.disconnectServer()),
+    registerCommand('zenml.refreshServerStatus', async () => await serverCommands.refreshServerStatus())
+  ]
 
-  const disconnectServerCommand = registerCommand(
-    'zenml.disconnectServer',
-    async () => await serverCommands.disconnectServer()
-  );
-
-  const refreshServerStatusCommand = registerCommand(
-    'zenml.refreshServerStatus',
-    async () => await serverCommands.refreshServerStatus()
-  );
-
-  context.subscriptions.push(
-    connectServerCommand,
-    disconnectServerCommand,
-    refreshServerStatusCommand
-  );
+  commands.forEach(cmd => {
+    context.subscriptions.push(cmd);
+    ExtensionEnvironment.commandDisposables.push(cmd);
+  });
 };
