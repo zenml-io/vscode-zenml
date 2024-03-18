@@ -11,26 +11,34 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
-import { ZenMLClient } from '../../../services/ZenMLClient';
+import { LSClient } from '../../../services/LSClient';
+import { Stack, StackComponent } from '../../../types/StackTypes';
 import { StackComponentTreeItem, StackTreeItem } from './StackTreeItems';
-import { StackComponent, Stack } from '../../../types/StackTypes';
+import { PYTOOL_MODULE } from '../../../utils/constants';
 
-/**
- * Supplies data for the stack tree view in the Activity Bar.
- * Implements the vscode TreeDataProvider interface, providing stack-related data to a TreeView component.
- */
 export class StackDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
-  private isActive = false;
-  private context: vscode.ExtensionContext;
-  private apiClient: ZenMLClient = ZenMLClient.getInstance();
+  private static instance: StackDataProvider | null = null;
+  private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined | null>();
+  readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-  constructor(context: vscode.ExtensionContext) {
-    this.isActive = true;
-    this.context = context;
+  constructor() { }
+
+  /**
+   * Retrieves the singleton instance of ServerDataProvider.
+   *
+   * @returns {StackDataProvider} The singleton instance.
+   */
+  public static getInstance(): StackDataProvider {
+    if (!this.instance) {
+      this.instance = new StackDataProvider();
+    }
+    return this.instance;
   }
 
   /**
    * Refreshes the tree view data by refetching stacks and triggering the onDidChangeTreeData event.
+   *
+   * @returns {Promise<void>} A promise that resolves when the tree view data has been refreshed.
    */
   public async refresh(): Promise<void> {
     await this.fetchStacksWithComponents();
@@ -38,96 +46,50 @@ export class StackDataProvider implements vscode.TreeDataProvider<vscode.TreeIte
   }
 
   /**
-   * Resets the tree view data by emitting an event with 'undefined'.
-   */
-  public reset(): void {
-    this.isActive = false;
-    this._onDidChangeTreeData.fire(undefined);
-  }
-
-  /**
-   * Reactivates the tree view data by setting isActive to true.
-   */
-  public reactivate(): void {
-    this.isActive = true;
-  }
-
-  private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined | null>();
-  readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null> =
-    this._onDidChangeTreeData.event;
-
-  /**
    * Returns the provided tree item.
+   *
+   * @param {vscode.TreeItem} element The tree item to return.
+   * @returns The corresponding VS Code tree item.
    */
   getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
     return element;
   }
 
   /**
-   * Asynchronously retrieves the children of a given tree item.
-   * If no element is provided, it fetches the root stacks.
+   * Retrieves the children of a given tree item.
    *
-   * @param {vscode.TreeItem} element The parent tree item.
-   * @returns {Promise<vscode.TreeItem[] | undefined>} A promise that resolves to an array of child tree items.
+   * @param {vscode.TreeItem} element The tree item whose children to retrieve.
+   * @returns A promise resolving to an array of child tree items or undefined if there are no children.
    */
   async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[] | undefined> {
     if (element instanceof StackTreeItem) {
       return element.children;
     } else if (!element) {
-      return this.fetchStacksWithComponents();
-    }
-  }
-
-  async fetchComponentsForStack(stackId: string): Promise<StackComponent[]> {
-    const accessToken = vscode.workspace.getConfiguration('zenml').get('accessToken');
-    if (!accessToken) {
-      return [];
-    }
-    try {
-      const stackResponse = await this.apiClient.request('get', `/stacks/${stackId}`);
-      const components: Record<string, any[]> = stackResponse.metadata.components;
-      if (!components) {
-        console.log('No components data found or unexpected response structure:', stackResponse);
-        return [];
-      }
-
-      const stackComponents: StackComponent[] = Object.entries(components).flatMap(
-        ([type, componentsArray]: [string, any[]]) =>
-          componentsArray.map((component: any) => ({
-            id: component.id,
-            name: component.name,
-            type: component.body.type,
-            flavor: component.body.flavor,
-            workspaceId: stackResponse.metadata.workspace.id,
-          }))
-      );
-
-      return stackComponents;
-    } catch (error) {
-      console.error('Failed to fetch components:', error);
-      throw new Error('Failed to fetch components');
+      return await this.fetchStacksWithComponents();
     }
   }
 
   /**
-   * Fetches all stacks along with their components from the server.
-   * This function utilizes the `hydrate=true` query parameter to fetch detailed
-   * information about each stack, including its components in a single API call.
-   * The fetched stacks are then converted into `StackTreeItem` objects for display
-   * in the VS Code TreeView.
+   * Retrieves detailed stack information, including components, from the server.
    *
-   * @returns {Promise<StackTreeItem[]>} A promise that resolves to an array of `StackTreeItem` objects.
+   * @returns {Promise<StackTreeItem[]>} A promise that resolves with an array of `StackTreeItem` objects.
    */
-  private async fetchStacksWithComponents(): Promise<StackTreeItem[]> {
-    if (!this.isActive) {
-      return [];
-    }
-
+  async fetchStacksWithComponents(): Promise<StackTreeItem[]> {
     try {
-      const response = await this.apiClient.request('get', '/stacks?hydrate=true');
-      const activeStackId = vscode.workspace.getConfiguration('zenml').get<string>('activeStackId');
+      const lsClient = LSClient.getInstance().getLanguageClient();
+      if (!lsClient) {
+        console.log('fetchStacksWithComponents: Language client not ready yet.');
+        return [];
+      }
 
-      return response.items.map((stack: any) => {
+      let stacks: Stack[] = await lsClient.sendRequest('workspace/executeCommand', {
+        command: `${PYTOOL_MODULE}.fetchStacks`,
+      });
+
+      return stacks.map((stack: Stack) => {
+        const activeStackId = vscode.workspace
+          .getConfiguration('zenml')
+          .get<string>('activeStackId');
         const isActive = stack.id === activeStackId;
         return this.convertToStackTreeItem(stack, isActive);
       });
@@ -139,33 +101,17 @@ export class StackDataProvider implements vscode.TreeDataProvider<vscode.TreeIte
   }
 
   /**
-   * Converts a stack object fetched from the API into a `StackTreeItem` object.
-   * This method processes the stack object to extract its components and creates
-   * `StackComponentTreeItem` objects for each component. These component items are
-   * then used to instantiate and return a `StackTreeItem` object.
+   * Transforms a stack from the API into a `StackTreeItem` with component sub-items.
    *
    * @param {any} stack - The stack object fetched from the API.
    * @returns {StackTreeItem} A `StackTreeItem` object representing the stack and its components.
    */
-  private convertToStackTreeItem(stack: any, isActive: boolean): StackTreeItem {
-    const components: Record<string, any[]> = stack.metadata.components;
-    const componentTreeItems = Object.entries(components).flatMap(
-      ([type, componentsArray]: [string, any[]]) =>
-        componentsArray.map(
-          component =>
-            new StackComponentTreeItem(
-              {
-                id: component.id,
-                name: component.name,
-                type: component.body.type,
-                flavor: component.body.flavor,
-                workspaceId: stack.metadata.workspace.id,
-              },
-              stack.id
-            )
-        )
+  private convertToStackTreeItem(stack: Stack, isActive: boolean): StackTreeItem {
+    const componentTreeItems = Object.entries(stack.components).flatMap(([type, componentsArray]) =>
+      componentsArray.map(
+        (component: StackComponent) => new StackComponentTreeItem(component, stack.id)
+      )
     );
-
     return new StackTreeItem(stack.name, stack.id, componentTreeItems, isActive);
   }
 }

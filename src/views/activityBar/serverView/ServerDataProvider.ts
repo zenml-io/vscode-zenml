@@ -11,70 +11,82 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
+import { ServerStatus, ZenServerDetails } from '../../../types/ServerInfoTypes';
+import { INITIAL_ZENML_SERVER_STATUS } from '../../../utils/constants';
+import { EventBus } from '../../../services/EventBus';
 import { ServerTreeItem } from './ServerTreeItems';
-import {
-  INITIAL_ZENML_SERVER_STATUS,
-  ServerStatusService,
-} from '../../../services/ServerStatusService';
-import { ServerStatus } from '../../../types/ServerTypes';
+import { checkServerStatus } from '../../../commands/server/utils';
 
-/**
- * Manages data provisioning for the server status tree view within the Activity Bar.
- */
 export class ServerDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
-  private isActive: boolean = true;
-  public serverStatusService: ServerStatusService;
-  private currentServerStatus: ServerStatus = { ...INITIAL_ZENML_SERVER_STATUS };
-
-  /**
-   * Constructs a new ServerDataProvider instance.
-   * Initializes the server status service and subscribes to server status updates to refresh the tree view.
-   */
-  constructor() {
-    this.isActive = true;
-    this.serverStatusService = ServerStatusService.getInstance();
-    this.serverStatusService.subscribe(status => {
-      this.currentServerStatus = status;
-      this.refresh();
-    });
-  }
-
-  /**
-   * Resets the tree view data by setting isActive to false and emitting an event with 'undefined'.
-   */
-  public reset(): void {
-    this.isActive = false;
-    this._onDidChangeTreeData.fire(undefined);
-  }
-
-  /**
-   * Reactivates the tree view data by setting isActive to true.
-   */
-  public reactivate(): void {
-    this.isActive = true;
-  }
-
-  /**
-   * Updates the server status and triggers a UI refresh to reflect the latest server status.
-   */
-  public async refresh(): Promise<void> {
-    if (!this.isActive) {
-      console.log('ServerDataProvider is not active, skipping server status update.');
-      return;
-    } else {
-      await this.serverStatusService.updateStatus();
-      this._onDidChangeTreeData.fire(undefined);
-    }
-  }
+  private static instance: ServerDataProvider | null = null;
+  private currentStatus: ServerStatus = INITIAL_ZENML_SERVER_STATUS;
+  private eventBus = EventBus.getInstance();
 
   private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined | null>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
+  constructor() {
+    this.eventBus.on('refreshServerStatus', async () => {
+      await this.refresh();
+    });
+  }
+
+  /**
+   * Retrieves the singleton instance of ServerDataProvider.
+   *
+   * @returns {ServerDataProvider} The singleton instance.
+   */
+  public static getInstance(): ServerDataProvider {
+    if (!this.instance) {
+      this.instance = new ServerDataProvider();
+    }
+    return this.instance;
+  }
+
+  /**
+   * Updates the server status to the provided status (used for tests).
+   *
+   * @param {ServerStatus} status The new server status.
+   */
+  public updateStatus(status: ServerStatus): void {
+    this.currentStatus = status;
+  }
+
+  /**
+   * Updates the server status and triggers a UI refresh to reflect the latest server status.
+   * If the server status has changed, it emits a serverStatusUpdated event.
+   *
+   * @param {ZenServerDetails} [updatedServerConfig] The updated server configuration from the LSP server.
+   * @returns {Promise<void>} A promise resolving to void.
+   */
+  public async refresh(updatedServerConfig?: ZenServerDetails): Promise<void> {
+    const serverStatus = await checkServerStatus(updatedServerConfig);
+    this.currentStatus = serverStatus;
+    if (JSON.stringify(serverStatus) !== JSON.stringify(this.currentStatus)) {
+      this.eventBus.emit('serverStatusUpdated', {
+        isConnected: serverStatus.isConnected,
+        serverUrl: serverStatus.url,
+      });
+    }
+
+    this.currentStatus = serverStatus;
+    this._onDidChangeTreeData.fire(undefined);
+  }
+
+  /**
+   * Gets the current status of the ZenML server.
+   *
+   * @returns {ServerStatus} The current status of the ZenML server, including connectivity, host, port, store type, and store URL.
+   */
+  public getCurrentStatus(): ServerStatus {
+    return this.currentStatus;
+  }
+
   /**
    * Retrieves the tree item for a given element, applying appropriate icons based on the server's connectivity status.
    *
-   * @param {vscode.TreeItem} element The tree item to be processed.
-   * @returns {vscode.TreeItem} The processed tree item with updated icon if applicable.
+   * @param element The tree item to retrieve.
+   * @returns The corresponding VS Code tree item.
    */
   getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
     if (element instanceof ServerTreeItem) {
@@ -90,12 +102,17 @@ export class ServerDataProvider implements vscode.TreeDataProvider<vscode.TreeIt
   /**
    * Asynchronously fetches the children for a given tree item.
    *
-   * @param {vscode.TreeItem} element The parent tree item. If undefined, fetches the server status.
-   * @returns {Promise<vscode.TreeItem[] | undefined>} A promise that resolves to an array of child tree items or undefined if no children exist.
+   * @param element The parent tree item. If undefined, the root server status is fetched.
+   * @returns A promise resolving to an array of child tree items or undefined if there are no children.
    */
   async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[] | undefined> {
     if (!element) {
-      return [new ServerTreeItem('Server Status', this.currentServerStatus)];
+      const updatedServerTreeItem = new ServerTreeItem('Server Status', this.currentStatus);
+      if (this.currentStatus.isConnected) {
+        return [updatedServerTreeItem];
+      } else {
+        return updatedServerTreeItem.children;
+      }
     } else if (element instanceof ServerTreeItem) {
       return element.children;
     }

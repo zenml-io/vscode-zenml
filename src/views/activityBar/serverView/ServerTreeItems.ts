@@ -11,7 +11,7 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
-import { ServerStatus } from '../../../types/ServerTypes';
+import { ServerStatus } from '../../../types/ServerInfoTypes';
 
 /**
  * A specialized TreeItem for displaying details about a server's status.
@@ -35,12 +35,6 @@ class ServerDetailTreeItem extends vscode.TreeItem {
 export class ServerTreeItem extends vscode.TreeItem {
   public children: vscode.TreeItem[] | ServerDetailTreeItem[] | undefined;
 
-  /**
-   * Constructs a new ServerTreeItem instance.
-   *
-   * @param {string} label The label for the tree item.
-   * @param {ServerStatus} serverStatus The current status of the server.
-   */
   constructor(
     public readonly label: string,
     public readonly serverStatus: ServerStatus
@@ -51,22 +45,49 @@ export class ServerTreeItem extends vscode.TreeItem {
         ? vscode.TreeItemCollapsibleState.Expanded
         : vscode.TreeItemCollapsibleState.None
     );
-    this.description = `${this.serverStatus.isConnected ? 'Connected ✅' : 'Disconnected ❌'}`;
 
-    if (serverStatus.isConnected) {
-      this.children = [
-        new ServerDetailTreeItem('URL', serverStatus.url),
-        new ServerDetailTreeItem('ID', serverStatus.id),
-        new ServerDetailTreeItem('Version', serverStatus.version),
-        new ServerDetailTreeItem('Debug', serverStatus.debug.toString()),
-        new ServerDetailTreeItem('Deployment Type', serverStatus.deployment_type),
-        new ServerDetailTreeItem('Database Type', serverStatus.database_type),
-        new ServerDetailTreeItem('Secrets Store Type', serverStatus.secrets_store_type),
-        new ServerDetailTreeItem('Auth Scheme', serverStatus.auth_scheme),
-      ];
-    } else {
-      this.children = undefined;
-    }
+    this.description = `${this.serverStatus.isConnected ? 'Connected ✅' : 'Disconnected ❌'}`;
+    this.children = this.determineChildrenBasedOnStatus();
   }
+
+  private determineChildrenBasedOnStatus(): ServerDetailTreeItem[] {
+    const children: ServerDetailTreeItem[] = [
+      new ServerDetailTreeItem('URL', this.serverStatus.url),
+      new ServerDetailTreeItem('Version', this.serverStatus.version),
+      new ServerDetailTreeItem('Store Type', this.serverStatus.store_type || 'N/A'),
+      new ServerDetailTreeItem('Deployment Type', this.serverStatus.deployment_type),
+      new ServerDetailTreeItem('Database Type', this.serverStatus.database_type),
+      new ServerDetailTreeItem('Secrets Store Type', this.serverStatus.secrets_store_type),
+    ];
+
+    // Conditional children based on server status type
+    if (this.serverStatus.id) {
+      children.push(new ServerDetailTreeItem('ID', this.serverStatus.id));
+    }
+    if (this.serverStatus.username) {
+      children.push(new ServerDetailTreeItem('Username', this.serverStatus.username));
+    }
+    if (this.serverStatus.debug !== undefined) {
+      children.push(new ServerDetailTreeItem('Debug', this.serverStatus.debug ? 'true' : 'false'));
+    }
+    if (this.serverStatus.auth_scheme) {
+      children.push(new ServerDetailTreeItem('Auth Scheme', this.serverStatus.auth_scheme));
+    }
+    // Specific to SQL Server Status
+    if (this.serverStatus.database) {
+      children.push(new ServerDetailTreeItem('Database', this.serverStatus.database));
+    }
+    if (this.serverStatus.backup_directory) {
+      children.push(
+        new ServerDetailTreeItem('Backup Directory', this.serverStatus.backup_directory)
+      );
+    }
+    if (this.serverStatus.backup_strategy) {
+      children.push(new ServerDetailTreeItem('Backup Strategy', this.serverStatus.backup_strategy));
+    }
+
+    return children;
+  }
+
   contextValue = 'server';
 }

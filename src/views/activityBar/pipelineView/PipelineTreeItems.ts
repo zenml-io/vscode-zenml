@@ -12,6 +12,7 @@
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
 import { PipelineRun } from '../../../types/PipelineTypes';
+import { PIPELINE_RUN_STATUS_ICONS } from '../../../utils/constants';
 
 /**
  * Represents a pipeline run in the VS Code tree view.
@@ -22,6 +23,7 @@ export class PipelineTreeItem extends vscode.TreeItem {
 
   constructor(
     public readonly run: PipelineRun,
+    public readonly id: string,
     children?: PipelineRunTreeItem[]
   ) {
     super(
@@ -32,6 +34,7 @@ export class PipelineTreeItem extends vscode.TreeItem {
     );
     this.tooltip = `${run.name} - Status: ${run.status}`;
     this.description = `version: ${run.version}, status: ${run.status}`;
+    this.iconPath = new vscode.ThemeIcon(PIPELINE_RUN_STATUS_ICONS[run.status]);
     this.children = children;
   }
 

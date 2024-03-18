@@ -11,27 +11,48 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
-import { ZenMLClient } from '../../../services/ZenMLClient';
 import { PipelineRunTreeItem, PipelineTreeItem } from './PipelineTreeItems';
 import { PipelineRun } from '../../../types/PipelineTypes';
+import { LSClient } from '../../../services/LSClient';
+import { PYTOOL_MODULE } from '../../../utils/constants';
 
 /**
  * Provides data for the pipeline run tree view, displaying detailed information about each pipeline run.
  */
 export class PipelineDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
-  private isActive = true;
-  private apiClient: ZenMLClient = ZenMLClient.getInstance();
+  private static instance: PipelineDataProvider | null = null;
 
   private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined | null>();
   readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null> =
     this._onDidChangeTreeData.event;
 
-  constructor() {
-    this.isActive = true;
+  constructor() { }
+
+  /**
+   * Retrieves the singleton instance of ServerDataProvider.
+   *
+   * @returns {PipelineDataProvider} The singleton instance.
+   */
+  public static getInstance(): PipelineDataProvider {
+    if (!this.instance) {
+      this.instance = new PipelineDataProvider();
+    }
+    return this.instance;
+  }
+
+  /**
+   * Refreshes the "Pipeline Runs" view by fetching the latest pipeline run data and updating the view.
+   *
+   * @returns A promise resolving to void.
+   */
+  public async refresh(): Promise<void> {
+    await this.fetchPipelineRuns();
+    this._onDidChangeTreeData.fire(undefined);
   }
 
   /**
    * Retrieves the tree item for a given pipeline run.
+   *
    * @param element The pipeline run item.
    * @returns The corresponding VS Code tree item.
    */
@@ -40,7 +61,7 @@ export class PipelineDataProvider implements vscode.TreeDataProvider<vscode.Tree
   }
 
   /**
-   * Asynchronously retrieves the children for a given tree item.
+   * Retrieves the children for a given tree item.
    *
    * @param element The parent tree item. If undefined, root pipeline runs are fetched.
    * @returns A promise resolving to an array of child tree items or undefined if there are no children.
@@ -59,65 +80,35 @@ export class PipelineDataProvider implements vscode.TreeDataProvider<vscode.Tree
    * @returns A promise resolving to an array of PipelineTreeItems representing fetched pipeline runs.
    */
   async fetchPipelineRuns(): Promise<PipelineTreeItem[]> {
-    if (!this.isActive) {
-      console.log('PipelineDataProvider is not active, skipping fetch.');
-      return [];
-    }
-
     try {
-      const response = await this.apiClient.request('get', '/runs?hydrate=true');
-      const pipelineRuns: PipelineRun[] = response.items.map((item: any) => ({
-        id: item.id,
-        name: item.body.pipeline.name,
-        status: item.body.status,
-        version: item.body.pipeline.body.version,
-        stackName: item.body.stack.name,
-        startTime: item.metadata.start_time,
-        endTime: item.metadata.end_time,
-        os: item.metadata.client_environment.os,
-        osVersion: item.metadata.client_environment.mac_version,
-        pythonVersion: item.metadata.client_environment.python_version,
-      }));
+      const lsClient = LSClient.getInstance().getLanguageClient();
+      if (!lsClient) {
+        return [];
+      }
 
-      return pipelineRuns.map(run => {
+      const pipelineRuns: PipelineRun[] = await lsClient.sendRequest('workspace/executeCommand', {
+        command: `${PYTOOL_MODULE}.getPipelineRuns`,
+      });
+
+      return pipelineRuns.map((run: PipelineRun) => {
+        const formattedStartTime = new Date(run.startTime).toLocaleString();
+        const formattedEndTime = run.endTime ? new Date(run.endTime).toLocaleString() : 'N/A';
+
         const children = [
           new PipelineRunTreeItem('run name', run.name),
           new PipelineRunTreeItem('stack', run.stackName),
-          new PipelineRunTreeItem('start time', run.startTime),
-          new PipelineRunTreeItem('end time', run.endTime),
+          new PipelineRunTreeItem('start time', formattedStartTime),
+          new PipelineRunTreeItem('end time', formattedEndTime),
           new PipelineRunTreeItem('os', `${run.os} ${run.osVersion}`),
           new PipelineRunTreeItem('python version', run.pythonVersion),
         ];
 
-        return new PipelineTreeItem(run, children);
+        return new PipelineTreeItem(run, run.id, children);
       });
     } catch (error) {
       console.error('Failed to fetch pipeline runs:', error);
       vscode.window.showErrorMessage('Failed to fetch pipeline runs. See console for details.');
       return [];
     }
-  }
-
-  /**
-   * Refreshes the "Pipeline Runs" view by fetching the latest pipeline run data and updating the view.
-   */
-  public async refresh(): Promise<void> {
-    const pipelineRuns = await this.fetchPipelineRuns();
-    this._onDidChangeTreeData.fire(undefined);
-  }
-
-  /**
-   * Resets the tree view data by setting isActive to false and emitting an event with 'undefined'.
-   */
-  public reset(): void {
-    this.isActive = false;
-    this._onDidChangeTreeData.fire(undefined);
-  }
-
-  /**
-   * Reactivates the tree view data by setting isActive to true.
-   */
-  public reactivate(): void {
-    this.isActive = true;
   }
 }
