@@ -79,9 +79,9 @@ function createServerStatusFromDetails(details: ZenServerDetails): ServerStatus 
   const { storeInfo, storeConfig } = details;
   return {
     ...storeInfo,
-    isConnected: storeConfig.type ? storeConfig.type === 'rest' : false,
-    url: storeConfig.url,
-    store_type: storeConfig.type,
+    isConnected: storeConfig?.type === 'rest',
+    url: storeConfig?.url ?? 'unknown',
+    store_type: storeConfig?.type ?? 'unknown',
   };
 }
 
