@@ -10,18 +10,28 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-export interface StackComponent {
+
+/************************************************************************************************
+ * LSClient parses the JSON response from the ZenML Client, and returns the following types.
+ * Hydrated types are in the HydratedTypes.ts file.
+ ************************************************************************************************/
+interface Stack {
   id: string;
   name: string;
-  type: string;
-  flavor: string;
-  workspaceId: string;
+  components: Components;
 }
 
-export interface Stack {
+interface Components {
+  [componentType: string]: StackComponent[];
+}
+
+interface StackComponent {
   id: string;
   name: string;
-  components: Record<string, StackComponent[]>;
-  workspaceId: string;
-  isActive?: boolean;
+  flavor: string;
+  type: string;
 }
+
+export { Stack, Components, StackComponent };
+
+
