@@ -1,6 +1,5 @@
 .DS_Store
 Thumbs.db
-.vscode/
 .vscode-test/
 .idea/
 .eslintcache
