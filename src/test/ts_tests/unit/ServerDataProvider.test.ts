@@ -34,7 +34,7 @@ suite('ServerDataProvider Tests', () => {
     sandbox.stub(LSClient, 'getInstance').returns(mockLSClient);
     sandbox.stub(EventBus, 'getInstance').returns(mockEventBus);
 
-    sandbox.stub(serverUtils, 'checkServerStatus').callsFake(async (updatedServerConfig) => {
+    sandbox.stub(serverUtils, 'checkServerStatus').callsFake(async updatedServerConfig => {
       if (updatedServerConfig) {
         return Promise.resolve(serverUtils.createServerStatusFromDetails(updatedServerConfig));
       }
@@ -54,16 +54,27 @@ suite('ServerDataProvider Tests', () => {
     await serverDataProvider.refresh(MOCK_REST_SERVER_DETAILS);
     const serverStatus = serverDataProvider.getCurrentStatus();
 
-    assert.strictEqual(serverStatus.isConnected, true, "Server should be reported as connected for REST config");
-    assert.strictEqual(serverStatus.store_type, 'rest', "Store type should be 'rest' for REST config");
+    assert.strictEqual(
+      serverStatus.isConnected,
+      true,
+      'Server should be reported as connected for REST config'
+    );
+    assert.strictEqual(
+      serverStatus.store_type,
+      'rest',
+      "Store type should be 'rest' for REST config"
+    );
   });
-
 
   test('ServerDataProvider should update server status to disconnected for non-REST type', async () => {
     await serverDataProvider.refresh(MOCK_SQL_SERVER_DETAILS);
     const serverStatus = serverDataProvider.getCurrentStatus();
 
-    assert.strictEqual(serverStatus.isConnected, false, "Server should be reported as not connected for SQL config");
+    assert.strictEqual(
+      serverStatus.isConnected,
+      false,
+      'Server should be reported as not connected for SQL config'
+    );
     assert.strictEqual(serverStatus.store_type, 'sql', "Store type should be 'sql' for SQL config");
   });
 });

@@ -26,7 +26,10 @@ suite('MockEventBus and Event Handling', () => {
   test('handles lsClientReady event correctly with mock', () => {
     eventBus.on('lsClientReady', spy);
     eventBus.emit('lsClientReady', true);
-    assert.ok(spy.calledWith(true), 'lsClientReady event handler was not called with expected argument');
+    assert.ok(
+      spy.calledWith(true),
+      'lsClientReady event handler was not called with expected argument'
+    );
   });
 
   test('can clear all event handlers and not trigger events', () => {
@@ -37,6 +40,10 @@ suite('MockEventBus and Event Handling', () => {
     eventBus.emit('lsClientReady', true);
 
     // Verify the spy was not called since all handlers were cleared
-    assert.strictEqual(spy.called, false, 'lsClientReady event handler was called despite clearing all handlers');
+    assert.strictEqual(
+      spy.called,
+      false,
+      'lsClientReady event handler was called despite clearing all handlers'
+    );
   });
 });

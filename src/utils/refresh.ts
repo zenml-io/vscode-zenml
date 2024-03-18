@@ -94,7 +94,6 @@ export function delayRefreshWithRetry(
   };
 }
 
-
 /**
  * Triggers a refresh of the UI components.
  *

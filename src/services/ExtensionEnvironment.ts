@@ -21,7 +21,11 @@ import { registerPipelineCommands } from '../commands/pipelines/registry';
 import { EXTENSION_ROOT_DIR } from '../common/constants';
 import { registerLogger, traceLog, traceVerbose } from '../common/log/logging';
 import { initializePython, onDidChangePythonInterpreter } from '../common/python';
-import { createOutputChannel, onDidChangeConfiguration, registerCommand } from '../common/vscodeapi';
+import {
+  createOutputChannel,
+  onDidChangeConfiguration,
+  registerCommand,
+} from '../common/vscodeapi';
 import { getLSClientTraceLevel } from '../common/utilities';
 import { checkIfConfigurationChanged, getInterpreterFromSetting } from '../common/settings';
 import { registerLanguageStatusItem } from '../common/status';
@@ -48,12 +52,12 @@ export class ExtensionEnvironment {
   private static registries = [
     registerServerCommands,
     registerStackCommands,
-    registerPipelineCommands
+    registerPipelineCommands,
   ];
 
   /**
    * Initializes the extension services and saves the context for reuse.
-   * 
+   *
    * @param context The extension context provided by VS Code on activation.
    */
   static initialize(context: vscode.ExtensionContext): void {
@@ -131,13 +135,19 @@ export class ExtensionEnvironment {
     };
 
     this.context.subscriptions.push(
-      this.outputChannel.onDidChangeLogLevel(async e => await changeLogLevel(e, vscode.env.logLevel)),
-      vscode.env.onDidChangeLogLevel(async e => await changeLogLevel(this.outputChannel.logLevel, e))
+      this.outputChannel.onDidChangeLogLevel(
+        async e => await changeLogLevel(e, vscode.env.logLevel)
+      ),
+      vscode.env.onDidChangeLogLevel(
+        async e => await changeLogLevel(this.outputChannel.logLevel, e)
+      )
     );
 
     traceLog(`Name: ${this.serverName}`);
     traceLog(`Module: ${this.serverId}`);
-    traceVerbose(`Full Server Info: ${JSON.stringify({ name: this.serverName, module: this.serverId })}`);
+    traceVerbose(
+      `Full Server Info: ${JSON.stringify({ name: this.serverName, module: this.serverId })}`
+    );
   }
 
   /**

@@ -22,12 +22,12 @@ interface MockLanguageClient {
 export class MockLSClient {
   notificationHandlers: Map<string, (params: any) => void> = new Map();
   mockLanguageClient: MockLanguageClient;
-  eventBus: MockEventBus
+  eventBus: MockEventBus;
 
   constructor(eventBus: MockEventBus) {
     this.eventBus = eventBus;
     this.mockLanguageClient = {
-      start: async () => { },
+      start: async () => {},
       onNotification: (type: string, handler: (params: any) => void) => {
         this.notificationHandlers.set(type, handler);
       },
@@ -46,7 +46,10 @@ export class MockLSClient {
     switch (command) {
       case `${PYTOOL_MODULE}.connect`:
         if (cmdArgs[0] === 'https://zenml.example.com') {
-          return Promise.resolve({ message: 'Connected successfully', access_token: 'valid_token' });
+          return Promise.resolve({
+            message: 'Connected successfully',
+            access_token: 'valid_token',
+          });
         } else {
           return Promise.resolve({ error: 'Failed to connect' });
         }
@@ -57,14 +60,18 @@ export class MockLSClient {
       case `${PYTOOL_MODULE}.renameStack`:
         const [renameStackId, newStackName] = cmdArgs;
         if (renameStackId && newStackName) {
-          return Promise.resolve({ message: `Stack ${renameStackId} successfully renamed to ${newStackName}.` });
+          return Promise.resolve({
+            message: `Stack ${renameStackId} successfully renamed to ${newStackName}.`,
+          });
         } else {
           return Promise.resolve({ error: 'Failed to rename stack' });
         }
       case `${PYTOOL_MODULE}.copyStack`:
         const [copyStackId, copyNewStackName] = cmdArgs;
         if (copyStackId && copyNewStackName) {
-          return Promise.resolve({ message: `Stack ${copyStackId} successfully copied to ${copyNewStackName}.` });
+          return Promise.resolve({
+            message: `Stack ${copyStackId} successfully copied to ${copyNewStackName}.`,
+          });
         } else {
           return Promise.resolve({ error: 'Failed to copy stack' });
         }
@@ -80,9 +87,9 @@ export class MockLSClient {
     }
   }
 
-  /** 
+  /**
    * Triggers a notification with the given type and parameters.
-   * 
+   *
    * @param type The type of the notification.
    * @param params The parameters of the notification.
    */
@@ -111,7 +118,7 @@ export class MockLSClient {
 
   /**
    * Gets the mocked language client.
-   * 
+   *
    * @returns {MockLanguageClient} The mocked language client.
    */
   public getLanguageClient(): MockLanguageClient {

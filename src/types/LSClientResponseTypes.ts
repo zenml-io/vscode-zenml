@@ -41,6 +41,3 @@ export interface ActiveStackResponse {
 
 export type SetActiveStackResponse = ActiveStackResponse | ErrorMessageResponse;
 export type GetActiveStackResponse = ActiveStackResponse | ErrorMessageResponse;
-
-
-

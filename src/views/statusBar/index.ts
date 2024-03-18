@@ -61,24 +61,25 @@ export default class ZenMLStatusBar {
    */
   private async sync(updatedServerConfig: ZenServerDetails): Promise<void> {
     try {
-      await vscode.window.withProgress({
-        location: vscode.ProgressLocation.Window,
-        title: 'ZenML config change detected. Syncing.',
-      }, async (progress) => {
-        progress.report({ increment: 0 });
+      await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Window,
+          title: 'ZenML config change detected. Syncing.',
+        },
+        async progress => {
+          progress.report({ increment: 0 });
 
-        const isConnected = updatedServerConfig.storeConfig.type === 'rest';
-        this.updateServerStatusIndicator(isConnected, updatedServerConfig.storeConfig.url);
-        await this.refreshActiveStack();
-        progress.report({ increment: 100 });
-      });
+          const isConnected = updatedServerConfig.storeConfig.type === 'rest';
+          this.updateServerStatusIndicator(isConnected, updatedServerConfig.storeConfig.url);
+          await this.refreshActiveStack();
+          progress.report({ increment: 100 });
+        }
+      );
     } catch (error) {
       console.error('Error syncing ZenML views:', error);
       showErrorMessage('Failed to sync ZenML views. See console for details.');
     }
   }
-
-
 
   /**
    * Retrieves or creates an instance of the ZenMLStatusBar.

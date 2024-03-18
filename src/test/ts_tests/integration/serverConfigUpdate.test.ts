@@ -52,13 +52,13 @@ suite('Server Configuration Update Flow Tests', () => {
 
   teardown(() => {
     sandbox.restore();
-    mockEventBus.clearAllHandlers()
+    mockEventBus.clearAllHandlers();
   });
 
   test('LSClientReady event triggers UI refresh', async () => {
     mockEventBus.setLsClientReady(true);
     sinon.assert.calledOnce(refreshUIComponentsStub);
-  })
+  });
 
   test('MockLSClient triggerNotification works as expected', async () => {
     const mockNotificationType = 'testNotification';
@@ -70,9 +70,12 @@ suite('Server Configuration Update Flow Tests', () => {
   });
 
   test('ServerConfigUpdated event updates global configuration and refreshes UI', async () => {
-    mockLSClientInstance.mockLanguageClient.onNotification('zenml/configUpdated', (data: ZenServerDetails) => {
-      assert.deepStrictEqual(data, MOCK_REST_SERVER_DETAILS);
-    });
+    mockLSClientInstance.mockLanguageClient.onNotification(
+      'zenml/configUpdated',
+      (data: ZenServerDetails) => {
+        assert.deepStrictEqual(data, MOCK_REST_SERVER_DETAILS);
+      }
+    );
 
     mockLSClientInstance.triggerNotification('zenml/configUpdated', MOCK_REST_SERVER_DETAILS);
 

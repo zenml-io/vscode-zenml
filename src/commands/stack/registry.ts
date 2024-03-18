@@ -53,4 +53,4 @@ export const registerStackCommands = (context: vscode.ExtensionContext) => {
     setActiveStack,
     copyStack
   );
-}
+};

@@ -45,7 +45,9 @@ export async function promptAndStoreServerUrl() {
  * @param {ZenServerDetails} [updatedServerConfig] The updated server configuration from the LSP server.
  * @returns {Promise<ServerStatus>} A promise that resolves with the server status, parsed from server details.
  */
-export async function checkServerStatus(updatedServerConfig?: ZenServerDetails): Promise<ServerStatus> {
+export async function checkServerStatus(
+  updatedServerConfig?: ZenServerDetails
+): Promise<ServerStatus> {
   if (updatedServerConfig) {
     return createServerStatusFromDetails(updatedServerConfig);
   }
@@ -90,4 +92,4 @@ export const serverUtils = {
   checkServerStatus,
   isZenServerDetails,
   createServerStatusFromDetails,
-}
+};

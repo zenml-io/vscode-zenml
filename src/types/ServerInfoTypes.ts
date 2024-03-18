@@ -27,7 +27,6 @@ export interface ServerStatus {
   username?: string | null;
 }
 
-
 /************************************************************************************************
  * This is the object returned by the @LSP_SERVER.command(zenml.serverInfo")
  ************************************************************************************************/
@@ -35,7 +34,6 @@ export interface ZenServerDetails {
   storeInfo: ZenServerStoreInfo;
   storeConfig: ZenServerStoreConfig;
 }
-
 
 /************************************************************************************************
  * This is the response from the `zen_store.get_store_info()` method in the ZenML Client.

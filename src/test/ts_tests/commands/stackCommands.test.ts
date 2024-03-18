@@ -41,7 +41,6 @@ suite('Stack Commands Test Suite', () => {
     mockStackDataProvider = new MockStackDataProvider();
     mockStatusBar = new MockZenMLStatusBar();
 
-
     // Stub classes to return mock instances
     sandbox.stub(StackDataProvider, 'getInstance').returns(mockStackDataProvider);
     sandbox.stub(ZenMLStatusBar, 'getInstance').returns(mockStatusBar);
@@ -50,30 +49,31 @@ suite('Stack Commands Test Suite', () => {
     sandbox.stub(stackUtils, 'storeActiveStack').resolves();
 
     showInputBoxStub = sandbox.stub(vscode.window, 'showInputBox');
-    showInformationMessageStub = sandbox.stub(vscode.window, 'showInformationMessage')
+    showInformationMessageStub = sandbox.stub(vscode.window, 'showInformationMessage');
 
-    switchActiveStackStub = sandbox.stub(stackUtils, 'switchActiveStack').callsFake(async (stackNameOrId: string) => {
-      console.log('switchActiveStack stub called with', stackNameOrId)
-      return Promise.resolve({ id: stackNameOrId, name: `MockStackName` });
-    })
+    switchActiveStackStub = sandbox
+      .stub(stackUtils, 'switchActiveStack')
+      .callsFake(async (stackNameOrId: string) => {
+        console.log('switchActiveStack stub called with', stackNameOrId);
+        return Promise.resolve({ id: stackNameOrId, name: `MockStackName` });
+      });
 
-    setActiveStackStub = sandbox.stub(stackCommands, 'setActiveStack').callsFake(async (node: StackTreeItem) => {
-      await switchActiveStackStub(node.id);
-      showInformationMessageStub(`Active stack set to: ${node.label}`);
-      await mockStatusBar.refreshActiveStack();
-      await mockStackDataProvider.refresh();
-    });
-
-
+    setActiveStackStub = sandbox
+      .stub(stackCommands, 'setActiveStack')
+      .callsFake(async (node: StackTreeItem) => {
+        await switchActiveStackStub(node.id);
+        showInformationMessageStub(`Active stack set to: ${node.label}`);
+        await mockStatusBar.refreshActiveStack();
+        await mockStackDataProvider.refresh();
+      });
 
     sandbox.stub(vscode.window, 'withProgress').callsFake(async (options, task) => {
       const mockProgress = {
-        report: sandbox.stub()
+        report: sandbox.stub(),
       };
       const mockCancellationToken = new vscode.CancellationTokenSource();
       await task(mockProgress, mockCancellationToken.token);
     });
-
   });
 
   teardown(() => {

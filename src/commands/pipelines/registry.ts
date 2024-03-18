@@ -31,8 +31,5 @@ export const registerPipelineCommands = (context: vscode.ExtensionContext) => {
     async (node: PipelineTreeItem) => await pipelineCommands.deletePipelineRun(node)
   );
 
-  context.subscriptions.push(
-    refreshPipelineView,
-    deletePipelineRun
-  );
-}
+  context.subscriptions.push(refreshPipelineView, deletePipelineRun);
+};
