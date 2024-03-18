@@ -50,7 +50,7 @@ class ZenMLLanguageServer(LanguageServer):
                     "zenml/ready",
                     {"message": message},
                 )
-                self.notify_user(message)
+                # self.notify_user(message)
                 return True
 
         except subprocess.CalledProcessError:
