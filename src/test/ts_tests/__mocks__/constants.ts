@@ -12,7 +12,7 @@
 // permissions and limitations under the License.
 import * as sinon from 'sinon';
 import * as vscode from 'vscode';
-import { ServerStatus, ZenServerDetails } from '../../../types/ServerStatusTypes';
+import { ServerStatus, ZenServerDetails } from '../../../types/ServerInfoTypes';
 
 export const MOCK_CONTEXT = {
   subscriptions: [],

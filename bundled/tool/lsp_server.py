@@ -10,7 +10,6 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
-
 """Implementation of tool support over LSP."""
 from __future__ import annotations
 
@@ -23,10 +22,6 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from zenml_language_server import ZenMLLanguageServer
 from zenml_client import ZenMLClient
-
-
-print(f"(DEBUG TODAY)–Using Python executable: {sys.executable}")
-print(f"(DEBUG TODAY)–Python sys.path: {sys.path}")
 
 
 # **********************************************************

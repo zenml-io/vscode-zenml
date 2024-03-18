@@ -12,7 +12,7 @@
 // permissions and limitations under the License.
 import { StackDataProvider } from '../../../views/activityBar';
 import { ServerDataProvider } from '../../../views/activityBar';
-import { ServerStatus, ZenServerDetails } from '../../../types/ServerStatusTypes';
+import { ServerStatus, ZenServerDetails } from '../../../types/ServerInfoTypes';
 import { INITIAL_ZENML_SERVER_STATUS } from '../../../utils/constants';
 import ZenMLStatusBar from '../../../views/statusBar';
 import sinon from 'sinon';
