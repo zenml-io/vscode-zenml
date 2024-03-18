@@ -77,6 +77,10 @@ export class LSClient {
         updatedServerConfig: params.serverDetails as ZenServerDetails,
       });
     });
+
+    lsClient.onNotification('zenml/ready', async params => {
+      this.eventBus.emit('zenmlClientAvailable', true);
+    });
   }
 
   /**

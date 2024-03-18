@@ -27,6 +27,14 @@ export async function activate(context: vscode.ExtensionContext) {
     console.log('Language client ready state: ', isReady);
     if (isReady) {
       await refreshUIComponents();
+      eventBus.emit('refreshServerStatus', true);
+    }
+  });
+
+  eventBus.on('zenmlClientAvailable', async (isAvailable: boolean) => {
+    if (isAvailable) {
+      await refreshUIComponents();
+      eventBus.emit('refreshServerStatus', true);
     }
   });
 
