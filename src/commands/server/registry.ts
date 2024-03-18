@@ -11,38 +11,28 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
-import {
-  PipelineDataProvider,
-  ServerDataProvider,
-  StackDataProvider,
-} from '../../views/activityBar';
-import { connectServer, disconnectServer, refreshServerStatus } from './cmds';
+import { serverCommands } from './cmds';
+import { registerCommand } from '../../common/vscodeapi';
 
 /**
  * Registers server-related commands for the extension.
  *
  * @param {vscode.ExtensionContext} context - The context in which the extension operates, used for registering commands and managing their lifecycle.
- * @param {ServerDataProvider} serverDataProvider - An instance of ServerDataProvider that manages the data and updates the view for server-related operations.
- * @param {StackDataProvider} stackDataProvider - An instance of StackDataProvider that manages the data and updates the view for stack-related operations.
- * @param {PipelineDataProvider} pipelineDataProvider - An instance of PipelineDataProvider that manages the data and updates the view for pipeline-related operations.
  */
-export function registerServerCommands(
-  context: vscode.ExtensionContext,
-  serverDataProvider: ServerDataProvider,
-  stackDataProvider: StackDataProvider,
-  pipelineDataProvider: PipelineDataProvider
-) {
-  const connectServerCommand = vscode.commands.registerCommand('zenml.connectServer', () =>
-    connectServer(serverDataProvider, stackDataProvider, pipelineDataProvider)
+export const registerServerCommands = (context: vscode.ExtensionContext) => {
+  const connectServerCommand = registerCommand(
+    'zenml.connectServer',
+    async () => await serverCommands.connectServer()
   );
 
-  const disconnectServerCommand = vscode.commands.registerCommand('zenml.disconnectServer', () =>
-    disconnectServer(serverDataProvider, stackDataProvider, pipelineDataProvider)
+  const disconnectServerCommand = registerCommand(
+    'zenml.disconnectServer',
+    async () => await serverCommands.disconnectServer()
   );
 
-  const refreshServerStatusCommand = vscode.commands.registerCommand(
+  const refreshServerStatusCommand = registerCommand(
     'zenml.refreshServerStatus',
-    () => refreshServerStatus(serverDataProvider)
+    async () => await serverCommands.refreshServerStatus()
   );
 
   context.subscriptions.push(

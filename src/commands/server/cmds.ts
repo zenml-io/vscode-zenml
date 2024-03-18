@@ -11,86 +11,85 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
-import { ZenMLClient } from '../../services/ZenMLClient';
-import {
-  PipelineDataProvider,
-  ServerDataProvider,
-  StackDataProvider,
-} from '../../views/activityBar';
-import {
-  disconnectFromZenMLServer,
-  initiateDeviceAuthorization,
-  promptAndStoreServerUrl,
-} from './utils';
+import { promptAndStoreServerUrl } from './utils';
+import { LSClient } from '../../services/LSClient';
+import { getZenMLServerUrl } from '../../utils/global';
+import { PYTOOL_MODULE } from '../../utils/constants';
+import { EventBus } from '../../services/EventBus';
+import { ConnectServerResponse, GenericLSClientResponse, RestServerConnectionResponse } from '../../types/LSClientResponseTypes';
+import { showInformationMessage } from '../../utils/notifications';
 
 /**
  * Initiates a connection to the ZenML server using a Flask service for OAuth2 authentication.
  * The service handles user authentication, device authorization, and updates the global configuration upon success.
  *
- * @param {ServerDataProvider} serverDataProvider Manages and updates the server-related UI.
- * @param {StackDataProvider} stackDataProvider Manages and updates the stack-related UI.
  * @returns {Promise<boolean>} Resolves after attempting to connect to the server.
  */
-const connectServer = async (
-  serverDataProvider: ServerDataProvider,
-  stackDataProvider: StackDataProvider,
-  pipelineDataProvider: PipelineDataProvider
-): Promise<boolean> => {
-  const zenmlClient = ZenMLClient.getInstance();
+const connectServer = async (): Promise<boolean> => {
   await promptAndStoreServerUrl();
 
-  const serverUrl = zenmlClient.getZenMLServerUrl();
-
-  if (!serverUrl) {
+  const url = getZenMLServerUrl();
+  if (!url) {
     vscode.window.showErrorMessage('Server URL is required to connect.');
     return false;
   }
 
-  return vscode.window.withProgress(
-    {
-      location: vscode.ProgressLocation.Notification,
-      title: 'Connecting to ZenML server...',
-      cancellable: false,
-    },
-    async progress => {
-      try {
-        await initiateDeviceAuthorization();
-        serverDataProvider.reactivate();
-        serverDataProvider.serverStatusService.reactivate();
-        stackDataProvider.reactivate();
-        pipelineDataProvider.reactivate();
+  const lsClient = LSClient.getInstance().getLanguageClient();
+  if (!lsClient) {
+    vscode.window.showErrorMessage('Language server is not available.');
+    return false;
+  }
 
-        await serverDataProvider.serverStatusService.updateStatus();
-        await serverDataProvider.refresh();
-        await stackDataProvider.refresh();
-        await pipelineDataProvider.refresh();
-        vscode.window.showInformationMessage(
-          'Successfully connected and authenticated with the ZenML server.'
-        );
-        return true;
-      } catch (error) {
-        console.error(`Connection and authentication error: ${error}`);
-        vscode.window.showErrorMessage(
-          'Connection and authentication error. Please check the console for more details.'
-        );
-        return false;
+  return new Promise<boolean>(resolve => {
+    vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: 'Connecting to ZenML server...',
+        cancellable: false,
+      },
+      async progress => {
+        progress.report({ increment: 0 });
+
+        try {
+          const result = (await lsClient.sendRequest('workspace/executeCommand', {
+            command: `${PYTOOL_MODULE}.connect`,
+            arguments: [url],
+          })) as ConnectServerResponse;
+
+          if (result && 'error' in result && result.error) {
+            throw new Error(result.error);
+          }
+
+          const config = vscode.workspace.getConfiguration('zenml');
+          await config.update('serverUrl', url, vscode.ConfigurationTarget.Global);
+          await config.update(
+            'accessToken',
+            (result as RestServerConnectionResponse).access_token,
+            vscode.ConfigurationTarget.Global
+          );
+
+          EventBus.getInstance().emit('refreshServerStatus');
+          progress.report({ increment: 100 });
+          resolve(true);
+        } catch (error) {
+          console.error('Failed to connect to ZenML server:', error);
+          vscode.window.showErrorMessage(
+            `Failed to connect to ZenML server: ${(error as Error).message}`
+          );
+          progress.report({ increment: 100 });
+          resolve(false);
+        }
       }
-    }
-  );
-};
+    );
+  });
+}
 
 /**
- * Disconnects from the ZenML server using the Flask service, ensuring proper cleanup and configuration reset.
+ * Disconnects from the ZenML server and clears related configuration and state in the application.
  *
- * @param {ServerDataProvider} serverDataProvider Manages and updates the server-related UI.
- * @param {StackDataProvider} stackDataProvider Manages and updates the stack-related UI.
  * @returns {Promise<void>} Resolves after successfully disconnecting from the server.
  */
-const disconnectServer = async (
-  serverDataProvider: ServerDataProvider,
-  stackDataProvider: StackDataProvider,
-  pipelineDataProvider: PipelineDataProvider
-): Promise<void> => {
+const disconnectServer = async (): Promise<void> => {
   await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
@@ -98,37 +97,52 @@ const disconnectServer = async (
       cancellable: false,
     },
     async () => {
-      const success = await disconnectFromZenMLServer(
-        serverDataProvider,
-        stackDataProvider,
-        pipelineDataProvider
-      );
-      if (success) {
-        vscode.window.showInformationMessage('Successfully disconnected from ZenML server.');
-        await serverDataProvider.refresh();
-      } else {
-        vscode.window.showErrorMessage('Failed to disconnect from ZenML server.');
+      const lsClientInstance = LSClient.getInstance();
+      const lsClient = lsClientInstance.getLanguageClient();
+
+      if (!lsClient) {
+        vscode.window.showErrorMessage('Language server is not available.');
+        return;
+      }
+      try {
+        const result = (await lsClient.sendRequest('workspace/executeCommand', {
+          command: `${PYTOOL_MODULE}.disconnect`,
+        })) as GenericLSClientResponse;
+
+        if ('error' in result) {
+          throw new Error(result.error);
+        }
+
+        EventBus.getInstance().emit('refreshServerStatus');
+      } catch (error: any) {
+        console.error('Failed to disconnect from ZenML server:', error);
+        vscode.window.showErrorMessage('Failed to disconnect from ZenML server: ' + error);
       }
     }
   );
-};
+}
 
 /**
  * Triggers a refresh of the server status within the UI components.
  *
- * @param {ServerDataProvider} serverDataProvider Manages and updates the server-related UI components.
  * @returns {Promise<void>} Resolves after refreshing the server status.
  */
-const refreshServerStatus = async (serverDataProvider: ServerDataProvider): Promise<void> => {
+const refreshServerStatus = async (): Promise<void> => {
   await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Window,
       title: 'Refreshing server status...',
+      cancellable: false,
     },
     async () => {
-      await serverDataProvider.refresh();
+      EventBus.getInstance().emit('refreshServerStatus');
+      showInformationMessage('Server status refreshed.');
     }
   );
-};
+}
 
-export { connectServer, disconnectServer, refreshServerStatus };
+export const serverCommands = {
+  connectServer,
+  disconnectServer,
+  refreshServerStatus,
+};

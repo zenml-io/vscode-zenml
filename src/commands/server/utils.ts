@@ -11,24 +11,10 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
-import { ZenMLClient } from '../../services/ZenMLClient';
-import axios from 'axios';
-import {
-  PipelineDataProvider,
-  ServerDataProvider,
-  StackDataProvider,
-} from '../../views/activityBar';
-
-/**
- * Setup for ZenML server connection + authentication:
- * 1. Prompts the user to enter the server URL and stores it in the global configuration.
- * 2. Makes a GET request to /info to fetch the ID from the server.
- * 3. Initiates the device authorization flow with the server by making a POST request to /device_authorization.
- * 4. This will return device_code, user_code, and verification_uri_complete.
- * 5. The user is prompted to open the verification URI in a browser.
- * 6. While waiting for the user to authorize the device in the browser, we poll the /login route to fetch the access token.
- * 7. Once the access token is fetched, we store it in the global configuration.
- */
+import { ServerStatus, ZenServerDetails } from '../../types/ServerInfoTypes';
+import { LSClient } from '../../services/LSClient';
+import { INITIAL_ZENML_SERVER_STATUS, PYTOOL_MODULE } from '../../utils/constants';
+import { ServerStatusInfoResponse } from '../../types/LSClientResponseTypes';
 
 /**
  * Prompts the user to enter the ZenML server URL and stores it in the global configuration.
@@ -54,154 +40,54 @@ export async function promptAndStoreServerUrl() {
 }
 
 /**
- * Fetches the server ID by making a GET request to the /info endpoint of the ZenML server.
+ * Retrieves the server status from the language server or the provided server details.
  *
- * @param {string} serverUrl - The URL of the ZenML server.
- * @returns {Promise<string>} The server ID.
+ * @param {ZenServerDetails} [updatedServerConfig] The updated server configuration from the LSP server.
+ * @returns {Promise<ServerStatus>} A promise that resolves with the server status, parsed from server details.
  */
-async function fetchServerId(serverUrl: string): Promise<string> {
-  try {
-    const response = await axios.get(`${serverUrl}/api/v1/info`);
-    const serverId = response.data.id;
-    console.log('Fetched server ID:', serverId);
-    return serverId;
-  } catch (error) {
-    console.error('Error fetching server info:', error);
-    vscode.window.showErrorMessage(
-      'Failed to fetch server info. Check the console for more details.'
-    );
-    throw error;
+export async function checkServerStatus(updatedServerConfig?: ZenServerDetails): Promise<ServerStatus> {
+  if (updatedServerConfig) {
+    return createServerStatusFromDetails(updatedServerConfig);
   }
-}
-
-/**
- * Initiates the device authorization flow with the ZenML server to obtain device and user codes.
- */
-export async function initiateDeviceAuthorization() {
-  const serverUrl = vscode.workspace.getConfiguration('zenml').get<string>('serverUrl') || '';
-
-  if (!serverUrl) {
-    vscode.window.showErrorMessage('ZenML server URL is not configured.');
-    return;
+  const lsClient = LSClient.getInstance().getLanguageClient();
+  if (!lsClient) {
+    return INITIAL_ZENML_SERVER_STATUS;
   }
 
-  const clientId = await fetchServerId(serverUrl);
-
   try {
-    const bodyFormData = new URLSearchParams();
-    bodyFormData.append('client_id', clientId);
+    const response = (await lsClient.sendRequest('workspace/executeCommand', {
+      command: `${PYTOOL_MODULE}.serverInfo`,
+    })) as ServerStatusInfoResponse;
 
-    const response = await axios.post(`${serverUrl}/api/v1/device_authorization`, bodyFormData, {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    });
-
-    const { device_code, verification_uri_complete } = response.data;
-    console.log('Verification URI:', verification_uri_complete);
-
-    const openUrl = await vscode.window.showInformationMessage(
-      'You need to authorize your device. Do you want to open the authorization page?',
-      'Open',
-      'Cancel'
-    );
-
-    if (openUrl === 'Open') {
-      vscode.env.openExternal(vscode.Uri.parse(verification_uri_complete));
+    if ('error' in response && response.error) {
+      console.error(response.error);
+      return INITIAL_ZENML_SERVER_STATUS;
+    } else if (isZenServerDetails(response)) {
+      return createServerStatusFromDetails(response);
     }
-
-    await pollForAccessToken(serverUrl, device_code, clientId);
   } catch (error) {
-    console.error('Error initiating device authorization:', error);
-    vscode.window.showErrorMessage(
-      'Failed to initiate device authorization. Check the console for more details.'
-    );
+    console.error('Failed to fetch server information:', error);
   }
+  return INITIAL_ZENML_SERVER_STATUS;
 }
 
-/**
- * Polls the ZenML server for an access token using the device authorization flow.
- *
- * @param {string} serverUrl - The URL of the ZenML server.
- * @param {string} deviceCode - The device code obtained from the server.
- * @param {string} clientId - The client ID (server ID) obtained from the server.
- * @returns {Promise<void>}
- */
-export async function pollForAccessToken(
-  serverUrl: string,
-  deviceCode: string,
-  clientId: string
-): Promise<void> {
-  const loginUrl = `${serverUrl}/api/v1/login`;
-  let attempts = 0;
-  const maxAttempts = 60;
-  let intervalSeconds = 5;
-
-  while (attempts < maxAttempts) {
-    try {
-      const params = new URLSearchParams();
-      params.append('grant_type', 'urn:ietf:params:oauth:grant-type:device_code');
-      params.append('client_id', clientId);
-      params.append('device_code', deviceCode);
-
-      const response = await axios.post(loginUrl, params.toString(), {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      });
-
-      if (response.data && response.data.access_token) {
-        console.log('Access token:', response.data.access_token);
-        const config = vscode.workspace.getConfiguration('zenml');
-        await config.update(
-          'accessToken',
-          response.data.access_token,
-          vscode.ConfigurationTarget.Global
-        );
-        return response.data.access_token;
-      } else {
-        throw new Error('Unexpected response data structure.');
-      }
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.data?.error === 'authorization_pending') {
-        console.log('Authorization pending...');
-        attempts++;
-        await new Promise(resolve => setTimeout(resolve, intervalSeconds * 1000));
-        // Increase interval with backoff, cap at 60 seconds
-        intervalSeconds = Math.min(intervalSeconds * 2, 60);
-      } else {
-        console.error('Error polling for access token:', error);
-        vscode.window.showErrorMessage(
-          'Error occurred while polling for access token. Check the console for details.'
-        );
-      }
-    }
-  }
+function isZenServerDetails(response: any): response is ZenServerDetails {
+  return response && 'storeInfo' in response && 'storeConfig' in response;
 }
 
-/**
- * Disconnects from the ZenML server and clears related configuration and state in the application.
- *
- * @param {ServerDataProvider} serverDataProvider - Provider for server data updates.
- * @param {StackDataProvider} stackDataProvider - Provider for stack data updates.
- * @param {PipelineDataProvider} pipelineDataProvider - Provider for pipeline data updates.
- * @returns {Promise<boolean>} True if the disconnection was successful, false otherwise.
- */
-export async function disconnectFromZenMLServer(
-  serverDataProvider: ServerDataProvider,
-  stackDataProvider: StackDataProvider,
-  pipelineDataProvider: PipelineDataProvider
-): Promise<boolean> {
-  try {
-    const config = vscode.workspace.getConfiguration('zenml');
-    await config.update('serverUrl', undefined, vscode.ConfigurationTarget.Global);
-    await config.update('accessToken', undefined, vscode.ConfigurationTarget.Global);
+function createServerStatusFromDetails(details: ZenServerDetails): ServerStatus {
+  const { storeInfo, storeConfig } = details;
+  return {
+    ...storeInfo,
+    isConnected: storeConfig.type === 'rest',
+    url: storeConfig.url,
+    store_type: storeConfig.type,
+  };
+}
 
-    serverDataProvider.serverStatusService.resetStatus();
-
-    serverDataProvider.reset();
-    stackDataProvider.reset();
-    pipelineDataProvider.reset();
-    ZenMLClient.resetInstance();
-    return true;
-  } catch (error) {
-    console.error('Failed to disconnect from ZenML server:', error);
-    return false;
-  }
+export const serverUtils = {
+  promptAndStoreServerUrl,
+  checkServerStatus,
+  isZenServerDetails,
+  createServerStatusFromDetails,
 }

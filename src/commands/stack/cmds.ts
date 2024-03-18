@@ -11,17 +11,18 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
-import { ZenMLClient } from '../../services/ZenMLClient';
 import { StackDataProvider, StackTreeItem } from '../../views/activityBar';
 import ZenMLStatusBar from '../../views/statusBar';
-import { switchZenMLStack } from './utils';
+import { switchActiveStack } from './utils';
+import { LSClient } from '../../services/LSClient';
+import { GenericLSClientResponse } from '../../types/LSClientResponseTypes';
+import { PYTOOL_MODULE } from '../../utils/constants';
+import { showInformationMessage } from '../../utils/notifications';
 
 /**
  * Refreshes the stack view.
- *
- * @param {StackDataProvider} stackDataProvider - An instance of StackDataProvider that manages the data and updates the view for stack-related operations.
  */
-export const refreshStackView = (stackDataProvider: StackDataProvider) => {
+const refreshStackView = async () => {
   vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
@@ -29,17 +30,17 @@ export const refreshStackView = (stackDataProvider: StackDataProvider) => {
       cancellable: false,
     },
     async progress => {
-      stackDataProvider.refresh();
+      await StackDataProvider.getInstance().refresh();
     }
   );
 };
 
 /**
  * Refreshes the active stack.
- *
- * @param {ZenMLStatusBar} statusBar - An instance of ZenMLStatusBar that manages the status bar for the extension.
  */
-export const refreshActiveStack = async (statusBar: ZenMLStatusBar) => {
+const refreshActiveStack = async () => {
+  const statusBar = ZenMLStatusBar.getInstance();
+
   vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
@@ -52,12 +53,25 @@ export const refreshActiveStack = async (statusBar: ZenMLStatusBar) => {
   );
 };
 
-export const renameStack = async (node: StackTreeItem, stackDataProvider: StackDataProvider) => {
-  const zenmlClient = ZenMLClient.getInstance();
+/**
+ * Renames the selected stack to a new name.
+ *
+ * @param node The stack to rename.
+ * @returns {Promise<void>} Resolves after renaming the stack.
+ */
+const renameStack = async (node: StackTreeItem): Promise<void> => {
   const newStackName = await vscode.window.showInputBox({ prompt: 'Enter new stack name' });
   if (!newStackName) {
     return;
   }
+
+  const lsClient = LSClient.getInstance().getLanguageClient();
+  if (!lsClient) {
+    console.log('Language server is not available.');
+    return;
+  }
+
+  const { label, id } = node;
 
   vscode.window.withProgress(
     {
@@ -67,11 +81,17 @@ export const renameStack = async (node: StackTreeItem, stackDataProvider: StackD
     },
     async () => {
       try {
-        const response = await zenmlClient.request('put', `/stacks/${node.id}`, {
-          name: newStackName,
-        });
-        vscode.window.showInformationMessage('Stack renamed successfully.');
-        stackDataProvider.refresh();
+        const result = (await lsClient.sendRequest('workspace/executeCommand', {
+          command: `${PYTOOL_MODULE}.renameStack`,
+          arguments: [id, newStackName],
+        })) as GenericLSClientResponse;
+
+        if ('error' in result && result.error) {
+          throw new Error(result.error);
+        }
+
+        showInformationMessage(`Stack ${label} successfully renamed to ${newStackName}.`);
+        await StackDataProvider.getInstance().refresh();
       } catch (error: any) {
         if (error.response) {
           vscode.window.showErrorMessage(`Failed to rename stack: ${error.response.data.message}`);
@@ -88,15 +108,19 @@ export const renameStack = async (node: StackTreeItem, stackDataProvider: StackD
  * Copies the selected stack to a new stack with a specified name.
  *
  * @param {StackTreeItem} node The stack to copy.
- * @param {StackDataProvider} stackDataProvider Updates the view to reflect the new stack.
  */
-export const copyStack = async (node: StackTreeItem, stackDataProvider: StackDataProvider) => {
-  const zenmlClient = ZenMLClient.getInstance();
-  const targetStackName = await vscode.window.showInputBox({
+const copyStack = async (node: StackTreeItem) => {
+  const newStackName = await vscode.window.showInputBox({
     prompt: 'Enter the name for the copied stack',
   });
-  if (!targetStackName) {
+  if (!newStackName) {
     return;
+  }
+
+  const lsClient = LSClient.getInstance().getLanguageClient();
+  if (!lsClient) {
+    console.log('Language server is not available.');
+    return false;
   }
 
   vscode.window.withProgress(
@@ -107,49 +131,18 @@ export const copyStack = async (node: StackTreeItem, stackDataProvider: StackDat
     },
     async progress => {
       try {
-        // Step 1: Fetch the stack the user wants to copy
-        const stackResponse = await zenmlClient.request('get', `/stacks/${node.id}`);
-        if (!stackResponse || !stackResponse.metadata || !stackResponse.metadata.components) {
-          throw new Error('Stack data is incomplete or missing.');
-        }
-        const originalStackComponents = stackResponse.metadata.components;
+        const result = (await lsClient.sendRequest('workspace/executeCommand', {
+          command: `${PYTOOL_MODULE}.copyStack`,
+          arguments: [node.id, newStackName],
+        })) as GenericLSClientResponse;
 
-        // Step 2: Extract and map component types to their corresponding IDs
-        const componentMappings: { [key: string]: string[] } = {};
-        for (const [componentType, components] of Object.entries(originalStackComponents)) {
-          componentMappings[componentType] = (components as any[]).map(component => component.id);
+        if ('error' in result && result.error) {
+          throw new Error(result.error);
         }
 
-        // Validate component mappings before proceeding.
-        if (Object.keys(componentMappings).length === 0) {
-          throw new Error('No components found in the original stack.');
-        }
+        showInformationMessage('Stack copied successfully.');
 
-        // Step 3: Prepare the payload for the new stack
-        const workspaceId = stackResponse.metadata.workspace.id;
-        if (!workspaceId) {
-          throw new Error('Workspace ID is missing.');
-        }
-        const userId = stackResponse.body.user ? stackResponse.body.user.id : null;
-
-        const newStackPayload = {
-          name: targetStackName,
-          components: componentMappings,
-          user: userId,
-          workspace: workspaceId,
-        };
-
-        // Step 4: Create the new stack
-        const copyStackResponse = await zenmlClient.request(
-          'post',
-          `/workspaces/${workspaceId}/stacks`,
-          newStackPayload
-        );
-        if (!copyStackResponse || copyStackResponse.error) {
-          throw new Error('Failed to create the new stack.');
-        }
-        vscode.window.showInformationMessage('Stack copied successfully.');
-        stackDataProvider.refresh();
+        await StackDataProvider.getInstance().refresh();
       } catch (error: any) {
         if (error.response && error.response.data && error.response.data.message) {
           vscode.window.showErrorMessage(`Failed to copy stack: ${error.response.data.message}`);
@@ -165,17 +158,10 @@ export const copyStack = async (node: StackTreeItem, stackDataProvider: StackDat
 /**
  * Sets the selected stack as the active stack and stores it in the global context.
  *
- * @param {vscode.ExtensionContext} context The extension context used for global state management.
  * @param {StackTreeItem} node The stack to activate.
- * @param {ZenMLStatusBar} statusBar Updates the status bar to show the active stack.
- * @param {StackDataProvider} stackDataProvider Updates the view to reflect the new active stack.
+ * @returns {Promise<void>} Resolves after setting the active stack.
  */
-export const setActiveStack = async (
-  context: vscode.ExtensionContext,
-  node: StackTreeItem,
-  statusBar: ZenMLStatusBar,
-  stackDataProvider: StackDataProvider
-) => {
+const setActiveStack = async (node: StackTreeItem): Promise<void> => {
   vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
@@ -184,15 +170,12 @@ export const setActiveStack = async (
     },
     async () => {
       try {
-        const activatedStack = await switchZenMLStack(node.id);
-        if (activatedStack) {
-          vscode.window.showInformationMessage(`Active stack set to: ${node.label}`);
-          await context.globalState.update('activeStackId', node.id);
-          await refreshActiveStack(statusBar);
-          await stackDataProvider.refresh();
-        } else {
-          console.log(activatedStack);
-          vscode.window.showErrorMessage('Failed to set active stack: No response from server');
+        const result = await switchActiveStack(node.id);
+        if (result) {
+          const { id, name } = result;
+          showInformationMessage(`Active stack set to: ${name}`);
+          await refreshActiveStack();
+          await StackDataProvider.getInstance().refresh();
         }
       } catch (error) {
         console.log(error);
@@ -200,4 +183,12 @@ export const setActiveStack = async (
       }
     }
   );
+};
+
+export const stackCommands = {
+  refreshStackView,
+  refreshActiveStack,
+  renameStack,
+  copyStack,
+  setActiveStack,
 };

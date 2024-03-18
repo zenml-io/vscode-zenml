@@ -11,23 +11,28 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
-import { PipelineDataProvider } from '../../views/activityBar';
-import { refreshPipelineView } from './cmds';
+import { PipelineTreeItem } from '../../views/activityBar';
+import { pipelineCommands } from './cmds';
+import { registerCommand } from '../../common/vscodeapi';
 
 /**
  * Registers pipeline-related commands for the extension.
  *
  * @param {vscode.ExtensionContext} context - The context in which the extension operates, used for registering commands and managing their lifecycle.
- * @param {PipelineDataProvider} pipelineDataProvider - Manages and updates the pipeline UI components.
  */
-export function registerPipelineCommands(
-  context: vscode.ExtensionContext,
-  pipelineDataProvider: PipelineDataProvider
-) {
-  const refreshPipelineViewCommand = vscode.commands.registerCommand(
+export const registerPipelineCommands = (context: vscode.ExtensionContext) => {
+  const refreshPipelineView = registerCommand(
     'zenml.refreshPipelineView',
-    () => refreshPipelineView(pipelineDataProvider)
+    async () => await pipelineCommands.refreshPipelineView()
   );
 
-  context.subscriptions.push(refreshPipelineViewCommand);
+  const deletePipelineRun = registerCommand(
+    'zenml.deletePipelineRun',
+    async (node: PipelineTreeItem) => await pipelineCommands.deletePipelineRun(node)
+  );
+
+  context.subscriptions.push(
+    refreshPipelineView,
+    deletePipelineRun
+  );
 }
