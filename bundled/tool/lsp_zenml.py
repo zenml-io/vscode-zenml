@@ -37,6 +37,7 @@ class ZenMLLanguageServer(LanguageServer):
                 capture_output=True,
                 text=True,
                 check=True,
+                timeout=10,
             )
             self.notify_user("ZenML installation check: Successful.")
             return True
