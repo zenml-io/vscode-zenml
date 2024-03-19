@@ -92,7 +92,7 @@
           "type": "array"
         },
         "zenml-python.showNotifications": {
-          "default": "off",
+          "default": "always",
           "description": "Controls when notifications are shown by this extension.",
           "enum": [
             "off",
@@ -108,11 +108,6 @@
           ],
           "scope": "machine",
           "type": "string"
-        },
-        "zenml.venvPath": {
-          "type": "string",
-          "default": "",
-          "description": "Path to the virtual environment where ZenML is installed. Leave empty if installed globally."
         },
         "zenml.serverUrl": {
           "type": "string",
@@ -143,7 +138,7 @@
     },
     "commands": [
       {
-        "command": "zenml.restartServer",
+        "command": "zenml-python.restart",
         "title": "Restart LSP Server",
         "category": "ZenML"
       },
