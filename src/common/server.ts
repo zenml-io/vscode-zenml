@@ -10,8 +10,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import * as vscode from 'vscode';
 import * as fsapi from 'fs-extra';
+import * as vscode from 'vscode';
 import { Disposable, env, l10n, LanguageStatusSeverity, LogOutputChannel } from 'vscode';
 import { State } from 'vscode-languageclient';
 import {
@@ -20,6 +20,7 @@ import {
   RevealOutputChannelOn,
   ServerOptions,
 } from 'vscode-languageclient/node';
+import { LSClient } from '../services/LSClient';
 import { DEBUG_SERVER_SCRIPT_PATH, SERVER_SCRIPT_PATH } from './constants';
 import { traceError, traceInfo, traceVerbose } from './log/logging';
 import { getDebuggerPath } from './python';
@@ -27,12 +28,11 @@ import {
   getExtensionSettings,
   getGlobalSettings,
   getWorkspaceSettings,
-  ISettings,
+  ISettings
 } from './settings';
+import { updateStatus } from './status';
 import { getLSClientTraceLevel, getProjectRoot } from './utilities';
 import { isVirtualWorkspace } from './vscodeapi';
-import { updateStatus } from './status';
-import { LSClient } from '../services/LSClient';
 
 export type IInitOptions = { settings: ISettings[]; globalSettings: ISettings };
 
@@ -43,7 +43,11 @@ async function createServer(
   outputChannel: LogOutputChannel,
   initializationOptions: IInitOptions
 ): Promise<LanguageClient> {
+  // const defaultInterpreterPath = getDefaultPythonInterpreterPath();
+  // const command =  defaultInterpreterPath || settings.interpreter[0];
   const command = settings.interpreter[0];
+  console.log('command is', command);
+
   const cwd = settings.cwd;
 
   // Set debugger path needed for debugging python code.
@@ -80,15 +84,18 @@ async function createServer(
     documentSelector: isVirtualWorkspace()
       ? [{ language: 'python' }]
       : [
-          { scheme: 'file', language: 'python' },
-          { scheme: 'untitled', language: 'python' },
-          { scheme: 'vscode-notebook', language: 'python' },
-          { scheme: 'vscode-notebook-cell', language: 'python' },
-        ],
+        { scheme: 'file', language: 'python' },
+        { scheme: 'untitled', language: 'python' },
+        { scheme: 'vscode-notebook', language: 'python' },
+        { scheme: 'vscode-notebook-cell', language: 'python' },
+      ],
     outputChannel: outputChannel,
     traceOutputChannel: outputChannel,
     revealOutputChannelOn: RevealOutputChannelOn.Never,
-    initializationOptions,
+    initializationOptions: {
+      ...initializationOptions,
+      interpreter: settings.interpreter[0],
+    },
   };
 
   return new LanguageClient(serverId, serverName, serverOptions, clientOptions);
@@ -100,8 +107,9 @@ export async function restartServer(
   serverId: string,
   serverName: string,
   outputChannel: LogOutputChannel,
-  lsClient?: LanguageClient | null
+  lsClientInstance: LSClient
 ): Promise<LanguageClient | undefined> {
+  const lsClient = lsClientInstance.getLanguageClient();
   if (lsClient) {
     traceInfo(`Server: Stop requested`);
     await lsClient.stop();
@@ -112,10 +120,9 @@ export async function restartServer(
 
   const newLSClient = await createServer(workspaceSetting, serverId, serverName, outputChannel, {
     settings: await getExtensionSettings(serverId, true),
-    globalSettings: await getGlobalSettings(serverId, false),
+    globalSettings: await getGlobalSettings(serverId, true),
   });
 
-  const lsClientInstance = LSClient.getInstance();
   lsClientInstance.updateClient(newLSClient);
 
   traceInfo(`Server: Start requested.`);
@@ -148,7 +155,8 @@ export async function restartServer(
 export async function runServer(
   serverId: string,
   serverName: string,
-  outputChannel: vscode.LogOutputChannel
+  outputChannel: vscode.LogOutputChannel,
+  lsClient: LSClient
 ) {
   const projectRoot = await getProjectRoot();
   const workspaceSetting = await getWorkspaceSettings(serverId, projectRoot, true);
@@ -161,6 +169,5 @@ export async function runServer(
     return;
   }
 
-  const lsClient = LSClient.getInstance().getLanguageClient();
   await restartServer(workspaceSetting, serverId, serverName, outputChannel, lsClient);
 }

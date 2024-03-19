@@ -15,11 +15,11 @@
 import { commands, Disposable, Event, EventEmitter, Uri } from 'vscode';
 import { traceError, traceLog } from './log/logging';
 import { PythonExtension, ResolvedEnvironment } from '@vscode/python-extension';
-
 export interface IInterpreterDetails {
   path?: string[];
   resource?: Uri;
 }
+
 
 const onDidChangePythonInterpreterEvent = new EventEmitter<IInterpreterDetails>();
 export const onDidChangePythonInterpreter: Event<IInterpreterDetails> =
