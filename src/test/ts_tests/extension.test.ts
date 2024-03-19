@@ -13,25 +13,30 @@
 import * as assert from 'assert';
 import sinon from 'sinon';
 import * as vscode from 'vscode';
-import { MOCK_CONTEXT } from './__mocks__/constants';
 import * as extension from '../../extension';
-import { ExtensionEnvironment } from '../../services/ExtensionEnvironment';
+import { EventBus } from '../../services/EventBus';
+import { LSClient } from '../../services/LSClient';
+import { ZenExtension } from '../../services/ZenExtension';
+import { MockEventBus } from './__mocks__/MockEventBus';
 
 suite('Extension Activation Test Suite', () => {
   let sandbox: sinon.SinonSandbox;
-  let contextMock: vscode.ExtensionContext;
+  let contextMock: any;
   let initializeSpy: sinon.SinonSpy;
-  let deferredInitializeStub: sinon.SinonSpy;
+  let mockEventBus = new MockEventBus();
+  let lsClient: LSClient
 
   setup(() => {
     sandbox = sinon.createSandbox();
-    contextMock = MOCK_CONTEXT;
-    initializeSpy = sandbox.spy(ExtensionEnvironment, 'initialize');
-    deferredInitializeStub = sandbox.stub(ExtensionEnvironment, 'deferredInitialize');
+    contextMock = { subscriptions: [] };
+    initializeSpy = sinon.spy(ZenExtension, 'initialize');
+    lsClient = LSClient.getInstance();
+    sandbox.stub(EventBus, 'getInstance').returns(mockEventBus);
   });
 
   teardown(() => {
     sandbox.restore();
+    initializeSpy.restore();
   });
 
   test('ZenML Extension should be present', () => {
@@ -40,7 +45,6 @@ suite('Extension Activation Test Suite', () => {
 
   test('activate function behaves as expected', async () => {
     await extension.activate(contextMock);
-    sinon.assert.calledOnceWithExactly(initializeSpy, contextMock);
-    sinon.assert.calledOnce(deferredInitializeStub);
+    sinon.assert.calledOnceWithExactly(initializeSpy, contextMock, lsClient);
   });
 });
