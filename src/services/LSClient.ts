@@ -13,13 +13,15 @@
 import { LanguageClient } from 'vscode-languageclient/node';
 import { ZenServerDetails } from '../types/ServerInfoTypes';
 import { EventBus } from './EventBus';
+import { GenericLSClientResponse } from '../types/LSClientResponseTypes';
+import { PYTOOL_MODULE } from '../utils/constants';
 
 export class LSClient {
   private static instance: LSClient | null = null;
   private client: LanguageClient | null = null;
   private eventBus: EventBus = EventBus.getInstance();
 
-  public constructor() { }
+  public constructor() {}
 
   /**
    * Gets the language client.
@@ -81,6 +83,33 @@ export class LSClient {
   }
 
   /**
+   * Sends a request to the language server.
+   *
+   * @param {string} command The command to send to the language server.
+   * @param {any[]} [args] The arguments to send with the command.
+   * @returns {Promise<T>} A promise resolving to the response from the language server.
+   */
+  public async sendLsClientRequest<T = GenericLSClientResponse>(
+    command: string,
+    args?: any[]
+  ): Promise<T> {
+    if (!this.client) {
+      console.log('Language server is not available.');
+      throw new Error('Language client is not available.');
+    }
+    try {
+      const result = await this.client.sendRequest('workspace/executeCommand', {
+        command: `${PYTOOL_MODULE}.${command}`,
+        arguments: args || [],
+      });
+      return result as T;
+    } catch (error) {
+      console.error(`Failed to execute command ${command}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Retrieves the singleton instance of LSClient.
    *
    * @returns {LSClient} The singleton instance.
@@ -92,4 +121,3 @@ export class LSClient {
     return this.instance;
   }
 }
-

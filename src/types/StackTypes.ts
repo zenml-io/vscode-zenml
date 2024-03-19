@@ -11,6 +11,8 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 
+import { ErrorMessageResponse } from './LSClientResponseTypes';
+
 /************************************************************************************************
  * LSClient parses the JSON response from the ZenML Client, and returns the following types.
  * Hydrated types are in the HydratedTypes.ts file.
@@ -31,5 +33,7 @@ interface StackComponent {
   flavor: string;
   type: string;
 }
+
+export type StacksReponse = Stack[] | ErrorMessageResponse;
 
 export { Stack, Components, StackComponent };

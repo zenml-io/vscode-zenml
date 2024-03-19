@@ -51,21 +51,20 @@ export async function checkServerStatus(
   if (updatedServerConfig) {
     return createServerStatusFromDetails(updatedServerConfig);
   }
-  const lsClient = LSClient.getInstance().getLanguageClient();
-  if (!lsClient) {
+
+  const lsClient = LSClient.getInstance();
+  if (!lsClient.getLanguageClient()) {
     return INITIAL_ZENML_SERVER_STATUS;
   }
 
   try {
-    const response = (await lsClient.sendRequest('workspace/executeCommand', {
-      command: `${PYTOOL_MODULE}.serverInfo`,
-    })) as ServerStatusInfoResponse;
+    const result = await lsClient.sendLsClientRequest<ServerStatusInfoResponse>('serverInfo');
 
-    if ('error' in response && response.error) {
-      console.error(response.error);
+    if ('error' in result && result.error) {
+      console.error(result.error);
       return INITIAL_ZENML_SERVER_STATUS;
-    } else if (isZenServerDetails(response)) {
-      return createServerStatusFromDetails(response);
+    } else if (isZenServerDetails(result)) {
+      return createServerStatusFromDetails(result);
     }
   } catch (error) {
     console.error('Failed to fetch server information:', error);

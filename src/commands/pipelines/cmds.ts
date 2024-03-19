@@ -11,8 +11,6 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import { LSClient } from '../../services/LSClient';
-import { GenericLSClientResponse } from '../../types/LSClientResponseTypes';
-import { PYTOOL_MODULE } from '../../utils/constants';
 import { showErrorMessage, showInformationMessage } from '../../utils/notifications';
 import { PipelineTreeItem } from '../../views/activityBar';
 import { PipelineDataProvider } from '../../views/activityBar/pipelineView/PipelineDataProvider';
@@ -49,12 +47,6 @@ const deletePipelineRun = async (node: PipelineTreeItem): Promise<void> => {
     'No'
   );
 
-  const lsClient = LSClient.getInstance().getLanguageClient();
-  if (!lsClient) {
-    console.log('Language server is not available.');
-    return;
-  }
-
   if (userConfirmation === 'Yes') {
     await vscode.window.withProgress(
       {
@@ -64,20 +56,13 @@ const deletePipelineRun = async (node: PipelineTreeItem): Promise<void> => {
       async () => {
         const runId = node.id;
         try {
-          const result: GenericLSClientResponse = await lsClient.sendRequest(
-            'workspace/executeCommand',
-            {
-              command: `${PYTOOL_MODULE}.deletePipelineRun`,
-              arguments: [runId],
-            }
-          );
-
+          const lsClient = LSClient.getInstance();
+          const result = await lsClient.sendLsClientRequest('deletePipelineRun', [runId]);
           if ('error' in result && result.error) {
             throw new Error(result.error);
           }
-
-          await refreshPipelineView();
           showInformationMessage('Pipeline run deleted successfully.');
+          await refreshPipelineView();
         } catch (error: any) {
           console.error(`Error deleting pipeline run: ${error}`);
           showErrorMessage(`Failed to delete pipeline run: ${error.message}`);

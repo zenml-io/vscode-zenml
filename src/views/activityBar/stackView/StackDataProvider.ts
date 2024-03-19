@@ -12,7 +12,7 @@
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
 import { LSClient } from '../../../services/LSClient';
-import { Stack, StackComponent } from '../../../types/StackTypes';
+import { Stack, StackComponent, StacksReponse } from '../../../types/StackTypes';
 import { StackComponentTreeItem, StackTreeItem } from './StackTreeItems';
 import { PYTOOL_MODULE } from '../../../utils/constants';
 import { ErrorMessageResponse } from '../../../types/LSClientResponseTypes';
@@ -22,7 +22,7 @@ export class StackDataProvider implements vscode.TreeDataProvider<vscode.TreeIte
   private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined | null>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-  constructor() { }
+  constructor() {}
 
   /**
    * Retrieves the singleton instance of ServerDataProvider.
@@ -77,16 +77,12 @@ export class StackDataProvider implements vscode.TreeDataProvider<vscode.TreeIte
    */
   async fetchStacksWithComponents(): Promise<StackTreeItem[]> {
     try {
-      const lsClient = LSClient.getInstance().getLanguageClient();
-      if (!lsClient) {
-        console.log('fetchStacksWithComponents: Language client not ready yet.');
+      const lsClient = LSClient.getInstance();
+      if (!lsClient.getLanguageClient()) {
         return [];
       }
 
-      let stacks: Stack[] | ErrorMessageResponse = await lsClient.sendRequest('workspace/executeCommand', {
-        command: `${PYTOOL_MODULE}.fetchStacks`,
-      });
-
+      const stacks = await lsClient.sendLsClientRequest<StacksReponse>('fetchStacks');
       if ('error' in stacks) {
         return [];
       }

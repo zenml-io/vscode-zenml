@@ -15,8 +15,6 @@ import { StackDataProvider, StackTreeItem } from '../../views/activityBar';
 import ZenMLStatusBar from '../../views/statusBar';
 import { switchActiveStack } from './utils';
 import { LSClient } from '../../services/LSClient';
-import { GenericLSClientResponse } from '../../types/LSClientResponseTypes';
-import { PYTOOL_MODULE } from '../../utils/constants';
 import { showInformationMessage } from '../../utils/notifications';
 
 /**
@@ -64,15 +62,6 @@ const renameStack = async (node: StackTreeItem): Promise<void> => {
   if (!newStackName) {
     return;
   }
-
-  const lsClient = LSClient.getInstance().getLanguageClient();
-  if (!lsClient) {
-    console.log('Language server is not available.');
-    return;
-  }
-
-  const { label, id } = node;
-
   vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
@@ -81,15 +70,12 @@ const renameStack = async (node: StackTreeItem): Promise<void> => {
     },
     async () => {
       try {
-        const result = (await lsClient.sendRequest('workspace/executeCommand', {
-          command: `${PYTOOL_MODULE}.renameStack`,
-          arguments: [id, newStackName],
-        })) as GenericLSClientResponse;
-
+        const { label, id } = node;
+        const lsClient = LSClient.getInstance();
+        const result = await lsClient.sendLsClientRequest('renameStack', [id, newStackName]);
         if ('error' in result && result.error) {
           throw new Error(result.error);
         }
-
         showInformationMessage(`Stack ${label} successfully renamed to ${newStackName}.`);
         await StackDataProvider.getInstance().refresh();
       } catch (error: any) {
@@ -116,13 +102,6 @@ const copyStack = async (node: StackTreeItem) => {
   if (!newStackName) {
     return;
   }
-
-  const lsClient = LSClient.getInstance().getLanguageClient();
-  if (!lsClient) {
-    console.log('Language server is not available.');
-    return false;
-  }
-
   vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
@@ -131,17 +110,12 @@ const copyStack = async (node: StackTreeItem) => {
     },
     async progress => {
       try {
-        const result = (await lsClient.sendRequest('workspace/executeCommand', {
-          command: `${PYTOOL_MODULE}.copyStack`,
-          arguments: [node.id, newStackName],
-        })) as GenericLSClientResponse;
-
+        const lsClient = LSClient.getInstance();
+        const result = await lsClient.sendLsClientRequest('copyStack', [node.id, newStackName]);
         if ('error' in result && result.error) {
           throw new Error(result.error);
         }
-
         showInformationMessage('Stack copied successfully.');
-
         await StackDataProvider.getInstance().refresh();
       } catch (error: any) {
         if (error.response && error.response.data && error.response.data.message) {

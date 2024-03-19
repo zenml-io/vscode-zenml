@@ -12,7 +12,7 @@
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
 import { PipelineRunTreeItem, PipelineTreeItem } from './PipelineTreeItems';
-import { PipelineRun } from '../../../types/PipelineTypes';
+import { PipelineRun, PipelineRunsResponse } from '../../../types/PipelineTypes';
 import { LSClient } from '../../../services/LSClient';
 import { PYTOOL_MODULE } from '../../../utils/constants';
 import { ErrorMessageResponse } from '../../../types/LSClientResponseTypes';
@@ -27,7 +27,7 @@ export class PipelineDataProvider implements vscode.TreeDataProvider<vscode.Tree
   readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null> =
     this._onDidChangeTreeData.event;
 
-  constructor() { }
+  constructor() {}
 
   /**
    * Retrieves the singleton instance of ServerDataProvider.
@@ -82,15 +82,13 @@ export class PipelineDataProvider implements vscode.TreeDataProvider<vscode.Tree
    */
   async fetchPipelineRuns(): Promise<PipelineTreeItem[]> {
     try {
-      const lsClient = LSClient.getInstance().getLanguageClient();
-      if (!lsClient) {
+      const lsClient = LSClient.getInstance();
+      if (!lsClient.getLanguageClient()) {
         return [];
       }
 
-      const pipelineRuns: PipelineRun[] | ErrorMessageResponse = await lsClient.sendRequest('workspace/executeCommand', {
-        command: `${PYTOOL_MODULE}.getPipelineRuns`,
-      });
-
+      const pipelineRuns =
+        await lsClient.sendLsClientRequest<PipelineRunsResponse>('getPipelineRuns');
       if ('error' in pipelineRuns) {
         return [];
       }
