@@ -24,10 +24,22 @@ import { ZenExtension } from '../../services/ZenExtension';
 export const registerStackCommands = (context: vscode.ExtensionContext) => {
   const commands = [
     registerCommand('zenml.refreshStackView', async () => await stackCommands.refreshStackView()),
-    registerCommand('zenml.refreshActiveStack', async () => await stackCommands.refreshActiveStack()),
-    registerCommand('zenml.renameStack', async (node: StackTreeItem) => await stackCommands.renameStack(node)),
-    registerCommand('zenml.setActiveStack', async (node: StackTreeItem) => await stackCommands.setActiveStack(node)),
-    registerCommand('zenml.copyStack', async (node: StackTreeItem) => await stackCommands.copyStack(node))
+    registerCommand(
+      'zenml.refreshActiveStack',
+      async () => await stackCommands.refreshActiveStack()
+    ),
+    registerCommand(
+      'zenml.renameStack',
+      async (node: StackTreeItem) => await stackCommands.renameStack(node)
+    ),
+    registerCommand(
+      'zenml.setActiveStack',
+      async (node: StackTreeItem) => await stackCommands.setActiveStack(node)
+    ),
+    registerCommand(
+      'zenml.copyStack',
+      async (node: StackTreeItem) => await stackCommands.copyStack(node)
+    ),
   ];
 
   commands.forEach(cmd => {

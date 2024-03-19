@@ -24,8 +24,11 @@ export const registerServerCommands = (context: vscode.ExtensionContext) => {
   const commands = [
     registerCommand('zenml.connectServer', async () => await serverCommands.connectServer()),
     registerCommand('zenml.disconnectServer', async () => await serverCommands.disconnectServer()),
-    registerCommand('zenml.refreshServerStatus', async () => await serverCommands.refreshServerStatus())
-  ]
+    registerCommand(
+      'zenml.refreshServerStatus',
+      async () => await serverCommands.refreshServerStatus()
+    ),
+  ];
 
   commands.forEach(cmd => {
     context.subscriptions.push(cmd);

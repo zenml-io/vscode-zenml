@@ -14,11 +14,9 @@ import * as vscode from 'vscode';
 import { promptAndStoreServerUrl } from './utils';
 import { LSClient } from '../../services/LSClient';
 import { getZenMLServerUrl } from '../../utils/global';
-import { PYTOOL_MODULE } from '../../utils/constants';
 import { EventBus } from '../../services/EventBus';
 import {
   ConnectServerResponse,
-  GenericLSClientResponse,
   RestServerConnectionResponse,
 } from '../../types/LSClientResponseTypes';
 import { showInformationMessage } from '../../utils/notifications';
@@ -39,12 +37,6 @@ const connectServer = async (): Promise<boolean> => {
     return false;
   }
 
-  const lsClient = LSClient.getInstance().getLanguageClient();
-  if (!lsClient) {
-    vscode.window.showErrorMessage('Language server is not available.');
-    return false;
-  }
-
   return new Promise<boolean>(resolve => {
     vscode.window.withProgress(
       {
@@ -56,10 +48,10 @@ const connectServer = async (): Promise<boolean> => {
         progress.report({ increment: 0 });
 
         try {
-          const result = (await lsClient.sendRequest('workspace/executeCommand', {
-            command: `${PYTOOL_MODULE}.connect`,
-            arguments: [url],
-          })) as ConnectServerResponse;
+          const lsClient = LSClient.getInstance();
+          const result = await lsClient.sendLsClientRequest<ConnectServerResponse>('connect', [
+            url,
+          ]);
 
           if (result && 'error' in result && result.error) {
             throw new Error(result.error);
@@ -102,22 +94,12 @@ const disconnectServer = async (): Promise<void> => {
       cancellable: false,
     },
     async () => {
-      const lsClientInstance = LSClient.getInstance();
-      const lsClient = lsClientInstance.getLanguageClient();
-
-      if (!lsClient) {
-        vscode.window.showErrorMessage('Language server is not available.');
-        return;
-      }
       try {
-        const result = (await lsClient.sendRequest('workspace/executeCommand', {
-          command: `${PYTOOL_MODULE}.disconnect`,
-        })) as GenericLSClientResponse;
-
-        if ('error' in result) {
+        const lsClient = LSClient.getInstance();
+        const result = await lsClient.sendLsClientRequest('disconnect');
+        if ('error' in result && result.error) {
           throw new Error(result.error);
         }
-
         await refreshUtils.refreshUIComponents();
       } catch (error: any) {
         console.error('Failed to disconnect from ZenML server:', error);

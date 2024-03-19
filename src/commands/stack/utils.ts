@@ -25,22 +25,15 @@ import { showErrorMessage, showInformationMessage } from '../../utils/notificati
 export const switchActiveStack = async (
   stackNameOrId: string
 ): Promise<{ id: string; name: string } | undefined> => {
-  const lsClient = LSClient.getInstance().getLanguageClient();
-  if (!lsClient) {
-    throw new Error('Language client not found');
-  }
-
   try {
-    const result = (await lsClient.sendRequest('workspace/executeCommand', {
-      command: `${PYTOOL_MODULE}.switchActiveStack`,
-      arguments: [stackNameOrId],
-    })) as SetActiveStackResponse;
-
+    const lsClient = LSClient.getInstance();
+    const result = await lsClient.sendLsClientRequest<SetActiveStackResponse>('switchActiveStack', [
+      stackNameOrId,
+    ]);
     if ('error' in result) {
       console.log('Error in switchZenMLStack result', result);
       throw new Error(result.error);
     }
-
     const { id, name } = result;
     await storeActiveStack(id, name);
     return { id, name };
@@ -51,25 +44,14 @@ export const switchActiveStack = async (
 };
 
 /**
- * Retrieves the currently active ZenML stack. If the active stack is stored in the global configuration,
- * it uses that information. Otherwise, it fetches the active stack using a Python script.
+ * Gets the id and name of the active ZenML stack.
  *
  * @returns {Promise<{id: string, name: string}>} A promise that resolves with the id and name of the active stack, or undefined on error;
  */
 export const getActiveStack = async (): Promise<{ id: string; name: string } | undefined> => {
-  const lsClientInstance = LSClient.getInstance();
-  const lsClient = lsClientInstance.getLanguageClient();
-
-  if (!lsClient) {
-    console.log('getActiveStack: Language client not ready yet.');
-    // showErrorMessage('Language server is not available.');
-    return;
-  }
-
   try {
-    const result = (await lsClient.sendRequest('workspace/executeCommand', {
-      command: `${PYTOOL_MODULE}.getActiveStack`,
-    })) as GetActiveStackResponse;
+    const lsClient = LSClient.getInstance();
+    const result = await lsClient.sendLsClientRequest<GetActiveStackResponse>('getActiveStack');
 
     if ('error' in result) {
       throw new Error(result.error);

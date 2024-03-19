@@ -23,9 +23,15 @@ import { ZenExtension } from '../../services/ZenExtension';
  */
 export const registerPipelineCommands = (context: vscode.ExtensionContext) => {
   const commands = [
-    registerCommand('zenml.refreshPipelineView', async () => await pipelineCommands.refreshPipelineView()),
-    registerCommand('zenml.deletePipelineRun', async (node: PipelineTreeItem) => await pipelineCommands.deletePipelineRun(node))
-  ]
+    registerCommand(
+      'zenml.refreshPipelineView',
+      async () => await pipelineCommands.refreshPipelineView()
+    ),
+    registerCommand(
+      'zenml.deletePipelineRun',
+      async (node: PipelineTreeItem) => await pipelineCommands.deletePipelineRun(node)
+    ),
+  ];
 
   commands.forEach(cmd => {
     context.subscriptions.push(cmd);
