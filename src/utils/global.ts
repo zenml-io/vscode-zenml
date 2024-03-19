@@ -107,7 +107,6 @@ export async function updateDefaultPythonInterpreterPath(interpreterPath: string
   await config.update('defaultInterpreterPath', interpreterPath, vscode.ConfigurationTarget.Global);
 }
 
-
 /**
  * Updates the ZenML Python interpreter setting.
  * @param interpreterPath The new path to the python environminterpreterent.
@@ -116,7 +115,6 @@ export async function updatePytoolInterpreter(interpreterPath: string): Promise<
   const config = vscode.workspace.getConfiguration(PYTOOL_MODULE);
   await config.update('interpreter', [interpreterPath], vscode.ConfigurationTarget.Workspace);
 }
-
 
 /**
  * Retrieves the virtual environment path from the VSCode workspace configuration.
