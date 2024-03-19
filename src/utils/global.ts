@@ -12,6 +12,7 @@
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
 import { RestZenServerStoreConfig, ZenServerStoreConfig } from '../types/ServerInfoTypes';
+import { PYTOOL_MODULE } from './constants';
 
 /**
  * Resets the ZenML Server URL and access token in the VSCode workspace configuration.
@@ -96,3 +97,33 @@ export const updateAccessToken = async (accessToken: string): Promise<void> => {
     throw new Error('Failed to update ZenML access token.');
   }
 };
+
+/**
+ * Updates the default Python interpreter path globally.
+ * @param interpreterPath The new default Python interpreter path.
+ */
+export async function updateDefaultPythonInterpreterPath(interpreterPath: string): Promise<void> {
+  const config = vscode.workspace.getConfiguration('python');
+  await config.update('defaultInterpreterPath', interpreterPath, vscode.ConfigurationTarget.Global);
+}
+
+
+/**
+ * Updates the ZenML Python interpreter setting.
+ * @param interpreterPath The new path to the python environminterpreterent.
+ */
+export async function updatePytoolInterpreter(interpreterPath: string): Promise<void> {
+  const config = vscode.workspace.getConfiguration(PYTOOL_MODULE);
+  await config.update('interpreter', [interpreterPath], vscode.ConfigurationTarget.Workspace);
+}
+
+
+/**
+ * Retrieves the virtual environment path from the VSCode workspace configuration.
+ * @returns The path to the virtual environment.
+ */
+export function getDefaultPythonInterpreterPath(): string {
+  const config = vscode.workspace.getConfiguration('python');
+  const defaultInterpreterPath = config.get<string>('defaultInterpreterPath', '');
+  return defaultInterpreterPath;
+}

@@ -10,38 +10,47 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import * as vscode from 'vscode';
-import * as path from 'path';
+import * as cp from 'child_process';
 import * as fs from 'fs-extra';
-import ZenMLStatusBar from '../views/statusBar';
-import { PipelineDataProvider, ServerDataProvider, StackDataProvider } from '../views/activityBar';
+import * as path from 'path';
+import { promisify } from 'util';
+import * as vscode from 'vscode';
+
+import { registerPipelineCommands } from '../commands/pipelines/registry';
 import { registerServerCommands } from '../commands/server/registry';
 import { registerStackCommands } from '../commands/stack/registry';
-import { registerPipelineCommands } from '../commands/pipelines/registry';
 import { EXTENSION_ROOT_DIR } from '../common/constants';
 import { registerLogger, traceLog, traceVerbose } from '../common/log/logging';
-import { initializePython, onDidChangePythonInterpreter } from '../common/python';
+import { IInterpreterDetails, getInterpreterDetails, initializePython, onDidChangePythonInterpreter } from '../common/python';
+import { runServer } from '../common/server';
+import { checkIfConfigurationChanged, updateWorkspaceInterpreterSettings } from '../common/settings';
+import { registerLanguageStatusItem } from '../common/status';
+import { getLSClientTraceLevel } from '../common/utilities';
 import {
   createOutputChannel,
   onDidChangeConfiguration,
   registerCommand,
 } from '../common/vscodeapi';
-import { getLSClientTraceLevel } from '../common/utilities';
-import { checkIfConfigurationChanged, getInterpreterFromSetting } from '../common/settings';
-import { registerLanguageStatusItem } from '../common/status';
-import { runServer } from '../common/server';
+import { updateDefaultPythonInterpreterPath } from '../utils/global';
+import { refreshUIComponents } from '../utils/refresh';
+import { PipelineDataProvider, ServerDataProvider, StackDataProvider } from '../views/activityBar';
+import ZenMLStatusBar from '../views/statusBar';
 import { LSClient } from './LSClient';
+
+const exec = promisify(cp.exec);
+
 
 export interface IServerInfo {
   name: string;
   module: string;
 }
 
-export class ExtensionEnvironment {
+export class ZenExtension {
   private static context: vscode.ExtensionContext;
   static commandDisposables: vscode.Disposable[] = [];
   static viewDisposables: vscode.Disposable[] = [];
 
+  private static lsClient: LSClient;
   private static outputChannel: vscode.LogOutputChannel;
   private static serverId: string;
   private static serverName: string;
@@ -63,12 +72,14 @@ export class ExtensionEnvironment {
    *
    * @param context The extension context provided by VS Code on activation.
    */
-  static initialize(context: vscode.ExtensionContext): void {
+  static initialize(context: vscode.ExtensionContext, lsClient: LSClient): void {
     this.context = context;
+    this.lsClient = lsClient;
     const serverDefaults = this.loadServerDefaults();
     this.serverName = serverDefaults.name;
     this.serverId = serverDefaults.module;
 
+    this.deferredInitialize(true);
     this.setupLoggingAndTrace();
     this.subscribeToCoreEvents();
   }
@@ -76,30 +87,46 @@ export class ExtensionEnvironment {
   /**
    * Deferred initialization tasks to be run after initializing other tasks.
    */
-  static deferredInitialize(): void {
+  static deferredInitialize(initialCall: boolean = false): void {
     setImmediate(async () => {
-      const interpreter = getInterpreterFromSetting(this.serverId);
-      if (!interpreter) {
-        traceLog(`Python extension loading`);
-        await initializePython(this.context.subscriptions);
-        traceLog(`Python extension loaded`);
+      const interpreterDetails = await getInterpreterDetails();
+      if (interpreterDetails.path) {
+        await this.updateGlobalSettings(interpreterDetails.path[0]);
       } else {
-        await runServer(this.serverId, this.serverName, this.outputChannel);
+        // If no interpreter details are found, listen for changes from the Python extension
+        traceLog(`Setting up Python extension listener.`);
+        await initializePython(this.context.subscriptions);
       }
-      this.setupViewsAndCommands();
+      // Start the server with the current or updated interpreter settings
+      await runServer(this.serverId, this.serverName, this.outputChannel, this.lsClient);
+      // Set up views and commands
+      if (initialCall) {
+        await this.setupViewsAndCommands();
+      }
     });
+  }
+
+  /**
+   * Updates the global settings for the ZenML extension.
+   * 
+   * @param pythonPath The new Python interpreter path.
+   */
+  static async updateGlobalSettings(pythonPath: string): Promise<void> {
+    await updateDefaultPythonInterpreterPath(pythonPath);
+    await updateWorkspaceInterpreterSettings(pythonPath);
   }
 
   /**
    * Sets up the views and commands for the ZenML extension.
    */
-  private static setupViewsAndCommands(): void {
+  static async setupViewsAndCommands(): Promise<void> {
     ZenMLStatusBar.getInstance();
     this.dataProviders.forEach((provider, viewId) => {
       const view = vscode.window.createTreeView(viewId, { treeDataProvider: provider });
       this.viewDisposables.push(view);
     });
     this.registries.forEach(register => register(this.context));
+    await refreshUIComponents();
   }
 
   /**
@@ -107,19 +134,24 @@ export class ExtensionEnvironment {
    */
   private static subscribeToCoreEvents(): void {
     this.context.subscriptions.push(
-      onDidChangePythonInterpreter(async () => {
-        await runServer(this.serverId, this.serverName, this.outputChannel);
+      onDidChangePythonInterpreter(async (interpreterDetails: IInterpreterDetails) => {
+        if (interpreterDetails.path) {
+          console.log('Interpreter changed, restarting LSP server...');
+          await this.updateGlobalSettings(interpreterDetails.path[0]);
+          await runServer(this.serverId, this.serverName, this.outputChannel, this.lsClient);
+        }
       }),
       registerCommand(`${this.serverId}.showLogs`, async () => {
         this.outputChannel.show();
       }),
       onDidChangeConfiguration(async (e: vscode.ConfigurationChangeEvent) => {
         if (checkIfConfigurationChanged(e, this.serverId)) {
-          await runServer(this.serverId, this.serverName, this.outputChannel);
+          console.log('Configuration changed, restarting LSP server...', e);
+          await runServer(this.serverId, this.serverName, this.outputChannel, this.lsClient);
         }
       }),
       registerCommand(`${this.serverId}.restart`, async () => {
-        await runServer(this.serverId, this.serverName, this.outputChannel);
+        await runServer(this.serverId, this.serverName, this.outputChannel, this.lsClient);
       }),
       registerLanguageStatusItem(this.serverId, this.serverName, `${this.serverId}.showLogs`)
     );
@@ -180,9 +212,4 @@ export class ExtensionEnvironment {
     console.log('Features deactivated due to unmet requirements.');
   }
 
-  static registerRestartServer() {
-    this.context.subscriptions.push(vscode.commands.registerCommand('zenml.restartServer', async () => {
-      await runServer(this.serverId, this.serverName, this.outputChannel);
-    }));
-  };
 }

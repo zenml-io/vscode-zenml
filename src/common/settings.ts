@@ -13,11 +13,15 @@
 import {
   ConfigurationChangeEvent,
   ConfigurationScope,
+  ConfigurationTarget,
   WorkspaceConfiguration,
   WorkspaceFolder,
+  workspace
 } from 'vscode';
 import { getInterpreterDetails } from './python';
 import { getConfiguration, getWorkspaceFolders } from './vscodeapi';
+import path from 'path';
+import * as fs from 'fs';
 
 export interface ISettings {
   cwd: string;
@@ -107,6 +111,8 @@ export async function getWorkspaceSettings(
     showNotifications: config.get<string>(`showNotifications`) ?? 'off',
   };
 
+  // console.log("WORKSPACE SETTINGS: ", workspaceSetting);
+
   return workspaceSetting;
 }
 
@@ -129,6 +135,9 @@ export async function getGlobalSettings(
     }
   }
 
+  const debugInterpreter = (await getInterpreterDetails()).path ?? [];
+  console.log("Global Interpreter: ", debugInterpreter)
+
   const setting = {
     cwd: process.cwd(),
     workspace: process.cwd(),
@@ -138,6 +147,8 @@ export async function getGlobalSettings(
     importStrategy: getGlobalValue<string>(config, 'importStrategy', 'useBundled'),
     showNotifications: getGlobalValue<string>(config, 'showNotifications', 'off'),
   };
+
+  // console.log("GLOBAL SETTINGS: ", setting);
 
   return setting;
 }
@@ -156,3 +167,21 @@ export function checkIfConfigurationChanged(
   const changed = settings.map(s => e.affectsConfiguration(s));
   return changed.includes(true);
 }
+
+export async function updateWorkspaceInterpreterSettings(interpreterPath: string): Promise<void> {
+  const workspaceFolders = workspace.workspaceFolders || [];
+  for (const workspaceFolder of workspaceFolders) {
+    const workspaceConfig = workspace.getConfiguration('zenml-python', workspaceFolder.uri);
+    await workspaceConfig.update('interpreter', [interpreterPath], ConfigurationTarget.Workspace);
+
+    let workspaceSettings: ISettings = await getWorkspaceSettings('zenml-python', workspaceFolder, true)
+    const settingsPath = path.join(workspaceFolders[0].uri.fsPath, '.vscode', 'settings.json');
+    if (fs.existsSync(settingsPath)) {
+      const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+      workspaceSettings['interpreter'] = [interpreterPath];
+      fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 4), 'utf8');
+    }
+  }
+}
+
+
