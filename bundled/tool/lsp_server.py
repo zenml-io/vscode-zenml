@@ -13,10 +13,10 @@
 """Implementation of tool support over LSP."""
 from __future__ import annotations
 
-import subprocess
 import json
 import os
 import pathlib
+import subprocess
 import sys
 from typing import Any, Dict, Optional, Tuple
 
@@ -60,12 +60,10 @@ def is_zenml_installed() -> bool:
 # **********************************************************
 # pylint: disable=wrong-import-position,import-error
 import lsp_jsonrpc as jsonrpc
-import lsp_utils as utils
 import lsprotocol.types as lsp
-from pygls import uris, workspace
 from lsp_zenml import ZenMLLanguageServer
+from pygls import uris, workspace
 from zenml_client import ZenMLClient
-
 
 WORKSPACE_SETTINGS = {}
 GLOBAL_SETTINGS = {}
@@ -100,12 +98,13 @@ zenml_init_error = {
 }
 
 
+from watchdog.events import FileSystemEventHandler
+
 # **********************************************************
 # ConfigFileChangeHandler: Observe config.yaml changes
 # **********************************************************
 # pylint: disable=wrong-import-position,import-error
 from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
 
 
 class ConfigFileChangeHandler(FileSystemEventHandler):
@@ -274,14 +273,11 @@ def initialize(params: lsp.InitializeParams) -> None:
 
     interpreter_path = WORKSPACE_SETTINGS["/"]["interpreter"][0]
     try:
-        log_to_output(f"Desired Interpreter: {interpreter_path}")
-        LSP_SERVER.notify_user(f"Desired Interpreter: {interpreter_path}")
         LSP_SERVER.update_python_interpreter(interpreter_path)
     except Exception as e:
         log_error(
             f"Failed to update Python interpreter with {str(interpreter_path)}: {str(e)}"
         )
-        LSP_SERVER.notify_user(f"Failed to update Python interpreter: {str(e)}")
 
     if LSP_SERVER.is_zenml_installed():
         zenml_client = ZenMLClient()
