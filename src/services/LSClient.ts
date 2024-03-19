@@ -10,7 +10,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import * as vscode from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
 import { ZenServerDetails } from '../types/ServerInfoTypes';
 import { EventBus } from './EventBus';
@@ -34,11 +33,10 @@ export class LSClient {
   /**
    * Updates the language client.
    *
-   * @param {LanguageClient} lsClient The new language client.
+   * @param {LanguageClient} updatedCLient The new language client.
    */
-  public updateClient(lsClient: LanguageClient): void {
-    this.client = lsClient;
-    this.setupNotificationListeners(this.client);
+  public updateClient(updatedCLient: LanguageClient): void {
+    this.client = updatedCLient;
   }
 
   /**
@@ -52,6 +50,7 @@ export class LSClient {
         await this.client.start();
         console.log('Language client started successfully.');
         this.eventBus.emit('lsClientReady', true);
+        this.setupNotificationListeners(this.client);
       }
     } catch (error) {
       console.error('Failed to start the language client:', error);
@@ -66,20 +65,18 @@ export class LSClient {
    * @returns void
    */
   private setupNotificationListeners(lsClient: LanguageClient): void {
-    lsClient.onNotification('zenml/requirementNotMet', params => {
-      console.log('ZenML Python Client Requirements Not Met. Check Console for Details.');
-      vscode.window.showErrorMessage(params.message);
-      this.eventBus.emit('zenmlRequirementsNotMet');
+    lsClient.onNotification('zenml/ready', params => {
+      console.log('Received zenml/ready notification:', params);
+
+      this.eventBus.emit('zenml/ready', params);
     });
 
     lsClient.onNotification('zenml/configUpdated', async params => {
-      this.eventBus.emit('serverConfigUpdated', {
+      console.log('Received zenml/configUpdated notification:', params);
+
+      this.eventBus.emit('zenml/configUpdated', {
         updatedServerConfig: params.serverDetails as ZenServerDetails,
       });
-    });
-
-    lsClient.onNotification('zenml/ready', async params => {
-      this.eventBus.emit('zenmlClientAvailable', true);
     });
   }
 
@@ -95,3 +92,4 @@ export class LSClient {
     return this.instance;
   }
 }
+

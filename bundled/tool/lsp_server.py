@@ -13,15 +13,12 @@
 """Implementation of tool support over LSP."""
 from __future__ import annotations
 
+import subprocess
 import json
 import os
 import pathlib
 import sys
 from typing import Any, Dict, Optional, Tuple
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
-from zenml_language_server import ZenMLLanguageServer
-from zenml_client import ZenMLClient
 
 
 # **********************************************************
@@ -42,6 +39,22 @@ update_sys_path(
     os.getenv("LS_IMPORT_STRATEGY", "useBundled"),
 )
 
+
+# **********************************************************
+# Checks if ZenML is installed.
+# **********************************************************
+def is_zenml_installed() -> bool:
+    try:
+        subprocess.check_call(
+            [sys.executable, "-c", "import zenml"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return True
+    except subprocess.CalledProcessError:
+        return False
+
+
 # **********************************************************
 # Imports needed for the language server goes below this.
 # **********************************************************
@@ -50,6 +63,9 @@ import lsp_jsonrpc as jsonrpc
 import lsp_utils as utils
 import lsprotocol.types as lsp
 from pygls import uris, workspace
+from lsp_zenml import ZenMLLanguageServer
+from zenml_client import ZenMLClient
+
 
 WORKSPACE_SETTINGS = {}
 GLOBAL_SETTINGS = {}
@@ -87,6 +103,11 @@ zenml_init_error = {
 # **********************************************************
 # ConfigFileChangeHandler: Observe config.yaml changes
 # **********************************************************
+# pylint: disable=wrong-import-position,import-error
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+
+
 class ConfigFileChangeHandler(FileSystemEventHandler):
     def on_modified(self, event):
         if event.src_path == str(get_global_config_file_path()):
@@ -166,7 +187,7 @@ def connect(args) -> dict:
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.disconnect")
 @zenml_command
-def disconnect(args) -> dict:
+def disconnect(*args, **kwargs) -> dict:
     return zenml_client.disconnect(args)
 
 
@@ -212,6 +233,14 @@ def delete_pipeline_run(args) -> dict:
     return zenml_client.delete_pipeline_run(args)
 
 
+@LSP_SERVER.command(f"{TOOL_MODULE}.checkInstallation")
+def check_zenml_installation(*args, **kwargs) -> None:
+    """Handles a request from the client to check the ZenML installation."""
+    # adjust parameters or extract python interpreter from params if needed
+    result = LSP_SERVER.is_zenml_installed()
+    LSP_SERVER.send_notification("zenml/ready", {"ready": result})
+
+
 # **********************************************************
 # Required Language Server Initialization and Exit handlers.
 # **********************************************************
@@ -235,18 +264,38 @@ def initialize(params: lsp.InitializeParams) -> None:
     log_to_output(
         f"Global settings:\r\n{json.dumps(GLOBAL_SETTINGS, indent=4, ensure_ascii=False)}\r\n"
     )
+    log_to_output(
+        f"Workspace settings:\r\n{json.dumps(WORKSPACE_SETTINGS, indent=4, ensure_ascii=False)}\r\n"
+    )
 
-    if LSP_SERVER.check_zenml_version():
+    LSP_SERVER.send_custom_notification(
+        "sanityCheck", {"message": "ZenML Language Server is initializing."}
+    )
+
+    interpreter_path = WORKSPACE_SETTINGS["/"]["interpreter"][0]
+    try:
+        log_to_output(f"Desired Interpreter: {interpreter_path}")
+        LSP_SERVER.notify_user(f"Desired Interpreter: {interpreter_path}")
+        LSP_SERVER.update_python_interpreter(interpreter_path)
+    except Exception as e:
+        log_error(
+            f"Failed to update Python interpreter with {str(interpreter_path)}: {str(e)}"
+        )
+        LSP_SERVER.notify_user(f"Failed to update Python interpreter: {str(e)}")
+
+    if LSP_SERVER.is_zenml_installed():
         zenml_client = ZenMLClient()
         zenml_initialized = True
-        log_to_output("ZenML version check passed. ZenMLClient initialized.")
+        LSP_SERVER.send_custom_notification(
+            "zenml/ready", {"ready": True, "installed": True}
+        )
+        log_to_output("ZenML is installed and ready.")
     else:
         zenml_initialized = False
-        log_error("ZenML version check failed. ZenML features will be unavailable.")
-
-    if zenml_initialized:
-        watch_zenml_config_yaml()
-    else:
+        LSP_SERVER.send_custom_notification(
+            "zenml/ready", {"ready": False, "installed": False}
+        )
+        log_error("ZenML is not installed. ZenML features will be unavailable.")
         log_error("Skipping file watch due to ZenML version check failure.")
 
 
@@ -295,51 +344,6 @@ def _update_workspace_settings(settings):
         }
 
 
-def _get_settings_by_path(file_path: pathlib.Path):
-    workspaces = {s["workspaceFS"] for s in WORKSPACE_SETTINGS.values()}
-
-    while file_path != file_path.parent:
-        str_file_path = str(file_path)
-        if str_file_path in workspaces:
-            return WORKSPACE_SETTINGS[str_file_path]
-        file_path = file_path.parent
-
-    setting_values = list(WORKSPACE_SETTINGS.values())
-    return setting_values[0]
-
-
-def _get_document_key(document: workspace.Document):
-    if WORKSPACE_SETTINGS:
-        document_workspace = pathlib.Path(document.path)
-        workspaces = {s["workspaceFS"] for s in WORKSPACE_SETTINGS.values()}
-
-        # Find workspace settings for the given file.
-        while document_workspace != document_workspace.parent:
-            if str(document_workspace) in workspaces:
-                return str(document_workspace)
-            document_workspace = document_workspace.parent
-
-    return None
-
-
-def _get_settings_by_document(document: workspace.Document | None):
-    if document is None or document.path is None:
-        return list(WORKSPACE_SETTINGS.values())[0]
-
-    key = _get_document_key(document)
-    if key is None:
-        # This is either a non-workspace file or there is no workspace.
-        key = os.fspath(pathlib.Path(document.path).parent)
-        return {
-            "cwd": key,
-            "workspaceFS": key,
-            "workspace": uris.from_fs_path(key),
-            **_get_global_defaults(),
-        }
-
-    return WORKSPACE_SETTINGS[str(key)]
-
-
 # *****************************************************
 # Internal execution APIs.
 # *****************************************************
@@ -354,96 +358,6 @@ def get_cwd(settings: Dict[str, Any], document: Optional[workspace.Document]) ->
         return settings["workspaceFS"]
 
     return settings["cwd"]
-
-
-def _to_run_result_with_logging(rpc_result: jsonrpc.RpcRunResult) -> utils.RunResult:
-    error = ""
-    if rpc_result.exception:
-        log_error(rpc_result.exception)
-        error = rpc_result.exception
-    elif rpc_result.stderr:
-        log_to_output(rpc_result.stderr)
-        error = rpc_result.stderr
-    return utils.RunResult(rpc_result.stdout, error)
-
-
-def _run_tool(extra_args: Sequence[str]) -> utils.RunResult:
-    """Runs tool."""
-    # deep copy here to prevent accidentally updating global settings.
-    settings = copy.deepcopy(_get_settings_by_document(None))
-
-    code_workspace = settings["workspaceFS"]
-    cwd = settings["workspaceFS"]
-
-    use_path = False
-    use_rpc = False
-    if len(settings["path"]) > 0:
-        # 'path' setting takes priority over everything.
-        use_path = True
-        argv = settings["path"]
-    elif len(settings["interpreter"]) > 0 and not utils.is_current_interpreter(
-        settings["interpreter"][0]
-    ):
-        # If there is a different interpreter set use JSON-RPC to the subprocess
-        # running under that interpreter.
-        argv = [TOOL_MODULE]
-        use_rpc = True
-    else:
-        # if the interpreter is same as the interpreter running this
-        # process then run as module.
-        argv = [TOOL_MODULE]
-
-    argv += extra_args
-
-    if use_path:
-        # This mode is used when running executables.
-        log_to_output(" ".join(argv))
-        log_to_output(f"CWD Server: {cwd}")
-        result = utils.run_path(argv=argv, use_stdin=True, cwd=cwd)
-        if result.stderr:
-            log_to_output(result.stderr)
-    elif use_rpc:
-        # This mode is used if the interpreter running this server is different from
-        # the interpreter used for running this server.
-        log_to_output(" ".join(settings["interpreter"] + ["-m"] + argv))
-        log_to_output(f"CWD Linter: {cwd}")
-        result = jsonrpc.run_over_json_rpc(
-            workspace=code_workspace,
-            interpreter=settings["interpreter"],
-            module=TOOL_MODULE,
-            argv=argv,
-            use_stdin=True,
-            cwd=cwd,
-        )
-        if result.exception:
-            log_error(result.exception)
-            result = utils.RunResult(result.stdout, result.stderr)
-        elif result.stderr:
-            log_to_output(result.stderr)
-    else:
-        # In this mode the tool is run as a module in the same process as the language server.
-        log_to_output(" ".join([sys.executable, "-m"] + argv))
-        log_to_output(f"CWD Linter: {cwd}")
-        # This is needed to preserve sys.path, in cases where the tool modifies
-        # sys.path and that might not work for this scenario next time around.
-        with utils.substitute_attr(sys, "path", sys.path[:]):
-            try:
-                # TODO: `utils.run_module` is equivalent to running `python -m <pytool-module>`.
-                # If your tool supports a programmatic API then replace the function below
-                # with code for your tool. You can also use `utils.run_api` helper, which
-                # handles changing working directories, managing io streams, etc.
-                # Also update `_run_tool_on_document` function and `utils.run_module` in `lsp_runner.py`.
-                result = utils.run_module(
-                    module=TOOL_MODULE, argv=argv, use_stdin=True, cwd=cwd
-                )
-            except Exception:
-                log_error(traceback.format_exc(chain=True))
-                raise
-        if result.stderr:
-            log_to_output(result.stderr)
-
-    log_to_output(f"\r\n{result.stdout}\r\n")
-    return result
 
 
 # *****************************************************
