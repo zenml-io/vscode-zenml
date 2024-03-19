@@ -27,7 +27,7 @@ export class MockLSClient {
   constructor(eventBus: MockEventBus) {
     this.eventBus = eventBus;
     this.mockLanguageClient = {
-      start: async () => {},
+      start: async () => { },
       onNotification: (type: string, handler: (params: any) => void) => {
         this.notificationHandlers.set(type, handler);
       },
@@ -98,7 +98,7 @@ export class MockLSClient {
     if (handler) {
       handler(params);
       if (type === 'zenml/configUpdated') {
-        this.eventBus.emit('serverConfigUpdated', {
+        this.eventBus.emit('zenml/configUpdated', {
           updatedServerConfig: params,
         });
       } else if (type === 'zenml/requirementNotMet') {

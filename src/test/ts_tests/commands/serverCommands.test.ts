@@ -19,6 +19,7 @@ import { MockLSClient } from '../__mocks__/MockLSClient';
 import { MockEventBus } from '../__mocks__/MockEventBus';
 import { EventBus } from '../../../services/EventBus';
 import { PYTOOL_MODULE } from '../../../utils/constants';
+import { refreshUtils } from '../../../utils/refresh';
 
 suite('Server Commands Tests', () => {
   let sandbox: sinon.SinonSandbox;
@@ -28,6 +29,7 @@ suite('Server Commands Tests', () => {
   let emitSpy: sinon.SinonSpy;
   let configurationMock: any;
   let showInputBoxStub: sinon.SinonStub;
+  let refreshUIComponentsStub: sinon.SinonStub;
 
   setup(() => {
     sandbox = sinon.createSandbox();
@@ -37,6 +39,7 @@ suite('Server Commands Tests', () => {
     sandbox.stub(EventBus, 'getInstance').returns(mockEventBus);
     showInputBoxStub = sandbox.stub(vscode.window, 'showInputBox');
     showErrorMessageStub = sandbox.stub(vscode.window, 'showErrorMessage');
+    refreshUIComponentsStub = sandbox.stub(refreshUtils, 'refreshUIComponents').resolves();
 
     configurationMock = {
       get: sandbox.stub().withArgs('serverUrl').returns('https://zenml.example.com'),
@@ -76,7 +79,7 @@ suite('Server Commands Tests', () => {
 
     await serverCommands.disconnectServer();
 
-    sinon.assert.calledOnceWithExactly(emitSpy, 'refreshServerStatus');
+    sinon.assert.calledOnce(refreshUIComponentsStub);
   });
 
   test('connectServer fails with incorrect URL', async () => {

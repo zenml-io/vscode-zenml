@@ -43,7 +43,7 @@ suite('Server Configuration Update Flow Tests', () => {
         await refreshUIComponentsStub();
       }
     });
-    mockEventBus.on('serverConfigUpdated', async (updatedServerConfig: ZenServerDetails) => {
+    mockEventBus.on('zenml/configUpdated', async (updatedServerConfig: ZenServerDetails) => {
       if (mockEventBus.lsClientReady) {
         await refreshUIComponentsStub(updatedServerConfig);
       }
@@ -69,7 +69,7 @@ suite('Server Configuration Update Flow Tests', () => {
     mockLSClientInstance.triggerNotification(mockNotificationType, mockData);
   });
 
-  test('ServerConfigUpdated event updates global configuration and refreshes UI', async () => {
+  test('zenml/configUpdated event updates global configuration and refreshes UI', async () => {
     mockLSClientInstance.mockLanguageClient.onNotification(
       'zenml/configUpdated',
       (data: ZenServerDetails) => {
