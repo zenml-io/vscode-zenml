@@ -15,6 +15,7 @@ import { PipelineRunTreeItem, PipelineTreeItem } from './PipelineTreeItems';
 import { PipelineRun } from '../../../types/PipelineTypes';
 import { LSClient } from '../../../services/LSClient';
 import { PYTOOL_MODULE } from '../../../utils/constants';
+import { ErrorMessageResponse } from '../../../types/LSClientResponseTypes';
 
 /**
  * Provides data for the pipeline run tree view, displaying detailed information about each pipeline run.
@@ -26,7 +27,7 @@ export class PipelineDataProvider implements vscode.TreeDataProvider<vscode.Tree
   readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null> =
     this._onDidChangeTreeData.event;
 
-  constructor() {}
+  constructor() { }
 
   /**
    * Retrieves the singleton instance of ServerDataProvider.
@@ -86,9 +87,13 @@ export class PipelineDataProvider implements vscode.TreeDataProvider<vscode.Tree
         return [];
       }
 
-      const pipelineRuns: PipelineRun[] = await lsClient.sendRequest('workspace/executeCommand', {
+      const pipelineRuns: PipelineRun[] | ErrorMessageResponse = await lsClient.sendRequest('workspace/executeCommand', {
         command: `${PYTOOL_MODULE}.getPipelineRuns`,
       });
+
+      if ('error' in pipelineRuns) {
+        return [];
+      }
 
       return pipelineRuns.map((run: PipelineRun) => {
         const formattedStartTime = new Date(run.startTime).toLocaleString();
@@ -107,7 +112,6 @@ export class PipelineDataProvider implements vscode.TreeDataProvider<vscode.Tree
       });
     } catch (error) {
       console.error('Failed to fetch pipeline runs:', error);
-      vscode.window.showErrorMessage('Failed to fetch pipeline runs. See console for details.');
       return [];
     }
   }

@@ -15,13 +15,14 @@ import { LSClient } from '../../../services/LSClient';
 import { Stack, StackComponent } from '../../../types/StackTypes';
 import { StackComponentTreeItem, StackTreeItem } from './StackTreeItems';
 import { PYTOOL_MODULE } from '../../../utils/constants';
+import { ErrorMessageResponse } from '../../../types/LSClientResponseTypes';
 
 export class StackDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   private static instance: StackDataProvider | null = null;
   private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined | null>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-  constructor() {}
+  constructor() { }
 
   /**
    * Retrieves the singleton instance of ServerDataProvider.
@@ -82,9 +83,13 @@ export class StackDataProvider implements vscode.TreeDataProvider<vscode.TreeIte
         return [];
       }
 
-      let stacks: Stack[] = await lsClient.sendRequest('workspace/executeCommand', {
+      let stacks: Stack[] | ErrorMessageResponse = await lsClient.sendRequest('workspace/executeCommand', {
         command: `${PYTOOL_MODULE}.fetchStacks`,
       });
+
+      if ('error' in stacks) {
+        return [];
+      }
 
       return stacks.map((stack: Stack) => {
         const activeStackId = vscode.workspace
@@ -95,7 +100,6 @@ export class StackDataProvider implements vscode.TreeDataProvider<vscode.TreeIte
       });
     } catch (error) {
       console.error('Failed to fetch stacks with components:', error);
-      vscode.window.showErrorMessage('Failed to fetch stacks. See console for details.');
       return [];
     }
   }
