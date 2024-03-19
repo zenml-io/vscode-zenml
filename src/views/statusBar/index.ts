@@ -44,7 +44,7 @@ export default class ZenMLStatusBar {
    * @returns void
    */
   private subscribeToEvents(): void {
-    this.eventBus.on('serverConfigUpdated', async ({ updatedServerConfig }) => {
+    this.eventBus.on('zenml/configUpdated', async ({ updatedServerConfig }) => {
       this.sync(updatedServerConfig);
       await this.refreshActiveStack();
     });
