@@ -14,6 +14,13 @@ import * as sinon from 'sinon';
 import * as vscode from 'vscode';
 import { ServerStatus, ZenServerDetails } from '../../../types/ServerInfoTypes';
 
+export const MOCK_REST_SERVER_URL = 'https://zenml.example.com';
+export const MOCK_SQL_SERVER_URL = 'sqlite:///path/to/sqlite.db';
+export const MOCK_SERVER_ID = 'test-server';
+export const MOCK_AUTH_SCHEME = 'OAUTH2_PASSWORD_BEARER';
+export const MOCK_ZENML_VERSION = '0.55.5';
+export const MOCK_ACCESS_TOKEN = 'valid_token';
+
 export const MOCK_CONTEXT = {
   subscriptions: [],
   extensionUri: vscode.Uri.parse('file:///extension/path'),
@@ -27,30 +34,30 @@ export const MOCK_CONTEXT = {
 
 export const MOCK_REST_SERVER_STATUS: ServerStatus = {
   isConnected: true,
-  id: 'test-server',
+  id: MOCK_SERVER_ID,
   store_type: 'rest',
-  url: 'https://zenml.example.com',
-  version: '0.55.5',
+  url: MOCK_REST_SERVER_URL,
+  version: MOCK_ZENML_VERSION,
   debug: false,
   deployment_type: 'kubernetes',
   database_type: 'sqlite',
   secrets_store_type: 'sql',
-  auth_scheme: 'OAUTH2_PASSWORD_BEARER',
+  auth_scheme: MOCK_AUTH_SCHEME,
 };
 
 export const MOCK_REST_SERVER_DETAILS: ZenServerDetails = {
   storeInfo: {
-    id: 'test-server',
-    version: '0.55.5',
+    id: MOCK_SERVER_ID,
+    version: MOCK_ZENML_VERSION,
     debug: false,
     deployment_type: 'kubernetes',
     database_type: 'sqlite',
     secrets_store_type: 'sql',
-    auth_scheme: 'OAUTH2_PASSWORD_BEARER',
+    auth_scheme: MOCK_AUTH_SCHEME,
   },
   storeConfig: {
     type: 'rest',
-    url: 'https://zenml.example.com',
+    url: MOCK_REST_SERVER_URL,
     secrets_store: null,
     backup_secrets_store: null,
     username: null,
@@ -64,30 +71,30 @@ export const MOCK_REST_SERVER_DETAILS: ZenServerDetails = {
 
 export const MOCK_SQL_SERVER_STATUS: ServerStatus = {
   isConnected: false,
-  id: 'test-server',
+  id: MOCK_SERVER_ID,
   store_type: 'sql',
-  url: 'sqlite:///path/to/sqlite.db',
-  version: '0.55.5',
+  url: MOCK_SQL_SERVER_URL,
+  version: MOCK_ZENML_VERSION,
   debug: false,
   deployment_type: 'local',
   database_type: 'sqlite',
   secrets_store_type: 'sql',
-  auth_scheme: 'OAUTH2_PASSWORD_BEARER',
+  auth_scheme: MOCK_AUTH_SCHEME,
 };
 
 export const MOCK_SQL_SERVER_DETAILS: ZenServerDetails = {
   storeInfo: {
-    id: 'test-server',
-    version: '0.55.5',
+    id: MOCK_SERVER_ID,
+    version: MOCK_ZENML_VERSION,
     debug: false,
     deployment_type: 'local',
     database_type: 'sqlite',
     secrets_store_type: 'sql',
-    auth_scheme: 'OAUTH2_PASSWORD_BEARER',
+    auth_scheme: MOCK_AUTH_SCHEME,
   },
   storeConfig: {
     type: 'sql',
-    url: 'sqlite:///path/to/sqlite.db',
+    url: MOCK_SQL_SERVER_URL,
     secrets_store: null,
     backup_secrets_store: null,
     username: null,
