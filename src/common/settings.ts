@@ -16,7 +16,7 @@ import {
   ConfigurationTarget,
   WorkspaceConfiguration,
   WorkspaceFolder,
-  workspace
+  workspace,
 } from 'vscode';
 import { getInterpreterDetails } from './python';
 import { getConfiguration, getWorkspaceFolders } from './vscodeapi';
@@ -136,7 +136,7 @@ export async function getGlobalSettings(
   }
 
   const debugInterpreter = (await getInterpreterDetails()).path ?? [];
-  console.log("Global Interpreter: ", debugInterpreter)
+  console.log('Global Interpreter: ', debugInterpreter);
 
   const setting = {
     cwd: process.cwd(),
@@ -174,7 +174,11 @@ export async function updateWorkspaceInterpreterSettings(interpreterPath: string
     const workspaceConfig = workspace.getConfiguration('zenml-python', workspaceFolder.uri);
     await workspaceConfig.update('interpreter', [interpreterPath], ConfigurationTarget.Workspace);
 
-    let workspaceSettings: ISettings = await getWorkspaceSettings('zenml-python', workspaceFolder, true)
+    let workspaceSettings: ISettings = await getWorkspaceSettings(
+      'zenml-python',
+      workspaceFolder,
+      true
+    );
     const settingsPath = path.join(workspaceFolders[0].uri.fsPath, '.vscode', 'settings.json');
     if (fs.existsSync(settingsPath)) {
       const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
@@ -183,5 +187,3 @@ export async function updateWorkspaceInterpreterSettings(interpreterPath: string
     }
   }
 }
-
-

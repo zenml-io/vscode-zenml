@@ -21,9 +21,17 @@ import { registerServerCommands } from '../commands/server/registry';
 import { registerStackCommands } from '../commands/stack/registry';
 import { EXTENSION_ROOT_DIR } from '../common/constants';
 import { registerLogger, traceLog, traceVerbose } from '../common/log/logging';
-import { IInterpreterDetails, getInterpreterDetails, initializePython, onDidChangePythonInterpreter } from '../common/python';
+import {
+  IInterpreterDetails,
+  getInterpreterDetails,
+  initializePython,
+  onDidChangePythonInterpreter,
+} from '../common/python';
 import { runServer } from '../common/server';
-import { checkIfConfigurationChanged, updateWorkspaceInterpreterSettings } from '../common/settings';
+import {
+  checkIfConfigurationChanged,
+  updateWorkspaceInterpreterSettings,
+} from '../common/settings';
 import { registerLanguageStatusItem } from '../common/status';
 import { getLSClientTraceLevel } from '../common/utilities';
 import {
@@ -38,7 +46,6 @@ import ZenMLStatusBar from '../views/statusBar';
 import { LSClient } from './LSClient';
 
 const exec = promisify(cp.exec);
-
 
 export interface IServerInfo {
   name: string;
@@ -108,7 +115,7 @@ export class ZenExtension {
 
   /**
    * Updates the global settings for the ZenML extension.
-   * 
+   *
    * @param pythonPath The new Python interpreter path.
    */
   static async updateGlobalSettings(pythonPath: string): Promise<void> {
@@ -200,7 +207,7 @@ export class ZenExtension {
 
   /**
    * Deactivates ZenML features when requirements not met.
-   * 
+   *
    * @returns {Promise<void>} A promise that resolves to void.
    */
   static async deactivateFeatures(): Promise<void> {
@@ -211,5 +218,4 @@ export class ZenExtension {
     this.viewDisposables = [];
     console.log('Features deactivated due to unmet requirements.');
   }
-
 }

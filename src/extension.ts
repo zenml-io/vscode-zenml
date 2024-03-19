@@ -20,8 +20,8 @@ import { ZenServerDetails } from './types/ServerInfoTypes';
 import { updateServerUrlAndToken } from './utils/global';
 
 export interface ZenMLReadyNotification {
-  ready: boolean,
-  version?: string
+  ready: boolean;
+  version?: string;
 }
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -31,13 +31,13 @@ export async function activate(context: vscode.ExtensionContext) {
   ZenExtension.initialize(context, lsClient);
 
   eventBus.on('lsClientReady', async (isReady: boolean) => {
-    console.log("extension.ts received lsClientReady event:", isReady)
-    console.log('---------------------')
+    console.log('extension.ts received lsClientReady event:', isReady);
+    console.log('---------------------');
     await refreshUIComponents();
   });
 
   eventBus.on('zenml/ready', async (params: ZenMLReadyNotification) => {
-    console.log('extension.ts received zenml/ready notification:', params)
+    console.log('extension.ts received zenml/ready notification:', params);
     if (params.ready) {
       showInformationMessage('ZenML Client Available. Refreshing Extension State...');
       await refreshUIComponents();
@@ -45,7 +45,7 @@ export async function activate(context: vscode.ExtensionContext) {
   });
 
   eventBus.on('zenml/configUpdated', async (updatedServerConfig: ZenServerDetails) => {
-    console.log('extension.ts received zenml/configUpdated event:', updatedServerConfig)
+    console.log('extension.ts received zenml/configUpdated event:', updatedServerConfig);
     if (!lsClient.getLanguageClient()) {
       return;
     }
