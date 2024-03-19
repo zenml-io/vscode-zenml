@@ -11,7 +11,7 @@
 // or implied.See the License for the specific language governing
 import { PYTOOL_MODULE } from '../../../utils/constants';
 import { MockEventBus } from './MockEventBus';
-import { MOCK_REST_SERVER_DETAILS } from './constants';
+import { MOCK_REST_SERVER_DETAILS, MOCK_REST_SERVER_URL } from './constants';
 
 interface MockLanguageClient {
   start: () => Promise<void>;
@@ -44,17 +44,6 @@ export class MockLSClient {
   public handleExecuteCommand(args: any): Promise<any> {
     const { command, arguments: cmdArgs } = args;
     switch (command) {
-      case `${PYTOOL_MODULE}.connect`:
-        if (cmdArgs[0] === 'https://zenml.example.com') {
-          return Promise.resolve({
-            message: 'Connected successfully',
-            access_token: 'valid_token',
-          });
-        } else {
-          return Promise.resolve({ error: 'Failed to connect' });
-        }
-      case `${PYTOOL_MODULE}.disconnect`:
-        return Promise.resolve({ message: 'Disconnected successfully' });
       case `${PYTOOL_MODULE}.serverInfo`:
         return Promise.resolve(MOCK_REST_SERVER_DETAILS);
       case `${PYTOOL_MODULE}.renameStack`:
@@ -88,10 +77,35 @@ export class MockLSClient {
   }
 
   /**
+   * Mocks sending a request to the language server.
+   *
+   * @param command The command to send to the language server.
+   * @param args The arguments to send with the command.
+   * @returns A promise resolving to a mocked response from the language server.
+   */
+  async sendLsClientRequest(command: string, args: any[] = []): Promise<any> {
+    if (command === 'connect') {
+      if (args[0] === MOCK_REST_SERVER_URL) {
+        return Promise.resolve({
+          message: 'Connected successfully',
+          access_token: 'valid_token',
+        });
+      } else {
+        return Promise.reject(new Error('Failed to connect with incorrect URL'));
+      }
+    } else if (command === 'disconnect') {
+      return Promise.resolve({ message: 'Disconnected successfully' });
+    } else {
+      return Promise.reject(new Error(`Unmocked command: ${command}`));
+    }
+  }
+
+  /**
    * Triggers a notification with the given type and parameters.
    *
    * @param type The type of the notification.
    * @param params The parameters of the notification.
+   * @returns void
    */
   public triggerNotification(type: string, params: any): void {
     const handler = this.notificationHandlers.get(type);
