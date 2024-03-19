@@ -10,8 +10,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
+import { serverCommands } from '../commands/server/cmds';
 import { ZenServerDetails } from '../types/ServerInfoTypes';
 import { PipelineDataProvider, ServerDataProvider, StackDataProvider } from '../views/activityBar';
+import { commands } from 'vscode';
 
 // Type definition for a refresh function that takes a global configuration object
 type RefreshFunction = (updatedServerConfig?: ZenServerDetails) => Promise<void>;
@@ -71,6 +73,7 @@ export function delayRefresh(
  * @param attempts The number of attempts to make before giving up.
  * @returns A function that, when called, initiates the delayed attempts to refresh.
  */
+
 export function delayRefreshWithRetry(
   refreshFn: RefreshFunction,
   delayMs: number = 5000,
@@ -104,4 +107,14 @@ export async function refreshUIComponents(updatedServerConfig?: ZenServerDetails
   await ServerDataProvider.getInstance().refresh(updatedServerConfig);
   await StackDataProvider.getInstance().refresh();
   await PipelineDataProvider.getInstance().refresh();
+  setTimeout(() => {
+    serverCommands.refreshServerStatus();
+  }, 2000);
 }
+
+export const refreshUtils = {
+  debounce,
+  delayRefresh,
+  delayRefreshWithRetry,
+  refreshUIComponents,
+};
