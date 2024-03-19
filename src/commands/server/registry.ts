@@ -13,7 +13,7 @@
 import * as vscode from 'vscode';
 import { serverCommands } from './cmds';
 import { registerCommand } from '../../common/vscodeapi';
-import { ExtensionEnvironment } from '../../services/ExtensionEnvironment';
+import { ZenExtension } from '../../services/ZenExtension';
 
 /**
  * Registers server-related commands for the extension.
@@ -29,6 +29,6 @@ export const registerServerCommands = (context: vscode.ExtensionContext) => {
 
   commands.forEach(cmd => {
     context.subscriptions.push(cmd);
-    ExtensionEnvironment.commandDisposables.push(cmd);
+    ZenExtension.commandDisposables.push(cmd);
   });
 };

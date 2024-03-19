@@ -14,7 +14,7 @@ import * as vscode from 'vscode';
 import { PipelineTreeItem } from '../../views/activityBar';
 import { pipelineCommands } from './cmds';
 import { registerCommand } from '../../common/vscodeapi';
-import { ExtensionEnvironment } from '../../services/ExtensionEnvironment';
+import { ZenExtension } from '../../services/ZenExtension';
 
 /**
  * Registers pipeline-related commands for the extension.
@@ -29,6 +29,6 @@ export const registerPipelineCommands = (context: vscode.ExtensionContext) => {
 
   commands.forEach(cmd => {
     context.subscriptions.push(cmd);
-    ExtensionEnvironment.commandDisposables.push(cmd);
+    ZenExtension.commandDisposables.push(cmd);
   });
 };

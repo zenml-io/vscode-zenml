@@ -22,6 +22,7 @@ import {
   RestServerConnectionResponse,
 } from '../../types/LSClientResponseTypes';
 import { showInformationMessage } from '../../utils/notifications';
+import { refreshUtils } from '../../utils/refresh';
 
 /**
  * Initiates a connection to the ZenML server using a Flask service for OAuth2 authentication.
@@ -72,7 +73,7 @@ const connectServer = async (): Promise<boolean> => {
             vscode.ConfigurationTarget.Global
           );
 
-          EventBus.getInstance().emit('refreshServerStatus');
+          await refreshUtils.refreshUIComponents();
           progress.report({ increment: 100 });
           resolve(true);
         } catch (error) {
@@ -117,7 +118,7 @@ const disconnectServer = async (): Promise<void> => {
           throw new Error(result.error);
         }
 
-        EventBus.getInstance().emit('refreshServerStatus');
+        await refreshUtils.refreshUIComponents();
       } catch (error: any) {
         console.error('Failed to disconnect from ZenML server:', error);
         vscode.window.showErrorMessage('Failed to disconnect from ZenML server: ' + error);
