@@ -62,3 +62,26 @@ export const showInformationMessage = (message: string): void => {
 export const showErrorMessage = (message: string): void => {
   vscode.window.showErrorMessage(message);
 };
+
+/**
+ * Shows a warning message with actions (buttons) for the user to select.
+ *
+ * @param message The warning message to display.
+ * @param actions An array of actions, each action being an object with a title and an action callback.
+ */
+export async function showWarningMessageWithActions(
+  message: string,
+  ...actions: { title: string; action: () => void | Promise<void> }[]
+): Promise<void> {
+  // Map actions to their titles to display as buttons.
+  const items = actions.map(action => action.title);
+
+  // Show warning message with buttons.
+  const selection = await vscode.window.showWarningMessage(message, ...items);
+
+  // Find the selected action based on the title and execute its callback.
+  const selectedAction = actions.find(action => action.title === selection);
+  if (selectedAction) {
+    await selectedAction.action();
+  }
+}
