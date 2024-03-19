@@ -56,31 +56,25 @@ class ZenMLLanguageServer(LanguageServer):
 
     def check_zenml_version(self) -> dict:
         """Checks if the installed ZenML version meets the minimum requirement."""
-        if not self.is_zenml_installed():
-            message = "ZenML is not installed. Please install ZenML and reload VS Code."
-            self.send_custom_notification(
-                "zenml/ready", {"message": message, "ready": False}
-            )
-            self.notify_user(message)
-            return {"message": message, "ready": False}
-
         version_str = self.get_zenml_version()
-        version = parse_version(version_str)
-        if version < parse_version(MIN_ZENML_VERSION):
-            message = f"ZenML version {MIN_ZENML_VERSION} or higher is required. Found version {version_str}. Please upgrade ZenML."
-            self.send_custom_notification(
-                "zenml/ready",
-                {"message": message, "version": version_str, "ready": False},
-            )
-            self.notify_user(message)
-            return {"message": message, "version": version_str, "ready": False}
+        installed_version = parse_version(version_str)
+        if installed_version < parse_version(MIN_ZENML_VERSION):
+            return self._construct_version_validation_response(False, version_str)
 
-        message = "ZenML is installed and meets the version requirement."
-        self.send_custom_notification(
-            "zenml/ready", {"message": message, "version": version_str, "ready": True}
-        )
+        return self._construct_version_validation_response(True, version_str)
+
+    def _construct_version_validation_response(self, meets_requirement, version_str):
+        """Constructs version status message and dict for notifications and returns."""
+        if meets_requirement:
+            message = "ZenML version requirement is met."
+            status = {"message": message, "version": version_str, "is_valid": True}
+        else:
+            message = f"ZenML version {MIN_ZENML_VERSION} or higher is required. Found version {version_str}. Please upgrade ZenML."
+            status = {"message": message, "version": version_str, "is_valid": False}
+
+        self.send_custom_notification("zenml/version", status)
         self.notify_user(message)
-        return {"message": message, "version": version_str, "ready": True}
+        return status
 
     def send_custom_notification(self, method: str, params: dict):
         """Sends a custom notification to the LSP client."""
