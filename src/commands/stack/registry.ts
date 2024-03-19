@@ -14,7 +14,7 @@ import * as vscode from 'vscode';
 import { StackTreeItem } from '../../views/activityBar';
 import { stackCommands } from './cmds';
 import { registerCommand } from '../../common/vscodeapi';
-import { ExtensionEnvironment } from '../../services/ExtensionEnvironment';
+import { ZenExtension } from '../../services/ZenExtension';
 
 /**
  * Registers stack-related commands for the extension.
@@ -32,6 +32,6 @@ export const registerStackCommands = (context: vscode.ExtensionContext) => {
 
   commands.forEach(cmd => {
     context.subscriptions.push(cmd);
-    ExtensionEnvironment.commandDisposables.push(cmd);
+    ZenExtension.commandDisposables.push(cmd);
   });
 };
