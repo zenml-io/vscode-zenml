@@ -117,7 +117,7 @@ class ZenMLClient:
         except Exception as e:
             return {"error": str(e)}
 
-    def disconnect(self) -> dict:
+    def disconnect(self, args) -> dict:
         try:
             url = self.gc.store_configuration.url
             store_type = self.BaseZenStore.get_store_type(url)
