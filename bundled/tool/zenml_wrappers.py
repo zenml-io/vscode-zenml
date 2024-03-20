@@ -14,7 +14,7 @@
 
 import json
 import pathlib
-from typing import Any, List
+from typing import Any
 
 
 class GlobalConfigWrapper:
@@ -163,7 +163,7 @@ class ZenServerWrapper:
         store_config = json.loads(self.gc.store_configuration.json(indent=2))
         return {"storeInfo": store_info, "storeConfig": store_config}
 
-    def connect(self, args) -> dict:
+    def connect(self, args, **kwargs) -> dict:
         """Connects to a ZenML server.
 
         Args:
@@ -186,7 +186,7 @@ class ZenServerWrapper:
         except self.AuthorizationException as e:
             return {"error": f"Authorization failed: {str(e)}"}
 
-    def disconnect(self) -> dict:
+    def disconnect(self, args) -> dict:
         """Disconnects from a ZenML server.
 
         Args:

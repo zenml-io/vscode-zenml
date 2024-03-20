@@ -67,6 +67,7 @@ import lsprotocol.types as lsp
 from lsp_zenml import ZenLanguageServer
 from pygls import uris, workspace
 from zenml_client import ZenMLClient
+from lazy_import import suppress_stdout_stderr
 
 WORKSPACE_SETTINGS = {}
 GLOBAL_SETTINGS = {}
@@ -120,21 +121,21 @@ class GlobalConfigWatcher(FileSystemEventHandler):
         When the global configuration file is modified, it fetches updated server
         details and sends a notification about the configuration change.
         """
-        config_file_path = zenml_client.config_wrapper.get_global_config_file_path()
-        if event.src_path == str(config_file_path):
-            LSP_SERVER.show_message_log("Configuration file changed.")
-            try:
-                server_details = zenml_client.zen_server_wrapper.get_server_info()
-                LSP_SERVER.send_custom_notification(
-                    "zenml/configUpdated",
-                    {
-                        "path": event.src_path,
-                        "serverDetails": server_details,
-                    },
-                )
-            # pylint: disable=broad-exception-caught
-            except Exception as e:
-                LSP_SERVER.show_message_log(f"Failed to get server info: {e}")
+        with suppress_stdout_stderr():
+            config_file_path = zenml_client.config_wrapper.get_global_config_file_path()
+            if event.src_path == str(config_file_path):
+                try:
+                    server_details = zenml_client.zen_server_wrapper.get_server_info()
+                    LSP_SERVER.send_custom_notification(
+                        "zenml/configUpdated",
+                        {
+                            "path": event.src_path,
+                            "serverDetails": server_details,
+                        },
+                    )
+                # pylint: disable=broad-exception-caught
+                except Exception as e:
+                    LSP_SERVER.show_message_log(f"Failed to get server info: {e}")
 
 
 def watch_zenml_config_yaml():
@@ -181,12 +182,14 @@ def zenml_command(wrapper_name=None):
             log_to_output(f"Executing command with wrapper: {wrapper_name}")
             if not zenml_initialized or not zenml_client:
                 return zenml_init_error
-            if wrapper_name:
-                wrapper_instance = getattr(zenml_client, wrapper_name, None)
-                if not wrapper_instance:
-                    return {"error": f"Wrapper '{wrapper_name}' not found."}
-                return func(wrapper_instance, *args, **kwargs)
-            return func(zenml_client, *args, **kwargs)
+
+            with suppress_stdout_stderr():
+                if wrapper_name:
+                    wrapper_instance = getattr(zenml_client, wrapper_name, None)
+                    if not wrapper_instance:
+                        return {"error": f"Wrapper '{wrapper_name}' not found."}
+                    return func(wrapper_instance, *args, **kwargs)
+                return func(zenml_client, *args, **kwargs)
 
         return wrapper
 
@@ -216,14 +219,14 @@ def get_server_info(wrapper_instance, *args, **kwargs) -> dict:
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.connect")
 @zenml_command(wrapper_name="zen_server_wrapper")
-def connect(wrapper_instance, args) -> dict:
+def connect(wrapper_instance, args, **kwargs) -> dict:
     """Connects to a ZenML server with specified arguments."""
     return wrapper_instance.connect(args)
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.disconnect")
 @zenml_command(wrapper_name="zen_server_wrapper")
-def disconnect(wrapper_instance, *args, **kwargs) -> dict:
+def disconnect(wrapper_instance, args, **kwargs) -> dict:
     """Disconnects from the current ZenML server."""
     return wrapper_instance.disconnect(args)
 
