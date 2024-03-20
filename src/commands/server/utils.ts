@@ -42,16 +42,9 @@ export async function promptAndStoreServerUrl() {
 /**
  * Retrieves the server status from the language server or the provided server details.
  *
- * @param {ZenServerDetails} [updatedServerConfig] The updated server configuration from the LSP server.
  * @returns {Promise<ServerStatus>} A promise that resolves with the server status, parsed from server details.
  */
-export async function checkServerStatus(
-  updatedServerConfig?: ZenServerDetails
-): Promise<ServerStatus> {
-  if (updatedServerConfig) {
-    return createServerStatusFromDetails(updatedServerConfig);
-  }
-
+export async function checkServerStatus(): Promise<ServerStatus> {
   const lsClient = LSClient.getInstance();
   if (!lsClient.getLanguageClient()) {
     return INITIAL_ZENML_SERVER_STATUS;
