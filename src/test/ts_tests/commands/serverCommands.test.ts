@@ -56,7 +56,8 @@ suite('Server Commands Tests', () => {
   });
 
   test('connectServer successfully connects to the server', async () => {
-    sandbox.stub(mockLSClient, 'sendLsClientRequest')
+    sandbox
+      .stub(mockLSClient, 'sendLsClientRequest')
       .withArgs('connect', [MOCK_REST_SERVER_URL])
       .resolves({ message: 'Connected successfully', access_token: MOCK_ACCESS_TOKEN });
 
@@ -67,7 +68,8 @@ suite('Server Commands Tests', () => {
   });
 
   test('disconnectServer successfully disconnects from the server', async () => {
-    sandbox.stub(mockLSClient, 'sendLsClientRequest')
+    sandbox
+      .stub(mockLSClient, 'sendLsClientRequest')
       .withArgs('disconnect')
       .resolves({ message: 'Disconnected successfully' });
 

@@ -10,16 +10,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import { LanguageClient } from 'vscode-languageclient/node';
-import { ConfigUpdateDetails, ZenServerDetails } from '../types/ServerInfoTypes';
-import { EventBus } from './EventBus';
-import { GenericLSClientResponse } from '../types/LSClientResponseTypes';
-import { PYTOOL_MODULE } from '../utils/constants';
-import { debounce } from '../utils/refresh';
 import { commands } from 'vscode';
-import { getZenMLAccessToken, getZenMLServerUrl, updateAccessToken, updateServerUrl, updateServerUrlAndToken } from '../utils/global';
+import { LanguageClient } from 'vscode-languageclient/node';
 import { stackCommands } from '../commands/stack/cmds';
-import { storeActiveStack, switchActiveStack } from '../commands/stack/utils';
+import { switchActiveStack } from '../commands/stack/utils';
+import { GenericLSClientResponse } from '../types/LSClientResponseTypes';
+import { ConfigUpdateDetails } from '../types/ServerInfoTypes';
+import { PYTOOL_MODULE } from '../utils/constants';
+import {
+  getZenMLAccessToken,
+  getZenMLServerUrl,
+  updateAccessToken,
+  updateServerUrl
+} from '../utils/global';
+import { debounce } from '../utils/refresh';
+import { EventBus } from './EventBus';
 
 export class LSClient {
   private static instance: LSClient | null = null;
@@ -58,7 +63,7 @@ export class LSClient {
         await this.client.start();
         console.log('Language client started successfully.');
 
-        this.client.onNotification('zenml/configUpdated', async (params) => {
+        this.client.onNotification('zenml/configUpdated', async params => {
           console.log('Received zenml/configUpdated notification:', params);
           await this.handleConfigUpdated(params.server_details as ConfigUpdateDetails);
         });
@@ -71,10 +76,10 @@ export class LSClient {
   }
 
   /**
- * Stops the language client.
- *
- * @returns A promise resolving to void.
- */
+   * Stops the language client.
+   *
+   * @returns A promise resolving to void.
+   */
   public async stopLanguageClient(): Promise<void> {
     this.clientReady = false;
     this.eventBus.off('zenml/configUpdated', this.handleConfigUpdated.bind(this));
@@ -95,15 +100,12 @@ export class LSClient {
     this.restartLSPServerDebounced();
   }
 
-
   private restartLSPServerDebounced = debounce(async () => {
     await commands.executeCommand('zenml-python.restart');
   }, 5000);
 
-
-
   public async handleConfigUpdated(updatedServerConfig: ConfigUpdateDetails): Promise<void> {
-    const currentServerUrl = getZenMLServerUrl()
+    const currentServerUrl = getZenMLServerUrl();
     const currentActiveStackId = getZenMLAccessToken();
 
     console.log('Checking for configuration changes...');
@@ -121,7 +123,6 @@ export class LSClient {
       await stackCommands.refreshStackView();
     }
   }
-
 
   /**
    * Sends a request to the language server.
@@ -141,7 +142,7 @@ export class LSClient {
     try {
       const result = await this.client.sendRequest('workspace/executeCommand', {
         command: `${PYTOOL_MODULE}.${command}`,
-        arguments: args
+        arguments: args,
       });
       return result as T;
     } catch (error) {

@@ -27,7 +27,7 @@ export class MockLSClient {
   constructor(eventBus: MockEventBus) {
     this.eventBus = eventBus;
     this.mockLanguageClient = {
-      start: async () => { },
+      start: async () => {},
       onNotification: (type: string, handler: (params: any) => void) => {
         this.notificationHandlers.set(type, handler);
       },

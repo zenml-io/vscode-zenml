@@ -43,7 +43,6 @@ import { PipelineDataProvider, ServerDataProvider, StackDataProvider } from '../
 import ZenMLStatusBar from '../views/statusBar';
 import { LSClient } from './LSClient';
 
-
 export interface IServerInfo {
   name: string;
   module: string;

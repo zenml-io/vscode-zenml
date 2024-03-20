@@ -15,11 +15,10 @@ import * as sinon from 'sinon';
 import { serverUtils } from '../../../commands/server/utils';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
-import { INITIAL_ZENML_SERVER_STATUS } from '../../../utils/constants';
 import { ServerDataProvider } from '../../../views/activityBar';
 import { MockEventBus } from '../__mocks__/MockEventBus';
 import { MockLSClient } from '../__mocks__/MockLSClient';
-import { MOCK_REST_SERVER_DETAILS, MOCK_REST_SERVER_STATUS, MOCK_SQL_SERVER_DETAILS, MOCK_SQL_SERVER_STATUS } from '../__mocks__/constants';
+import { MOCK_REST_SERVER_STATUS, MOCK_SQL_SERVER_STATUS } from '../__mocks__/constants';
 
 suite('ServerDataProvider Tests', () => {
   let sandbox: sinon.SinonSandbox;
@@ -54,7 +53,11 @@ suite('ServerDataProvider Tests', () => {
     await serverDataProvider.refresh();
     let serverStatus = serverDataProvider.getCurrentStatus();
 
-    assert.strictEqual(serverStatus.isConnected, true, 'Server should be reported as connected for REST config');
+    assert.strictEqual(
+      serverStatus.isConnected,
+      true,
+      'Server should be reported as connected for REST config'
+    );
   });
 
   test('ServerDataProvider should update server status to disconnected for non-REST type', async () => {
@@ -66,6 +69,10 @@ suite('ServerDataProvider Tests', () => {
     await serverDataProvider.refresh();
     const serverStatus = serverDataProvider.getCurrentStatus();
 
-    assert.strictEqual(serverStatus.isConnected, false, 'Server should be reported as disconnected for SQL config');
+    assert.strictEqual(
+      serverStatus.isConnected,
+      false,
+      'Server should be reported as disconnected for SQL config'
+    );
   });
 });

@@ -13,7 +13,7 @@
 import * as vscode from 'vscode';
 import { getActiveStack } from '../../commands/stack/utils';
 import { EventBus } from '../../services/EventBus';
-import { ConfigUpdateDetails, ZenServerDetails } from '../../types/ServerInfoTypes';
+import { ConfigUpdateDetails } from '../../types/ServerInfoTypes';
 import { showErrorMessage } from '../../utils/notifications';
 
 /**
@@ -69,7 +69,9 @@ export default class ZenMLStatusBar {
         async progress => {
           progress.report({ increment: 0 });
 
-          const isConnected = updatedServerConfig.api_token !== undefined && updatedServerConfig.store_type === 'rest';
+          const isConnected =
+            updatedServerConfig.api_token !== undefined &&
+            updatedServerConfig.store_type === 'rest';
           this.updateServerStatusIndicator(isConnected, updatedServerConfig.url);
 
           await this.refreshActiveStack();
