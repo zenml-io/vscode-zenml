@@ -31,6 +31,7 @@ if debugger_path:
     if debugger_path.endswith("debugpy"):
         debugger_path = os.fspath(pathlib.Path(debugger_path).parent)
 
+    # pylint: disable=wrong-import-position,import-error
     import debugpy
 
     update_sys_path(debugger_path)
