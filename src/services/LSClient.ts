@@ -21,7 +21,7 @@ export class LSClient {
   private client: LanguageClient | null = null;
   private eventBus: EventBus = EventBus.getInstance();
 
-  public constructor() {}
+  public constructor() { }
 
   /**
    * Gets the language client.
@@ -50,9 +50,9 @@ export class LSClient {
     try {
       if (this.client) {
         await this.client.start();
-        console.log('Language client started successfully.');
-        this.eventBus.emit('lsClientReady', true);
         this.setupNotificationListeners(this.client);
+        this.eventBus.emit('lsClientReady', true);
+        console.log('Language client started successfully.');
       }
     } catch (error) {
       console.error('Failed to start the language client:', error);
@@ -67,12 +67,6 @@ export class LSClient {
    * @returns void
    */
   private setupNotificationListeners(lsClient: LanguageClient): void {
-    lsClient.onNotification('zenml/ready', params => {
-      console.log('Received zenml/ready notification:', params);
-
-      this.eventBus.emit('zenml/ready', params);
-    });
-
     lsClient.onNotification('zenml/configUpdated', async params => {
       console.log('Received zenml/configUpdated notification:', params);
 
@@ -100,7 +94,7 @@ export class LSClient {
     try {
       const result = await this.client.sendRequest('workspace/executeCommand', {
         command: `${PYTOOL_MODULE}.${command}`,
-        arguments: args || [],
+        arguments: args
       });
       return result as T;
     } catch (error) {
