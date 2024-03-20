@@ -10,10 +10,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import * as cp from 'child_process';
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import { promisify } from 'util';
 import * as vscode from 'vscode';
 
 import { registerPipelineCommands } from '../commands/pipelines/registry';
@@ -45,7 +43,6 @@ import { PipelineDataProvider, ServerDataProvider, StackDataProvider } from '../
 import ZenMLStatusBar from '../views/statusBar';
 import { LSClient } from './LSClient';
 
-const exec = promisify(cp.exec);
 
 export interface IServerInfo {
   name: string;

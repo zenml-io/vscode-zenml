@@ -31,18 +31,12 @@ export async function activate(context: vscode.ExtensionContext) {
   ZenExtension.initialize(context, lsClient);
 
   eventBus.on('lsClientReady', async (isReady: boolean) => {
-    console.log('extension.ts received lsClientReady event:', isReady);
-    console.log('---------------------');
-    await refreshUIComponents();
-  });
-
-  eventBus.on('zenml/ready', async (params: ZenMLReadyNotification) => {
-    console.log('extension.ts received zenml/ready notification:', params);
-    if (params.ready) {
-      showInformationMessage('ZenML Client Available. Refreshing Extension State...');
+    console.log('extension.ts received lsClientReady notification:', isReady);
+    if (isReady) {
       await refreshUIComponents();
     }
   });
+
 
   eventBus.on('zenml/configUpdated', async (updatedServerConfig: ZenServerDetails) => {
     console.log('extension.ts received zenml/configUpdated event:', updatedServerConfig);

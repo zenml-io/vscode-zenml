@@ -11,6 +11,7 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import { serverCommands } from '../commands/server/cmds';
+import { EventBus } from '../services/EventBus';
 import { ZenServerDetails } from '../types/ServerInfoTypes';
 import { PipelineDataProvider, ServerDataProvider, StackDataProvider } from '../views/activityBar';
 import { commands } from 'vscode';
@@ -108,7 +109,7 @@ export async function refreshUIComponents(updatedServerConfig?: ZenServerDetails
   await StackDataProvider.getInstance().refresh();
   await PipelineDataProvider.getInstance().refresh();
   setTimeout(() => {
-    serverCommands.refreshServerStatus();
+    EventBus.getInstance().emit('refreshServerStatus');
   }, 2000);
 }
 
