@@ -43,10 +43,8 @@ async function createServer(
   outputChannel: LogOutputChannel,
   initializationOptions: IInitOptions
 ): Promise<LanguageClient> {
-  // const defaultInterpreterPath = getDefaultPythonInterpreterPath();
-  // const command =  defaultInterpreterPath || settings.interpreter[0];
   const command = settings.interpreter[0];
-  console.log('command is', command);
+  // console.log('command is', command);
 
   const cwd = settings.cwd;
 
@@ -84,11 +82,11 @@ async function createServer(
     documentSelector: isVirtualWorkspace()
       ? [{ language: 'python' }]
       : [
-          { scheme: 'file', language: 'python' },
-          { scheme: 'untitled', language: 'python' },
-          { scheme: 'vscode-notebook', language: 'python' },
-          { scheme: 'vscode-notebook-cell', language: 'python' },
-        ],
+        { scheme: 'file', language: 'python' },
+        { scheme: 'untitled', language: 'python' },
+        { scheme: 'vscode-notebook', language: 'python' },
+        { scheme: 'vscode-notebook-cell', language: 'python' },
+      ],
     outputChannel: outputChannel,
     traceOutputChannel: outputChannel,
     revealOutputChannelOn: RevealOutputChannelOn.Never,

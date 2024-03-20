@@ -33,7 +33,7 @@
   },
   "main": "./dist/extension.js",
   "serverInfo": {
-    "name": "ZenML Python",
+    "name": "ZenML",
     "module": "zenml-python"
   },
   "scripts": {
