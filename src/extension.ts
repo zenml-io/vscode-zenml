@@ -14,10 +14,7 @@ import * as vscode from 'vscode';
 import { EventBus } from './services/EventBus';
 import { LSClient } from './services/LSClient';
 import { ZenExtension } from './services/ZenExtension';
-import { showInformationMessage } from './utils/notifications';
 import { refreshUIComponents } from './utils/refresh';
-import { ZenServerDetails } from './types/ServerInfoTypes';
-import { updateServerUrlAndToken } from './utils/global';
 
 export interface ZenMLReadyNotification {
   ready: boolean;
@@ -35,16 +32,6 @@ export async function activate(context: vscode.ExtensionContext) {
     if (isReady) {
       await refreshUIComponents();
     }
-  });
-
-
-  eventBus.on('zenml/configUpdated', async (updatedServerConfig: ZenServerDetails) => {
-    console.log('extension.ts received zenml/configUpdated event:', updatedServerConfig);
-    if (!lsClient.getLanguageClient()) {
-      return;
-    }
-    await updateServerUrlAndToken(updatedServerConfig.storeConfig);
-    await refreshUIComponents(updatedServerConfig);
   });
 }
 

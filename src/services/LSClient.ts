@@ -11,15 +11,21 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import { LanguageClient } from 'vscode-languageclient/node';
-import { ZenServerDetails } from '../types/ServerInfoTypes';
+import { ConfigUpdateDetails, ZenServerDetails } from '../types/ServerInfoTypes';
 import { EventBus } from './EventBus';
 import { GenericLSClientResponse } from '../types/LSClientResponseTypes';
 import { PYTOOL_MODULE } from '../utils/constants';
+import { debounce } from '../utils/refresh';
+import { commands } from 'vscode';
+import { getZenMLAccessToken, getZenMLServerUrl, updateAccessToken, updateServerUrl, updateServerUrlAndToken } from '../utils/global';
+import { stackCommands } from '../commands/stack/cmds';
+import { storeActiveStack, switchActiveStack } from '../commands/stack/utils';
 
 export class LSClient {
   private static instance: LSClient | null = null;
   private client: LanguageClient | null = null;
   private eventBus: EventBus = EventBus.getInstance();
+  private clientReady: boolean = false;
 
   public constructor() { }
 
@@ -50,9 +56,14 @@ export class LSClient {
     try {
       if (this.client) {
         await this.client.start();
-        this.setupNotificationListeners(this.client);
-        this.eventBus.emit('lsClientReady', true);
         console.log('Language client started successfully.');
+
+        this.client.onNotification('zenml/configUpdated', async (params) => {
+          console.log('Received zenml/configUpdated notification:', params);
+          await this.handleConfigUpdated(params.server_details as ConfigUpdateDetails);
+        });
+        this.clientReady = true;
+        this.eventBus.emit('lsClientReady', true);
       }
     } catch (error) {
       console.error('Failed to start the language client:', error);
@@ -60,21 +71,57 @@ export class LSClient {
   }
 
   /**
-   * Adds listeners to the language client.
-   * Listens to notifications from the language server and emits events accordingly.
-   *
-   * @param lsClient The language client to add listeners to.
-   * @returns void
-   */
-  private setupNotificationListeners(lsClient: LanguageClient): void {
-    lsClient.onNotification('zenml/configUpdated', async params => {
-      console.log('Received zenml/configUpdated notification:', params);
-
-      this.eventBus.emit('zenml/configUpdated', {
-        updatedServerConfig: params.serverDetails as ZenServerDetails,
-      });
-    });
+ * Stops the language client.
+ *
+ * @returns A promise resolving to void.
+ */
+  public async stopLanguageClient(): Promise<void> {
+    this.clientReady = false;
+    this.eventBus.off('zenml/configUpdated', this.handleConfigUpdated.bind(this));
+    try {
+      if (this.client) {
+        await this.client.stop();
+        console.log('Language client stopped successfully.');
+        this.eventBus.emit('lsClientReady', false);
+      }
+    } catch (error) {
+      console.error('Failed to stop the language client:', error);
+    }
   }
+
+  public async restartServer(): Promise<void> {
+    // this.eventBus.removeAllListeners();
+    await this.stopLanguageClient();
+    this.restartLSPServerDebounced();
+  }
+
+
+  private restartLSPServerDebounced = debounce(async () => {
+    await commands.executeCommand('zenml-python.restart');
+  }, 5000);
+
+
+
+  public async handleConfigUpdated(updatedServerConfig: ConfigUpdateDetails): Promise<void> {
+    const currentServerUrl = getZenMLServerUrl()
+    const currentActiveStackId = getZenMLAccessToken();
+
+    console.log('Checking for configuration changes...');
+    const { url, api_token, active_stack_id } = updatedServerConfig;
+
+    if (currentServerUrl !== url) {
+      console.log('Server URL has changed. Updating configuration and restarting LSP server...');
+      await updateServerUrl(url);
+      await updateAccessToken(api_token);
+      await this.restartServer();
+    } else if (active_stack_id && currentActiveStackId !== active_stack_id) {
+      console.log('Active stack ID has changed. Refreshing stack-related information...');
+      await switchActiveStack(active_stack_id);
+      await stackCommands.refreshActiveStack();
+      await stackCommands.refreshStackView();
+    }
+  }
+
 
   /**
    * Sends a request to the language server.
@@ -87,7 +134,7 @@ export class LSClient {
     command: string,
     args?: any[]
   ): Promise<T> {
-    if (!this.client) {
+    if (!this.clientReady || !this.client) {
       console.log('Language server is not available.');
       throw new Error('Language client is not available.');
     }
