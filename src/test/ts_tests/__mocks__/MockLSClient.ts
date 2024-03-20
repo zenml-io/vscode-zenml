@@ -95,8 +95,43 @@ export class MockLSClient {
       }
     } else if (command === 'disconnect') {
       return Promise.resolve({ message: 'Disconnected successfully' });
-    } else {
-      return Promise.reject(new Error(`Unmocked command: ${command}`));
+    }
+
+    // Handle additional commands migrated from handleExecuteCommand
+    switch (command) {
+      case `serverInfo`:
+        return Promise.resolve(MOCK_REST_SERVER_DETAILS);
+
+      case `renameStack`:
+        const [renameStackId, newStackName] = args;
+        if (renameStackId && newStackName) {
+          return Promise.resolve({
+            message: `Stack ${renameStackId} successfully renamed to ${newStackName}.`,
+          });
+        } else {
+          return Promise.resolve({ error: 'Failed to rename stack' });
+        }
+
+      case `copyStack`:
+        const [copyStackId, copyNewStackName] = args;
+        if (copyStackId && copyNewStackName) {
+          return Promise.resolve({
+            message: `Stack ${copyStackId} successfully copied to ${copyNewStackName}.`,
+          });
+        } else {
+          return Promise.resolve({ error: 'Failed to copy stack' });
+        }
+
+      case `switchActiveStack`:
+        const [stackNameOrId] = args;
+        if (stackNameOrId) {
+          return Promise.resolve({ message: `Active stack set to: ${stackNameOrId}` });
+        } else {
+          return Promise.resolve({ error: 'Failed to set active stack' });
+        }
+
+      default:
+        return Promise.reject(new Error(`Unmocked command: ${command}`));
     }
   }
 

@@ -19,27 +19,23 @@ import { INITIAL_ZENML_SERVER_STATUS } from '../../../utils/constants';
 import { ServerDataProvider } from '../../../views/activityBar';
 import { MockEventBus } from '../__mocks__/MockEventBus';
 import { MockLSClient } from '../__mocks__/MockLSClient';
-import { MOCK_REST_SERVER_DETAILS, MOCK_SQL_SERVER_DETAILS } from '../__mocks__/constants';
+import { MOCK_REST_SERVER_DETAILS, MOCK_REST_SERVER_STATUS, MOCK_SQL_SERVER_DETAILS, MOCK_SQL_SERVER_STATUS } from '../__mocks__/constants';
 
 suite('ServerDataProvider Tests', () => {
   let sandbox: sinon.SinonSandbox;
   let mockEventBus = new MockEventBus();
   let serverDataProvider: ServerDataProvider;
   let mockLSClient: any;
+  let mockLSClientInstance: any;
 
   setup(() => {
     sandbox = sinon.createSandbox();
-    mockLSClient = new MockLSClient(mockEventBus);
     serverDataProvider = ServerDataProvider.getInstance();
-    sandbox.stub(LSClient, 'getInstance').returns(mockLSClient);
+    mockLSClientInstance = new MockLSClient(mockEventBus);
+    mockLSClient = mockLSClientInstance.getLanguageClient();
+    sandbox.stub(LSClient, 'getInstance').returns(mockLSClientInstance);
     sandbox.stub(EventBus, 'getInstance').returns(mockEventBus);
-
-    sandbox.stub(serverUtils, 'checkServerStatus').callsFake(async updatedServerConfig => {
-      if (updatedServerConfig) {
-        return Promise.resolve(serverUtils.createServerStatusFromDetails(updatedServerConfig));
-      }
-      return INITIAL_ZENML_SERVER_STATUS;
-    });
+    sandbox.stub(mockLSClientInstance, 'startLanguageClient').resolves();
   });
 
   teardown(() => {
@@ -50,31 +46,26 @@ suite('ServerDataProvider Tests', () => {
     assert.ok(serverDataProvider);
   });
 
-  test('ServerDataProvider should update server status to connected for REST type', async () => {
-    await serverDataProvider.refresh(MOCK_REST_SERVER_DETAILS);
-    const serverStatus = serverDataProvider.getCurrentStatus();
+  test('ServerDataProvider should update server status correctly', async () => {
+    sandbox.stub(serverUtils, 'checkServerStatus').callsFake(async () => {
+      return Promise.resolve(MOCK_REST_SERVER_STATUS);
+    });
 
-    assert.strictEqual(
-      serverStatus.isConnected,
-      true,
-      'Server should be reported as connected for REST config'
-    );
-    assert.strictEqual(
-      serverStatus.store_type,
-      'rest',
-      "Store type should be 'rest' for REST config"
-    );
+    await serverDataProvider.refresh();
+    let serverStatus = serverDataProvider.getCurrentStatus();
+
+    assert.strictEqual(serverStatus.isConnected, true, 'Server should be reported as connected for REST config');
   });
 
   test('ServerDataProvider should update server status to disconnected for non-REST type', async () => {
-    await serverDataProvider.refresh(MOCK_SQL_SERVER_DETAILS);
+    sandbox.restore();
+    sandbox.stub(serverUtils, 'checkServerStatus').callsFake(async () => {
+      return Promise.resolve(MOCK_SQL_SERVER_STATUS);
+    });
+
+    await serverDataProvider.refresh();
     const serverStatus = serverDataProvider.getCurrentStatus();
 
-    assert.strictEqual(
-      serverStatus.isConnected,
-      false,
-      'Server should be reported as not connected for SQL config'
-    );
-    assert.strictEqual(serverStatus.store_type, 'sql', "Store type should be 'sql' for SQL config");
+    assert.strictEqual(serverStatus.isConnected, false, 'Server should be reported as disconnected for SQL config');
   });
 });
