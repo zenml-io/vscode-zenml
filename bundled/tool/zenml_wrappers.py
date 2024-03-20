@@ -14,7 +14,7 @@
 
 import json
 import pathlib
-from typing import Any, Dict, List
+from typing import Any, List
 
 
 class GlobalConfigWrapper:
@@ -315,34 +315,39 @@ class StacksWrapper:
         """Returns the ZenKeyError class."""
         return self.lazy_import("zenml.exceptions", "ZenKeyError")
 
-    def fetch_stacks(self) -> List[Dict[str, Any]]:
-        """Fetches all ZenML stacks and their components.
+    def fetch_stacks(self):
+        detailed_stacks = []
+        stacks_page = self.client.list_stacks(hydrate=False)
 
-        Returns:
-            list: List of dictionaries containing stack data.
-        """
-        stacks = self.client.list_stacks(hydrate=True)
-        stacks_data = [
-            {
-                "id": str(stack.id),
-                "name": stack.name,
-                "components": {
-                    component_type: [
-                        {
-                            "id": str(component.id),
-                            "name": component.name,
-                            "flavor": component.flavor,
-                            "type": component.type,
-                        }
-                        for component in components
-                    ]
-                    for component_type, components in stack.components.items()
-                },
+        for stack_raw in stacks_page.items:
+            components_page = self.client.list_stack_components(
+                stack_id=stack_raw.id, hydrate=True
+            )
+            components = [
+                {
+                    "id": str(component.id),
+                    "name": component.name,
+                    "flavor": component.body.flavor,
+                    "type": component.body.type.value,
+                }
+                for component in components_page.items
+            ]
+
+            components_by_type = {}
+            for component in components:
+                comp_type = component["type"]
+                if comp_type not in components_by_type:
+                    components_by_type[comp_type] = []
+                components_by_type[comp_type].append(component)
+
+            stack = {
+                "id": str(stack_raw.id),
+                "name": stack_raw.name,
+                "components": components_by_type,
             }
-            for stack in stacks
-        ]
+            detailed_stacks.append(stack)
 
-        return stacks_data
+        return detailed_stacks  # should be directly serializable to JSON
 
     def get_active_stack(self) -> dict:
         """Fetches the active ZenML stack.
