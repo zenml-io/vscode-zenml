@@ -14,22 +14,22 @@
 Utilities for lazy importing of modules and classes, 
 with an option to suppress stdout temporarily.
 """
-import sys
-import os
 import importlib
+import logging
+import os
+import sys
 from contextlib import contextmanager
 
 
 @contextmanager
-def suppress_stdout_temporarily():
+def suppress_logging_temporarily(level=logging.ERROR):
     """Suppress stdout temporarily."""
-    original_stdout = sys.stdout
+    original_level = logging.root.level
+    logging.root.setLevel(level)
     try:
-        with open(os.devnull, "w", encoding="utf-8") as devnull:
-            sys.stdout = devnull
-            yield
+        yield
     finally:
-        sys.stdout = original_stdout
+        logging.root.setLevel(original_level)
 
 
 def lazy_import(module_name, class_name=None):
@@ -43,7 +43,7 @@ def lazy_import(module_name, class_name=None):
     Returns:
         The imported module or class.
     """
-    with suppress_stdout_temporarily():
+    with suppress_logging_temporarily():
         module = importlib.import_module(module_name)
         if class_name:
             return getattr(module, class_name)
