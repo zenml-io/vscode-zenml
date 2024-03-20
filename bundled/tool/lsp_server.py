@@ -19,8 +19,10 @@ import pathlib
 import subprocess
 import sys
 from functools import wraps
+import yaml
 
 from typing import Any, Dict, Optional, Tuple
+import time
 
 
 # **********************************************************
@@ -116,24 +118,52 @@ class GlobalConfigWatcher(FileSystemEventHandler):
     to update server details accordingly.
     """
 
+    last_notification_time = 0
+    notification_debounce_interval = 2
+    last_known_url = ""
+    last_known_stack_id = ""
+
     def on_modified(self, event):
         """
         When the global configuration file is modified, it fetches updated server
         details and sends a notification about the configuration change.
         """
+        current_time = time.time()
+        if (
+            current_time - self.last_notification_time
+        ) < self.notification_debounce_interval:
+            return
         with suppress_stdout_stderr():
             config_file_path = zenml_client.config_wrapper.get_global_config_file_path()
             if event.src_path == str(config_file_path):
                 try:
-                    server_details = zenml_client.zen_server_wrapper.get_server_info()
+                    with open(config_file_path, "r") as f:
+                        config_data = yaml.safe_load(f)
+
+                    new_stack_id = config_data.get("active_stack_id", "")
+                    new_url = config_data.get("store", {}).get("url", "")
+                    if (
+                        new_url == self.last_known_url
+                        and new_stack_id == self.last_known_stack_id
+                    ):
+                        return
+
+                    self.last_known_url = new_url
+                    self.last_known_stack_id = new_stack_id
+
+                    server_details = {
+                        "url": new_url,
+                        "api_token": config_data.get("store", {}).get("api_token", ""),
+                        "active_stack_id": config_data.get("active_stack_id", ""),
+                        "store_type": config_data.get("store", {}).get("type", ""),
+                    }
+
                     LSP_SERVER.send_custom_notification(
                         "zenml/configUpdated",
-                        {
-                            "path": event.src_path,
-                            "serverDetails": server_details,
-                        },
+                        {"path": event.src_path, "server_details": server_details},
                     )
-                # pylint: disable=broad-exception-caught
+
+                    self.last_notification_time = current_time
                 except Exception as e:
                     LSP_SERVER.show_message_log(f"Failed to get server info: {e}")
 
