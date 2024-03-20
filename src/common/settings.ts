@@ -135,8 +135,8 @@ export async function getGlobalSettings(
     }
   }
 
-  const debugInterpreter = (await getInterpreterDetails()).path ?? [];
-  console.log('Global Interpreter: ', debugInterpreter);
+  // const debugInterpreter = (await getInterpreterDetails()).path ?? [];
+  // console.log('Global Interpreter: ', debugInterpreter);
 
   const setting = {
     cwd: process.cwd(),
