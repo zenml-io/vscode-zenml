@@ -125,11 +125,6 @@
           "default": "",
           "description": "Active stack id for the ZenML server"
         },
-        "zenml.activeStackName": {
-          "type": "string",
-          "default": "",
-          "description": "Active stack name for the ZenML server"
-        },
         "zenml.zenmlClientReady": {
           "type": "boolean",
           "default": false,

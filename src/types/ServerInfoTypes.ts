@@ -35,6 +35,13 @@ export interface ZenServerDetails {
   storeConfig: ZenServerStoreConfig;
 }
 
+export interface ConfigUpdateDetails {
+  url: string;
+  api_token: string;
+  active_stack_id: string;
+  store_type: string;
+}
+
 /************************************************************************************************
  * This is the response from the `zen_store.get_store_info()` method in the ZenML Client.
  ************************************************************************************************/
