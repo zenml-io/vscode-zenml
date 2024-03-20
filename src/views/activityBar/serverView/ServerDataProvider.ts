@@ -11,11 +11,11 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
-import { ServerStatus, ZenServerDetails } from '../../../types/ServerInfoTypes';
-import { INITIAL_ZENML_SERVER_STATUS } from '../../../utils/constants';
-import { EventBus } from '../../../services/EventBus';
-import { ServerTreeItem } from './ServerTreeItems';
 import { checkServerStatus } from '../../../commands/server/utils';
+import { EventBus } from '../../../services/EventBus';
+import { ServerStatus } from '../../../types/ServerInfoTypes';
+import { INITIAL_ZENML_SERVER_STATUS } from '../../../utils/constants';
+import { ServerTreeItem } from './ServerTreeItems';
 
 export class ServerDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   private static instance: ServerDataProvider | null = null;

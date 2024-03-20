@@ -12,9 +12,8 @@
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
 import { LSClient } from '../../services/LSClient';
-import { PYTOOL_MODULE } from '../../utils/constants';
 import { GetActiveStackResponse, SetActiveStackResponse } from '../../types/LSClientResponseTypes';
-import { showErrorMessage, showInformationMessage } from '../../utils/notifications';
+import { showErrorMessage } from '../../utils/notifications';
 
 /**
  * Switches the active ZenML stack to the specified stack name.
@@ -81,7 +80,7 @@ export const storeActiveStack = async (id: string): Promise<void> => {
 export const getActiveStackIdFromConfig = (): string | undefined => {
   const config = vscode.workspace.getConfiguration('zenml');
   return config.get<string>('activeStackId');
-}
+};
 
 const stackUtils = {
   switchActiveStack,

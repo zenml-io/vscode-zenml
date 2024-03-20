@@ -10,12 +10,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import { serverCommands } from '../commands/server/cmds';
 import { EventBus } from '../services/EventBus';
-import { LSClient } from '../services/LSClient';
 import { ZenServerDetails } from '../types/ServerInfoTypes';
 import { PipelineDataProvider, ServerDataProvider, StackDataProvider } from '../views/activityBar';
-import { commands } from 'vscode';
 
 // Type definition for a refresh function that takes a global configuration object
 type RefreshFunction = (updatedServerConfig?: ZenServerDetails) => Promise<void>;
