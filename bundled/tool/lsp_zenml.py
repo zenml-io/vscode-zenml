@@ -10,36 +10,56 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
+"""
+Extends the main Language Server Protocol (LSP) server for ZenML
+by adding custom functionalities. It acts as a wrapper around the core LSP
+server implementation (`lsp_server.py`), providing ZenML-specific features
+such as checking ZenML installation, verifying version compatibility, and
+updating Python interpreter paths.
+"""
+
+
 import subprocess
 import sys
+
+import lsprotocol.types as lsp
 from packaging.version import parse as parse_version
 from pygls.server import LanguageServer
-import lsprotocol.types as lsp
 
 MIN_ZENML_VERSION = "0.55.2"
 
 
-class ZenMLLanguageServer(LanguageServer):
+class ZenLanguageServer(LanguageServer):
+    """ZenML Language Server implementation."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.python_interpreter = sys.executable
 
     def update_python_interpreter(self, interpreter_path):
-        """Updates the Python interpreter path."""
-        self.python_interpreter = interpreter_path
-        self.notify_user(f"LSP_Python_Interpreter Updated: {self.python_interpreter}")
+        """Updates the Python interpreter path and handles errors."""
+        try:
+            self.python_interpreter = interpreter_path
+            self.show_message_log(
+                f"LSP_Python_Interpreter Updated: {self.python_interpreter}"
+            )
+        # pylint: disable=broad-exception-caught
+        except Exception as e:
+            self.show_message_log(
+                f"Failed to update Python interpreter: {str(e)}", lsp.MessageType.Error
+            )
 
     def is_zenml_installed(self) -> bool:
         """Checks if ZenML is installed."""
         try:
-            result = subprocess.run(
+            subprocess.run(
                 [self.python_interpreter, "-c", "import zenml"],
                 capture_output=True,
                 text=True,
                 check=True,
                 timeout=10,
             )
-            self.notify_user("ZenML installation check: Successful.")
+            self.show_message_log("ZenML installation check: Successful.")
             return True
         except subprocess.CalledProcessError:
             return False
@@ -64,12 +84,12 @@ class ZenMLLanguageServer(LanguageServer):
         return self._construct_version_validation_response(True, version_str)
 
     def _construct_version_validation_response(self, meets_requirement, version_str):
-        """Constructs version status message and dict for notifications and returns."""
+        """Constructs a version validation response."""
         if meets_requirement:
             message = "ZenML version requirement is met."
             status = {"message": message, "version": version_str, "is_valid": True}
         else:
-            message = f"ZenML version {MIN_ZENML_VERSION} or higher is required. Found version {version_str}. Please upgrade ZenML."
+            message = f"Supported versions >= {MIN_ZENML_VERSION}. Found version {version_str}."
             status = {"message": message, "version": version_str, "is_valid": False}
 
         self.send_custom_notification("zenml/version", status)

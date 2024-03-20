@@ -18,6 +18,8 @@ import os
 import pathlib
 import subprocess
 import sys
+from functools import wraps
+
 from typing import Any, Dict, Optional, Tuple
 
 
@@ -41,9 +43,10 @@ update_sys_path(
 
 
 # **********************************************************
-# Checks if ZenML is installed.
+# ZenML Installation Check
 # **********************************************************
 def is_zenml_installed() -> bool:
+    """Checks if ZenML is installed."""
     try:
         subprocess.check_call(
             [sys.executable, "-c", "import zenml"],
@@ -61,7 +64,7 @@ def is_zenml_installed() -> bool:
 # pylint: disable=wrong-import-position,import-error
 import lsp_jsonrpc as jsonrpc
 import lsprotocol.types as lsp
-from lsp_zenml import ZenMLLanguageServer
+from lsp_zenml import ZenLanguageServer
 from pygls import uris, workspace
 from zenml_client import ZenMLClient
 
@@ -71,22 +74,21 @@ RUNNER = pathlib.Path(__file__).parent / "lsp_runner.py"
 
 MAX_WORKERS = 5
 
-LSP_SERVER = ZenMLLanguageServer(
-    name="zenml-lsp-server", version="0.0.1", max_workers=MAX_WORKERS
+LSP_SERVER = ZenLanguageServer(
+    name="zen-language-server", version="0.0.1", max_workers=MAX_WORKERS
 )
 
 # **********************************************************
 # Tool specific code goes below this.
 # **********************************************************
-
 TOOL_MODULE = "zenml-python"
-TOOL_DISPLAY = "ZenML Python Tool"
+TOOL_DISPLAY = "ZenML"
 
 # Default arguments always passed to zenml.
 TOOL_ARGS = []
 
 # Minimum version of zenml supported.
-# MIN_VERSION = "0.55.2"
+MIN_ZENML_VERSION = "0.55.0"
 
 # Versions of zenml found by workspace
 VERSION_LOOKUP: Dict[str, Tuple[int, int, int]] = {}
@@ -97,22 +99,32 @@ zenml_init_error = {
     "error": "ZenML is not initialized. Please check ZenML version requirements."
 }
 
-
-from watchdog.events import FileSystemEventHandler
-
 # **********************************************************
 # ConfigFileChangeHandler: Observe config.yaml changes
 # **********************************************************
 # pylint: disable=wrong-import-position,import-error
+from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
 
-class ConfigFileChangeHandler(FileSystemEventHandler):
+class GlobalConfigWatcher(FileSystemEventHandler):
+    """
+    Watches for changes in the ZenML global configuration file.
+
+    Upon modification of the global configuration file, it triggers notifications
+    to update server details accordingly.
+    """
+
     def on_modified(self, event):
-        if event.src_path == str(get_global_config_file_path()):
+        """
+        When the global configuration file is modified, it fetches updated server
+        details and sends a notification about the configuration change.
+        """
+        config_file_path = zenml_client.config_wrapper.get_global_config_file_path()
+        if event.src_path == str(config_file_path):
             LSP_SERVER.show_message_log("Configuration file changed.")
             try:
-                server_details = zenml_client.get_server_info()
+                server_details = zenml_client.zen_server_wrapper.get_server_info()
                 LSP_SERVER.send_custom_notification(
                     "zenml/configUpdated",
                     {
@@ -120,26 +132,26 @@ class ConfigFileChangeHandler(FileSystemEventHandler):
                         "serverDetails": server_details,
                     },
                 )
-                LSP_SERVER.show_message_log(
-                    "Server information sent after config change."
-                )
+            # pylint: disable=broad-exception-caught
             except Exception as e:
                 LSP_SERVER.show_message_log(f"Failed to get server info: {e}")
 
 
 def watch_zenml_config_yaml():
-    config_dir_path = zenml_client.get_global_config_directory_path()
+    """
+    Initializes and starts a file watcher on the ZenML global configuration directory.
+    Upon detecting a change, it triggers handlers to process these changes.
+    """
+    config_dir_path = zenml_client.config_wrapper.get_global_config_directory_path()
 
     if os.path.isdir(config_dir_path):
         try:
             os.listdir(config_dir_path)
         except OSError as e:
-            log_error(
-                "Cannot start file watcher, configuration directory does not exist or is inaccessible."
-            )
+            log_error(f"Error starting file watcher on {config_dir_path}: {e}.")
         else:
             observer = Observer()
-            event_handler = ConfigFileChangeHandler()
+            event_handler = GlobalConfigWatcher()
             observer.schedule(event_handler, config_dir_path, recursive=False)
             observer.start()
             log_to_output(f"Started watching {config_dir_path} for changes.")
@@ -150,92 +162,124 @@ def watch_zenml_config_yaml():
 # **********************************************************
 # ZenML Client LSP Commands
 # **********************************************************
-def zenml_command(func):
-    def wrapper(*args, **kwargs):
-        if zenml_initialized and zenml_client:
-            return func(*args, **kwargs)
-        else:
-            return zenml_init_error
+def zenml_command(wrapper_name=None):
+    """
+    Decorator for executing commands with ZenMLClient or its specified wrapper.
 
-    return wrapper
+    This decorator ensures that commands are only executed if ZenMLClient is properly
+    initialized. If a `wrapper_name` is provided, the command targets a specific
+    wrapper within ZenMLClient; otherwise, it targets ZenMLClient directly.
+
+    Args:
+        wrapper_name (str, optional): The specific wrapper within ZenMLClient to target.
+                                    Defaults to None, targeting the ZenMLClient itself.
+    """
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            log_to_output(f"Executing command with wrapper: {wrapper_name}")
+            if not zenml_initialized or not zenml_client:
+                return zenml_init_error
+            if wrapper_name:
+                wrapper_instance = getattr(zenml_client, wrapper_name, None)
+                if not wrapper_instance:
+                    return {"error": f"Wrapper '{wrapper_name}' not found."}
+                return func(wrapper_instance, *args, **kwargs)
+            return func(zenml_client, *args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.getGlobalConfig")
-@zenml_command
-def get_global_configuration(*args, **kwargs) -> dict:
-    return zenml_client.get_global_configuration()
+@zenml_command(wrapper_name="config_wrapper")
+def get_global_configuration(wrapper_instance, *args, **kwargs) -> dict:
+    """Fetches global ZenML configuration settings."""
+    return wrapper_instance.get_global_configuration()
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.getGlobalConfigFilePath")
-@zenml_command
-def get_global_config_file_path(*args, **kwargs) -> str:
-    return zenml_client.get_global_config_file_path()
+@zenml_command(wrapper_name="config_wrapper")
+def get_global_config_file_path(wrapper_instance, *args, **kwargs) -> str:
+    """Retrieves the file path of the global ZenML configuration."""
+    return wrapper_instance.get_global_config_file_path()
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.serverInfo")
-@zenml_command
-def get_server_info(*args, **kwargs) -> dict:
-    return zenml_client.get_server_info()
+@zenml_command(wrapper_name="zen_server_wrapper")
+def get_server_info(wrapper_instance, *args, **kwargs) -> dict:
+    """Gets information about the ZenML server."""
+    return wrapper_instance.get_server_info()
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.connect")
-@zenml_command
-def connect(args) -> dict:
-    return zenml_client.connect(args)
+@zenml_command(wrapper_name="zen_server_wrapper")
+def connect(wrapper_instance, args) -> dict:
+    """Connects to a ZenML server with specified arguments."""
+    return wrapper_instance.connect(args)
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.disconnect")
-@zenml_command
-def disconnect(*args, **kwargs) -> dict:
-    return zenml_client.disconnect(args)
+@zenml_command(wrapper_name="zen_server_wrapper")
+def disconnect(wrapper_instance, *args, **kwargs) -> dict:
+    """Disconnects from the current ZenML server."""
+    return wrapper_instance.disconnect(args)
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.fetchStacks")
-@zenml_command
-def fetch_stacks(*args, **kwargs):
-    return zenml_client.fetch_stacks()
+@zenml_command(wrapper_name="stacks_wrapper")
+def fetch_stacks(wrapper_instance, *args, **kwargs):
+    """Fetches a list of all ZenML stacks."""
+    return wrapper_instance.fetch_stacks()
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.getActiveStack")
-@zenml_command
-def get_active_stack(*args, **kwargs) -> dict:
-    return zenml_client.get_active_stack()
+@zenml_command(wrapper_name="stacks_wrapper")
+def get_active_stack(wrapper_instance, *args, **kwargs) -> dict:
+    """Gets the currently active ZenML stack."""
+    return wrapper_instance.get_active_stack()
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.switchActiveStack")
-@zenml_command
-def set_active_stack(args) -> dict:
-    return zenml_client.set_active_stack(args)
+@zenml_command(wrapper_name="stacks_wrapper")
+def set_active_stack(wrapper_instance, args) -> dict:
+    """Sets the active ZenML stack to the specified stack."""
+    return wrapper_instance.set_active_stack(args)
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.renameStack")
-@zenml_command
-def rename_stack(args) -> dict:
-    return zenml_client.rename_stack(args)
+@zenml_command(wrapper_name="stacks_wrapper")
+def rename_stack(wrapper_instance, args) -> dict:
+    """Renames a specified ZenML stack."""
+    return wrapper_instance.rename_stack(args)
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.copyStack")
-@zenml_command
-def copy_stack(args) -> dict:
-    return zenml_client.copy_stack(args)
+@zenml_command(wrapper_name="stacks_wrapper")
+def copy_stack(wrapper_instance, args) -> dict:
+    """Copies a specified ZenML stack to a new stack."""
+    return wrapper_instance.copy_stack(args)
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.getPipelineRuns")
-@zenml_command
-def fetch_pipeline_runs(*args, **kwargs):
-    return zenml_client.fetch_pipeline_runs()
+@zenml_command(wrapper_name="pipeline_runs_wrapper")
+def fetch_pipeline_runs(wrapper_instance, *args, **kwargs):
+    """Fetches all ZenML pipeline runs."""
+    return wrapper_instance.fetch_pipeline_runs()
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.deletePipelineRun")
-@zenml_command
-def delete_pipeline_run(args) -> dict:
-    return zenml_client.delete_pipeline_run(args)
+@zenml_command(wrapper_name="pipeline_runs_wrapper")
+def delete_pipeline_run(wrapper_instance, args) -> dict:
+    """Deletes a specified ZenML pipeline run."""
+    return wrapper_instance.delete_pipeline_run(args)
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.checkInstallation")
 def check_zenml_installation(*args, **kwargs) -> None:
     """Handles a request from the client to check the ZenML installation."""
-    # adjust parameters or extract python interpreter from params if needed
     result = LSP_SERVER.is_zenml_installed()
     LSP_SERVER.send_notification("zenml/ready", {"ready": result})
 
@@ -246,6 +290,7 @@ def check_zenml_installation(*args, **kwargs) -> None:
 @LSP_SERVER.feature(lsp.INITIALIZE)
 def initialize(params: lsp.InitializeParams) -> None:
     """LSP handler for initialize request."""
+    # pylint: disable=global-statement
     global zenml_client, zenml_initialized
 
     log_to_output(f"CWD Server: {os.getcwd()}")
@@ -271,13 +316,9 @@ def initialize(params: lsp.InitializeParams) -> None:
         "sanityCheck", {"message": "ZenML Language Server is initializing."}
     )
 
+    # Update the Python interpreter to the one used by the client.
     interpreter_path = WORKSPACE_SETTINGS["/"]["interpreter"][0]
-    try:
-        LSP_SERVER.update_python_interpreter(interpreter_path)
-    except Exception as e:
-        log_error(
-            f"Failed to update Python interpreter with {str(interpreter_path)}: {str(e)}"
-        )
+    LSP_SERVER.update_python_interpreter(interpreter_path)
 
     if LSP_SERVER.is_zenml_installed():
         zenml_client = ZenMLClient()
@@ -292,6 +333,10 @@ def initialize(params: lsp.InitializeParams) -> None:
             "zenml/ready", {"ready": False, "installed": False}
         )
         log_error("ZenML is not installed. ZenML features will be unavailable.")
+        log_error("Skipping file watch due to ZenML version check failure.")
+    if zenml_initialized:
+        watch_zenml_config_yaml()
+    else:
         log_error("Skipping file watch due to ZenML version check failure.")
 
 
@@ -362,22 +407,26 @@ def get_cwd(settings: Dict[str, Any], document: Optional[workspace.Document]) ->
 def log_to_output(
     message: str, msg_type: lsp.MessageType = lsp.MessageType.Log
 ) -> None:
+    """Log to output."""
     LSP_SERVER.show_message_log(message, msg_type)
 
 
 def log_error(message: str) -> None:
+    """Log error."""
     LSP_SERVER.show_message_log(message, lsp.MessageType.Error)
     if os.getenv("LS_SHOW_NOTIFICATION", "off") in ["onError", "onWarning", "always"]:
         LSP_SERVER.show_message(message, lsp.MessageType.Error)
 
 
 def log_warning(message: str) -> None:
+    """Log warning."""
     LSP_SERVER.show_message_log(message, lsp.MessageType.Warning)
     if os.getenv("LS_SHOW_NOTIFICATION", "off") in ["onWarning", "always"]:
         LSP_SERVER.show_message(message, lsp.MessageType.Warning)
 
 
 def log_always(message: str) -> None:
+    """Log message."""
     LSP_SERVER.show_message_log(message, lsp.MessageType.Info)
     if os.getenv("LS_SHOW_NOTIFICATION", "off") in ["always"]:
         LSP_SERVER.show_message(message, lsp.MessageType.Info)
