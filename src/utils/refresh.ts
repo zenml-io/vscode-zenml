@@ -12,6 +12,7 @@
 // permissions and limitations under the License.
 import { serverCommands } from '../commands/server/cmds';
 import { EventBus } from '../services/EventBus';
+import { LSClient } from '../services/LSClient';
 import { ZenServerDetails } from '../types/ServerInfoTypes';
 import { PipelineDataProvider, ServerDataProvider, StackDataProvider } from '../views/activityBar';
 import { commands } from 'vscode';
@@ -101,11 +102,11 @@ export function delayRefreshWithRetry(
 /**
  * Triggers a refresh of the UI components.
  *
- * @param {ZenServerDetails} [updatedServerConfig] The updated server configuration from the LSP server.
+ * @param {boolean} forceRestart - Whether to force a restart of the Python language server.
  * @returns {Promise<void>} A promise that resolves to void.
  */
-export async function refreshUIComponents(updatedServerConfig?: ZenServerDetails): Promise<void> {
-  await ServerDataProvider.getInstance().refresh(updatedServerConfig);
+export async function refreshUIComponents(): Promise<void> {
+  await ServerDataProvider.getInstance().refresh();
   await StackDataProvider.getInstance().refresh();
   await PipelineDataProvider.getInstance().refresh();
   setTimeout(() => {
