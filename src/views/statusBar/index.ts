@@ -13,7 +13,7 @@
 import * as vscode from 'vscode';
 import { getActiveStack } from '../../commands/stack/utils';
 import { EventBus } from '../../services/EventBus';
-import { ZenServerDetails } from '../../types/ServerInfoTypes';
+import { ConfigUpdateDetails, ZenServerDetails } from '../../types/ServerInfoTypes';
 import { showErrorMessage } from '../../utils/notifications';
 
 /**
@@ -59,7 +59,7 @@ export default class ZenMLStatusBar {
    *
    * @param {ZenServerDetails} [updatedServerConfig] The updated server configuration from the LSP server.
    */
-  private async sync(updatedServerConfig: ZenServerDetails): Promise<void> {
+  private async sync(updatedServerConfig: ConfigUpdateDetails): Promise<void> {
     try {
       await vscode.window.withProgress(
         {
@@ -69,8 +69,9 @@ export default class ZenMLStatusBar {
         async progress => {
           progress.report({ increment: 0 });
 
-          const isConnected = updatedServerConfig.storeConfig.type === 'rest';
-          this.updateServerStatusIndicator(isConnected, updatedServerConfig.storeConfig.url);
+          const isConnected = updatedServerConfig.api_token !== undefined && updatedServerConfig.store_type === 'rest';
+          this.updateServerStatusIndicator(isConnected, updatedServerConfig.url);
+
           await this.refreshActiveStack();
           progress.report({ increment: 100 });
         }

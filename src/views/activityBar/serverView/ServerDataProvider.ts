@@ -56,12 +56,10 @@ export class ServerDataProvider implements vscode.TreeDataProvider<vscode.TreeIt
    * Updates the server status and triggers a UI refresh to reflect the latest server status.
    * If the server status has changed, it emits a serverStatusUpdated event.
    *
-   * @param {ZenServerDetails} [updatedServerConfig] The updated server configuration from the LSP server.
    * @returns {Promise<void>} A promise resolving to void.
    */
-  public async refresh(updatedServerConfig?: ZenServerDetails): Promise<void> {
-    const serverStatus = await checkServerStatus(updatedServerConfig);
-    this.currentStatus = serverStatus;
+  public async refresh(): Promise<void> {
+    const serverStatus = await checkServerStatus();
     if (JSON.stringify(serverStatus) !== JSON.stringify(this.currentStatus)) {
       this.eventBus.emit('serverStatusUpdated', {
         isConnected: serverStatus.isConnected,
