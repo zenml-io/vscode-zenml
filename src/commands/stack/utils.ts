@@ -29,7 +29,7 @@ export const switchActiveStack = async (
     const result = await lsClient.sendLsClientRequest<SetActiveStackResponse>('switchActiveStack', [
       stackNameOrId,
     ]);
-    if ('error' in result) {
+    if (result && 'error' in result) {
       console.log('Error in switchZenMLStack result', result);
       throw new Error(result.error);
     }
@@ -48,17 +48,17 @@ export const switchActiveStack = async (
  * @returns {Promise<{id: string, name: string}>} A promise that resolves with the id and name of the active stack, or undefined on error;
  */
 export const getActiveStack = async (): Promise<{ id: string; name: string } | undefined> => {
-  try {
-    const lsClient = LSClient.getInstance();
-    const result = await lsClient.sendLsClientRequest<GetActiveStackResponse>('getActiveStack');
+  const lsClient = LSClient.getInstance();
+  if (!lsClient.clientReady) {
+    return;
+  }
 
-    if ('error' in result) {
+  try {
+    const result = await lsClient.sendLsClientRequest<GetActiveStackResponse>('getActiveStack');
+    if (result && 'error' in result) {
       throw new Error(result.error);
     }
-
-    const { id, name } = result;
-    await storeActiveStack(id);
-    return { id, name };
+    return result;
   } catch (error: any) {
     console.error(`Error getting active stack information: ${error}`);
     showErrorMessage(`Failed to get active stack information: ${error.message}`);

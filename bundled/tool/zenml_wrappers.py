@@ -242,31 +242,36 @@ class PipelineRunsWrapper:
         Returns:
             list: List of dictionaries containing pipeline run data.
         """
-        hydrated_runs = self.client.list_pipeline_runs(hydrate=True)
+        try:
+            hydrated_runs = self.client.list_pipeline_runs(hydrate=True)
 
-        runs = [
-            {
-                "id": str(run.id),
-                "name": run.body.pipeline.name,
-                "status": run.body.status,
-                "version": run.body.pipeline.body.version,
-                "stackName": run.body.stack.name,
-                "startTime": (
-                    run.metadata.start_time.isoformat()
-                    if run.metadata.start_time
-                    else None
-                ),
-                "endTime": (
-                    run.metadata.end_time.isoformat() if run.metadata.end_time else None
-                ),
-                "os": run.metadata.client_environment["os"],
-                "osVersion": run.metadata.client_environment["mac_version"],
-                "pythonVersion": run.metadata.client_environment["python_version"],
-            }
-            for run in hydrated_runs.items
-        ]
+            runs = [
+                {
+                    "id": str(run.id),
+                    "name": run.body.pipeline.name,
+                    "status": run.body.status,
+                    "version": run.body.pipeline.body.version,
+                    "stackName": run.body.stack.name,
+                    "startTime": (
+                        run.metadata.start_time.isoformat()
+                        if run.metadata.start_time
+                        else None
+                    ),
+                    "endTime": (
+                        run.metadata.end_time.isoformat()
+                        if run.metadata.end_time
+                        else None
+                    ),
+                    "os": run.metadata.client_environment["os"],
+                    "osVersion": run.metadata.client_environment["mac_version"],
+                    "pythonVersion": run.metadata.client_environment["python_version"],
+                }
+                for run in hydrated_runs.items
+            ]
 
-        return runs
+            return runs
+        except self.ZenMLBaseException as e:
+            return [{"error": f"Failed to retrieve pipeline runs: {str(e)}"}]
 
     def delete_pipeline_run(self, args) -> dict:
         """Deletes a ZenML pipeline run.
@@ -317,37 +322,40 @@ class StacksWrapper:
 
     def fetch_stacks(self):
         detailed_stacks = []
-        stacks_page = self.client.list_stacks(hydrate=False)
+        try:
+            stacks_page = self.client.list_stacks(hydrate=False)
 
-        for stack_raw in stacks_page.items:
-            components_page = self.client.list_stack_components(
-                stack_id=stack_raw.id, hydrate=True
-            )
-            components = [
-                {
-                    "id": str(component.id),
-                    "name": component.name,
-                    "flavor": component.body.flavor,
-                    "type": component.body.type.value,
+            for stack_raw in stacks_page.items:
+                components_page = self.client.list_stack_components(
+                    stack_id=stack_raw.id, hydrate=True
+                )
+                components = [
+                    {
+                        "id": str(component.id),
+                        "name": component.name,
+                        "flavor": component.body.flavor,
+                        "type": component.body.type.value,
+                    }
+                    for component in components_page.items
+                ]
+
+                components_by_type = {}
+                for component in components:
+                    comp_type = component["type"]
+                    if comp_type not in components_by_type:
+                        components_by_type[comp_type] = []
+                    components_by_type[comp_type].append(component)
+
+                stack = {
+                    "id": str(stack_raw.id),
+                    "name": stack_raw.name,
+                    "components": components_by_type,
                 }
-                for component in components_page.items
-            ]
+                detailed_stacks.append(stack)
 
-            components_by_type = {}
-            for component in components:
-                comp_type = component["type"]
-                if comp_type not in components_by_type:
-                    components_by_type[comp_type] = []
-                components_by_type[comp_type].append(component)
-
-            stack = {
-                "id": str(stack_raw.id),
-                "name": stack_raw.name,
-                "components": components_by_type,
-            }
-            detailed_stacks.append(stack)
-
-        return detailed_stacks  # should be directly serializable to JSON
+            return detailed_stacks
+        except self.ZenMLBaseException as e:
+            return [{"error": f"Failed to retrieve stacks: {str(e)}"}]
 
     def get_active_stack(self) -> dict:
         """Fetches the active ZenML stack.

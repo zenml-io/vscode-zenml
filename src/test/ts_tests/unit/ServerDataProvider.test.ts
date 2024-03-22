@@ -16,25 +16,27 @@ import { serverUtils } from '../../../commands/server/utils';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
 import { ServerDataProvider } from '../../../views/activityBar';
-import { MockEventBus } from '../__mocks__/MockEventBus';
 import { MockLSClient } from '../__mocks__/MockLSClient';
 import { MOCK_REST_SERVER_STATUS, MOCK_SQL_SERVER_STATUS } from '../__mocks__/constants';
+import { MockEventBus } from '../__mocks__/MockEventBus';
 
 suite('ServerDataProvider Tests', () => {
   let sandbox: sinon.SinonSandbox;
-  let mockEventBus = new MockEventBus();
+  let mockEventBus: MockEventBus;
   let serverDataProvider: ServerDataProvider;
-  let mockLSClient: any;
   let mockLSClientInstance: any;
+  let mockLSClient: any;
 
   setup(() => {
     sandbox = sinon.createSandbox();
     serverDataProvider = ServerDataProvider.getInstance();
-    mockLSClientInstance = new MockLSClient(mockEventBus);
+    mockEventBus = new MockEventBus();
+    mockLSClientInstance = MockLSClient.getInstance(mockEventBus);
     mockLSClient = mockLSClientInstance.getLanguageClient();
     sandbox.stub(LSClient, 'getInstance').returns(mockLSClientInstance);
     sandbox.stub(EventBus, 'getInstance').returns(mockEventBus);
     sandbox.stub(mockLSClientInstance, 'startLanguageClient').resolves();
+
   });
 
   teardown(() => {
@@ -62,6 +64,7 @@ suite('ServerDataProvider Tests', () => {
 
   test('ServerDataProvider should update server status to disconnected for non-REST type', async () => {
     sandbox.restore();
+
     sandbox.stub(serverUtils, 'checkServerStatus').callsFake(async () => {
       return Promise.resolve(MOCK_SQL_SERVER_STATUS);
     });

@@ -43,10 +43,8 @@ suite('Server Configuration Update Flow Tests', () => {
         await refreshUIComponentsStub();
       }
     });
-    mockEventBus.on('zenml/configUpdated', async (updatedServerConfig: ZenServerDetails) => {
-      if (mockEventBus.lsClientReady) {
-        await refreshUIComponentsStub(updatedServerConfig);
-      }
+    mockEventBus.on('zenml/serverChanged', async (updatedServerConfig: ZenServerDetails) => {
+      await refreshUIComponentsStub(updatedServerConfig);
     });
   });
 
@@ -69,15 +67,15 @@ suite('Server Configuration Update Flow Tests', () => {
     mockLSClientInstance.triggerNotification(mockNotificationType, mockData);
   });
 
-  test('zenml/configUpdated event updates global configuration and refreshes UI', async () => {
+  test('zenml/serverChanged event updates global configuration and refreshes UI', async () => {
     mockLSClientInstance.mockLanguageClient.onNotification(
-      'zenml/configUpdated',
+      'zenml/serverChanged',
       (data: ZenServerDetails) => {
         assert.deepStrictEqual(data, MOCK_REST_SERVER_DETAILS);
       }
     );
 
-    mockLSClientInstance.triggerNotification('zenml/configUpdated', MOCK_REST_SERVER_DETAILS);
+    mockLSClientInstance.triggerNotification('zenml/serverChanged', MOCK_REST_SERVER_DETAILS);
 
     await new Promise(resolve => setTimeout(resolve, 0));
 

@@ -10,46 +10,63 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import { commands } from 'vscode';
+import { ProgressLocation, commands, window } from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
-import { stackCommands } from '../commands/stack/cmds';
-import { switchActiveStack } from '../commands/stack/utils';
+import { storeActiveStack } from '../commands/stack/utils';
 import { GenericLSClientResponse } from '../types/LSClientResponseTypes';
 import { ConfigUpdateDetails } from '../types/ServerInfoTypes';
 import { PYTOOL_MODULE } from '../utils/constants';
 import {
-  getZenMLAccessToken,
   getZenMLServerUrl,
-  updateAccessToken,
-  updateServerUrl
+  updateServerUrlAndToken
 } from '../utils/global';
-import { debounce } from '../utils/refresh';
+import { debounce, refreshUIComponents } from '../utils/refresh';
 import { EventBus } from './EventBus';
 
 export class LSClient {
   private static instance: LSClient | null = null;
   private client: LanguageClient | null = null;
   private eventBus: EventBus = EventBus.getInstance();
-  private clientReady: boolean = false;
+  public clientReady: boolean = false;
 
-  public constructor() { }
+  public restartLSPServerDebounced = debounce(async () => {
+    await commands.executeCommand(`${PYTOOL_MODULE}.restart`);
+    await refreshUIComponents();
+  }, 500);
 
-  /**
-   * Gets the language client.
-   *
-   * @returns {LanguageClient | null} The language client.
-   */
-  public getLanguageClient(): LanguageClient | null {
-    return this.client;
+  /** 
+   * Sets up notification listeners for the language client.
+   * 
+   * @returns void
+  */
+  public setupNotificationListeners(): void {
+    if (this.client) {
+      this.client.onNotification('zenml/serverChanged', this.handleServerChanged.bind(this));
+      this.client.onNotification('zenml/stackChanged', this.handleStackChanged.bind(this));
+    }
   }
 
   /**
-   * Updates the language client.
-   *
-   * @param {LanguageClient} updatedCLient The new language client.
+   * Handles the zenml/serverChanged notification. 
+   * 
+   * @param details The details of the server update.
    */
-  public updateClient(updatedCLient: LanguageClient): void {
-    this.client = updatedCLient;
+  public async handleServerChanged(details: ConfigUpdateDetails): Promise<void> {
+    console.log('Received zenml/serverChanged notification');
+
+    const currentServerUrl = getZenMLServerUrl();
+    const { url, api_token } = details;
+    if (currentServerUrl !== url) {
+      window.withProgress({
+        location: ProgressLocation.Notification,
+        title: "ZenML config change detected",
+        cancellable: false
+      }, async progress => {
+        await this.stopLanguageClient();
+        await updateServerUrlAndToken(url, api_token);
+        this.restartLSPServerDebounced();
+      });
+    }
   }
 
   /**
@@ -61,19 +78,16 @@ export class LSClient {
     try {
       if (this.client) {
         await this.client.start();
-        console.log('Language client started successfully.');
-
-        this.client.onNotification('zenml/configUpdated', async params => {
-          console.log('Received zenml/configUpdated notification:', params);
-          await this.handleConfigUpdated(params.server_details as ConfigUpdateDetails);
-        });
         this.clientReady = true;
         this.eventBus.emit('lsClientReady', true);
+        this.setupNotificationListeners();
+        console.log('Language client started successfully.');
       }
     } catch (error) {
       console.error('Failed to start the language client:', error);
     }
   }
+
 
   /**
    * Stops the language client.
@@ -82,46 +96,21 @@ export class LSClient {
    */
   public async stopLanguageClient(): Promise<void> {
     this.clientReady = false;
-    this.eventBus.off('zenml/configUpdated', this.handleConfigUpdated.bind(this));
     try {
       if (this.client) {
         await this.client.stop();
-        console.log('Language client stopped successfully.');
         this.eventBus.emit('lsClientReady', false);
+        console.log('Language client stopped successfully.');
       }
     } catch (error) {
       console.error('Failed to stop the language client:', error);
     }
   }
 
-  public async restartServer(): Promise<void> {
-    // this.eventBus.removeAllListeners();
-    await this.stopLanguageClient();
-    this.restartLSPServerDebounced();
-  }
-
-  private restartLSPServerDebounced = debounce(async () => {
-    await commands.executeCommand('zenml-python.restart');
-  }, 5000);
-
-  public async handleConfigUpdated(updatedServerConfig: ConfigUpdateDetails): Promise<void> {
-    const currentServerUrl = getZenMLServerUrl();
-    const currentActiveStackId = getZenMLAccessToken();
-
-    console.log('Checking for configuration changes...');
-    const { url, api_token, active_stack_id } = updatedServerConfig;
-
-    if (currentServerUrl !== url) {
-      console.log('Server URL has changed. Updating configuration and restarting LSP server...');
-      await updateServerUrl(url);
-      await updateAccessToken(api_token);
-      await this.restartServer();
-    } else if (active_stack_id && currentActiveStackId !== active_stack_id) {
-      console.log('Active stack ID has changed. Refreshing stack-related information...');
-      await switchActiveStack(active_stack_id);
-      await stackCommands.refreshActiveStack();
-      await stackCommands.refreshStackView();
-    }
+  public async handleStackChanged(activeStackId: string): Promise<void> {
+    console.log('Received zenml/stackChanged notification:', activeStackId);
+    await storeActiveStack(activeStackId);
+    this.eventBus.emit('stackChanged', activeStackId);
   }
 
   /**
@@ -149,6 +138,24 @@ export class LSClient {
       console.error(`Failed to execute command ${command}:`, error);
       throw error;
     }
+  }
+
+  /**
+   * Updates the language client.
+   *
+   * @param {LanguageClient} updatedCLient The new language client.
+   */
+  public updateClient(updatedCLient: LanguageClient): void {
+    this.client = updatedCLient;
+  }
+
+  /**
+   * Gets the language client.
+   *
+   * @returns {LanguageClient | null} The language client.
+   */
+  public getLanguageClient(): LanguageClient | null {
+    return this.client;
   }
 
   /**

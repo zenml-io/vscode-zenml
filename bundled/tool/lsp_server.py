@@ -118,52 +118,65 @@ class GlobalConfigWatcher(FileSystemEventHandler):
     to update server details accordingly.
     """
 
-    last_notification_time = 0
-    notification_debounce_interval = 2
+    last_event_time = 0
+    debounce_interval = 2
     last_known_url = ""
     last_known_stack_id = ""
 
     def on_modified(self, event):
         """
-        When the global configuration file is modified, it fetches updated server
-        details and sends a notification about the configuration change.
+        Handles the modification event triggered when the global configuration file is changed.
+
+        It checks if the modification event occurs after the debounce interval to avoid
+        processing rapid, successive changes. It then compares the new server URL and
+        stack ID against the last known values to determine if a change has occurred.
+        If a change is detected, it sends a custom notification to the LSP server with the
+        updated configuration details.
+
+        Parameters:
+            event (FileSystemEvent): The event object representing the file modification.
+
+        Notes:
+            If the time since the last event is less than the debounce interval, or if there
+            are no significant changes in the server URL or active stack ID, the method will
+            return early without sending any notifications.
         """
         current_time = time.time()
-        if (
-            current_time - self.last_notification_time
-        ) < self.notification_debounce_interval:
+        if (current_time - self.last_event_time) < self.debounce_interval:
             return
         with suppress_stdout_stderr():
             config_file_path = zenml_client.config_wrapper.get_global_config_file_path()
             if event.src_path == str(config_file_path):
                 try:
                     with open(config_file_path, "r") as f:
-                        config_data = yaml.safe_load(f)
+                        config = yaml.safe_load(f)
+                        new_url = config.get("store", {}).get("url", "")
+                        new_stack_id = config.get("active_stack_id", "")
 
-                    new_stack_id = config_data.get("active_stack_id", "")
-                    new_url = config_data.get("store", {}).get("url", "")
-                    if (
-                        new_url == self.last_known_url
-                        and new_stack_id == self.last_known_stack_id
-                    ):
-                        return
+                        url_changed = new_url != self.last_known_url
+                        if url_changed:
+                            server_details = {
+                                "url": new_url,
+                                "api_token": config.get("store", {}).get(
+                                    "api_token", ""
+                                ),
+                                "store_type": config.get("store", {}).get("type", ""),
+                            }
+                            LSP_SERVER.send_custom_notification(
+                                "zenml/serverChanged",
+                                server_details,
+                            )
+                            self.last_known_url = new_url
 
-                    self.last_known_url = new_url
-                    self.last_known_stack_id = new_stack_id
+                        stack_id_changed = new_stack_id != self.last_known_stack_id
+                        if stack_id_changed:
+                            LSP_SERVER.send_custom_notification(
+                                "zenml/stackChanged", new_stack_id
+                            )
+                            self.last_known_stack_id = new_stack_id
 
-                    server_details = {
-                        "url": new_url,
-                        "api_token": config_data.get("store", {}).get("api_token", ""),
-                        "active_stack_id": config_data.get("active_stack_id", ""),
-                        "store_type": config_data.get("store", {}).get("type", ""),
-                    }
-
-                    LSP_SERVER.send_custom_notification(
-                        "zenml/configUpdated",
-                        {"path": event.src_path, "server_details": server_details},
-                    )
-
-                    self.last_notification_time = current_time
+                        if url_changed or stack_id_changed:
+                            self.last_event_time = current_time
                 except Exception as e:
                     LSP_SERVER.show_message_log(f"Failed to get server info: {e}")
 
@@ -173,6 +186,7 @@ def watch_zenml_config_yaml():
     Initializes and starts a file watcher on the ZenML global configuration directory.
     Upon detecting a change, it triggers handlers to process these changes.
     """
+
     config_dir_path = zenml_client.config_wrapper.get_global_config_directory_path()
 
     if os.path.isdir(config_dir_path):
@@ -182,8 +196,8 @@ def watch_zenml_config_yaml():
             log_error(f"Error starting file watcher on {config_dir_path}: {e}.")
         else:
             observer = Observer()
-            event_handler = GlobalConfigWatcher()
-            observer.schedule(event_handler, config_dir_path, recursive=False)
+            event_listener = GlobalConfigWatcher()
+            observer.schedule(event_listener, config_dir_path, recursive=False)
             observer.start()
             log_to_output(f"Started watching {config_dir_path} for changes.")
     else:

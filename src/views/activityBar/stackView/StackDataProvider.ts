@@ -11,6 +11,7 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
+import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
 import { Stack, StackComponent, StacksReponse } from '../../../types/StackTypes';
 import { StackComponentTreeItem, StackTreeItem } from './StackTreeItems';
@@ -19,8 +20,20 @@ export class StackDataProvider implements vscode.TreeDataProvider<vscode.TreeIte
   private static instance: StackDataProvider | null = null;
   private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined | null>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+  public stacks: Stack[] = [];
+  private eventBus = EventBus.getInstance();
 
-  constructor() { }
+  constructor() {
+    this.subscribeToEvents();
+  }
+
+  /**
+   * Subscribes to relevant events to trigger a refresh of the tree view.
+   */
+  public subscribeToEvents(): void {
+    this.eventBus.off('stackChanged', this.refresh);
+    this.eventBus.on('stackChanged', this.refresh);
+  }
 
   /**
    * Retrieves the singleton instance of ServerDataProvider.
@@ -74,14 +87,16 @@ export class StackDataProvider implements vscode.TreeDataProvider<vscode.TreeIte
    * @returns {Promise<StackTreeItem[]>} A promise that resolves with an array of `StackTreeItem` objects.
    */
   async fetchStacksWithComponents(): Promise<StackTreeItem[]> {
-    try {
-      const lsClient = LSClient.getInstance();
-      if (!lsClient.getLanguageClient()) {
-        return [];
-      }
+    const lsClient = LSClient.getInstance();
+    if (!lsClient.clientReady) {
+      this.stacks = [];
+      return [];
+    }
 
+    try {
       const stacks = await lsClient.sendLsClientRequest<StacksReponse>('fetchStacks');
-      if ('error' in stacks) {
+      if (!stacks || (stacks && 'error' in stacks)) {
+        this.stacks = [];
         return [];
       }
 
@@ -90,6 +105,7 @@ export class StackDataProvider implements vscode.TreeDataProvider<vscode.TreeIte
           .getConfiguration('zenml')
           .get<string>('activeStackId');
         const isActive = stack.id === activeStackId;
+        this.stacks = stacks
         return this.convertToStackTreeItem(stack, isActive);
       });
     } catch (error) {

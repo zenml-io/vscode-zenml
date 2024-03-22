@@ -9,16 +9,29 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
-import { EventBus } from '../../../services/EventBus';
+import { EventEmitter } from 'stream';
 
-export class MockEventBus extends EventBus {
+export class MockEventBus extends EventEmitter {
   public lsClientReady: boolean = false;
+  private static instance: MockEventBus;
 
   constructor() {
     super();
     this.on('lsClientReady', (isReady: boolean) => {
       this.lsClientReady = isReady;
     });
+  }
+
+  /**
+   * Retrieves the singleton instance of EventBus.
+   *
+   * @returns {MockEventBus} The singleton instance.
+   */
+  public static getInstance(): MockEventBus {
+    if (!MockEventBus.instance) {
+      MockEventBus.instance = new MockEventBus();
+    }
+    return MockEventBus.instance;
   }
 
   /**

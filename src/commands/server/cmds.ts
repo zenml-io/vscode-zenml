@@ -11,16 +11,17 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
-import { promptAndStoreServerUrl } from './utils';
 import { LSClient } from '../../services/LSClient';
-import { getZenMLServerUrl } from '../../utils/global';
-import { EventBus } from '../../services/EventBus';
 import {
   ConnectServerResponse,
+  GenericLSClientResponse,
   RestServerConnectionResponse,
 } from '../../types/LSClientResponseTypes';
+import { updateServerUrlAndToken } from '../../utils/global';
 import { showInformationMessage } from '../../utils/notifications';
-import { refreshUtils } from '../../utils/refresh';
+import { refreshUIComponents, refreshUtils } from '../../utils/refresh';
+import { ServerDataProvider } from '../../views/activityBar';
+import { promptAndStoreServerUrl } from './utils';
 
 /**
  * Initiates a connection to the ZenML server using a Flask service for OAuth2 authentication.
@@ -29,11 +30,9 @@ import { refreshUtils } from '../../utils/refresh';
  * @returns {Promise<boolean>} Resolves after attempting to connect to the server.
  */
 const connectServer = async (): Promise<boolean> => {
-  await promptAndStoreServerUrl();
+  const url = await promptAndStoreServerUrl();
 
-  const url = getZenMLServerUrl();
   if (!url) {
-    vscode.window.showErrorMessage('Server URL is required to connect.');
     return false;
   }
 
@@ -45,35 +44,25 @@ const connectServer = async (): Promise<boolean> => {
         cancellable: false,
       },
       async progress => {
-        progress.report({ increment: 0 });
-
         try {
           const lsClient = LSClient.getInstance();
           const result = await lsClient.sendLsClientRequest<ConnectServerResponse>('connect', [
             url,
           ]);
 
-          if (result && 'error' in result && result.error) {
+          if (result && 'error' in result) {
             throw new Error(result.error);
           }
 
-          const config = vscode.workspace.getConfiguration('zenml');
-          await config.update('serverUrl', url, vscode.ConfigurationTarget.Global);
-          await config.update(
-            'accessToken',
-            (result as RestServerConnectionResponse).access_token,
-            vscode.ConfigurationTarget.Global
-          );
-
+          const accessToken = (result as RestServerConnectionResponse).access_token
+          await updateServerUrlAndToken(url, accessToken);
           await refreshUtils.refreshUIComponents();
-          progress.report({ increment: 100 });
           resolve(true);
         } catch (error) {
           console.error('Failed to connect to ZenML server:', error);
           vscode.window.showErrorMessage(
             `Failed to connect to ZenML server: ${(error as Error).message}`
           );
-          progress.report({ increment: 100 });
           resolve(false);
         }
       }
@@ -93,11 +82,12 @@ const disconnectServer = async (): Promise<void> => {
       title: 'Disconnecting from ZenML server...',
       cancellable: false,
     },
-    async () => {
+    async progress => {
       try {
+
         const lsClient = LSClient.getInstance();
-        const result = await lsClient.sendLsClientRequest('disconnect');
-        if ('error' in result && result.error) {
+        const result = await lsClient.sendLsClientRequest<GenericLSClientResponse>('disconnect');
+        if (result && 'error' in result) {
           throw new Error(result.error);
         }
         await refreshUtils.refreshUIComponents();
@@ -122,7 +112,7 @@ const refreshServerStatus = async (): Promise<void> => {
       cancellable: false,
     },
     async () => {
-      EventBus.getInstance().emit('refreshServerStatus');
+      await ServerDataProvider.getInstance().refresh();
       showInformationMessage('Server status refreshed.');
     }
   );

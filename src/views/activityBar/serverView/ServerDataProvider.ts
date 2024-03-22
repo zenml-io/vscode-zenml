@@ -26,9 +26,16 @@ export class ServerDataProvider implements vscode.TreeDataProvider<vscode.TreeIt
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
   constructor() {
-    this.eventBus.on('refreshServerStatus', async () => {
-      await this.refresh();
-    });
+    this.subscribeToEvents();
+  }
+
+
+  /**
+   * Subscribes to relevant events to trigger a refresh of the tree view.
+   */
+  public subscribeToEvents(): void {
+    this.eventBus.off('refreshServerStatus', this.refresh);
+    this.eventBus.on('refreshServerStatus', this.refresh);
   }
 
   /**

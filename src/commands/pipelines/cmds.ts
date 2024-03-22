@@ -58,7 +58,7 @@ const deletePipelineRun = async (node: PipelineTreeItem): Promise<void> => {
         try {
           const lsClient = LSClient.getInstance();
           const result = await lsClient.sendLsClientRequest('deletePipelineRun', [runId]);
-          if ('error' in result && result.error) {
+          if (result && 'error' in result) {
             throw new Error(result.error);
           }
           showInformationMessage('Pipeline run deleted successfully.');

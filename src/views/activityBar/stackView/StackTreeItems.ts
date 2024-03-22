@@ -48,7 +48,7 @@ export class StackComponentTreeItem extends vscode.TreeItem {
   ) {
     super(component.name, vscode.TreeItemCollapsibleState.None);
 
-    this.tooltip = `Type: ${component.type}, Flavor: ${component.flavor}`;
+    this.tooltip = `Type: ${component.type}, Flavor: ${component.flavor}, ID: ${stackId}`;
     this.description = `${component.type} (${component.flavor})`;
     this.contextValue = 'stackComponent';
     this.id = `${stackId}-${component.id}`;
