@@ -19,17 +19,22 @@ import { PYTOOL_MODULE } from '../utils/constants';
 import { getZenMLServerUrl, updateServerUrlAndToken } from '../utils/global';
 import { debounce, refreshUIComponents } from '../utils/refresh';
 import { EventBus } from './EventBus';
+import { ZenExtension } from './ZenExtension';
+import * as vscode from 'vscode';
 
 export class LSClient {
+  public isZenMLReady = false;
   private static instance: LSClient | null = null;
   private client: LanguageClient | null = null;
   private eventBus: EventBus = EventBus.getInstance();
   public clientReady: boolean = false;
+  public interpreterSelectionInProgress = false;
 
   public restartLSPServerDebounced = debounce(async () => {
     await commands.executeCommand(`${PYTOOL_MODULE}.restart`);
     await refreshUIComponents();
   }, 500);
+
 
   /**
    * Sets up notification listeners for the language client.
@@ -40,38 +45,13 @@ export class LSClient {
     if (this.client) {
       this.client.onNotification('zenml/serverChanged', this.handleServerChanged.bind(this));
       this.client.onNotification('zenml/stackChanged', this.handleStackChanged.bind(this));
-    }
-  }
-
-  /**
-   * Handles the zenml/serverChanged notification.
-   *
-   * @param details The details of the server update.
-   */
-  public async handleServerChanged(details: ConfigUpdateDetails): Promise<void> {
-    console.log('Received zenml/serverChanged notification');
-
-    const currentServerUrl = getZenMLServerUrl();
-    const { url, api_token } = details;
-    if (currentServerUrl !== url) {
-      window.withProgress(
-        {
-          location: ProgressLocation.Notification,
-          title: 'ZenML config change detected',
-          cancellable: false,
-        },
-        async progress => {
-          await this.stopLanguageClient();
-          await updateServerUrlAndToken(url, api_token);
-          this.restartLSPServerDebounced();
-        }
-      );
+      this.client.onNotification('zenml/ready', this.handleZenMLReady.bind(this));
     }
   }
 
   /**
    * Starts the language client.
-   *
+   * 
    * @returns A promise resolving to void.
    */
   public async startLanguageClient(): Promise<void> {
@@ -82,11 +62,65 @@ export class LSClient {
         this.eventBus.emit('lsClientReady', true);
         this.setupNotificationListeners();
         console.log('Language client started successfully.');
+        if (!this.isZenMLReady) {
+          await vscode.commands.executeCommand(`${PYTOOL_MODULE}.checkZenMLInstallation`);
+        }
       }
     } catch (error) {
       console.error('Failed to start the language client:', error);
     }
   }
+
+  /**
+   *  Handles the zenml/ready notification.
+   * 
+   * @param params The ready status of ZenML.
+   * @returns A promise resolving to void.
+   */
+  public async handleZenMLReady(params: { ready: boolean }): Promise<void> {
+    console.log("ZENML/READY: ", params.ready);
+    this.isZenMLReady = params.ready;
+    if (!params.ready) {
+      console.log('ZenML is not installed.');
+      if (!this.interpreterSelectionInProgress) {
+        await vscode.commands.executeCommand('zenml.promptForInterpreter');
+      }
+    } else {
+      console.log('ZenML is installed, setting up extension components...');
+      await commands.executeCommand(`${PYTOOL_MODULE}.restart`);
+      await ZenExtension.setupViewsAndCommands();
+      this.eventBus.emit('zenmlReady/lsClientReady', true);
+    }
+  }
+
+  /**
+   * Handles the zenml/serverChanged notification.
+   *
+   * @param details The details of the server update.
+   */
+  public async handleServerChanged(details: ConfigUpdateDetails): Promise<void> {
+    if (this.isZenMLReady) {
+      console.log('Received zenml/serverChanged notification');
+
+      const currentServerUrl = getZenMLServerUrl();
+      const { url, api_token } = details;
+      if (currentServerUrl !== url) {
+        window.withProgress(
+          {
+            location: ProgressLocation.Notification,
+            title: 'ZenML config change detected',
+            cancellable: false,
+          },
+          async progress => {
+            await this.stopLanguageClient();
+            await updateServerUrlAndToken(url, api_token);
+            this.restartLSPServerDebounced();
+          }
+        );
+      }
+    }
+  }
+
 
   /**
    * Stops the language client.
@@ -106,6 +140,11 @@ export class LSClient {
     }
   }
 
+  /**
+   * Handles the zenml/stackChanged notification.
+   * 
+   * @param activeStackId The ID of the active stack.
+   */
   public async handleStackChanged(activeStackId: string): Promise<void> {
     console.log('Received zenml/stackChanged notification:', activeStackId);
     await storeActiveStack(activeStackId);

@@ -52,7 +52,6 @@ export class ZenExtension {
   private static context: vscode.ExtensionContext;
   static commandDisposables: vscode.Disposable[] = [];
   static viewDisposables: vscode.Disposable[] = [];
-
   private static lsClient: LSClient;
   private static outputChannel: vscode.LogOutputChannel;
   private static serverId: string;
@@ -82,15 +81,15 @@ export class ZenExtension {
     this.serverName = serverDefaults.name;
     this.serverId = serverDefaults.module;
 
-    this.deferredInitialize(true);
     this.setupLoggingAndTrace();
     this.subscribeToCoreEvents();
+    this.deferredInitialize();
   }
 
   /**
    * Deferred initialization tasks to be run after initializing other tasks.
    */
-  static deferredInitialize(initialCall: boolean = false): void {
+  static deferredInitialize(): void {
     setImmediate(async () => {
       const interpreterDetails = await getInterpreterDetails();
       if (interpreterDetails.path) {
@@ -102,12 +101,10 @@ export class ZenExtension {
       }
       // Start the server with the current or updated interpreter settings
       await runServer(this.serverId, this.serverName, this.outputChannel, this.lsClient);
-      // Set up views and commands
-      if (initialCall) {
-        await this.setupViewsAndCommands();
-      }
+      // Set up views and commands / Check ZenML installation
     });
   }
+
 
   /**
    * Updates the global settings for the ZenML extension.
@@ -156,8 +153,44 @@ export class ZenExtension {
       registerCommand(`${this.serverId}.restart`, async () => {
         await runServer(this.serverId, this.serverName, this.outputChannel, this.lsClient);
       }),
+      registerCommand(`zenml.promptForInterpreter`, async () => {
+        if (!this.lsClient.interpreterSelectionInProgress && !this.lsClient.isZenMLReady) {
+          await this.promptForPythonInterpreter();
+        }
+      }),
       registerLanguageStatusItem(this.serverId, this.serverName, `${this.serverId}.showLogs`)
     );
+  }
+
+  /**
+   * Prompts the user to select a Python interpreter.
+   * 
+   * @returns {Promise<void>} A promise that resolves to void.
+   */
+  static async promptForPythonInterpreter(): Promise<void> {
+    if (this.lsClient.isZenMLReady) {
+      console.log('ZenML is already installed, no need to prompt for interpreter.');
+      return;
+    }
+    this.lsClient.interpreterSelectionInProgress = true;
+    try {
+      const selected = await vscode.window.showInformationMessage(
+        'ZenML not found with the current Python interpreter. Would you like to select a different interpreter?',
+        'Select Interpreter', 'Cancel'
+      );
+      if (selected === 'Select Interpreter') {
+        await vscode.commands.executeCommand('python.setInterpreter');
+        console.log('Interpreter selection completed.');
+        await vscode.commands.executeCommand(`${this.serverId}.checkZenMLInstallation`);
+        await vscode.commands.executeCommand(`${this.serverId}.restart`);
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
+    } finally {
+      this.lsClient.interpreterSelectionInProgress = false;
+      if (!this.lsClient.isZenMLReady) {
+        await this.promptForPythonInterpreter();
+      }
+    }
   }
 
   /**

@@ -101,7 +101,6 @@ export function delayRefreshWithRetry(
  * @returns {Promise<void>} A promise that resolves to void.
  */
 export async function refreshUIComponents(): Promise<void> {
-  console.log('Test Debug: Inside refreshUIComponents() - called: true');
   await ServerDataProvider.getInstance().refresh();
   await StackDataProvider.getInstance().refresh();
   await PipelineDataProvider.getInstance().refresh();

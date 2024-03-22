@@ -14,6 +14,7 @@ import { EventEmitter } from 'events';
 
 export class EventBus extends EventEmitter {
   private static instance: EventBus;
+  public zenmlReady: boolean = false;
 
   constructor() {
     super();
