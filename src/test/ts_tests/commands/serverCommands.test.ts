@@ -56,9 +56,11 @@ suite('Server Commands Tests', () => {
       await task(mockProgress, mockCancellationToken.token);
     });
 
-    refreshUIComponentsStub = sandbox.stub(refreshUtils, 'refreshUIComponents').callsFake(async () => {
-      console.log("Stubbed refreshUIComponents called");
-    });
+    refreshUIComponentsStub = sandbox
+      .stub(refreshUtils, 'refreshUIComponents')
+      .callsFake(async () => {
+        console.log('Stubbed refreshUIComponents called');
+      });
   });
 
   teardown(() => {
@@ -67,24 +69,35 @@ suite('Server Commands Tests', () => {
 
   test('connectServer successfully connects to the server', async () => {
     showInputBoxStub.resolves(MOCK_REST_SERVER_URL);
-    sandbox.stub(mockLSClient, 'sendLsClientRequest')
+    sandbox
+      .stub(mockLSClient, 'sendLsClientRequest')
       .withArgs('connect', [MOCK_REST_SERVER_URL])
       .resolves({
         message: 'Connected successfully',
-        access_token: MOCK_ACCESS_TOKEN
+        access_token: MOCK_ACCESS_TOKEN,
       });
 
     const result = await serverCommands.connectServer();
 
     assert.strictEqual(result, true, 'Should successfully connect to the server');
     sinon.assert.calledOnce(showInputBoxStub);
-    sinon.assert.calledWith(configurationMock.update, 'serverUrl', MOCK_REST_SERVER_URL, vscode.ConfigurationTarget.Global);
-    sinon.assert.calledWith(configurationMock.update, 'accessToken', MOCK_ACCESS_TOKEN, vscode.ConfigurationTarget.Global);
+    sinon.assert.calledWith(
+      configurationMock.update,
+      'serverUrl',
+      MOCK_REST_SERVER_URL,
+      vscode.ConfigurationTarget.Global
+    );
+    sinon.assert.calledWith(
+      configurationMock.update,
+      'accessToken',
+      MOCK_ACCESS_TOKEN,
+      vscode.ConfigurationTarget.Global
+    );
   });
 
-
   test('disconnectServer successfully disconnects from the server', async () => {
-    sandbox.stub(mockLSClient, 'sendLsClientRequest')
+    sandbox
+      .stub(mockLSClient, 'sendLsClientRequest')
       .withArgs('disconnect')
       .resolves({ message: 'Disconnected successfully' });
 
@@ -92,7 +105,6 @@ suite('Server Commands Tests', () => {
 
     sinon.assert.calledOnce(refreshUIComponentsStub);
   });
-
 
   test('connectServer fails with incorrect URL', async () => {
     showInputBoxStub.resolves('invalid.url');
@@ -107,11 +119,12 @@ suite('Server Commands Tests', () => {
   });
 
   test('refreshServerStatus refreshes the server status', async () => {
-    const serverDataProviderRefreshStub = sandbox.stub(ServerDataProvider.getInstance(), 'refresh').resolves();
+    const serverDataProviderRefreshStub = sandbox
+      .stub(ServerDataProvider.getInstance(), 'refresh')
+      .resolves();
 
     await serverCommands.refreshServerStatus();
 
     sinon.assert.calledOnce(serverDataProviderRefreshStub);
   });
-
 });

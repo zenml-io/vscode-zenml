@@ -54,7 +54,7 @@ const connectServer = async (): Promise<boolean> => {
             throw new Error(result.error);
           }
 
-          const accessToken = (result as RestServerConnectionResponse).access_token
+          const accessToken = (result as RestServerConnectionResponse).access_token;
           await updateServerUrlAndToken(url, accessToken);
           await refreshUtils.refreshUIComponents();
           resolve(true);
@@ -84,7 +84,6 @@ const disconnectServer = async (): Promise<void> => {
     },
     async progress => {
       try {
-
         const lsClient = LSClient.getInstance();
         const result = await lsClient.sendLsClientRequest<GenericLSClientResponse>('disconnect');
         if (result && 'error' in result) {

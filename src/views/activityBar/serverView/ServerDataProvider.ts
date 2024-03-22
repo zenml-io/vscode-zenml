@@ -29,7 +29,6 @@ export class ServerDataProvider implements vscode.TreeDataProvider<vscode.TreeIt
     this.subscribeToEvents();
   }
 
-
   /**
    * Subscribes to relevant events to trigger a refresh of the tree view.
    */
