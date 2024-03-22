@@ -22,17 +22,20 @@ export async function activate(context: vscode.ExtensionContext) {
 
   ZenExtension.initialize(context, lsClient);
 
-
-  context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(async (e) => {
-    if (e.affectsConfiguration("python.defaultInterpreterPath")) {
-      const interpreterPath = vscode.workspace.getConfiguration('python').get<string>('defaultInterpreterPath');
-      console.log(`Python interpreter changed to: ${interpreterPath}`);
-      if (interpreterPath) {
-        console.log('Updating global settings with new interpreter path')
-        await ZenExtension.updateGlobalSettings(interpreterPath);
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration(async e => {
+      if (e.affectsConfiguration('python.defaultInterpreterPath')) {
+        const interpreterPath = vscode.workspace
+          .getConfiguration('python')
+          .get<string>('defaultInterpreterPath');
+        console.log(`Python interpreter changed to: ${interpreterPath}`);
+        if (interpreterPath) {
+          console.log('Updating global settings with new interpreter path');
+          await ZenExtension.updateGlobalSettings(interpreterPath);
+        }
       }
-    }
-  }));
+    })
+  );
 
   const handleLsClientReady = async (isReady: boolean) => {
     // console.log('Extension received lsClientReady notification:', isReady);
@@ -49,8 +52,6 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 }
-
-
 
 /**
  * Deactivates the ZenML extension.

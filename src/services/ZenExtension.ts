@@ -105,7 +105,6 @@ export class ZenExtension {
     });
   }
 
-
   /**
    * Updates the global settings for the ZenML extension.
    *
@@ -164,7 +163,7 @@ export class ZenExtension {
 
   /**
    * Prompts the user to select a Python interpreter.
-   * 
+   *
    * @returns {Promise<void>} A promise that resolves to void.
    */
   static async promptForPythonInterpreter(): Promise<void> {
@@ -176,7 +175,8 @@ export class ZenExtension {
     try {
       const selected = await vscode.window.showInformationMessage(
         'ZenML not found with the current Python interpreter. Would you like to select a different interpreter?',
-        'Select Interpreter', 'Cancel'
+        'Select Interpreter',
+        'Cancel'
       );
       if (selected === 'Select Interpreter') {
         await vscode.commands.executeCommand('python.setInterpreter');

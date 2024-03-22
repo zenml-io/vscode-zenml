@@ -35,7 +35,6 @@ export class LSClient {
     await refreshUIComponents();
   }, 500);
 
-
   /**
    * Sets up notification listeners for the language client.
    *
@@ -51,7 +50,7 @@ export class LSClient {
 
   /**
    * Starts the language client.
-   * 
+   *
    * @returns A promise resolving to void.
    */
   public async startLanguageClient(): Promise<void> {
@@ -73,12 +72,12 @@ export class LSClient {
 
   /**
    *  Handles the zenml/ready notification.
-   * 
+   *
    * @param params The ready status of ZenML.
    * @returns A promise resolving to void.
    */
   public async handleZenMLReady(params: { ready: boolean }): Promise<void> {
-    console.log("ZENML/READY: ", params.ready);
+    console.log('ZENML/READY: ', params.ready);
     this.isZenMLReady = params.ready;
     if (!params.ready) {
       console.log('ZenML is not installed.');
@@ -121,7 +120,6 @@ export class LSClient {
     }
   }
 
-
   /**
    * Stops the language client.
    *
@@ -142,7 +140,7 @@ export class LSClient {
 
   /**
    * Handles the zenml/stackChanged notification.
-   * 
+   *
    * @param activeStackId The ID of the active stack.
    */
   public async handleStackChanged(activeStackId: string): Promise<void> {
