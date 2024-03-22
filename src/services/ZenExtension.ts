@@ -172,6 +172,7 @@ export class ZenExtension {
       return;
     }
     this.lsClient.interpreterSelectionInProgress = true;
+    let userCancelled = false;
     try {
       const selected = await vscode.window.showInformationMessage(
         'ZenML not found with the current Python interpreter. Would you like to select a different interpreter?',
@@ -184,13 +185,18 @@ export class ZenExtension {
         await vscode.commands.executeCommand(`${this.serverId}.checkZenMLInstallation`);
         await vscode.commands.executeCommand(`${this.serverId}.restart`);
         await new Promise(resolve => setTimeout(resolve, 5000));
+      } else {
+        userCancelled = true;
+        console.log('Interpreter selection cancelled.');
       }
     } finally {
       this.lsClient.interpreterSelectionInProgress = false;
-      if (!this.lsClient.isZenMLReady) {
+      if (!this.lsClient.isZenMLReady && !userCancelled) {
         await this.promptForPythonInterpreter();
-      } else {
+      } else if (this.lsClient.isZenMLReady) {
         vscode.window.showInformationMessage('ZenML installation found. Ready to use.');
+      } else {
+        vscode.window.showInformationMessage('Interpreter selection cancelled. ZenML features will be disabled.');
       }
     }
   }
