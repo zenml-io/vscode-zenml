@@ -134,6 +134,21 @@
     },
     "commands": [
       {
+        "command": "zenml.promptForInterpreter",
+        "title": "Select Python Interpreter",
+        "category": "ZenML"
+      },
+      {
+        "command": "zenml.checkZenML",
+        "title": "Check ZenML Installation",
+        "category": "ZenML"
+      },
+      {
+        "command": "zenml-python.checkZenMLInstallation",
+        "title": "Check ZenML Installation",
+        "category": "ZenML"
+      },
+      {
         "command": "zenml-python.restart",
         "title": "Restart LSP Server",
         "category": "ZenML"

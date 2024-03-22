@@ -31,8 +31,11 @@ export class StackDataProvider implements vscode.TreeDataProvider<vscode.TreeIte
    * Subscribes to relevant events to trigger a refresh of the tree view.
    */
   public subscribeToEvents(): void {
-    this.eventBus.off('stackChanged', this.refresh);
-    this.eventBus.on('stackChanged', this.refresh);
+    this.eventBus.on('zenmlReadt/lsClientReady', (isReady: boolean) => {
+      this.eventBus.off('stackChanged', this.refresh);
+      this.eventBus.on('stackChanged', this.refresh);
+      this.refresh();
+    })
   }
 
   /**

@@ -14,6 +14,7 @@ import { EventEmitter } from 'stream';
 export class MockEventBus extends EventEmitter {
   public lsClientReady: boolean = false;
   private static instance: MockEventBus;
+  public zenmlReady: boolean = false;
 
   constructor() {
     super();

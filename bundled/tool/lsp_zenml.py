@@ -57,11 +57,11 @@ class ZenLanguageServer(LanguageServer):
                 capture_output=True,
                 text=True,
                 check=True,
-                timeout=10,
+                timeout=10,  # Timeout after 10 seconds
             )
             self.show_message_log("ZenML installation check: Successful.")
             return True
-        except subprocess.CalledProcessError:
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
             return False
 
     def get_zenml_version(self) -> str:

@@ -45,22 +45,6 @@ update_sys_path(
 
 
 # **********************************************************
-# ZenML Installation Check
-# **********************************************************
-def is_zenml_installed() -> bool:
-    """Checks if ZenML is installed."""
-    try:
-        subprocess.check_call(
-            [sys.executable, "-c", "import zenml"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        return True
-    except subprocess.CalledProcessError:
-        return False
-
-
-# **********************************************************
 # Imports needed for the language server goes below this.
 # **********************************************************
 # pylint: disable=wrong-import-position,import-error
@@ -101,6 +85,27 @@ zenml_initialized = False
 zenml_init_error = {
     "error": "ZenML is not initialized. Please check ZenML version requirements."
 }
+python_interpreter = sys.executable
+
+
+# **********************************************************
+# ZenML Installation Check
+# **********************************************************
+def is_zenml_installed() -> bool:
+    """Checks if ZenML is installed."""
+    try:
+        subprocess.run(
+            [python_interpreter, "-c", "import zenml"],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=10,  # Timeout after 10 seconds
+        )
+        LSP_SERVER.show_message_log("ZenML installation check: Successful.")
+        return True
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        return False
+
 
 # **********************************************************
 # ConfigFileChangeHandler: Observe config.yaml changes
@@ -324,11 +329,12 @@ def delete_pipeline_run(wrapper_instance, args) -> dict:
     return wrapper_instance.delete_pipeline_run(args)
 
 
-@LSP_SERVER.command(f"{TOOL_MODULE}.checkInstallation")
+@LSP_SERVER.command(f"{TOOL_MODULE}.checkZenMLInstallation")
 def check_zenml_installation(*args, **kwargs) -> None:
     """Handles a request from the client to check the ZenML installation."""
-    result = LSP_SERVER.is_zenml_installed()
-    LSP_SERVER.send_notification("zenml/ready", {"ready": result})
+    result = is_zenml_installed()
+    LSP_SERVER.send_custom_notification("zenml/ready", {"ready": result})
+    return result
 
 
 # **********************************************************
@@ -370,21 +376,18 @@ def initialize(params: lsp.InitializeParams) -> None:
     if LSP_SERVER.is_zenml_installed():
         zenml_client = ZenMLClient()
         zenml_initialized = True
-        LSP_SERVER.send_custom_notification(
-            "zenml/ready", {"ready": True, "installed": True}
-        )
+        LSP_SERVER.send_custom_notification("zenml/ready", {"ready": True})
         log_to_output("ZenML is installed and ready.")
     else:
         zenml_initialized = False
-        LSP_SERVER.send_custom_notification(
-            "zenml/ready", {"ready": False, "installed": False}
+        LSP_SERVER.send_notification("zenml/ready", {"ready": False})
+        log_to_output(
+            "LSP: ZenML not found. Please select a Python interpreter with ZenML installed."
         )
-        log_error("ZenML is not installed. ZenML features will be unavailable.")
-        log_error("Skipping file watch due to ZenML version check failure.")
     if zenml_initialized:
         watch_zenml_config_yaml()
     else:
-        log_error("Skipping file watch due to ZenML version check failure.")
+        log_to_output("Skipping file watch due to ZenML version check failure.")
 
 
 @LSP_SERVER.feature(lsp.EXIT)

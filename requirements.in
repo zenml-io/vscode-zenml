@@ -12,4 +12,5 @@
 pygls
 packaging
 watchdog
+PyYAML
 # TODO: Add your tool here
