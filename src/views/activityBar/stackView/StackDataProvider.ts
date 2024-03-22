@@ -105,7 +105,7 @@ export class StackDataProvider implements vscode.TreeDataProvider<vscode.TreeIte
           .getConfiguration('zenml')
           .get<string>('activeStackId');
         const isActive = stack.id === activeStackId;
-        this.stacks = stacks
+        this.stacks = stacks;
         return this.convertToStackTreeItem(stack, isActive);
       });
     } catch (error) {

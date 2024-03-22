@@ -36,7 +36,6 @@ suite('ServerDataProvider Tests', () => {
     sandbox.stub(LSClient, 'getInstance').returns(mockLSClientInstance);
     sandbox.stub(EventBus, 'getInstance').returns(mockEventBus);
     sandbox.stub(mockLSClientInstance, 'startLanguageClient').resolves();
-
   });
 
   teardown(() => {

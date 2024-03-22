@@ -16,10 +16,7 @@ import { storeActiveStack } from '../commands/stack/utils';
 import { GenericLSClientResponse } from '../types/LSClientResponseTypes';
 import { ConfigUpdateDetails } from '../types/ServerInfoTypes';
 import { PYTOOL_MODULE } from '../utils/constants';
-import {
-  getZenMLServerUrl,
-  updateServerUrlAndToken
-} from '../utils/global';
+import { getZenMLServerUrl, updateServerUrlAndToken } from '../utils/global';
 import { debounce, refreshUIComponents } from '../utils/refresh';
 import { EventBus } from './EventBus';
 
@@ -34,11 +31,11 @@ export class LSClient {
     await refreshUIComponents();
   }, 500);
 
-  /** 
+  /**
    * Sets up notification listeners for the language client.
-   * 
+   *
    * @returns void
-  */
+   */
   public setupNotificationListeners(): void {
     if (this.client) {
       this.client.onNotification('zenml/serverChanged', this.handleServerChanged.bind(this));
@@ -47,8 +44,8 @@ export class LSClient {
   }
 
   /**
-   * Handles the zenml/serverChanged notification. 
-   * 
+   * Handles the zenml/serverChanged notification.
+   *
    * @param details The details of the server update.
    */
   public async handleServerChanged(details: ConfigUpdateDetails): Promise<void> {
@@ -57,15 +54,18 @@ export class LSClient {
     const currentServerUrl = getZenMLServerUrl();
     const { url, api_token } = details;
     if (currentServerUrl !== url) {
-      window.withProgress({
-        location: ProgressLocation.Notification,
-        title: "ZenML config change detected",
-        cancellable: false
-      }, async progress => {
-        await this.stopLanguageClient();
-        await updateServerUrlAndToken(url, api_token);
-        this.restartLSPServerDebounced();
-      });
+      window.withProgress(
+        {
+          location: ProgressLocation.Notification,
+          title: 'ZenML config change detected',
+          cancellable: false,
+        },
+        async progress => {
+          await this.stopLanguageClient();
+          await updateServerUrlAndToken(url, api_token);
+          this.restartLSPServerDebounced();
+        }
+      );
     }
   }
 
@@ -87,7 +87,6 @@ export class LSClient {
       console.error('Failed to start the language client:', error);
     }
   }
-
 
   /**
    * Stops the language client.

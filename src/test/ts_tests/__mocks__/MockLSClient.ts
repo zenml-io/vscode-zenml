@@ -28,7 +28,7 @@ export class MockLSClient {
   constructor(eventBus: MockEventBus) {
     this.eventBus = eventBus;
     this.mockLanguageClient = {
-      start: async () => { },
+      start: async () => {},
       onNotification: (type: string, handler: (params: any) => void) => {
         this.notificationHandlers.set(type, handler);
       },
@@ -43,10 +43,10 @@ export class MockLSClient {
   }
 
   /**
- * Retrieves the singleton instance of EventBus.
- *
- * @returns {MockLSClient} The singleton instance.
- */
+   * Retrieves the singleton instance of EventBus.
+   *
+   * @returns {MockLSClient} The singleton instance.
+   */
   public static getInstance(mockEventBus: MockEventBus): MockLSClient {
     if (!MockLSClient.instance) {
       MockLSClient.instance = new MockLSClient(mockEventBus);
@@ -55,8 +55,8 @@ export class MockLSClient {
   }
 
   /**
- * Starts the language client.
- */
+   * Starts the language client.
+   */
   public startLanguageClient(): Promise<void> {
     return this.mockLanguageClient.start();
   }
@@ -148,6 +148,4 @@ export class MockLSClient {
       }
     }
   }
-
-
 }

@@ -25,7 +25,7 @@ export class PipelineDataProvider implements vscode.TreeDataProvider<vscode.Tree
   readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null> =
     this._onDidChangeTreeData.event;
 
-  constructor() { }
+  constructor() {}
 
   /**
    * Retrieves the singleton instance of ServerDataProvider.
@@ -85,8 +85,7 @@ export class PipelineDataProvider implements vscode.TreeDataProvider<vscode.Tree
         return [];
       }
 
-      const result =
-        await lsClient.sendLsClientRequest<PipelineRunsResponse>('getPipelineRuns');
+      const result = await lsClient.sendLsClientRequest<PipelineRunsResponse>('getPipelineRuns');
       if (!result || (result && 'error' in result)) {
         return [];
       }

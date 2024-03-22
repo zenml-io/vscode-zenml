@@ -27,13 +27,15 @@ export async function activate(context: vscode.ExtensionContext) {
     if (isReady) {
       await refreshUIComponents();
     }
-  }
+  };
 
   eventBus.on('lsClientReady', handleLsClientReady);
 
-  context.subscriptions.push(new vscode.Disposable(() => {
-    eventBus.off('lsClientReady', handleLsClientReady);
-  }));
+  context.subscriptions.push(
+    new vscode.Disposable(() => {
+      eventBus.off('lsClientReady', handleLsClientReady);
+    })
+  );
 }
 
 /**

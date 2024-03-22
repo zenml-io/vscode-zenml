@@ -53,8 +53,6 @@ export default class ZenMLStatusBar {
     });
   }
 
-
-
   /**
    * Retrieves or creates an instance of the ZenMLStatusBar.
    * This method implements the Singleton pattern to ensure that only one instance of ZenMLStatusBar exists.
