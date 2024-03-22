@@ -16,23 +16,24 @@ import { LSClient } from './services/LSClient';
 import { ZenExtension } from './services/ZenExtension';
 import { refreshUIComponents } from './utils/refresh';
 
-export interface ZenMLReadyNotification {
-  ready: boolean;
-  version?: string;
-}
-
 export async function activate(context: vscode.ExtensionContext) {
   const eventBus = EventBus.getInstance();
   const lsClient = LSClient.getInstance();
 
   ZenExtension.initialize(context, lsClient);
 
-  eventBus.on('lsClientReady', async (isReady: boolean) => {
-    console.log('extension.ts received lsClientReady notification:', isReady);
+  const handleLsClientReady = async (isReady: boolean) => {
+    console.log('Extension received lsClientReady notification:', isReady);
     if (isReady) {
       await refreshUIComponents();
     }
-  });
+  }
+
+  eventBus.on('lsClientReady', handleLsClientReady);
+
+  context.subscriptions.push(new vscode.Disposable(() => {
+    eventBus.off('lsClientReady', handleLsClientReady);
+  }));
 }
 
 /**

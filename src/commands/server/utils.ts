@@ -19,7 +19,7 @@ import { ServerStatusInfoResponse } from '../../types/LSClientResponseTypes';
 /**
  * Prompts the user to enter the ZenML server URL and stores it in the global configuration.
  */
-export async function promptAndStoreServerUrl() {
+export async function promptAndStoreServerUrl(): Promise<string | undefined> {
   let serverUrl = await vscode.window.showInputBox({
     prompt: 'Enter the ZenML server URL',
     placeHolder: 'https://<your-zenml-server-url>',
@@ -28,15 +28,17 @@ export async function promptAndStoreServerUrl() {
   serverUrl = serverUrl?.trim();
 
   if (serverUrl) {
-    let cleanedServerUrl = serverUrl.replace(/\/$/, '');
+    serverUrl = serverUrl.replace(/\/$/, '');
     // Validate the server URL format before storing
-    if (!/^https?:\/\/[^\s$.?#].[^\s]*$/.test(cleanedServerUrl)) {
+    if (!/^https?:\/\/[^\s$.?#].[^\s]*$/.test(serverUrl)) {
       vscode.window.showErrorMessage('Invalid server URL format.');
       return;
     }
     const config = vscode.workspace.getConfiguration('zenml');
-    await config.update('serverUrl', cleanedServerUrl, vscode.ConfigurationTarget.Global);
+    await config.update('serverUrl', serverUrl, vscode.ConfigurationTarget.Global);
   }
+
+  return serverUrl;
 }
 
 /**
@@ -46,14 +48,14 @@ export async function promptAndStoreServerUrl() {
  */
 export async function checkServerStatus(): Promise<ServerStatus> {
   const lsClient = LSClient.getInstance();
-  if (!lsClient.getLanguageClient()) {
+  // For debugging
+  if (!lsClient.clientReady) {
     return INITIAL_ZENML_SERVER_STATUS;
   }
 
   try {
     const result = await lsClient.sendLsClientRequest<ServerStatusInfoResponse>('serverInfo');
-
-    if ('error' in result && result.error) {
+    if (result && 'error' in result) {
       console.error(result.error);
       return INITIAL_ZENML_SERVER_STATUS;
     } else if (isZenServerDetails(result)) {

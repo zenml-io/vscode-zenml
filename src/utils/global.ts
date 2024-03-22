@@ -11,7 +11,6 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
-import { RestZenServerStoreConfig, ZenServerStoreConfig } from '../types/ServerInfoTypes';
 import { PYTOOL_MODULE } from './constants';
 
 /**
@@ -42,24 +41,15 @@ export const getZenMLAccessToken = (): string => {
 /**
  * Updates the ZenML Server URL and access token in the VSCode workspace configuration.
  *
- * @param {ZenServerStoreConfig} storeConfig - The new ZenML Server configuration to be updated.
+ * @param {string} url - The new ZenML Server URL to be updated.
+ * @param {string} token - The new access token to be updated.
  * @returns {Promise<void>} A promise that resolves after the configuration has been updated.
  */
-export const updateServerUrlAndToken = async (
-  storeConfig: ZenServerStoreConfig | undefined
-): Promise<void> => {
-  let accessToken: string | undefined;
-  const serverUrl = storeConfig?.url;
-  if (storeConfig && storeConfig.type === 'rest' && storeConfig.url.startsWith('http:')) {
-    accessToken = (storeConfig as RestZenServerStoreConfig).api_token;
-  }
-
-  const config = vscode.workspace.getConfiguration('zenml');
-
+export const updateServerUrlAndToken = async (url: string, token: string): Promise<void> => {
   try {
-    await config.update('serverUrl', serverUrl, vscode.ConfigurationTarget.Global);
-    await config.update('accessToken', accessToken, vscode.ConfigurationTarget.Global);
-    console.log('ZenML Server URL and access token have been updated successfully.');
+    const config = vscode.workspace.getConfiguration('zenml');
+    await config.update('serverUrl', url, vscode.ConfigurationTarget.Global);
+    await config.update('accessToken', token, vscode.ConfigurationTarget.Global);
   } catch (error: any) {
     console.error(`Failed to update ZenML configuration: ${error.message}`);
     throw new Error('Failed to update ZenML Server URL and access token.');

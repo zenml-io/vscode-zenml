@@ -14,8 +14,6 @@ import * as vscode from 'vscode';
 import { PipelineRunTreeItem, PipelineTreeItem } from './PipelineTreeItems';
 import { PipelineRun, PipelineRunsResponse } from '../../../types/PipelineTypes';
 import { LSClient } from '../../../services/LSClient';
-import { PYTOOL_MODULE } from '../../../utils/constants';
-import { ErrorMessageResponse } from '../../../types/LSClientResponseTypes';
 
 /**
  * Provides data for the pipeline run tree view, displaying detailed information about each pipeline run.
@@ -27,7 +25,7 @@ export class PipelineDataProvider implements vscode.TreeDataProvider<vscode.Tree
   readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null> =
     this._onDidChangeTreeData.event;
 
-  constructor() {}
+  constructor() { }
 
   /**
    * Retrieves the singleton instance of ServerDataProvider.
@@ -83,17 +81,17 @@ export class PipelineDataProvider implements vscode.TreeDataProvider<vscode.Tree
   async fetchPipelineRuns(): Promise<PipelineTreeItem[]> {
     try {
       const lsClient = LSClient.getInstance();
-      if (!lsClient.getLanguageClient()) {
+      if (!lsClient.clientReady) {
         return [];
       }
 
-      const pipelineRuns =
+      const result =
         await lsClient.sendLsClientRequest<PipelineRunsResponse>('getPipelineRuns');
-      if ('error' in pipelineRuns) {
+      if (!result || (result && 'error' in result)) {
         return [];
       }
 
-      return pipelineRuns.map((run: PipelineRun) => {
+      return result.map((run: PipelineRun) => {
         const formattedStartTime = new Date(run.startTime).toLocaleString();
         const formattedEndTime = run.endTime ? new Date(run.endTime).toLocaleString() : 'N/A';
 

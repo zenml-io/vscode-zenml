@@ -73,7 +73,7 @@ const renameStack = async (node: StackTreeItem): Promise<void> => {
         const { label, id } = node;
         const lsClient = LSClient.getInstance();
         const result = await lsClient.sendLsClientRequest('renameStack', [id, newStackName]);
-        if ('error' in result && result.error) {
+        if (result && 'error' in result) {
           throw new Error(result.error);
         }
         showInformationMessage(`Stack ${label} successfully renamed to ${newStackName}.`);
@@ -148,8 +148,6 @@ const setActiveStack = async (node: StackTreeItem): Promise<void> => {
         if (result) {
           const { id, name } = result;
           showInformationMessage(`Active stack set to: ${name}`);
-          await refreshActiveStack();
-          await StackDataProvider.getInstance().refresh();
         }
       } catch (error) {
         console.log(error);

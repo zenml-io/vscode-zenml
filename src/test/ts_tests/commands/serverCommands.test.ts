@@ -11,15 +11,15 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import * as assert from 'assert';
-import * as vscode from 'vscode';
 import * as sinon from 'sinon';
+import * as vscode from 'vscode';
 import { serverCommands } from '../../../commands/server/cmds';
-import { LSClient } from '../../../services/LSClient';
-import { MockLSClient } from '../__mocks__/MockLSClient';
-import { MockEventBus } from '../__mocks__/MockEventBus';
 import { EventBus } from '../../../services/EventBus';
-import { PYTOOL_MODULE } from '../../../utils/constants';
+import { LSClient } from '../../../services/LSClient';
 import { refreshUtils } from '../../../utils/refresh';
+import { ServerDataProvider } from '../../../views/activityBar';
+import { MockEventBus } from '../__mocks__/MockEventBus';
+import { MockLSClient } from '../__mocks__/MockLSClient';
 import { MOCK_ACCESS_TOKEN, MOCK_REST_SERVER_URL } from '../__mocks__/constants';
 
 suite('Server Commands Tests', () => {
@@ -40,7 +40,6 @@ suite('Server Commands Tests', () => {
     sandbox.stub(EventBus, 'getInstance').returns(mockEventBus);
     showInputBoxStub = sandbox.stub(vscode.window, 'showInputBox');
     showErrorMessageStub = sandbox.stub(vscode.window, 'showErrorMessage');
-    refreshUIComponentsStub = sandbox.stub(refreshUtils, 'refreshUIComponents').resolves();
 
     configurationMock = {
       get: sandbox.stub().withArgs('serverUrl').returns(MOCK_REST_SERVER_URL),
@@ -49,6 +48,17 @@ suite('Server Commands Tests', () => {
       inspect: sandbox.stub().returns({ globalValue: undefined }),
     };
     sandbox.stub(vscode.workspace, 'getConfiguration').returns(configurationMock);
+    sandbox.stub(vscode.window, 'withProgress').callsFake(async (options, task) => {
+      const mockProgress = {
+        report: sandbox.stub(),
+      };
+      const mockCancellationToken = new vscode.CancellationTokenSource();
+      await task(mockProgress, mockCancellationToken.token);
+    });
+
+    refreshUIComponentsStub = sandbox.stub(refreshUtils, 'refreshUIComponents').callsFake(async () => {
+      console.log("Stubbed refreshUIComponents called");
+    });
   });
 
   teardown(() => {
@@ -56,20 +66,25 @@ suite('Server Commands Tests', () => {
   });
 
   test('connectServer successfully connects to the server', async () => {
-    sandbox
-      .stub(mockLSClient, 'sendLsClientRequest')
+    showInputBoxStub.resolves(MOCK_REST_SERVER_URL);
+    sandbox.stub(mockLSClient, 'sendLsClientRequest')
       .withArgs('connect', [MOCK_REST_SERVER_URL])
-      .resolves({ message: 'Connected successfully', access_token: MOCK_ACCESS_TOKEN });
+      .resolves({
+        message: 'Connected successfully',
+        access_token: MOCK_ACCESS_TOKEN
+      });
 
     const result = await serverCommands.connectServer();
 
     assert.strictEqual(result, true, 'Should successfully connect to the server');
     sinon.assert.calledOnce(showInputBoxStub);
+    sinon.assert.calledWith(configurationMock.update, 'serverUrl', MOCK_REST_SERVER_URL, vscode.ConfigurationTarget.Global);
+    sinon.assert.calledWith(configurationMock.update, 'accessToken', MOCK_ACCESS_TOKEN, vscode.ConfigurationTarget.Global);
   });
 
+
   test('disconnectServer successfully disconnects from the server', async () => {
-    sandbox
-      .stub(mockLSClient, 'sendLsClientRequest')
+    sandbox.stub(mockLSClient, 'sendLsClientRequest')
       .withArgs('disconnect')
       .resolves({ message: 'Disconnected successfully' });
 
@@ -78,19 +93,25 @@ suite('Server Commands Tests', () => {
     sinon.assert.calledOnce(refreshUIComponentsStub);
   });
 
+
   test('connectServer fails with incorrect URL', async () => {
+    showInputBoxStub.resolves('invalid.url');
     sandbox
       .stub(mockLSClient, 'sendLsClientRequest')
-      .withArgs(['invalid.url'])
-      .resolves({ error: 'Failed to connect' });
+      .withArgs('connect', ['invalid.url'])
+      .rejects(new Error('Failed to connect'));
 
     const result = await serverCommands.connectServer();
     assert.strictEqual(result, false, 'Should fail to connect to the server with incorrect URL');
     sinon.assert.calledOnce(showErrorMessageStub);
   });
 
-  test('refreshServerStatus emits the refresh event', async () => {
+  test('refreshServerStatus refreshes the server status', async () => {
+    const serverDataProviderRefreshStub = sandbox.stub(ServerDataProvider.getInstance(), 'refresh').resolves();
+
     await serverCommands.refreshServerStatus();
-    sinon.assert.calledWithExactly(emitSpy, 'refreshServerStatus');
+
+    sinon.assert.calledOnce(serverDataProviderRefreshStub);
   });
+
 });

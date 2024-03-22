@@ -9,9 +9,8 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
-import { PYTOOL_MODULE } from '../../../utils/constants';
 import { MockEventBus } from './MockEventBus';
-import { MOCK_REST_SERVER_DETAILS, MOCK_REST_SERVER_URL } from './constants';
+import { MOCK_ACCESS_TOKEN, MOCK_REST_SERVER_DETAILS, MOCK_REST_SERVER_URL } from './constants';
 
 interface MockLanguageClient {
   start: () => Promise<void>;
@@ -23,17 +22,19 @@ export class MockLSClient {
   notificationHandlers: Map<string, (params: any) => void> = new Map();
   mockLanguageClient: MockLanguageClient;
   eventBus: MockEventBus;
+  private static instance: MockLSClient;
+  public clientReady: boolean = true;
 
   constructor(eventBus: MockEventBus) {
     this.eventBus = eventBus;
     this.mockLanguageClient = {
-      start: async () => {},
+      start: async () => { },
       onNotification: (type: string, handler: (params: any) => void) => {
         this.notificationHandlers.set(type, handler);
       },
       sendRequest: async (command: string, args?: any) => {
         if (command === 'workspace/executeCommand') {
-          return this.handleExecuteCommand(args);
+          return this.sendLsClientRequest(args);
         } else {
           throw new Error(`Unmocked command: ${command}`);
         }
@@ -41,39 +42,32 @@ export class MockLSClient {
     };
   }
 
-  public handleExecuteCommand(args: any): Promise<any> {
-    const { command, arguments: cmdArgs } = args;
-    switch (command) {
-      case `${PYTOOL_MODULE}.serverInfo`:
-        return Promise.resolve(MOCK_REST_SERVER_DETAILS);
-      case `${PYTOOL_MODULE}.renameStack`:
-        const [renameStackId, newStackName] = cmdArgs;
-        if (renameStackId && newStackName) {
-          return Promise.resolve({
-            message: `Stack ${renameStackId} successfully renamed to ${newStackName}.`,
-          });
-        } else {
-          return Promise.resolve({ error: 'Failed to rename stack' });
-        }
-      case `${PYTOOL_MODULE}.copyStack`:
-        const [copyStackId, copyNewStackName] = cmdArgs;
-        if (copyStackId && copyNewStackName) {
-          return Promise.resolve({
-            message: `Stack ${copyStackId} successfully copied to ${copyNewStackName}.`,
-          });
-        } else {
-          return Promise.resolve({ error: 'Failed to copy stack' });
-        }
-      case `${PYTOOL_MODULE}.switchActiveStack`:
-        const [stackNameOrId] = cmdArgs;
-        if (stackNameOrId) {
-          return Promise.resolve({ message: `Active stack set to: ${stackNameOrId}` });
-        } else {
-          return Promise.resolve({ error: 'Failed to set active stack' });
-        }
-      default:
-        throw new Error(`Unmocked PYTOOL_MODULE command: ${command}`);
+  /**
+ * Retrieves the singleton instance of EventBus.
+ *
+ * @returns {MockLSClient} The singleton instance.
+ */
+  public static getInstance(mockEventBus: MockEventBus): MockLSClient {
+    if (!MockLSClient.instance) {
+      MockLSClient.instance = new MockLSClient(mockEventBus);
     }
+    return MockLSClient.instance;
+  }
+
+  /**
+ * Starts the language client.
+ */
+  public startLanguageClient(): Promise<void> {
+    return this.mockLanguageClient.start();
+  }
+
+  /**
+   * Gets the mocked language client.
+   *
+   * @returns {MockLanguageClient} The mocked language client.
+   */
+  public getLanguageClient(): MockLanguageClient {
+    return this.mockLanguageClient;
   }
 
   /**
@@ -84,21 +78,18 @@ export class MockLSClient {
    * @returns A promise resolving to a mocked response from the language server.
    */
   async sendLsClientRequest(command: string, args: any[] = []): Promise<any> {
-    if (command === 'connect') {
-      if (args[0] === MOCK_REST_SERVER_URL) {
-        return Promise.resolve({
-          message: 'Connected successfully',
-          access_token: 'valid_token',
-        });
-      } else {
-        return Promise.reject(new Error('Failed to connect with incorrect URL'));
-      }
-    } else if (command === 'disconnect') {
-      return Promise.resolve({ message: 'Disconnected successfully' });
-    }
-
-    // Handle additional commands migrated from handleExecuteCommand
     switch (command) {
+      case 'connect':
+        if (args[0] === MOCK_REST_SERVER_URL) {
+          return Promise.resolve({
+            message: 'Connected successfully',
+            access_token: MOCK_ACCESS_TOKEN,
+          });
+        } else {
+          return Promise.reject(new Error('Failed to connect with incorrect URL'));
+        }
+      case 'disconnect':
+        return Promise.resolve({ message: 'Disconnected successfully' });
       case `serverInfo`:
         return Promise.resolve(MOCK_REST_SERVER_DETAILS);
 
@@ -146,8 +137,8 @@ export class MockLSClient {
     const handler = this.notificationHandlers.get(type);
     if (handler) {
       handler(params);
-      if (type === 'zenml/configUpdated') {
-        this.eventBus.emit('zenml/configUpdated', {
+      if (type === 'zenml/serverChanged') {
+        this.eventBus.emit('zenml/serverChanged', {
           updatedServerConfig: params,
         });
       } else if (type === 'zenml/requirementNotMet') {
@@ -158,19 +149,5 @@ export class MockLSClient {
     }
   }
 
-  /**
-   * Starts the language client.
-   */
-  public startLanguageClient(): Promise<void> {
-    return this.mockLanguageClient.start();
-  }
 
-  /**
-   * Gets the mocked language client.
-   *
-   * @returns {MockLanguageClient} The mocked language client.
-   */
-  public getLanguageClient(): MockLanguageClient {
-    return this.mockLanguageClient;
-  }
 }

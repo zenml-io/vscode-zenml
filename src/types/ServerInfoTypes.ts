@@ -38,7 +38,6 @@ export interface ZenServerDetails {
 export interface ConfigUpdateDetails {
   url: string;
   api_token: string;
-  active_stack_id: string;
   store_type: string;
 }
 

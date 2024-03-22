@@ -14,11 +14,9 @@ import { EventEmitter } from 'events';
 
 export class EventBus extends EventEmitter {
   private static instance: EventBus;
-  public lsClientReady: boolean = false;
 
   constructor() {
     super();
-    this.subscribeToEvents();
   }
 
   /**
@@ -31,24 +29,5 @@ export class EventBus extends EventEmitter {
       EventBus.instance = new EventBus();
     }
     return EventBus.instance;
-  }
-
-  /**
-   * Subscribes to relevant events to trigger a refresh of the status bar and tree views.
-   *
-   * @returns void
-   */
-  private subscribeToEvents(): void {
-    this.on('lsClientReady', this.handleLsClientReady.bind(this));
-  }
-
-  /**
-   * Handles the LS Client ready event.
-   *
-   * @param isReady A boolean indicating whether the LS Client is ready.
-   * @returns void
-   */
-  public async handleLsClientReady(isReady: boolean): Promise<void> {
-    this.lsClientReady = isReady;
   }
 }

@@ -11,10 +11,9 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
+import { stackCommands } from '../../commands/stack/cmds';
 import { getActiveStack } from '../../commands/stack/utils';
 import { EventBus } from '../../services/EventBus';
-import { ConfigUpdateDetails } from '../../types/ServerInfoTypes';
-import { showErrorMessage } from '../../utils/notifications';
 
 /**
  * Represents the ZenML extension's status bar.
@@ -44,9 +43,9 @@ export default class ZenMLStatusBar {
    * @returns void
    */
   private subscribeToEvents(): void {
-    this.eventBus.on('zenml/configUpdated', async ({ updatedServerConfig }) => {
-      this.sync(updatedServerConfig);
+    this.eventBus.on('stackChanged', async (activeStackId: string) => {
       await this.refreshActiveStack();
+      await stackCommands.refreshStackView();
     });
 
     this.eventBus.on('serverStatusUpdated', ({ isConnected, serverUrl }) => {
@@ -54,35 +53,7 @@ export default class ZenMLStatusBar {
     });
   }
 
-  /**
-   * Shows a loading indicator in the status bar and syncs the status bar with the updated server configuration.
-   *
-   * @param {ZenServerDetails} [updatedServerConfig] The updated server configuration from the LSP server.
-   */
-  private async sync(updatedServerConfig: ConfigUpdateDetails): Promise<void> {
-    try {
-      await vscode.window.withProgress(
-        {
-          location: vscode.ProgressLocation.Window,
-          title: 'ZenML config change detected. Syncing.',
-        },
-        async progress => {
-          progress.report({ increment: 0 });
 
-          const isConnected =
-            updatedServerConfig.api_token !== undefined &&
-            updatedServerConfig.store_type === 'rest';
-          this.updateServerStatusIndicator(isConnected, updatedServerConfig.url);
-
-          await this.refreshActiveStack();
-          progress.report({ increment: 100 });
-        }
-      );
-    } catch (error) {
-      console.error('Error syncing ZenML views:', error);
-      showErrorMessage('Failed to sync ZenML views. See console for details.');
-    }
-  }
 
   /**
    * Retrieves or creates an instance of the ZenMLStatusBar.
