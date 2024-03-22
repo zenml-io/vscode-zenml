@@ -189,6 +189,8 @@ export class ZenExtension {
       this.lsClient.interpreterSelectionInProgress = false;
       if (!this.lsClient.isZenMLReady) {
         await this.promptForPythonInterpreter();
+      } else {
+        vscode.window.showInformationMessage('ZenML installation found. Ready to use.');
       }
     }
   }
