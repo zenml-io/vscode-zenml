@@ -236,7 +236,7 @@ class PipelineRunsWrapper:
         """Returns the ZenML ZenMLBaseException class."""
         return self.lazy_import("zenml.exceptions", "ZenMLBaseException")
 
-    def fetch_pipeline_runs(self) -> list[dict]:
+    def fetch_pipeline_runs(self):
         """Fetches all ZenML pipeline runs.
 
         Returns:

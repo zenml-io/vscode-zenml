@@ -29,7 +29,7 @@ suite('Extension Activation Test Suite', () => {
   setup(() => {
     sandbox = sinon.createSandbox();
     contextMock = { subscriptions: [] };
-    initializeSpy = sinon.spy(ZenExtension, 'initialize');
+    initializeSpy = sinon.spy(ZenExtension, 'activate');
     lsClient = LSClient.getInstance();
     sandbox.stub(EventBus, 'getInstance').returns(mockEventBus);
   });
