@@ -20,25 +20,10 @@ export async function activate(context: vscode.ExtensionContext) {
   const eventBus = EventBus.getInstance();
   const lsClient = LSClient.getInstance();
 
-  ZenExtension.initialize(context, lsClient);
-
-  context.subscriptions.push(
-    vscode.workspace.onDidChangeConfiguration(async e => {
-      if (e.affectsConfiguration('python.defaultInterpreterPath')) {
-        const interpreterPath = vscode.workspace
-          .getConfiguration('python')
-          .get<string>('defaultInterpreterPath');
-        console.log(`Python interpreter changed to: ${interpreterPath}`);
-        if (interpreterPath) {
-          console.log('Updating global settings with new interpreter path');
-          await ZenExtension.updateGlobalSettings(interpreterPath);
-        }
-      }
-    })
-  );
+  await ZenExtension.activate(context, lsClient);
 
   const handleLsClientReady = async (isReady: boolean) => {
-    // console.log('Extension received lsClientReady notification:', isReady);
+    console.log('Extension received lsClientReady notification:', isReady);
     if (isReady && eventBus.zenmlReady) {
       await refreshUIComponents();
     }
