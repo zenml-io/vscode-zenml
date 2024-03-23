@@ -74,7 +74,7 @@ export class ZenExtension {
    *
    * @param context The extension context provided by VS Code on activation.
    */
-  static initialize(context: vscode.ExtensionContext, lsClient: LSClient): void {
+  static async activate(context: vscode.ExtensionContext, lsClient: LSClient): Promise<void> {
     this.context = context;
     this.lsClient = lsClient;
     const serverDefaults = this.loadServerDefaults();
@@ -182,7 +182,6 @@ export class ZenExtension {
       if (selected === 'Select Interpreter') {
         await vscode.commands.executeCommand('python.setInterpreter');
         console.log('Interpreter selection completed.');
-        await vscode.commands.executeCommand(`${this.serverId}.checkZenMLInstallation`);
         await vscode.commands.executeCommand(`${this.serverId}.restart`);
         await new Promise(resolve => setTimeout(resolve, 5000));
       } else {
@@ -194,7 +193,7 @@ export class ZenExtension {
       if (!this.lsClient.isZenMLReady && !userCancelled) {
         await this.promptForPythonInterpreter();
       } else if (this.lsClient.isZenMLReady) {
-        vscode.window.showInformationMessage('ZenML installation found. Ready to use.');
+        vscode.window.showInformationMessage('🚀 ZenML installation found. Ready to use.');
       } else {
         vscode.window.showInformationMessage('Interpreter selection cancelled. ZenML features will be disabled.');
       }
