@@ -58,7 +58,6 @@ export class ZenExtension {
   private static serverName: string;
   private static viewsAndCommandsSetup = false;
 
-
   private static dataProviders = new Map<string, vscode.TreeDataProvider<vscode.TreeItem>>([
     ['zenmlServerView', ServerDataProvider.getInstance()],
     ['zenmlStackView', StackDataProvider.getInstance()],
@@ -122,7 +121,7 @@ export class ZenExtension {
    */
   static async setupViewsAndCommands(): Promise<void> {
     if (this.viewsAndCommandsSetup) {
-      console.log("Views and commands have already been set up. Refreshing views...");
+      console.log('Views and commands have already been set up. Refreshing views...');
       await refreshUIComponents();
       return;
     }
@@ -199,12 +198,14 @@ export class ZenExtension {
     } finally {
       this.lsClient.interpreterSelectionInProgress = false;
       if (!this.lsClient.isZenMLReady && !userCancelled) {
-        console.log("ZenML is still not installed. Prompting again...");
+        console.log('ZenML is still not installed. Prompting again...');
         // await this.promptForPythonInterpreter();
       } else if (this.lsClient.isZenMLReady) {
         vscode.window.showInformationMessage('🚀 ZenML installation found. Ready to use.');
       } else {
-        vscode.window.showInformationMessage('Interpreter selection cancelled. ZenML features will be disabled.');
+        vscode.window.showInformationMessage(
+          'Interpreter selection cancelled. ZenML features will be disabled.'
+        );
       }
     }
   }

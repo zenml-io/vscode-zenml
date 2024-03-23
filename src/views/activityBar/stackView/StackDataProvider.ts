@@ -36,7 +36,6 @@ export class StackDataProvider implements vscode.TreeDataProvider<vscode.TreeIte
       this.refresh();
       // Listen for 'stackChanged' events from the watcher
       this.eventBus.on('stackChanged', () => this.refresh());
-
     });
   }
 
