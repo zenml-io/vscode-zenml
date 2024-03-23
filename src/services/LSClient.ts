@@ -59,11 +59,7 @@ export class LSClient {
         await this.client.start();
         this.clientReady = true;
         this.eventBus.emit('lsClientReady', true);
-        this.setupNotificationListeners();
         console.log('Language client started successfully.');
-        if (!this.isZenMLReady) {
-          await vscode.commands.executeCommand(`${PYTOOL_MODULE}.checkZenMLInstallation`);
-        }
       }
     } catch (error) {
       console.error('Failed to start the language client:', error);
@@ -86,9 +82,8 @@ export class LSClient {
       }
     } else {
       console.log('ZenML is installed, setting up extension components...');
-      await commands.executeCommand(`${PYTOOL_MODULE}.restart`);
       await ZenExtension.setupViewsAndCommands();
-      this.eventBus.emit('zenmlReady/lsClientReady', true);
+      this.eventBus.emit('zenmlReady/lsClientReady');
     }
   }
 
@@ -183,6 +178,9 @@ export class LSClient {
    */
   public updateClient(updatedCLient: LanguageClient): void {
     this.client = updatedCLient;
+    console.log('Language client updated... setting up notification listeners');
+    this.setupNotificationListeners();
+
   }
 
   /**
