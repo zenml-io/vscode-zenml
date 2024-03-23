@@ -56,6 +56,8 @@ export class ZenExtension {
   private static outputChannel: vscode.LogOutputChannel;
   private static serverId: string;
   private static serverName: string;
+  private static viewsAndCommandsSetup = false;
+
 
   private static dataProviders = new Map<string, vscode.TreeDataProvider<vscode.TreeItem>>([
     ['zenmlServerView', ServerDataProvider.getInstance()],
@@ -119,6 +121,12 @@ export class ZenExtension {
    * Sets up the views and commands for the ZenML extension.
    */
   static async setupViewsAndCommands(): Promise<void> {
+    if (this.viewsAndCommandsSetup) {
+      console.log("Views and commands have already been set up. Refreshing views...");
+      await refreshUIComponents();
+      return;
+    }
+
     ZenMLStatusBar.getInstance();
     this.dataProviders.forEach((provider, viewId) => {
       const view = vscode.window.createTreeView(viewId, { treeDataProvider: provider });
@@ -126,6 +134,7 @@ export class ZenExtension {
     });
     this.registries.forEach(register => register(this.context));
     await refreshUIComponents();
+    this.viewsAndCommandsSetup = true;
   }
 
   /**

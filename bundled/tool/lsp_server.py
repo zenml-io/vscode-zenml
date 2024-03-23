@@ -19,7 +19,7 @@ import pathlib
 import sys
 
 from typing import Any, Dict, Optional, Tuple
-from constants import SERVER_ID, ZENML_READY, DISPLAY_NAME
+from constants import TOOL_MODULE_NAME, ZENML_READY, TOOL_DISPLAY_NAME
 
 
 # **********************************************************
@@ -64,12 +64,10 @@ LSP_SERVER = ZenLanguageServer(
 # **********************************************************
 # Tool specific code goes below this.
 # **********************************************************
-TOOL_MODULE = SERVER_ID
-TOOL_DISPLAY = DISPLAY_NAME
+TOOL_MODULE = TOOL_MODULE_NAME
+TOOL_DISPLAY = TOOL_DISPLAY_NAME
 # Default arguments always passed to zenml.
 TOOL_ARGS = []
-# Minimum version of zenml supported.
-MIN_ZENML_VERSION = "0.55.0"
 # Versions of zenml found by workspace
 VERSION_LOOKUP: Dict[str, Tuple[int, int, int]] = {}
 
