@@ -46,9 +46,8 @@ class GlobalConfigWrapper:
     @property
     def RestZenStoreConfiguration(self):
         """Returns the RestZenStoreConfiguration class for store configuration."""
-        return self.lazy_import(
-            "zenml.zen_stores.rest_zen_store", "RestZenStoreConfiguration"
-        )
+        # pylint: disable=not-callable
+        return self.lazy_import("zenml.zen_stores.rest_zen_store", "RestZenStoreConfiguration")
 
     def get_global_config_directory_path(self) -> str:
         """Get the global configuration directory path.
@@ -56,6 +55,7 @@ class GlobalConfigWrapper:
         Returns:
             str: Path to the global configuration directory.
         """
+        # pylint: disable=not-callable
         config_dir = pathlib.Path(self.get_global_config_directory())
         if self.fileio.exists(str(config_dir)):
             return str(config_dir)
@@ -67,6 +67,7 @@ class GlobalConfigWrapper:
         Returns:
             str: Path to the global configuration file.
         """
+        # pylint: disable=not-callable
         config_dir = pathlib.Path(self.get_global_config_directory())
         config_path = config_dir / "config.yaml"
         if self.fileio.exists(str(config_path)):
@@ -80,6 +81,7 @@ class GlobalConfigWrapper:
             remote_url (str): Remote URL.
             access_token (str): Access token.
         """
+        # pylint: disable=not-callable
         new_store_config = self.RestZenStoreConfiguration(
             type="rest", url=remote_url, api_token=access_token, verify_ssl=True
         )
@@ -178,10 +180,9 @@ class ZenServerWrapper:
             return {"error": "Server URL is required."}
 
         try:
+            # pylint: disable=not-callable
             access_token = self.web_login(url=url, verify_ssl=verify_ssl)
-            self._config_wrapper.set_store_configuration(
-                remote_url=url, access_token=access_token
-            )
+            self._config_wrapper.set_store_configuration(remote_url=url, access_token=access_token)
             return {"message": "Connected successfully.", "access_token": access_token}
         except self.AuthorizationException as e:
             return {"error": f"Authorization failed: {str(e)}"}
@@ -198,6 +199,7 @@ class ZenServerWrapper:
             url = self.gc.store_configuration.url
             store_type = self.BaseZenStore.get_store_type(url)
 
+            # pylint: disable=not-callable
             server = self.get_active_deployment(local=True)
             deployer = self.ServerDeployer()
 
@@ -253,14 +255,10 @@ class PipelineRunsWrapper:
                     "version": run.body.pipeline.body.version,
                     "stackName": run.body.stack.name,
                     "startTime": (
-                        run.metadata.start_time.isoformat()
-                        if run.metadata.start_time
-                        else None
+                        run.metadata.start_time.isoformat() if run.metadata.start_time else None
                     ),
                     "endTime": (
-                        run.metadata.end_time.isoformat()
-                        if run.metadata.end_time
-                        else None
+                        run.metadata.end_time.isoformat() if run.metadata.end_time else None
                     ),
                     "os": run.metadata.client_environment["os"],
                     "osVersion": run.metadata.client_environment["mac_version"],
@@ -321,6 +319,7 @@ class StacksWrapper:
         return self.lazy_import("zenml.exceptions", "ZenKeyError")
 
     def fetch_stacks(self):
+        """Fetches all ZenML stacks and components."""
         detailed_stacks = []
         try:
             stacks_page = self.client.list_stacks(hydrate=False)
@@ -433,23 +432,17 @@ class StacksWrapper:
         target_stack_name = args[1]
 
         if not source_stack_name_or_id or not target_stack_name:
-            return {
-                "error": "Both source stack name/id and target stack name are required"
-            }
+            return {"error": "Both source stack name/id and target stack name are required"}
 
         try:
-            stack_to_copy = self.client.get_stack(
-                name_id_or_prefix=source_stack_name_or_id
-            )
+            stack_to_copy = self.client.get_stack(name_id_or_prefix=source_stack_name_or_id)
             component_mapping = {
                 c_type: [c.id for c in components][0]
                 for c_type, components in stack_to_copy.components.items()
                 if components
             }
 
-            self.client.create_stack(
-                name=target_stack_name, components=component_mapping
-            )
+            self.client.create_stack(name=target_stack_name, components=component_mapping)
             return {
                 "message": (
                     f"Stack `{source_stack_name_or_id}` successfully copied "
