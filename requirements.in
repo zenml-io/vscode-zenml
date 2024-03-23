@@ -11,6 +11,6 @@
 # Required packages
 pygls
 packaging
+# Tool-specific packages for ZenML extension
 watchdog
 PyYAML
-# TODO: Add your tool here

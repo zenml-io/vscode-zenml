@@ -19,23 +19,20 @@ updating Python interpreter paths.
 """
 
 
+import asyncio
 import subprocess
 import sys
+from functools import wraps
 
 import lsprotocol.types as lsp
+from constants import MIN_ZENML_VERSION, TOOL_MODULE_NAME
+from lazy_import import suppress_stdout_temporarily
 from packaging.version import parse as parse_version
 from pygls.server import LanguageServer
-from zenml_client import ZenMLClient
-from lazy_import import suppress_stdout_stderr
-from functools import wraps
-from lazy_import import suppress_stdout_stderr
 from zen_watcher import ZenConfigWatcher
-import asyncio
-from constants import TOOL_MODULE_NAME, MIN_ZENML_VERSION
+from zenml_client import ZenMLClient
 
-zenml_init_error = {
-    "error": "ZenML is not initialized. Please check ZenML version requirements."
-}
+zenml_init_error = {"error": "ZenML is not initialized. Please check ZenML version requirements."}
 
 
 class ZenLanguageServer(LanguageServer):
@@ -63,11 +60,8 @@ class ZenLanguageServer(LanguageServer):
             if process.returncode == 0:
                 self.show_message_log("✅ ZenML installation check: Successful.")
                 return True
-            else:
-                self.show_message_log(
-                    "❌ ZenML installation check failed.", lsp.MessageType.Error
-                )
-                return False
+            self.show_message_log("❌ ZenML installation check failed.", lsp.MessageType.Error)
+            return False
         except Exception as e:
             self.show_message_log(
                 f"Error checking ZenML installation: {str(e)}", lsp.MessageType.Error
@@ -92,14 +86,10 @@ class ZenLanguageServer(LanguageServer):
             self.notify_user("✅ ZenML client initialized successfully.")
             # register pytool module commands
             self.register_commands()
-             # initialize watcher
+            # initialize watcher
             self.initialize_global_config_watcher()
         except Exception as e:
-            self.notify_user(
-                f"Failed to initialize ZenML client: {str(e)}", lsp.MessageType.Error
-            )
-
-     
+            self.notify_user(f"Failed to initialize ZenML client: {str(e)}", lsp.MessageType.Error)
 
     def initialize_global_config_watcher(self):
         """Sets up and starts the Global Configuration Watcher."""
@@ -137,11 +127,9 @@ class ZenLanguageServer(LanguageServer):
                 if not client.initialized:
                     return zenml_init_error
 
-                with suppress_stdout_stderr():
+                with suppress_stdout_temporarily():
                     if wrapper_name:
-                        wrapper_instance = getattr(
-                            self.zenml_client, wrapper_name, None
-                        )
+                        wrapper_instance = getattr(self.zenml_client, wrapper_name, None)
                         if not wrapper_instance:
                             return {"error": f"Wrapper '{wrapper_name}' not found."}
                         return func(wrapper_instance, *args, **kwargs)
@@ -185,37 +173,31 @@ class ZenLanguageServer(LanguageServer):
 
     def send_custom_notification(self, method: str, args: dict):
         """Sends a custom notification to the LSP client."""
-        self.show_message_log(
-            f"Sending custom notification: {method} with args: {args}"
-        )
+        self.show_message_log(f"Sending custom notification: {method} with args: {args}")
         self.send_notification(method, args)
 
     def update_python_interpreter(self, interpreter_path):
         """Updates the Python interpreter path and handles errors."""
         try:
             self.python_interpreter = interpreter_path
-            self.show_message_log(
-                f"LSP_Python_Interpreter Updated: {self.python_interpreter}"
-            )
+            self.show_message_log(f"LSP_Python_Interpreter Updated: {self.python_interpreter}")
         # pylint: disable=broad-exception-caught
         except Exception as e:
             self.show_message_log(
                 f"Failed to update Python interpreter: {str(e)}", lsp.MessageType.Error
             )
 
-    def notify_user(
-        self, message: str, msg_type: lsp.MessageType = lsp.MessageType.Info
-    ):
+    def notify_user(self, message: str, msg_type: lsp.MessageType = lsp.MessageType.Info):
         """Logs a message and also notifies the user."""
         self.show_message(message, msg_type)
 
-    def log_to_output(
-        self, message: str, msg_type: lsp.MessageType = lsp.MessageType.Log
-    ) -> None:
+    def log_to_output(self, message: str, msg_type: lsp.MessageType = lsp.MessageType.Log) -> None:
         """Log to output."""
         self.show_message_log(message, msg_type)
 
     def register_commands(self):
+        """Registers ZenML Python Tool commands."""
+
         @self.command(f"{TOOL_MODULE_NAME}.getGlobalConfig")
         def get_global_configuration(args) -> dict:
             """Fetches global ZenML configuration settings."""

@@ -10,15 +10,21 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
-from watchdog.events import FileSystemEventHandler
-from watchdog.observers import Observer
-from lazy_import import suppress_stdout_stderr
-import yaml
+"""
+ZenML Global Configuration Watcher.
+
+This module contains ZenConfigWatcher, a class that watches for changes
+in the ZenML global configuration file and triggers notifications accordingly.
+"""
 import os
 from threading import Timer
-from typing import Optional, Any
+from typing import Any, Optional
 
+import yaml
 from constants import ZENML_SERVER_CHANGED, ZENML_STACK_CHANGED
+from lazy_import import suppress_stdout_temporarily
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 
 class ZenConfigWatcher(FileSystemEventHandler):
@@ -45,7 +51,7 @@ class ZenConfigWatcher(FileSystemEventHandler):
 
     def process_config_change(self, config_file_path: str):
         """Process the configuration file change."""
-        with suppress_stdout_stderr():
+        with suppress_stdout_temporarily():
             try:
                 with open(config_file_path, "r") as f:
                     config = yaml.safe_load(f)
@@ -69,18 +75,12 @@ class ZenConfigWatcher(FileSystemEventHandler):
                         self.last_known_url = new_url
                     # Send ZENML_STACK_CHANGED if stack_id changed
                     if stack_id_changed:
-                        self.LSP_SERVER.send_custom_notification(
-                            ZENML_STACK_CHANGED, new_stack_id
-                        )
+                        self.LSP_SERVER.send_custom_notification(ZENML_STACK_CHANGED, new_stack_id)
                         self.last_known_stack_id = new_stack_id
             except (FileNotFoundError, PermissionError) as e:
-                self.log_error(
-                    f"Configuration file access error: {e} - {config_file_path}"
-                )
+                self.log_error(f"Configuration file access error: {e} - {config_file_path}")
             except yaml.YAMLError as e:
-                self.log_error(
-                    f"YAML parsing error in configuration: {e} - {config_file_path}"
-                )
+                self.log_error(f"YAML parsing error in configuration: {e} - {config_file_path}")
             except Exception as e:
                 self.log_error(f"Unexpected error while monitoring configuration: {e}")
 
@@ -97,7 +97,7 @@ class ZenConfigWatcher(FileSystemEventHandler):
         """
         Processes the event with a debounce mechanism.
         """
-        with suppress_stdout_stderr():
+        with suppress_stdout_temporarily():
             config_wrapper_instance = self.LSP_SERVER.zenml_client.config_wrapper
             config_file_path = config_wrapper_instance.get_global_config_file_path()
             if event.src_path == str(config_file_path):
@@ -117,9 +117,7 @@ class ZenConfigWatcher(FileSystemEventHandler):
                 self.observer = Observer()
                 self.observer.schedule(self, config_dir_path, recursive=False)
                 self.observer.start()
-                self.LSP_SERVER.log_to_output(
-                    f"Started watching {config_dir_path} for changes."
-                )
+                self.LSP_SERVER.log_to_output(f"Started watching {config_dir_path} for changes.")
             except Exception as e:
                 self.log_error(f"Failed to start file watcher: {e}")
         else:
@@ -132,9 +130,7 @@ class ZenConfigWatcher(FileSystemEventHandler):
         if self.observer is not None:
             self.observer.stop()
             self.observer.join()  # waits for observer to fully stop
-            self.LSP_SERVER.log_to_output(
-                "Stopped watching config directory for changes."
-            )
+            self.LSP_SERVER.log_to_output("Stopped watching config directory for changes.")
 
     def log_error(self, message: str):
         """Log error."""

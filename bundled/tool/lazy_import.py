@@ -26,7 +26,7 @@ from contextlib import contextmanager
 @contextmanager
 def suppress_logging_temporarily(level=logging.ERROR):
     """
-    Temporarily elevates logging level and suppresses stdout to 
+    Temporarily elevates logging level and suppresses stdout to
     minimize console output during imports.
 
     Parameters:
@@ -38,7 +38,7 @@ def suppress_logging_temporarily(level=logging.ERROR):
     original_level = logging.root.level
     original_stdout = sys.stdout
     logging.root.setLevel(level)
-    with open(os.devnull, "w", encoding='utf-8') as fnull:
+    with open(os.devnull, "w", encoding="utf-8") as fnull:
         sys.stdout = fnull
         try:
             yield
@@ -56,7 +56,7 @@ def suppress_stdout_temporarily():
     Yields:
         None: While suppressing stdout.
     """
-    with open(os.devnull, "w", encoding='utf-8') as fnull:
+    with open(os.devnull, "w", encoding="utf-8") as fnull:
         original_stdout = sys.stdout
         # original_stderr = sys.stderr
         sys.stdout = fnull
