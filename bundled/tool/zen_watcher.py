@@ -10,7 +10,7 @@ import yaml
 import os
 
 
-class GlobalConfigWatcher(FileSystemEventHandler):
+class ZenConfigWatcher(FileSystemEventHandler):
     """
     Watches for changes in the ZenML global configuration file.
 
