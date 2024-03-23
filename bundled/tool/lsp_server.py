@@ -56,7 +56,9 @@ RUNNER = pathlib.Path(__file__).parent / "lsp_runner.py"
 
 MAX_WORKERS = 5
 
-LSP_SERVER = ZenLanguageServer(name="zen-language-server", version="0.0.1", max_workers=MAX_WORKERS)
+LSP_SERVER = ZenLanguageServer(
+    name="zen-language-server", version="0.0.1", max_workers=MAX_WORKERS
+)
 
 # **********************************************************
 # Tool specific code goes below this.
@@ -95,10 +97,11 @@ async def initialize(params: lsp.InitializeParams) -> None:
         f"Workspace settings:\r\n{json.dumps(WORKSPACE_SETTINGS, indent=4, ensure_ascii=False)}\r\n"
     )
 
+    log_to_output(f"ZenML LSP is initializing.")
     LSP_SERVER.send_custom_notification("sanityCheck", "ZenML LSP is initializing.")
 
     # Update the Python interpreter to the one used by the client.
-    interpreter_path = WORKSPACE_SETTINGS["/"]["interpreter"][0]
+    interpreter_path = WORKSPACE_SETTINGS[os.getcwd()]["interpreter"][0]
     LSP_SERVER.update_python_interpreter(interpreter_path)
 
     # Check install status and initialize ZenML client if ZenML is installed.
@@ -173,7 +176,9 @@ def get_cwd(settings: Dict[str, Any], document: Optional[workspace.Document]) ->
 # *****************************************************
 # Logging and notification.
 # *****************************************************
-def log_to_output(message: str, msg_type: lsp.MessageType = lsp.MessageType.Log) -> None:
+def log_to_output(
+    message: str, msg_type: lsp.MessageType = lsp.MessageType.Log
+) -> None:
     """Log to output."""
     LSP_SERVER.show_message_log(message, msg_type)
 
