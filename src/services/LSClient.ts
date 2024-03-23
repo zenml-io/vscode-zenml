@@ -73,18 +73,16 @@ export class LSClient {
    * @returns A promise resolving to void.
    */
   public async handleZenMLReady(params: { ready: boolean }): Promise<void> {
-    console.log('ZENML/READY: ', params.ready);
+    console.log('Received zenml/ready notification: ', params.ready);
+        if (!params.ready && !this.interpreterSelectionInProgress) {
+          console.log('ZenML is still not installed. Prompting again...');
+          await vscode.commands.executeCommand('zenml.promptForInterpreter');
+        } else {
+          console.log('ZenML is installed, setting up extension components...');
+          await ZenExtension.setupViewsAndCommands();
+          this.eventBus.emit('zenmlReady/lsClientReady');
+        }
     this.isZenMLReady = params.ready;
-    if (!params.ready) {
-      console.log('ZenML is not installed.');
-      if (!this.interpreterSelectionInProgress) {
-        await vscode.commands.executeCommand('zenml.promptForInterpreter');
-      }
-    } else {
-      console.log('ZenML is installed, setting up extension components...');
-      await ZenExtension.setupViewsAndCommands();
-      this.eventBus.emit('zenmlReady/lsClientReady');
-    }
   }
 
   /**

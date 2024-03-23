@@ -192,7 +192,6 @@ export class ZenExtension {
         await vscode.commands.executeCommand('python.setInterpreter');
         console.log('Interpreter selection completed.');
         await vscode.commands.executeCommand(`${this.serverId}.restart`);
-        await new Promise(resolve => setTimeout(resolve, 5000));
       } else {
         userCancelled = true;
         console.log('Interpreter selection cancelled.');
@@ -200,7 +199,8 @@ export class ZenExtension {
     } finally {
       this.lsClient.interpreterSelectionInProgress = false;
       if (!this.lsClient.isZenMLReady && !userCancelled) {
-        await this.promptForPythonInterpreter();
+        console.log("ZenML is still not installed. Prompting again...");
+        // await this.promptForPythonInterpreter();
       } else if (this.lsClient.isZenMLReady) {
         vscode.window.showInformationMessage('🚀 ZenML installation found. Ready to use.');
       } else {

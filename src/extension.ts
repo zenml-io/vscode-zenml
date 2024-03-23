@@ -23,7 +23,7 @@ export async function activate(context: vscode.ExtensionContext) {
   await ZenExtension.activate(context, lsClient);
 
   const handleLsClientReady = async (isReady: boolean) => {
-    console.log('Extension received lsClientReady notification:', isReady);
+    // console.log('Extension received lsClientReady notification:', isReady);
     if (isReady && eventBus.zenmlReady) {
       await refreshUIComponents();
     }
