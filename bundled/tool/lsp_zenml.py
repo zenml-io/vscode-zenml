@@ -31,9 +31,7 @@ from functools import wraps
 from lazy_import import suppress_stdout_stderr
 from zen_watcher import ZenConfigWatcher
 import asyncio
-
-MIN_ZENML_VERSION = "0.55.2"
-TOOL_MODULE = "zenml-python"
+from constants import TOOL_MODULE, MIN_ZENML_VERSION
 
 zenml_init_error = {
     "error": "ZenML is not initialized. Please check ZenML version requirements."

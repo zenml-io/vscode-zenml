@@ -16,11 +16,10 @@ from __future__ import annotations
 import json
 import os
 import pathlib
-import subprocess
 import sys
-import asyncio
 
 from typing import Any, Dict, Optional, Tuple
+from constants import SERVER_ID, ZENML_READY, DISPLAY_NAME
 
 
 # **********************************************************
@@ -65,29 +64,14 @@ LSP_SERVER = ZenLanguageServer(
 # **********************************************************
 # Tool specific code goes below this.
 # **********************************************************
-TOOL_MODULE = "zenml-python"
-TOOL_DISPLAY = "ZenML"
-
+TOOL_MODULE = SERVER_ID
+TOOL_DISPLAY = DISPLAY_NAME
 # Default arguments always passed to zenml.
 TOOL_ARGS = []
-
 # Minimum version of zenml supported.
 MIN_ZENML_VERSION = "0.55.0"
-
 # Versions of zenml found by workspace
 VERSION_LOOKUP: Dict[str, Tuple[int, int, int]] = {}
-
-zenml_init_error = {
-    "error": "ZenML is not initialized. Please check ZenML version requirements."
-}
-
-
-# @LSP_SERVER.command(f"{TOOL_MODULE}.checkZenMLInstallation")
-# def check_zenml_installation(*args, **kwargs) -> None:
-#     """Handles a request from the client to check the ZenML installation."""
-#     result = LSP_SERVER.is_zenml_installed()
-#     LSP_SERVER.send_custom_notification("zenml/ready", {"ready": result})
-#     return result
 
 
 # **********************************************************
@@ -127,7 +111,7 @@ async def initialize(params: lsp.InitializeParams) -> None:
 
     # Wait for 5 secondsto allow the language client to setup and settle down client side.
     ready_status = {"ready": True} if LSP_SERVER.zenml_client else {"ready": False}
-    LSP_SERVER.send_custom_notification("zenml/ready", ready_status)
+    LSP_SERVER.send_custom_notification(ZENML_READY, ready_status)
 
 
 @LSP_SERVER.feature(lsp.EXIT)
