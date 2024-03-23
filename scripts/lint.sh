@@ -2,7 +2,8 @@
 
 cd "$(dirname "$0")/.." || exit
 
-export PYTHONPATH="$PYTHONPATH:$(pwd)/bundled/tool"
+PYTHONPATH="$PYTHONPATH:$(pwd)/bundled/tool"
+export PYTHONPATH
 
 nox --session lint
 
