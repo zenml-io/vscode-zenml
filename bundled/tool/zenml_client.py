@@ -36,3 +36,4 @@ class ZenMLClient:
         self.zen_server_wrapper = ZenServerWrapper(self.config_wrapper)
         self.stacks_wrapper = StacksWrapper(self.client)
         self.pipeline_runs_wrapper = PipelineRunsWrapper(self.client)
+        self.initialized = True
