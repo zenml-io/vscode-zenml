@@ -13,8 +13,8 @@
 
 """Constants for ZenML Tool"""
 
-SERVER_ID = "zenml-python"
-DISPLAY_NAME = "ZenML"
+TOOL_MODULE_NAME = "zenml-python"
+TOOL_DISPLAY_NAME = "ZenML"
 MIN_ZENML_VERSION = "0.55.0"
 
 """Constants for ZenML Notifications and Events"""

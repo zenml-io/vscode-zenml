@@ -13,7 +13,6 @@
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 from lazy_import import suppress_stdout_stderr
-import time
 import yaml
 import os
 from threading import Timer
@@ -46,9 +45,6 @@ class ZenConfigWatcher(FileSystemEventHandler):
 
     def process_config_change(self, config_file_path: str):
         """Process the configuration file change."""
-        current_time = time.time()
-        if (current_time - self.last_event_time) < self.debounce_interval:
-            return
         with suppress_stdout_stderr():
             try:
                 with open(config_file_path, "r") as f:
@@ -59,7 +55,7 @@ class ZenConfigWatcher(FileSystemEventHandler):
 
                     url_changed = new_url != self.last_known_url
                     stack_id_changed = new_stack_id != self.last_known_stack_id
-                    # Compare the new URL against the last known URL
+                    # Send ZENML_SERVER_CHANGED if url changed
                     if url_changed:
                         server_details = {
                             "url": new_url,
@@ -71,15 +67,12 @@ class ZenConfigWatcher(FileSystemEventHandler):
                             server_details,
                         )
                         self.last_known_url = new_url
-                    # Compare the new stack ID against the last known stack ID
+                    # Send ZENML_STACK_CHANGED if stack_id changed
                     if stack_id_changed:
                         self.LSP_SERVER.send_custom_notification(
                             ZENML_STACK_CHANGED, new_stack_id
                         )
                         self.last_known_stack_id = new_stack_id
-
-                    if url_changed or stack_id_changed:
-                        self.last_event_time = current_time
             except (FileNotFoundError, PermissionError) as e:
                 self.log_error(
                     f"Configuration file access error: {e} - {config_file_path}"
