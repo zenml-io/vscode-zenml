@@ -74,14 +74,14 @@ export class LSClient {
    */
   public async handleZenMLReady(params: { ready: boolean }): Promise<void> {
     console.log('Received zenml/ready notification: ', params.ready);
-        if (!params.ready && !this.interpreterSelectionInProgress) {
-          console.log('ZenML is still not installed. Prompting again...');
-          await vscode.commands.executeCommand('zenml.promptForInterpreter');
-        } else {
-          console.log('ZenML is installed, setting up extension components...');
-          await ZenExtension.setupViewsAndCommands();
-          this.eventBus.emit('zenmlReady/lsClientReady');
-        }
+    if (!params.ready && !this.interpreterSelectionInProgress) {
+      console.log('ZenML is still not installed. Prompting again...');
+      await vscode.commands.executeCommand('zenml.promptForInterpreter');
+    } else {
+      console.log('ZenML is installed, setting up extension components...');
+      await ZenExtension.setupViewsAndCommands();
+      this.eventBus.emit('zenmlReady/lsClientReady');
+    }
     this.isZenMLReady = params.ready;
   }
 
@@ -178,7 +178,6 @@ export class LSClient {
     this.client = updatedCLient;
     console.log('Language client updated... setting up notification listeners');
     this.setupNotificationListeners();
-
   }
 
   /**

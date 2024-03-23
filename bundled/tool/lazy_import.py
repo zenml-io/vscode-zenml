@@ -11,11 +11,11 @@
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
 """
-This module provides utilities designed to facilitate lazy importing of Python modules and classes.
-It includes features for suppressing standard output (stdout) and standard error (stderr) temporarily.
-The suppression of stdout and stderr is implemented via context managers, ensuring that the original 
-state is restored once the operation is complete.
+Utilities for lazy importing and temporary suppression of stdout and logging. 
+Reduces noise when integrating with logging-heavy systems like LSP. 
+Useful for quieter module loads and command executions.
 """
+
 import importlib
 import logging
 import os
@@ -26,7 +26,8 @@ from contextlib import contextmanager
 @contextmanager
 def suppress_logging_temporarily(level=logging.ERROR):
     """
-    Temporarily elevates logging level and suppresses stdout to minimize console output.
+    Temporarily elevates logging level and suppresses stdout to 
+    minimize console output during imports.
 
     Parameters:
         level (int): Temporary logging level (default: ERROR).
@@ -37,7 +38,7 @@ def suppress_logging_temporarily(level=logging.ERROR):
     original_level = logging.root.level
     original_stdout = sys.stdout
     logging.root.setLevel(level)
-    with open(os.devnull, "w") as fnull:
+    with open(os.devnull, "w", encoding='utf-8') as fnull:
         sys.stdout = fnull
         try:
             yield
@@ -47,24 +48,24 @@ def suppress_logging_temporarily(level=logging.ERROR):
 
 
 @contextmanager
-def suppress_stdout_stderr():
+def suppress_stdout_temporarily():
     """
-    This context manager suppresses stdout and stderr for LSP commands,
+    This context manager suppresses stdout for LSP commands,
     silencing unnecessary or unwanted output during execution.
 
     Yields:
-        None: While suppressing stdout and stderr.
+        None: While suppressing stdout.
     """
-    with open(os.devnull, "w") as fnull:
+    with open(os.devnull, "w", encoding='utf-8') as fnull:
         original_stdout = sys.stdout
-        original_stderr = sys.stderr
+        # original_stderr = sys.stderr
         sys.stdout = fnull
-        sys.stderr = fnull
+        # sys.stderr = fnull
         try:
             yield
         finally:
             sys.stdout = original_stdout
-            sys.stderr = original_stderr
+            # sys.stderr = original_stderr
 
 
 def lazy_import(module_name, class_name=None):
