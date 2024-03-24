@@ -10,26 +10,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import * as vscode from 'vscode';
-import { pipelineCommands } from './cmds';
 import { registerCommand } from '../../common/vscodeapi';
+import { environmentCommands } from './cmds';
 import { ZenExtension } from '../../services/ZenExtension';
-import { PipelineTreeItem } from '../../views/activityBar';
+import { ExtensionContext } from 'vscode';
 
 /**
  * Registers pipeline-related commands for the extension.
  *
- * @param {vscode.ExtensionContext} context - The context in which the extension operates, used for registering commands and managing their lifecycle.
+ * @param {ExtensionContext} context - The context in which the extension operates, used for registering commands and managing their lifecycle.
  */
-export const registerPipelineCommands = (context: vscode.ExtensionContext) => {
+export const registerEnvironmentCommands = (context: ExtensionContext) => {
   const commands = [
     registerCommand(
-      'zenml.refreshPipelineView',
-      async () => await pipelineCommands.refreshPipelineView()
-    ),
-    registerCommand(
-      'zenml.deletePipelineRun',
-      async (node: PipelineTreeItem) => await pipelineCommands.deletePipelineRun(node)
+      'zenml.setPythonInterpreter',
+      async () => await environmentCommands.setPythonInterpreter()
     ),
   ];
 

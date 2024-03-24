@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
+import path from 'path';
 import { ThemeIcon, TreeItem, TreeItemCollapsibleState } from 'vscode';
 
 export class EnvironmentItem extends TreeItem {
@@ -23,7 +24,7 @@ export class EnvironmentItem extends TreeItem {
     this.iconPath = this.determineIcon(label);
   }
 
-  private determineIcon(label: string): ThemeIcon | undefined {
+  private determineIcon(label: string): { light: string; dark: string } | ThemeIcon | undefined {
     switch (label) {
       case 'global':
       case 'workspace':
@@ -34,7 +35,12 @@ export class EnvironmentItem extends TreeItem {
         return new ThemeIcon('folder');
       case 'path':
       case 'interpreter':
-        return new ThemeIcon('file-code');
+        const iconName = 'python.png';
+        const iconPath = path.join(__dirname, '..', 'resources', iconName);
+        return {
+          light: iconPath,
+          dark: iconPath
+        };
       default:
         return undefined;
     }

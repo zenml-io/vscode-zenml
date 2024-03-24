@@ -1,14 +1,13 @@
-import * as vscode from 'vscode';
-import { getGlobalSettings, getWorkspaceSettings } from '../../../common/settings';
+import { ISettings, getGlobalSettings, getWorkspaceSettings } from '../../../common/settings';
 import { EnvironmentItem } from './EnvironmentItem';
-import { SERVER_ID } from '../../../common/constants';
 import { getProjectRoot } from '../../../common/utilities';
 import { PYTOOL_MODULE } from '../../../utils/constants';
+import { Event, EventEmitter, TreeDataProvider, TreeItem, TreeItemCollapsibleState, workspace } from 'vscode';
 
-export class EnvironmentDataProvider implements vscode.TreeDataProvider<EnvironmentItem> {
+export class EnvironmentDataProvider implements TreeDataProvider<EnvironmentItem> {
   private static instance: EnvironmentDataProvider | null = null;
-  private _onDidChangeTreeData: vscode.EventEmitter<EnvironmentItem | undefined | void> = new vscode.EventEmitter<EnvironmentItem | undefined | void>();
-  readonly onDidChangeTreeData: vscode.Event<EnvironmentItem | undefined | void> = this._onDidChangeTreeData.event;
+  private _onDidChangeTreeData: EventEmitter<EnvironmentItem | undefined | void> = new EventEmitter<EnvironmentItem | undefined | void>();
+  readonly onDidChangeTreeData: Event<EnvironmentItem | undefined | void> = this._onDidChangeTreeData.event;
 
   constructor() { }
 
@@ -38,7 +37,7 @@ export class EnvironmentDataProvider implements vscode.TreeDataProvider<Environm
    * @param element The pipeline run item.
    * @returns The corresponding VS Code tree item.
    */
-  getTreeItem(element: EnvironmentItem): vscode.TreeItem {
+  getTreeItem(element: EnvironmentItem): TreeItem {
     return element;
   }
 
@@ -51,8 +50,10 @@ export class EnvironmentDataProvider implements vscode.TreeDataProvider<Environm
   async getChildren(element?: EnvironmentItem): Promise<EnvironmentItem[]> {
     if (!element) {
       // Root elements: Global and Workspace settings
-      return [new EnvironmentItem('Global Settings', '', vscode.TreeItemCollapsibleState.Collapsed),
-      new EnvironmentItem('Workspace Settings', '', vscode.TreeItemCollapsibleState.Collapsed)];
+      return [
+        new EnvironmentItem('Global Settings', '', TreeItemCollapsibleState.Collapsed),
+        new EnvironmentItem('Workspace Settings', '', TreeItemCollapsibleState.Expanded)
+      ];
     } else {
       const settings = element.label === 'Global Settings'
         ? await getGlobalSettings('zenml', true)
@@ -62,10 +63,9 @@ export class EnvironmentDataProvider implements vscode.TreeDataProvider<Environm
       return [
         new EnvironmentItem('cwd', settings.cwd),
         new EnvironmentItem('workspace', settings.workspace),
-        new EnvironmentItem('path', settings.path.join('; ')),
+        ...(settings.path && settings.path.length ? [new EnvironmentItem('path', settings.path.join('; '))] : []),
         new EnvironmentItem('interpreter', settings.interpreter.join('; '))
       ];
-
     }
   }
 }
