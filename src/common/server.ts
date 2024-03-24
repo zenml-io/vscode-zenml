@@ -33,6 +33,7 @@ import {
 import { updateStatus } from './status';
 import { getLSClientTraceLevel, getProjectRoot } from './utilities';
 import { isVirtualWorkspace } from './vscodeapi';
+import { ZenExtension } from '../services/ZenExtension';
 
 export type IInitOptions = { settings: ISettings[]; globalSettings: ISettings };
 
@@ -82,11 +83,11 @@ async function createServer(
     documentSelector: isVirtualWorkspace()
       ? [{ language: 'python' }]
       : [
-          { scheme: 'file', language: 'python' },
-          { scheme: 'untitled', language: 'python' },
-          { scheme: 'vscode-notebook', language: 'python' },
-          { scheme: 'vscode-notebook-cell', language: 'python' },
-        ],
+        { scheme: 'file', language: 'python' },
+        { scheme: 'untitled', language: 'python' },
+        { scheme: 'vscode-notebook', language: 'python' },
+        { scheme: 'vscode-notebook-cell', language: 'python' },
+      ],
     outputChannel: outputChannel,
     traceOutputChannel: outputChannel,
     revealOutputChannelOn: RevealOutputChannelOn.Never,
@@ -100,13 +101,8 @@ async function createServer(
 }
 
 let _disposables: Disposable[] = [];
-export async function restartServer(
-  workspaceSetting: ISettings,
-  serverId: string,
-  serverName: string,
-  outputChannel: LogOutputChannel,
-  lsClientInstance: LSClient
-): Promise<LanguageClient | undefined> {
+export async function restartServer(workspaceSetting: ISettings,): Promise<LanguageClient | undefined> {
+  const lsClientInstance = LSClient.getInstance();
   const lsClient = lsClientInstance.getLanguageClient();
   if (lsClient) {
     traceInfo(`Server: Stop requested`);
@@ -116,9 +112,9 @@ export async function restartServer(
   }
   updateStatus(undefined, LanguageStatusSeverity.Information, true);
 
-  const newLSClient = await createServer(workspaceSetting, serverId, serverName, outputChannel, {
-    settings: await getExtensionSettings(serverId, true),
-    globalSettings: await getGlobalSettings(serverId, true),
+  const newLSClient = await createServer(workspaceSetting, ZenExtension.serverId, ZenExtension.serverName, ZenExtension.outputChannel, {
+    settings: await getExtensionSettings(ZenExtension.serverId, true),
+    globalSettings: await getGlobalSettings(ZenExtension.serverId, true),
   });
 
   lsClientInstance.updateClient(newLSClient);
@@ -141,23 +137,18 @@ export async function restartServer(
     })
   );
   try {
-    await lsClientInstance.startLanguageClient();
+    await ZenExtension.lsClient.startLanguageClient();
   } catch (ex) {
     updateStatus(l10n.t('Server failed to start.'), LanguageStatusSeverity.Error);
     traceError(`Server: Start failed: ${ex}`);
   }
-  await newLSClient.setTrace(getLSClientTraceLevel(outputChannel.logLevel, env.logLevel));
+  await newLSClient.setTrace(getLSClientTraceLevel(ZenExtension.outputChannel.logLevel, env.logLevel));
   return newLSClient;
 }
 
-export async function runServer(
-  serverId: string,
-  serverName: string,
-  outputChannel: vscode.LogOutputChannel,
-  lsClient: LSClient
-) {
+export async function runServer() {
   const projectRoot = await getProjectRoot();
-  const workspaceSetting = await getWorkspaceSettings(serverId, projectRoot, true);
+  const workspaceSetting = await getWorkspaceSettings(ZenExtension.serverId, projectRoot, true);
   if (workspaceSetting.interpreter.length === 0) {
     updateStatus(
       vscode.l10n.t('Please select a Python interpreter.'),
@@ -167,5 +158,5 @@ export async function runServer(
     return;
   }
 
-  await restartServer(workspaceSetting, serverId, serverName, outputChannel, lsClient);
+  await restartServer(workspaceSetting);
 }

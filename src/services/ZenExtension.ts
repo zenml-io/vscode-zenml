@@ -14,6 +14,7 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
+import { registerEnvironmentCommands } from '../commands/environment/registry';
 import { registerPipelineCommands } from '../commands/pipelines/registry';
 import { registerServerCommands } from '../commands/server/registry';
 import { registerStackCommands } from '../commands/stack/registry';
@@ -21,14 +22,13 @@ import { EXTENSION_ROOT_DIR } from '../common/constants';
 import { registerLogger, traceLog, traceVerbose } from '../common/log/logging';
 import {
   IInterpreterDetails,
-  getInterpreterDetails,
   initializePython,
-  onDidChangePythonInterpreter,
+  onDidChangePythonInterpreter
 } from '../common/python';
 import { runServer } from '../common/server';
 import {
   checkIfConfigurationChanged,
-  updateWorkspaceInterpreterSettings,
+  getInterpreterFromSetting,
 } from '../common/settings';
 import { registerLanguageStatusItem } from '../common/status';
 import { getLSClientTraceLevel } from '../common/utilities';
@@ -37,12 +37,11 @@ import {
   onDidChangeConfiguration,
   registerCommand,
 } from '../common/vscodeapi';
-import { updateDefaultPythonInterpreterPath } from '../utils/global';
 import { refreshUIComponents } from '../utils/refresh';
 import { PipelineDataProvider, ServerDataProvider, StackDataProvider } from '../views/activityBar';
+import { EnvironmentDataProvider } from '../views/activityBar/environmentView/EnvironmentDataProvider';
 import ZenMLStatusBar from '../views/statusBar';
 import { LSClient } from './LSClient';
-import { EnvironmentDataProvider } from '../views/activityBar/environmentView/EnvironmentDataProvider';
 
 export interface IServerInfo {
   name: string;
@@ -53,11 +52,12 @@ export class ZenExtension {
   private static context: vscode.ExtensionContext;
   static commandDisposables: vscode.Disposable[] = [];
   static viewDisposables: vscode.Disposable[] = [];
-  private static lsClient: LSClient;
-  private static outputChannel: vscode.LogOutputChannel;
-  private static serverId: string;
-  private static serverName: string;
+  public static lsClient: LSClient;
+  public static outputChannel: vscode.LogOutputChannel;
+  public static serverId: string;
+  public static serverName: string;
   private static viewsAndCommandsSetup = false;
+  public static interpreterCheckInProgress = false;
 
   private static dataProviders = new Map<string, vscode.TreeDataProvider<vscode.TreeItem>>([
     ['zenmlServerView', ServerDataProvider.getInstance()],
@@ -70,6 +70,7 @@ export class ZenExtension {
     registerServerCommands,
     registerStackCommands,
     registerPipelineCommands,
+    registerEnvironmentCommands
   ];
 
   /**
@@ -94,28 +95,15 @@ export class ZenExtension {
    */
   static deferredInitialize(): void {
     setImmediate(async () => {
-      const interpreterDetails = await getInterpreterDetails();
-      if (interpreterDetails.path) {
-        await this.updateGlobalSettings(interpreterDetails.path[0]);
-      } else {
-        // If no interpreter details are found, listen for changes from the Python extension
-        traceLog(`Setting up Python extension listener.`);
+      const interpreter = getInterpreterFromSetting(this.serverId);
+      if (interpreter === undefined || interpreter.length === 0) {
+        traceLog(`Python extension loading`);
         await initializePython(this.context.subscriptions);
+        traceLog(`Python extension loaded`);
+      } else {
+        await runServer();
       }
-      // Start the server with the current or updated interpreter settings
-      await runServer(this.serverId, this.serverName, this.outputChannel, this.lsClient);
-      // Set up views and commands / Check ZenML installation
     });
-  }
-
-  /**
-   * Updates the global settings for the ZenML extension.
-   *
-   * @param pythonPath The new Python interpreter path.
-   */
-  static async updateGlobalSettings(pythonPath: string): Promise<void> {
-    await updateDefaultPythonInterpreterPath(pythonPath);
-    await updateWorkspaceInterpreterSettings(pythonPath);
   }
 
   /**
@@ -144,11 +132,20 @@ export class ZenExtension {
   private static subscribeToCoreEvents(): void {
     this.context.subscriptions.push(
       onDidChangePythonInterpreter(async (interpreterDetails: IInterpreterDetails) => {
+        this.interpreterCheckInProgress = true;
         if (interpreterDetails.path) {
-          console.log('Interpreter changed, restarting LSP server...');
-          await this.updateGlobalSettings(interpreterDetails.path[0]);
-          await runServer(this.serverId, this.serverName, this.outputChannel, this.lsClient);
+          console.log('Interpreter changed:', interpreterDetails.path[0]);
+          console.log('onDidChangePythonInterpreter triggered: restarting server...');
+          await runServer();
+          if (!this.lsClient.isZenMLReady) {
+            console.log('ZenML is still not installed. Prompting again...');
+            await this.promptForPythonInterpreter();
+          } else {
+            vscode.window.showInformationMessage('🚀 ZenML installation found. Ready to use.');
+            await refreshUIComponents();
+          }
         }
+        this.interpreterCheckInProgress = false;
       }),
       registerCommand(`${this.serverId}.showLogs`, async () => {
         this.outputChannel.show();
@@ -156,14 +153,14 @@ export class ZenExtension {
       onDidChangeConfiguration(async (e: vscode.ConfigurationChangeEvent) => {
         if (checkIfConfigurationChanged(e, this.serverId)) {
           console.log('Configuration changed, restarting LSP server...', e);
-          await runServer(this.serverId, this.serverName, this.outputChannel, this.lsClient);
+          await runServer();
         }
       }),
       registerCommand(`${this.serverId}.restart`, async () => {
-        await runServer(this.serverId, this.serverName, this.outputChannel, this.lsClient);
+        await runServer();
       }),
       registerCommand(`zenml.promptForInterpreter`, async () => {
-        if (!this.lsClient.interpreterSelectionInProgress && !this.lsClient.isZenMLReady) {
+        if (!this.interpreterCheckInProgress && !this.lsClient.isZenMLReady) {
           await this.promptForPythonInterpreter();
         }
       }),
@@ -177,12 +174,14 @@ export class ZenExtension {
    * @returns {Promise<void>} A promise that resolves to void.
    */
   static async promptForPythonInterpreter(): Promise<void> {
+    if (this.interpreterCheckInProgress) {
+      console.log('Interpreter check already in progress. Skipping prompt.');
+      return;
+    }
     if (this.lsClient.isZenMLReady) {
       console.log('ZenML is already installed, no need to prompt for interpreter.');
       return;
     }
-    this.lsClient.interpreterSelectionInProgress = true;
-    let userCancelled = false;
     try {
       const selected = await vscode.window.showInformationMessage(
         'ZenML not found with the current Python interpreter. Would you like to select a different interpreter?',
@@ -192,23 +191,11 @@ export class ZenExtension {
       if (selected === 'Select Interpreter') {
         await vscode.commands.executeCommand('python.setInterpreter');
         console.log('Interpreter selection completed.');
-        await vscode.commands.executeCommand(`${this.serverId}.restart`);
       } else {
-        userCancelled = true;
         console.log('Interpreter selection cancelled.');
       }
-    } finally {
-      this.lsClient.interpreterSelectionInProgress = false;
-      if (!this.lsClient.isZenMLReady && !userCancelled) {
-        console.log('ZenML is still not installed. Prompting again...');
-        // await this.promptForPythonInterpreter();
-      } else if (this.lsClient.isZenMLReady) {
-        vscode.window.showInformationMessage('🚀 ZenML installation found. Ready to use.');
-      } else {
-        vscode.window.showInformationMessage(
-          'Interpreter selection cancelled. ZenML features will be disabled.'
-        );
-      }
+    } catch (err) {
+      console.error('Error selecting Python interpreter:', err);
     }
   }
 

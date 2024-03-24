@@ -84,7 +84,7 @@ class ZenLanguageServer(LanguageServer):
             return
 
         # Initializing ZenML client after successful installation check.
-        self.notify_user("🚀 Initializing ZenML client...")
+        self.log_to_output("🚀 Initializing ZenML client...")
         try:
             self.zenml_client = ZenMLClient()
             self.notify_user("✅ ZenML client initialized successfully.")
@@ -102,7 +102,7 @@ class ZenLanguageServer(LanguageServer):
         try:
             watcher = ZenConfigWatcher(self)
             watcher.watch_zenml_config_yaml()
-            self.notify_user("👀 Watching ZenML configuration for changes.")
+            self.log_to_output("👀 Watching ZenML configuration for changes.")
         except Exception as e:
             self.notify_user(
                 f"Error setting up the Global Configuration Watcher: {e}",

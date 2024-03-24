@@ -20,7 +20,6 @@ import { getZenMLServerUrl, updateServerUrlAndToken } from '../utils/global';
 import { debounce, refreshUIComponents } from '../utils/refresh';
 import { EventBus } from './EventBus';
 import { ZenExtension } from './ZenExtension';
-import * as vscode from 'vscode';
 
 export class LSClient {
   public isZenMLReady = false;
@@ -28,7 +27,6 @@ export class LSClient {
   private client: LanguageClient | null = null;
   private eventBus: EventBus = EventBus.getInstance();
   public clientReady: boolean = false;
-  public interpreterSelectionInProgress = false;
 
   public restartLSPServerDebounced = debounce(async () => {
     await commands.executeCommand(`${PYTOOL_MODULE}.restart`);
@@ -74,9 +72,9 @@ export class LSClient {
    */
   public async handleZenMLReady(params: { ready: boolean }): Promise<void> {
     console.log('Received zenml/ready notification: ', params.ready);
-    if (!params.ready && !this.interpreterSelectionInProgress) {
+    if (!params.ready) {
       console.log('ZenML is still not installed. Prompting again...');
-      await vscode.commands.executeCommand('zenml.promptForInterpreter');
+      await commands.executeCommand('zenml.promptForInterpreter');
     } else {
       console.log('ZenML is installed, setting up extension components...');
       await ZenExtension.setupViewsAndCommands();
@@ -154,8 +152,11 @@ export class LSClient {
     args?: any[]
   ): Promise<T> {
     if (!this.clientReady || !this.client) {
-      console.log('Language server is not available.');
-      throw new Error('Language client is not available.');
+      console.error('Language server is not available.');
+      return { error: "Language server is not available." } as T;
+    } else if (!this.isZenMLReady) {
+      console.error('ZenML is not installed. Cannot send request to the language server.');
+      return { error: "ZenML is not installed. Cannot send request to the language server." } as T;
     }
     try {
       const result = await this.client.sendRequest('workspace/executeCommand', {
@@ -176,7 +177,6 @@ export class LSClient {
    */
   public updateClient(updatedCLient: LanguageClient): void {
     this.client = updatedCLient;
-    console.log('Language client updated... setting up notification listeners');
     this.setupNotificationListeners();
   }
 
