@@ -23,3 +23,6 @@ export const DEBUG_SERVER_SCRIPT_PATH = path.join(
   'tool',
   `_debug_server.py`
 );
+
+export const SERVER_ID = 'zenml-python'
+export const SERVER_NAME = 'ZenML Language Server'

@@ -47,7 +47,9 @@ class GlobalConfigWrapper:
     def RestZenStoreConfiguration(self):
         """Returns the RestZenStoreConfiguration class for store configuration."""
         # pylint: disable=not-callable
-        return self.lazy_import("zenml.zen_stores.rest_zen_store", "RestZenStoreConfiguration")
+        return self.lazy_import(
+            "zenml.zen_stores.rest_zen_store", "RestZenStoreConfiguration"
+        )
 
     def get_global_config_directory_path(self) -> str:
         """Get the global configuration directory path.
@@ -162,7 +164,8 @@ class ZenServerWrapper:
             dict: Dictionary containing server info.
         """
         store_info = json.loads(self.gc.zen_store.get_store_info().json(indent=2))
-        store_config = json.loads(self.gc.store_configuration.json(indent=2))
+        ##THIS CHANGED from 0.55.2 to 0.55.5 store -> store_configuration
+        store_config = json.loads(self.gc.store.json(indent=2))
         return {"storeInfo": store_info, "storeConfig": store_config}
 
     def connect(self, args, **kwargs) -> dict:
@@ -182,7 +185,9 @@ class ZenServerWrapper:
         try:
             # pylint: disable=not-callable
             access_token = self.web_login(url=url, verify_ssl=verify_ssl)
-            self._config_wrapper.set_store_configuration(remote_url=url, access_token=access_token)
+            self._config_wrapper.set_store_configuration(
+                remote_url=url, access_token=access_token
+            )
             return {"message": "Connected successfully.", "access_token": access_token}
         except self.AuthorizationException as e:
             return {"error": f"Authorization failed: {str(e)}"}
@@ -196,7 +201,8 @@ class ZenServerWrapper:
             dict: Dictionary containing the result of the operation.
         """
         try:
-            url = self.gc.store_configuration.url
+            ##THIS CHANGED from 0.55.2 to 0.55.5 store -> store_configuration
+            url = self.gc.store.url
             store_type = self.BaseZenStore.get_store_type(url)
 
             # pylint: disable=not-callable
@@ -255,10 +261,14 @@ class PipelineRunsWrapper:
                     "version": run.body.pipeline.body.version,
                     "stackName": run.body.stack.name,
                     "startTime": (
-                        run.metadata.start_time.isoformat() if run.metadata.start_time else None
+                        run.metadata.start_time.isoformat()
+                        if run.metadata.start_time
+                        else None
                     ),
                     "endTime": (
-                        run.metadata.end_time.isoformat() if run.metadata.end_time else None
+                        run.metadata.end_time.isoformat()
+                        if run.metadata.end_time
+                        else None
                     ),
                     "os": run.metadata.client_environment["os"],
                     "osVersion": run.metadata.client_environment["mac_version"],
@@ -432,17 +442,23 @@ class StacksWrapper:
         target_stack_name = args[1]
 
         if not source_stack_name_or_id or not target_stack_name:
-            return {"error": "Both source stack name/id and target stack name are required"}
+            return {
+                "error": "Both source stack name/id and target stack name are required"
+            }
 
         try:
-            stack_to_copy = self.client.get_stack(name_id_or_prefix=source_stack_name_or_id)
+            stack_to_copy = self.client.get_stack(
+                name_id_or_prefix=source_stack_name_or_id
+            )
             component_mapping = {
                 c_type: [c.id for c in components][0]
                 for c_type, components in stack_to_copy.components.items()
                 if components
             }
 
-            self.client.create_stack(name=target_stack_name, components=component_mapping)
+            self.client.create_stack(
+                name=target_stack_name, components=component_mapping
+            )
             return {
                 "message": (
                     f"Stack `{source_stack_name_or_id}` successfully copied "

@@ -42,6 +42,7 @@ import { refreshUIComponents } from '../utils/refresh';
 import { PipelineDataProvider, ServerDataProvider, StackDataProvider } from '../views/activityBar';
 import ZenMLStatusBar from '../views/statusBar';
 import { LSClient } from './LSClient';
+import { EnvironmentDataProvider } from '../views/activityBar/environmentView/EnvironmentDataProvider';
 
 export interface IServerInfo {
   name: string;
@@ -62,6 +63,7 @@ export class ZenExtension {
     ['zenmlServerView', ServerDataProvider.getInstance()],
     ['zenmlStackView', StackDataProvider.getInstance()],
     ['zenmlPipelineView', PipelineDataProvider.getInstance()],
+    ['zenmlEnvironmentView', EnvironmentDataProvider.getInstance()]
   ]);
 
   private static registries = [

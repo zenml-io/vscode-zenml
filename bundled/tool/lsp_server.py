@@ -100,9 +100,9 @@ async def initialize(params: lsp.InitializeParams) -> None:
     log_to_output(f"ZenML LSP is initializing.")
     LSP_SERVER.send_custom_notification("sanityCheck", "ZenML LSP is initializing.")
 
-    # Update the Python interpreter to the one used by the client.
-    interpreter_path = WORKSPACE_SETTINGS[os.getcwd()]["interpreter"][0]
-    LSP_SERVER.update_python_interpreter(interpreter_path)
+    # Below is not needed as the interpreter path gets automatically updated when changed in vscode.
+    # interpreter_path = WORKSPACE_SETTINGS[os.getcwd()]["interpreter"][0]
+    # LSP_SERVER.update_python_interpreter(interpreter_path)
 
     # Check install status and initialize ZenML client if ZenML is installed.
     await LSP_SERVER.initialize_zenml_client()

@@ -58,14 +58,14 @@ def suppress_stdout_temporarily():
     """
     with open(os.devnull, "w", encoding="utf-8") as fnull:
         original_stdout = sys.stdout
-        # original_stderr = sys.stderr
+        original_stderr = sys.stderr
         sys.stdout = fnull
-        # sys.stderr = fnull
+        sys.stderr = fnull
         try:
             yield
         finally:
             sys.stdout = original_stdout
-            # sys.stderr = original_stderr
+            sys.stderr = original_stderr
 
 
 def lazy_import(module_name, class_name=None):

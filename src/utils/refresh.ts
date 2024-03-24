@@ -12,6 +12,7 @@
 // permissions and limitations under the License.
 import { ZenServerDetails } from '../types/ServerInfoTypes';
 import { PipelineDataProvider, ServerDataProvider, StackDataProvider } from '../views/activityBar';
+import { EnvironmentDataProvider } from '../views/activityBar/environmentView/EnvironmentDataProvider';
 
 // Type definition for a refresh function that takes a global configuration object
 type RefreshFunction = (updatedServerConfig?: ZenServerDetails) => Promise<void>;
@@ -104,6 +105,7 @@ export async function refreshUIComponents(): Promise<void> {
   await ServerDataProvider.getInstance().refresh();
   await StackDataProvider.getInstance().refresh();
   await PipelineDataProvider.getInstance().refresh();
+  EnvironmentDataProvider.getInstance().refresh();
   // setTimeout(() => {
   //   EventBus.getInstance().emit('refreshServerStatus');
   // }, 2000);

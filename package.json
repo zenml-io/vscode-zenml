@@ -93,7 +93,7 @@
           "type": "array"
         },
         "zenml-python.showNotifications": {
-          "default": "always",
+          "default": "off",
           "description": "Controls when notifications are shown by this extension.",
           "enum": [
             "off",
@@ -236,6 +236,11 @@
           "id": "zenmlPipelineView",
           "name": "Pipeline Runs",
           "icon": "$(beaker)"
+        },
+        {
+          "id": "zenmlEnvironmentView",
+          "name": "Environment Settings",
+          "icon": "$(server-environment)"
         }
       ]
     },
