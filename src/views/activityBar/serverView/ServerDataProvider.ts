@@ -10,19 +10,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import * as vscode from 'vscode';
 import { checkServerStatus } from '../../../commands/server/utils';
 import { EventBus } from '../../../services/EventBus';
 import { ServerStatus } from '../../../types/ServerInfoTypes';
 import { INITIAL_ZENML_SERVER_STATUS } from '../../../utils/constants';
 import { ServerTreeItem } from './ServerTreeItems';
+import { TreeDataProvider, TreeItem, EventEmitter, Event, workspace, ThemeIcon } from 'vscode';
 
-export class ServerDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+export class ServerDataProvider implements TreeDataProvider<TreeItem> {
   private static instance: ServerDataProvider | null = null;
   private currentStatus: ServerStatus = INITIAL_ZENML_SERVER_STATUS;
   private eventBus = EventBus.getInstance();
 
-  private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined | null>();
+  private _onDidChangeTreeData = new EventEmitter<TreeItem | undefined | null>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
   constructor() {
@@ -92,12 +92,12 @@ export class ServerDataProvider implements vscode.TreeDataProvider<vscode.TreeIt
    * @param element The tree item to retrieve.
    * @returns The corresponding VS Code tree item.
    */
-  getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
+  getTreeItem(element: TreeItem): TreeItem {
     if (element instanceof ServerTreeItem) {
       if (element.serverStatus.isConnected) {
-        element.iconPath = new vscode.ThemeIcon('vm-active');
+        element.iconPath = new ThemeIcon('vm-active');
       } else {
-        element.iconPath = new vscode.ThemeIcon('vm-connect');
+        element.iconPath = new ThemeIcon('vm-connect');
       }
     }
     return element;
@@ -109,7 +109,7 @@ export class ServerDataProvider implements vscode.TreeDataProvider<vscode.TreeIt
    * @param element The parent tree item. If undefined, the root server status is fetched.
    * @returns A promise resolving to an array of child tree items or undefined if there are no children.
    */
-  async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[] | undefined> {
+  async getChildren(element?: TreeItem): Promise<TreeItem[] | undefined> {
     if (!element) {
       const updatedServerTreeItem = new ServerTreeItem('Server Status', this.currentStatus);
       if (this.currentStatus.isConnected) {

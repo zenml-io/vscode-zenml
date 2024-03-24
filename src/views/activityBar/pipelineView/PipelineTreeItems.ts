@@ -15,7 +15,7 @@ import { PipelineRun } from '../../../types/PipelineTypes';
 import { PIPELINE_RUN_STATUS_ICONS } from '../../../utils/constants';
 
 /**
- * Represents a pipeline run in the VS Code tree view.
+ * Represents a Pipeline Run Tree Item in the VS Code tree view.
  * Displays its name, version and status.
  */
 export class PipelineTreeItem extends vscode.TreeItem {
@@ -42,7 +42,7 @@ export class PipelineTreeItem extends vscode.TreeItem {
 }
 
 /**
- * Represents details of a pipeline run in the VS Code tree view.
+ * Represents details of a Pipeline Run Tree Item in the VS Code tree view.
  * Displays the stack name for the run, its start time, end time, machine details and Python version.
  */
 export class PipelineRunTreeItem extends vscode.TreeItem {

@@ -49,7 +49,6 @@ export class EnvironmentDataProvider implements TreeDataProvider<EnvironmentItem
    */
   async getChildren(element?: EnvironmentItem): Promise<EnvironmentItem[]> {
     if (!element) {
-      // Root elements: Global and Workspace settings
       return [
         new EnvironmentItem('Global Settings', '', TreeItemCollapsibleState.Collapsed),
         new EnvironmentItem('Workspace Settings', '', TreeItemCollapsibleState.Expanded)
