@@ -10,22 +10,22 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import * as vscode from 'vscode';
 import { PipelineRunTreeItem, PipelineTreeItem } from './PipelineTreeItems';
 import { PipelineRun, PipelineRunsResponse } from '../../../types/PipelineTypes';
 import { LSClient } from '../../../services/LSClient';
+import { TreeDataProvider, TreeItem, EventEmitter, Event } from 'vscode';
 
 /**
  * Provides data for the pipeline run tree view, displaying detailed information about each pipeline run.
  */
-export class PipelineDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+export class PipelineDataProvider implements TreeDataProvider<TreeItem> {
   private static instance: PipelineDataProvider | null = null;
 
-  private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined | null>();
-  readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null> =
+  private _onDidChangeTreeData = new EventEmitter<TreeItem | undefined | null>();
+  readonly onDidChangeTreeData: Event<TreeItem | undefined | null> =
     this._onDidChangeTreeData.event;
 
-  constructor() {}
+  constructor() { }
 
   /**
    * Retrieves the singleton instance of ServerDataProvider.
@@ -55,7 +55,7 @@ export class PipelineDataProvider implements vscode.TreeDataProvider<vscode.Tree
    * @param element The pipeline run item.
    * @returns The corresponding VS Code tree item.
    */
-  getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
+  getTreeItem(element: TreeItem): TreeItem {
     return element;
   }
 
@@ -65,7 +65,7 @@ export class PipelineDataProvider implements vscode.TreeDataProvider<vscode.Tree
    * @param element The parent tree item. If undefined, root pipeline runs are fetched.
    * @returns A promise resolving to an array of child tree items or undefined if there are no children.
    */
-  async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[] | undefined> {
+  async getChildren(element?: TreeItem): Promise<TreeItem[] | undefined> {
     if (!element) {
       return this.fetchPipelineRuns();
     } else {

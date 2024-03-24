@@ -10,16 +10,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import * as vscode from 'vscode';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
 import { Stack, StackComponent, StacksReponse } from '../../../types/StackTypes';
 import { StackComponentTreeItem, StackTreeItem } from './StackTreeItems';
+import { TreeDataProvider, TreeItem, EventEmitter, Event, workspace } from 'vscode';
 
-export class StackDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+export class StackDataProvider implements TreeDataProvider<TreeItem> {
+  private _onDidChangeTreeData = new EventEmitter<TreeItem | undefined | null>();
+  readonly onDidChangeTreeData: Event<TreeItem | undefined | null> = this._onDidChangeTreeData.event;
+
   private static instance: StackDataProvider | null = null;
-  private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined | null>();
-  readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
   public stacks: Stack[] = [];
   private eventBus = EventBus.getInstance();
 
@@ -34,6 +35,8 @@ export class StackDataProvider implements vscode.TreeDataProvider<vscode.TreeIte
     this.eventBus.on('zenmlReady/lsClientReady', () => {
       // Initial refresh upon ready
       this.refresh();
+
+      this.eventBus.off('stackChanged', () => this.refresh());
       // Listen for 'stackChanged' events from the watcher
       this.eventBus.on('stackChanged', () => this.refresh());
     });
@@ -64,20 +67,20 @@ export class StackDataProvider implements vscode.TreeDataProvider<vscode.TreeIte
   /**
    * Returns the provided tree item.
    *
-   * @param {vscode.TreeItem} element The tree item to return.
+   * @param {TreeItem} element The tree item to return.
    * @returns The corresponding VS Code tree item.
    */
-  getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
+  getTreeItem(element: TreeItem): TreeItem {
     return element;
   }
 
   /**
    * Retrieves the children of a given tree item.
    *
-   * @param {vscode.TreeItem} element The tree item whose children to retrieve.
+   * @param {TreeItem} element The tree item whose children to retrieve.
    * @returns A promise resolving to an array of child tree items or undefined if there are no children.
    */
-  async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[] | undefined> {
+  async getChildren(element?: TreeItem): Promise<TreeItem[] | undefined> {
     if (element instanceof StackTreeItem) {
       return element.children;
     } else if (!element) {
@@ -99,15 +102,14 @@ export class StackDataProvider implements vscode.TreeDataProvider<vscode.TreeIte
 
     try {
       const stacks = await lsClient.sendLsClientRequest<StacksReponse>('fetchStacks');
+
       if (!stacks || (stacks && 'error' in stacks)) {
         this.stacks = [];
         return [];
       }
 
       return stacks.map((stack: Stack) => {
-        const activeStackId = vscode.workspace
-          .getConfiguration('zenml')
-          .get<string>('activeStackId');
+        const activeStackId = workspace.getConfiguration('zenml').get<string>('activeStackId');
         const isActive = stack.id === activeStackId;
         this.stacks = stacks;
         return this.convertToStackTreeItem(stack, isActive);
