@@ -32,7 +32,9 @@ from pygls.server import LanguageServer
 from zen_watcher import ZenConfigWatcher
 from zenml_client import ZenMLClient
 
-zenml_init_error = {"error": "ZenML is not initialized. Please check ZenML version requirements."}
+zenml_init_error = {
+    "error": "ZenML is not initialized. Please check ZenML version requirements."
+}
 
 
 class ZenLanguageServer(LanguageServer):
@@ -60,7 +62,9 @@ class ZenLanguageServer(LanguageServer):
             if process.returncode == 0:
                 self.show_message_log("✅ ZenML installation check: Successful.")
                 return True
-            self.show_message_log("❌ ZenML installation check failed.", lsp.MessageType.Error)
+            self.show_message_log(
+                "❌ ZenML installation check failed.", lsp.MessageType.Error
+            )
             return False
         except Exception as e:
             self.show_message_log(
@@ -89,7 +93,9 @@ class ZenLanguageServer(LanguageServer):
             # initialize watcher
             self.initialize_global_config_watcher()
         except Exception as e:
-            self.notify_user(f"Failed to initialize ZenML client: {str(e)}", lsp.MessageType.Error)
+            self.notify_user(
+                f"Failed to initialize ZenML client: {str(e)}", lsp.MessageType.Error
+            )
 
     def initialize_global_config_watcher(self):
         """Sets up and starts the Global Configuration Watcher."""
@@ -129,7 +135,9 @@ class ZenLanguageServer(LanguageServer):
 
                 with suppress_stdout_temporarily():
                     if wrapper_name:
-                        wrapper_instance = getattr(self.zenml_client, wrapper_name, None)
+                        wrapper_instance = getattr(
+                            self.zenml_client, wrapper_name, None
+                        )
                         if not wrapper_instance:
                             return {"error": f"Wrapper '{wrapper_name}' not found."}
                         return func(wrapper_instance, *args, **kwargs)
@@ -173,25 +181,33 @@ class ZenLanguageServer(LanguageServer):
 
     def send_custom_notification(self, method: str, args: dict):
         """Sends a custom notification to the LSP client."""
-        self.show_message_log(f"Sending custom notification: {method} with args: {args}")
+        self.show_message_log(
+            f"Sending custom notification: {method} with args: {args}"
+        )
         self.send_notification(method, args)
 
     def update_python_interpreter(self, interpreter_path):
         """Updates the Python interpreter path and handles errors."""
         try:
             self.python_interpreter = interpreter_path
-            self.show_message_log(f"LSP_Python_Interpreter Updated: {self.python_interpreter}")
+            self.show_message_log(
+                f"LSP_Python_Interpreter Updated: {self.python_interpreter}"
+            )
         # pylint: disable=broad-exception-caught
         except Exception as e:
             self.show_message_log(
                 f"Failed to update Python interpreter: {str(e)}", lsp.MessageType.Error
             )
 
-    def notify_user(self, message: str, msg_type: lsp.MessageType = lsp.MessageType.Info):
+    def notify_user(
+        self, message: str, msg_type: lsp.MessageType = lsp.MessageType.Info
+    ):
         """Logs a message and also notifies the user."""
         self.show_message(message, msg_type)
 
-    def log_to_output(self, message: str, msg_type: lsp.MessageType = lsp.MessageType.Log) -> None:
+    def log_to_output(
+        self, message: str, msg_type: lsp.MessageType = lsp.MessageType.Log
+    ) -> None:
         """Log to output."""
         self.show_message_log(message, msg_type)
 
@@ -199,74 +215,74 @@ class ZenLanguageServer(LanguageServer):
         """Registers ZenML Python Tool commands."""
 
         @self.command(f"{TOOL_MODULE_NAME}.getGlobalConfig")
-        def get_global_configuration(args) -> dict:
+        @self.zenml_command(wrapper_name="config_wrapper")
+        def get_global_configuration(wrapper_instance, *args, **kwargs) -> dict:
             """Fetches global ZenML configuration settings."""
-            wrapper_instance = self.zenml_client.config_wrapper
             return wrapper_instance.get_global_configuration()
 
         @self.command(f"{TOOL_MODULE_NAME}.getGlobalConfigFilePath")
-        def get_global_config_file_path(args):
+        @self.zenml_command(wrapper_name="config_wrapper")
+        def get_global_config_file_path(wrapper_instance, *args, **kwargs):
             """Retrieves the file path of the global ZenML configuration."""
-            wrapper_instance = self.zenml_client.config_wrapper
             return wrapper_instance.get_global_config_file_path()
 
         @self.command(f"{TOOL_MODULE_NAME}.serverInfo")
-        def get_server_info(args):
+        @self.zenml_command(wrapper_name="zen_server_wrapper")
+        def get_server_info(wrapper_instance, *args, **kwargs):
             """Gets information about the ZenML server."""
-            wrapper_instance = self.zenml_client.zen_server_wrapper
             return wrapper_instance.get_server_info()
 
         @self.command(f"{TOOL_MODULE_NAME}.connect")
-        def connect(args):
+        @self.zenml_command(wrapper_name="zen_server_wrapper")
+        def connect(wrapper_instance, args):
             """Connects to a ZenML server with specified arguments."""
-            wrapper_instance = self.zenml_client.zen_server_wrapper
             return wrapper_instance.connect(args)
 
         @self.command(f"{TOOL_MODULE_NAME}.disconnect")
-        def disconnect(args):
+        @self.zenml_command(wrapper_name="zen_server_wrapper")
+        def disconnect(wrapper_instance, *args, **kwargs):
             """Disconnects from the current ZenML server."""
-            wrapper_instance = self.zenml_client.zen_server_wrapper
-            return wrapper_instance.disconnect(args)
+            return wrapper_instance.disconnect(*args, **kwargs)
 
         @self.command(f"{TOOL_MODULE_NAME}.fetchStacks")
-        def fetch_stacks(args):
+        @self.zenml_command(wrapper_name="stacks_wrapper")
+        def fetch_stacks(wrapper_instance, *args, **kwargs):
             """Fetches a list of all ZenML stacks."""
-            wrapper_instance = self.zenml_client.stacks_wrapper
             return wrapper_instance.fetch_stacks()
 
         @self.command(f"{TOOL_MODULE_NAME}.getActiveStack")
-        def get_active_stack(args):
+        @self.zenml_command(wrapper_name="stacks_wrapper")
+        def get_active_stack(wrapper_instance, *args, **kwargs):
             """Gets the currently active ZenML stack."""
-            wrapper_instance = self.zenml_client.stacks_wrapper
             return wrapper_instance.get_active_stack()
 
         @self.command(f"{TOOL_MODULE_NAME}.switchActiveStack")
-        def set_active_stack(args):
+        @self.zenml_command(wrapper_name="stacks_wrapper")
+        def set_active_stack(wrapper_instance, args):
             """Sets the active ZenML stack to the specified stack."""
             print(f"args received: {args}")
-            wrapper_instance = self.zenml_client.stacks_wrapper
             return wrapper_instance.set_active_stack(args)
 
         @self.command(f"{TOOL_MODULE_NAME}.renameStack")
-        def rename_stack(args):
+        @self.zenml_command(wrapper_name="stacks_wrapper")
+        def rename_stack(wrapper_instance, args):
             """Renames a specified ZenML stack."""
-            wrapper_instance = self.zenml_client.stacks_wrapper
             return wrapper_instance.rename_stack(args)
 
         @self.command(f"{TOOL_MODULE_NAME}.copyStack")
-        def copy_stack(args):
+        @self.zenml_command(wrapper_name="stacks_wrapper")
+        def copy_stack(wrapper_instance, args):
             """Copies a specified ZenML stack to a new stack."""
-            wrapper_instance = self.zenml_client.stacks_wrapper
             return wrapper_instance.copy_stack(args)
 
         @self.command(f"{TOOL_MODULE_NAME}.getPipelineRuns")
-        def fetch_pipeline_runs(args):
+        @self.zenml_command(wrapper_name="pipeline_runs_wrapper")
+        def fetch_pipeline_runs(wrapper_instance, *args, **kwargs):
             """Fetches all ZenML pipeline runs."""
-            wrapper_instance = self.zenml_client.pipeline_runs_wrapper
             return wrapper_instance.fetch_pipeline_runs()
 
         @self.command(f"{TOOL_MODULE_NAME}.deletePipelineRun")
-        def delete_pipeline_run(args):
+        @self.zenml_command(wrapper_name="pipeline_runs_wrapper")
+        def delete_pipeline_run(wrapper_instance, args):
             """Deletes a specified ZenML pipeline run."""
-            wrapper_instance = self.zenml_client.pipeline_runs_wrapper
             return wrapper_instance.delete_pipeline_run(args)
