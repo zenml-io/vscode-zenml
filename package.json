@@ -124,11 +124,6 @@
           "type": "string",
           "default": "",
           "description": "Active stack id for the ZenML server"
-        },
-        "zenml.zenmlClientReady": {
-          "type": "boolean",
-          "default": false,
-          "description": "ZenML Python client is ready"
         }
       }
     },
@@ -136,16 +131,6 @@
       {
         "command": "zenml.promptForInterpreter",
         "title": "Select Python Interpreter",
-        "category": "ZenML"
-      },
-      {
-        "command": "zenml.checkZenML",
-        "title": "Check ZenML Installation",
-        "category": "ZenML"
-      },
-      {
-        "command": "zenml-python.checkZenMLInstallation",
-        "title": "Check ZenML Installation",
         "category": "ZenML"
       },
       {
@@ -209,6 +194,11 @@
         "title": "Delete Pipeline Run",
         "icon": "$(trash)",
         "category": "ZenML Pipeline Runs"
+      },
+      {
+        "command": "zenml.setPythonInterpreter",
+        "title": "Set Python Interpreter",
+        "category": "ZenML Environment Settings"
       }
     ],
     "viewsContainers": {
@@ -269,6 +259,11 @@
         {
           "when": "view == zenmlPipelineView",
           "command": "zenml.refreshPipelineView",
+          "group": "navigation"
+        },
+        {
+          "when": "view == zenmlEnvironmentView",
+          "command": "zenml.setPythonInterpreter",
           "group": "navigation"
         }
       ],
