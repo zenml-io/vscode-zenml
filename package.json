@@ -196,9 +196,22 @@
         "category": "ZenML Pipeline Runs"
       },
       {
+        "command": "zenml.refreshEnvironmentView",
+        "title": "Refresh Environment View",
+        "icon": "$(refresh)",
+        "category": "ZenML Environment"
+      },
+      {
         "command": "zenml.setPythonInterpreter",
-        "title": "Set Python Interpreter",
-        "category": "ZenML Environment Settings"
+        "title": "Switch Python Interpreter",
+        "icon": "$(arrow-swap)",
+        "category": "ZenML Environment"
+      },
+      {
+        "command": "zenml.restartLspServer",
+        "title": "Restart LSP Server",
+        "icon": "$(debug-restart)",
+        "category": "ZenML Environment"
       }
     ],
     "viewsContainers": {
@@ -229,7 +242,7 @@
         },
         {
           "id": "zenmlEnvironmentView",
-          "name": "Environment Settings",
+          "name": "Environment",
           "icon": "$(server-environment)"
         }
       ]
@@ -237,55 +250,60 @@
     "menus": {
       "view/title": [
         {
-          "when": "view == zenmlServerView",
+          "when": "serverCommandsRegistered && view == zenmlServerView",
           "command": "zenml.connectServer",
           "group": "navigation"
         },
         {
-          "when": "view == zenmlServerView",
+          "when": "serverCommandsRegistered && view == zenmlServerView",
           "command": "zenml.disconnectServer",
           "group": "navigation"
         },
         {
-          "when": "view == zenmlServerView",
+          "when": "serverCommandsRegistered && view == zenmlServerView",
           "command": "zenml.refreshServerStatus",
           "group": "navigation"
         },
         {
-          "when": "view == zenmlStackView",
+          "when": "stackCommandsRegistered && view == zenmlStackView",
           "command": "zenml.refreshStackView",
           "group": "navigation"
         },
         {
-          "when": "view == zenmlPipelineView",
+          "when": "pipelineCommandsRegistered && view == zenmlPipelineView",
           "command": "zenml.refreshPipelineView",
           "group": "navigation"
         },
         {
-          "when": "view == zenmlEnvironmentView",
-          "command": "zenml.setPythonInterpreter",
+          "when": "environmentCommandsRegistered && view == zenmlEnvironmentView",
+          "command": "zenml.restartLspServer",
           "group": "navigation"
         }
       ],
       "view/item/context": [
         {
-          "when": "view == zenmlStackView && viewItem == stack",
+          "when": "stackCommandsRegistered && view == zenmlStackView && viewItem == stack",
           "command": "zenml.setActiveStack",
           "group": "inline@1"
         },
         {
-          "when": "view == zenmlStackView && viewItem == stack",
+          "when": "stackCommandsRegistered && view == zenmlStackView && viewItem == stack",
           "command": "zenml.renameStack",
           "group": "inline@2"
         },
         {
+          "when": "stackCommandsRegistered && view == zenmlStackView && viewItem == stack",
           "command": "zenml.copyStack",
-          "when": "view == zenmlStackView && viewItem == stack",
           "group": "inline@3"
         },
         {
+          "when": "pipelineCommandsRegistered && view == zenmlPipelineView && viewItem == pipelineRun",
           "command": "zenml.deletePipelineRun",
-          "when": "view == zenmlPipelineView && viewItem == pipelineRun",
+          "group": "inline"
+        },
+        {
+          "when": "environmentCommandsRegistered && view == zenmlEnvironmentView && viewItem == interpreter",
+          "command": "zenml.setPythonInterpreter",
           "group": "inline"
         }
       ]

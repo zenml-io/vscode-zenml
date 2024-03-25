@@ -19,7 +19,7 @@ import pathlib
 import sys
 from typing import Any, Dict, Optional, Tuple
 
-from constants import TOOL_DISPLAY_NAME, TOOL_MODULE_NAME, ZENML_READY
+from constants import TOOL_DISPLAY_NAME, TOOL_MODULE_NAME, ZENML_CLIENT_INITIALIZED
 
 
 # **********************************************************
@@ -109,7 +109,7 @@ async def initialize(params: lsp.InitializeParams) -> None:
 
     # Wait for 5 secondsto allow the language client to setup and settle down client side.
     ready_status = {"ready": True} if LSP_SERVER.zenml_client else {"ready": False}
-    LSP_SERVER.send_custom_notification(ZENML_READY, ready_status)
+    LSP_SERVER.send_custom_notification(ZENML_CLIENT_INITIALIZED, ready_status)
 
 
 @LSP_SERVER.feature(lsp.EXIT)

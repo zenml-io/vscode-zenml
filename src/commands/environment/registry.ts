@@ -13,7 +13,7 @@
 import { registerCommand } from '../../common/vscodeapi';
 import { environmentCommands } from './cmds';
 import { ZenExtension } from '../../services/ZenExtension';
-import { ExtensionContext } from 'vscode';
+import { ExtensionContext, commands } from 'vscode';
 
 /**
  * Registers pipeline-related commands for the extension.
@@ -21,15 +21,31 @@ import { ExtensionContext } from 'vscode';
  * @param {ExtensionContext} context - The context in which the extension operates, used for registering commands and managing their lifecycle.
  */
 export const registerEnvironmentCommands = (context: ExtensionContext) => {
-  const commands = [
-    registerCommand(
-      'zenml.setPythonInterpreter',
-      async () => await environmentCommands.setPythonInterpreter()
-    ),
-  ];
+  try {
+    const registeredCommands = [
+      registerCommand(
+        'zenml.setPythonInterpreter',
+        async () => await environmentCommands.setPythonInterpreter()
+      ),
+      registerCommand(
+        'zenml.refreshEnvironmentView',
+        async () => await environmentCommands.refreshEnvironmentView()
+      ),
+      registerCommand(
+        'zenml.restartLspServer',
+        async () => await environmentCommands.restartLSPServer()
+      )
+    ];
 
-  commands.forEach(cmd => {
-    context.subscriptions.push(cmd);
-    ZenExtension.commandDisposables.push(cmd);
-  });
+    registeredCommands.forEach(cmd => {
+      context.subscriptions.push(cmd);
+      ZenExtension.commandDisposables.push(cmd);
+    });
+
+    commands.executeCommand('setContext', 'environmentCommandsRegistered', true);
+
+  } catch (error) {
+    console.error("Error registering environment commands:", error);
+    commands.executeCommand('setContext', 'environmentCommandsRegistered', false);
+  }
 };

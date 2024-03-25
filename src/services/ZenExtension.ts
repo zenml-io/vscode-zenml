@@ -14,7 +14,6 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { registerEnvironmentCommands } from '../commands/environment/registry';
 import { registerPipelineCommands } from '../commands/pipelines/registry';
 import { registerServerCommands } from '../commands/server/registry';
 import { registerStackCommands } from '../commands/stack/registry';
@@ -23,7 +22,9 @@ import { registerLogger, traceLog, traceVerbose } from '../common/log/logging';
 import {
   IInterpreterDetails,
   initializePython,
-  onDidChangePythonInterpreter
+  isPythonVersonSupported,
+  onDidChangePythonInterpreter,
+  resolveInterpreter
 } from '../common/python';
 import { runServer } from '../common/server';
 import {
@@ -39,7 +40,6 @@ import {
 } from '../common/vscodeapi';
 import { refreshUIComponents } from '../utils/refresh';
 import { PipelineDataProvider, ServerDataProvider, StackDataProvider } from '../views/activityBar';
-import { EnvironmentDataProvider } from '../views/activityBar/environmentView/EnvironmentDataProvider';
 import ZenMLStatusBar from '../views/statusBar';
 import { LSClient } from './LSClient';
 
@@ -63,14 +63,12 @@ export class ZenExtension {
     ['zenmlServerView', ServerDataProvider.getInstance()],
     ['zenmlStackView', StackDataProvider.getInstance()],
     ['zenmlPipelineView', PipelineDataProvider.getInstance()],
-    ['zenmlEnvironmentView', EnvironmentDataProvider.getInstance()]
   ]);
 
   private static registries = [
     registerServerCommands,
     registerStackCommands,
     registerPipelineCommands,
-    registerEnvironmentCommands
   ];
 
   /**
@@ -134,11 +132,16 @@ export class ZenExtension {
       onDidChangePythonInterpreter(async (interpreterDetails: IInterpreterDetails) => {
         this.interpreterCheckInProgress = true;
         if (interpreterDetails.path) {
-          console.log('Interpreter changed:', interpreterDetails.path[0]);
-          console.log('onDidChangePythonInterpreter triggered: restarting server...');
+          const resolvedEnv = await resolveInterpreter(interpreterDetails.path);
+          const { isSupported, message } = isPythonVersonSupported(resolvedEnv);
+          if (!isSupported) {
+            vscode.window.showErrorMessage(`Interpreter not supported: ${message}`);
+            this.interpreterCheckInProgress = false;
+            return;
+          }
           await runServer();
           if (!this.lsClient.isZenMLReady) {
-            console.log('ZenML is still not installed. Prompting again...');
+            console.log('ZenML Client is not initialized yet.');
             await this.promptForPythonInterpreter();
           } else {
             vscode.window.showInformationMessage('🚀 ZenML installation found. Ready to use.');

@@ -19,7 +19,8 @@ MIN_ZENML_VERSION = "0.55.0"
 
 """Constants for ZenML Notifications and Events"""
 
+IS_ZENML_INSTALLED = "zenml/isInstalled"
+ZENML_CLIENT_INITIALIZED = "zenml/clientInitialized"
 ZENML_SERVER_CHANGED = "zenml/serverChanged"
 ZENML_STACK_CHANGED = "zenml/stackChanged"
-ZENML_READY = "zenml/ready"
 ZENML_REQUIREMENTS_NOT_MET = "zenml/requirementsNotMet"

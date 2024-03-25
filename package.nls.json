@@ -1,7 +1,6 @@
 {
   "extension.description": "ZenML integrates with VS Code to enhance productivity in machine learning projects by providing support for ZenML pipelines, stacks, and server management directly within the editor.",
-  "command.promptForInterpreter": "Prompt to select a Python interpreter from the command palette in VSCode.",
-  "command.restartLSPServer": "Restarts the ZenML Language Server Protocol (LSP) server for updated settings to take effect.",
+  "zenml.promptForInterpreter": "Prompt to select a Python interpreter from the command palette in VSCode.",
   "command.connectServer": "Establishes a connection to a specified ZenML server.",
   "command.disconnectServer": "Disconnects from the currently connected ZenML server.",
   "command.refreshServerStatus": "Refreshes the status of the ZenML server to reflect the current state.",
@@ -13,6 +12,8 @@
   "command.refreshPipelineView": "Refreshes the pipeline view to display the latest information on ZenML pipeline runs.",
   "command.deletePipelineRun": "Deletes a specified ZenML pipeline run.",
   "command.setPythonInterpreter": "Sets the Python interpreter for ZenML-related tasks within the VS Code environment.",
+  "command.refreshEnvironmentView": "Updates the Environment View with the latest ZenML configuration and system information.",
+  "command.restartLspServer": "Restarts the Language Server to ensure the latest configurations are used.",
   "settings.args.description": "Specify arguments to pass to the ZenML CLI. Provide each argument as a separate item in the array.",
   "settings.path.description": "Defines the path to the ZenML CLI. If left as an empty array, the default system path will be used.",
   "settings.importStrategy.description": "Determines which ZenML CLI to use. Options include using a bundled version (`useBundled`) or attempting to use the CLI installed in the current Python environment (`fromEnvironment`).",
@@ -22,7 +23,7 @@
   "settings.showNotifications.onWarning.description": "Notifications are shown for any errors and warnings when formatting Python files.",
   "settings.showNotifications.always.description": "Notifications are show for anything that the server chooses to show when formatting Python files.",
   "settings.interpreter.description": "Sets the path to the Python interpreter used by ZenML. This is used for launching the server and subprocesses. Leave empty to use the default interpreter.",
-  "settings.serverUrl.description": "URL to connect to the ZenML server. Used for managing pipelines and stacks.",
-  "settings.accessToken.description": "Access token required for authenticating with the ZenML server.",
+  "settings.serverUrl.description": "URL to connect to the ZenML server.",
+  "settings.accessToken.description": "Access token required for authenticating with the ZenML server (not necessary currently).",
   "settings.activeStackId.description": "Identifier for the currently active stack in ZenML. This is used to specify which stack is being used for operations."
 }

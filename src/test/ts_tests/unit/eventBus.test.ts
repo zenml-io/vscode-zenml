@@ -13,6 +13,7 @@
 import assert from 'assert';
 import sinon from 'sinon';
 import { MockEventBus } from '../__mocks__/MockEventBus';
+import { LSCLIENT_READY } from '../../../utils/constants';
 
 suite('MockEventBus and Event Handling', () => {
   let eventBus: MockEventBus;
@@ -24,8 +25,8 @@ suite('MockEventBus and Event Handling', () => {
   });
 
   test('handles lsClientReady event correctly with mock', () => {
-    eventBus.on('lsClientReady', spy);
-    eventBus.emit('lsClientReady', true);
+    eventBus.on(LSCLIENT_READY, spy);
+    eventBus.emit(LSCLIENT_READY, true);
     assert.ok(
       spy.calledWith(true),
       'lsClientReady event handler was not called with expected argument'
@@ -33,11 +34,11 @@ suite('MockEventBus and Event Handling', () => {
   });
 
   test('can clear all event handlers and not trigger events', () => {
-    eventBus.on('lsClientReady', spy);
+    eventBus.on(LSCLIENT_READY, spy);
     eventBus.clearAllHandlers();
 
     // Try emitting the event after clearing all handlers
-    eventBus.emit('lsClientReady', true);
+    eventBus.emit(LSCLIENT_READY, true);
 
     // Verify the spy was not called since all handlers were cleared
     assert.strictEqual(

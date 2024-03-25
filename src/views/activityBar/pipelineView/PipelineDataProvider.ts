@@ -13,7 +13,7 @@
 import { PipelineRunTreeItem, PipelineTreeItem } from './PipelineTreeItems';
 import { PipelineRun, PipelineRunsResponse } from '../../../types/PipelineTypes';
 import { LSClient } from '../../../services/LSClient';
-import { TreeDataProvider, TreeItem, EventEmitter, Event } from 'vscode';
+import { TreeDataProvider, TreeItem, EventEmitter } from 'vscode';
 
 /**
  * Provides data for the pipeline run tree view, displaying detailed information about each pipeline run.
@@ -22,8 +22,7 @@ export class PipelineDataProvider implements TreeDataProvider<TreeItem> {
   private static instance: PipelineDataProvider | null = null;
 
   private _onDidChangeTreeData = new EventEmitter<TreeItem | undefined | null>();
-  readonly onDidChangeTreeData: Event<TreeItem | undefined | null> =
-    this._onDidChangeTreeData.event;
+  readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
   constructor() { }
 

@@ -18,6 +18,7 @@ import { ZenServerDetails } from '../../../types/ServerInfoTypes';
 import { MOCK_REST_SERVER_DETAILS } from '../__mocks__/constants';
 import { MockLSClient } from '../__mocks__/MockLSClient';
 import { MockEventBus } from '../__mocks__/MockEventBus';
+import { LSCLIENT_READY, LSP_ZENML_SERVER_CHANGED } from '../../../utils/constants';
 
 suite('Server Configuration Update Flow Tests', () => {
   let sandbox: sinon.SinonSandbox;
@@ -38,12 +39,12 @@ suite('Server Configuration Update Flow Tests', () => {
 
     // Mock EventBus
     sandbox.stub(EventBus, 'getInstance').returns(mockEventBus);
-    mockEventBus.on('lsClientReady', async (isReady: boolean) => {
+    mockEventBus.on(LSCLIENT_READY, async (isReady: boolean) => {
       if (isReady) {
         await refreshUIComponentsStub();
       }
     });
-    mockEventBus.on('zenml/serverChanged', async (updatedServerConfig: ZenServerDetails) => {
+    mockEventBus.on(LSP_ZENML_SERVER_CHANGED, async (updatedServerConfig: ZenServerDetails) => {
       await refreshUIComponentsStub(updatedServerConfig);
     });
   });
@@ -69,13 +70,13 @@ suite('Server Configuration Update Flow Tests', () => {
 
   test('zenml/serverChanged event updates global configuration and refreshes UI', async () => {
     mockLSClientInstance.mockLanguageClient.onNotification(
-      'zenml/serverChanged',
+      LSP_ZENML_SERVER_CHANGED,
       (data: ZenServerDetails) => {
         assert.deepStrictEqual(data, MOCK_REST_SERVER_DETAILS);
       }
     );
 
-    mockLSClientInstance.triggerNotification('zenml/serverChanged', MOCK_REST_SERVER_DETAILS);
+    mockLSClientInstance.triggerNotification(LSP_ZENML_SERVER_CHANGED, MOCK_REST_SERVER_DETAILS);
 
     await new Promise(resolve => setTimeout(resolve, 0));
 
