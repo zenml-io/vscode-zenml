@@ -12,6 +12,10 @@ The ZenML VSCode extension seamlessly integrates with the ZenML CLI to enhance y
 
 - **Status Bar:** The status bar displays the currently active stack name and connection status with dynamic icons.
 
+## New Additions
+
+- **Environment View**: Provides a detailed snapshot of the development environment, mainly to aid with troubleshooting. It clarifies the Python interpreter setup, ZenML installation, and ZenML Client and LSP client states.
+
 ### Server Commands
 
 - `connectServer`: Establishes a connection to the ZenML server (cloud or self-hosted).
@@ -37,6 +41,12 @@ The ZenML VSCode extension seamlessly integrates with the ZenML CLI to enhance y
 - `refreshPipelineView`: Refreshes the pipeline view to display the current pipeline runs.
 
 - `deletePipelineRun`: Removes a specified pipeline run from the view and system.
+
+### Environment Commands
+
+- `restartLspServer`: Restarts the LSP Server to revalidate ZenML installation and client initialization.
+
+- `setPythonInterpreter`: Opens the command palette for Python interpreter selection and restarts the LSP server upon change.
 
 ## Limitations
 
@@ -110,7 +120,7 @@ To use the extension:
   1. **Server View**: View server info and connect/disconnect from a ZenML server.
   2. **Stacks View**: Manage stacks and their components (rename, copy, switch).
   3. **Pipeline Runs View**: Monitor pipeline runs and their status, and delete runs as needed.
-  4. **Environment View**: Inspect your Python workspace environment.
+  4. **Environment View**: Manage your Python environment, switch interpreters, and restart the LSP server for troubleshooting.
 
 Press `F5` to launch the extension (you can also run it from the status bar `Run Extension`).
 Use the command palette (`Ctrl+Shift+P` or `Cmd+Shift+P`) to access these functions via the command palette by searching for `ZenML`.
