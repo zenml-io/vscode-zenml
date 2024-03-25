@@ -48,7 +48,7 @@ const setPythonInterpreter = async (): Promise<void> => {
       window.showInformationMessage(
         'ZenML server will restart to apply the new interpreter settings.'
       );
-      // await commands.executeCommand(`${PYTOOL_MODULE}.restart`);
+      // The onDidChangePythonInterpreter event will trigger the server restart.
       progress.report({ increment: 100 });
     }
   );
