@@ -25,7 +25,7 @@ import sys
 from functools import wraps
 
 import lsprotocol.types as lsp
-from constants import MIN_ZENML_VERSION, TOOL_MODULE_NAME
+from constants import MIN_ZENML_VERSION, TOOL_MODULE_NAME, IS_ZENML_INSTALLED
 from lazy_import import suppress_stdout_temporarily
 from packaging.version import parse as parse_version
 from pygls.server import LanguageServer
@@ -74,15 +74,21 @@ class ZenLanguageServer(LanguageServer):
 
     async def initialize_zenml_client(self):
         """Initializes the ZenML client."""
+        self.send_custom_notification("zenml/client", {"status": "pending"})
         if self.zenml_client is not None:
             # Client is already initialized.
             self.notify_user("⭐️ ZenML Client Already Initialized ⭐️")
             return
 
         if not await self.is_zenml_installed():
+            self.send_custom_notification(IS_ZENML_INSTALLED, {"is_installed": False})
             self.notify_user("❗ ZenML not detected.", lsp.MessageType.Warning)
             return
 
+        zenml_version = self.get_zenml_version()
+        self.send_custom_notification(
+            IS_ZENML_INSTALLED, {"is_installed": True, "version": zenml_version}
+        )
         # Initializing ZenML client after successful installation check.
         self.log_to_output("🚀 Initializing ZenML client...")
         try:

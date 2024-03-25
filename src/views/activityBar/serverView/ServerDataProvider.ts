@@ -13,7 +13,7 @@
 import { checkServerStatus } from '../../../commands/server/utils';
 import { EventBus } from '../../../services/EventBus';
 import { ServerStatus } from '../../../types/ServerInfoTypes';
-import { INITIAL_ZENML_SERVER_STATUS } from '../../../utils/constants';
+import { INITIAL_ZENML_SERVER_STATUS, REFRESH_SERVER_STATUS } from '../../../utils/constants';
 import { ServerTreeItem } from './ServerTreeItems';
 import { TreeDataProvider, TreeItem, EventEmitter, Event, workspace, ThemeIcon } from 'vscode';
 
@@ -33,8 +33,10 @@ export class ServerDataProvider implements TreeDataProvider<TreeItem> {
    * Subscribes to relevant events to trigger a refresh of the tree view.
    */
   public subscribeToEvents(): void {
-    this.eventBus.off('refreshServerStatus', this.refresh);
-    this.eventBus.on('refreshServerStatus', this.refresh);
+    this.eventBus.off(REFRESH_SERVER_STATUS, this.refresh.bind(this));
+    this.eventBus.on(REFRESH_SERVER_STATUS, async () => {
+      await this.refresh();
+    });
   }
 
   /**

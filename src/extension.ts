@@ -15,25 +15,31 @@ import { EventBus } from './services/EventBus';
 import { LSClient } from './services/LSClient';
 import { ZenExtension } from './services/ZenExtension';
 import { refreshUIComponents } from './utils/refresh';
+import { EnvironmentDataProvider } from './views/activityBar/environmentView/EnvironmentDataProvider';
+import { registerEnvironmentCommands } from './commands/environment/registry';
+import { LSP_ZENML_CLIENT_INITIALIZED } from './utils/constants';
 
 export async function activate(context: vscode.ExtensionContext) {
   const eventBus = EventBus.getInstance();
   const lsClient = LSClient.getInstance();
 
-  await ZenExtension.activate(context, lsClient);
-
-  const handleLsClientReady = async (isReady: boolean) => {
-    // console.log('Extension received lsClientReady notification:', isReady);
-    if (isReady && eventBus.zenmlReady) {
+  const handleZenMLClientInitialized = async (isInitialized: boolean) => {
+    if (isInitialized) {
+      console.log('ZenML client initialized: ', isInitialized);
       await refreshUIComponents();
     }
   };
 
-  eventBus.on('lsClientReady', handleLsClientReady);
+  eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, handleZenMLClientInitialized);
+
+  vscode.window.createTreeView("zenmlEnvironmentView", { treeDataProvider: EnvironmentDataProvider.getInstance() });
+  registerEnvironmentCommands(context);
+
+  await ZenExtension.activate(context, lsClient);
 
   context.subscriptions.push(
     new vscode.Disposable(() => {
-      eventBus.off('lsClientReady', handleLsClientReady);
+      eventBus.off(LSP_ZENML_CLIENT_INITIALIZED, handleZenMLClientInitialized);
     })
   );
 }

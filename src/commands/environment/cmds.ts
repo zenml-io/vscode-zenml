@@ -13,8 +13,11 @@
 
 import { ProgressLocation, commands, window } from 'vscode';
 import { getInterpreterFromWorkspaceSettings } from '../../common/settings';
+import { EnvironmentDataProvider } from '../../views/activityBar/environmentView/EnvironmentDataProvider';
 import { PYTOOL_MODULE } from '../../utils/constants';
-import { refreshUIComponents } from '../../utils/refresh';
+import { LSClient } from '../../services/LSClient';
+import { EventBus } from '../../services/EventBus';
+import { REFRESH_ENVIRONMENT_VIEW } from '../../utils/constants';
 
 /**
  * Set the Python interpreter for the current workspace.
@@ -53,7 +56,42 @@ const setPythonInterpreter = async (): Promise<void> => {
   );
 };
 
+const refreshEnvironmentView = async (): Promise<void> => {
+  window.withProgress(
+    {
+      location: ProgressLocation.Notification,
+      title: 'Refreshing Environment View...',
+      cancellable: false,
+    },
+    async () => {
+      EnvironmentDataProvider.getInstance().refresh();
+    }
+  );
+}
+
+const restartLSPServer = async (): Promise<void> => {
+  await window.withProgress(
+    {
+      location: ProgressLocation.Window,
+      title: 'Restarting LSP Server...',
+    },
+    async (progress) => {
+      progress.report({ increment: 10 });
+
+      const lsClient = LSClient.getInstance();
+      lsClient.isZenMLReady = false;
+      lsClient.localZenML = { is_installed: false, version: '' };
+      EventBus.getInstance().emit(REFRESH_ENVIRONMENT_VIEW);
+
+      await commands.executeCommand(`${PYTOOL_MODULE}.restart`);
+      progress.report({ increment: 100 });
+    }
+  );
+}
+
 
 export const environmentCommands = {
   setPythonInterpreter,
+  refreshEnvironmentView,
+  restartLSPServer
 };

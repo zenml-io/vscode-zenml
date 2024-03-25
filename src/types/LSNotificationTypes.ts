@@ -10,17 +10,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import * as path from 'path';
 
-export const EXTENSION_ID = 'zenml-io.zenml';
-const folderName = path.basename(__dirname);
-export const EXTENSION_ROOT_DIR =
-  folderName === 'common' ? path.dirname(path.dirname(__dirname)) : path.dirname(__dirname);
-export const BUNDLED_PYTHON_SCRIPTS_DIR = path.join(EXTENSION_ROOT_DIR, 'bundled');
-export const SERVER_SCRIPT_PATH = path.join(BUNDLED_PYTHON_SCRIPTS_DIR, 'tool', `lsp_server.py`);
-export const DEBUG_SERVER_SCRIPT_PATH = path.join(
-  BUNDLED_PYTHON_SCRIPTS_DIR,
-  'tool',
-  `_debug_server.py`
-);
+// create type for LSP server notification that returns {is_installed: boolean, version: string}
 
+export interface LSNotificationIsZenMLInstalled {
+  is_installed: boolean;
+  version?: string;
+}
+
+export interface LSNotification {
+  is_ready: boolean;
+}

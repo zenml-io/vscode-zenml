@@ -13,7 +13,9 @@
 import { ProgressLocation, commands, window } from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
 import { storeActiveStack } from '../commands/stack/utils';
+import { LSCLIENT_READY, LSP_IS_ZENML_INSTALLED, LSP_ZENML_CLIENT_INITIALIZED, LSP_ZENML_SERVER_CHANGED, LSP_ZENML_STACK_CHANGED, REFRESH_ENVIRONMENT_VIEW } from '../utils/constants';
 import { GenericLSClientResponse } from '../types/LSClientResponseTypes';
+import { LSNotificationIsZenMLInstalled } from '../types/LSNotificationTypes';
 import { ConfigUpdateDetails } from '../types/ServerInfoTypes';
 import { PYTOOL_MODULE } from '../utils/constants';
 import { getZenMLServerUrl, updateServerUrlAndToken } from '../utils/global';
@@ -22,11 +24,15 @@ import { EventBus } from './EventBus';
 import { ZenExtension } from './ZenExtension';
 
 export class LSClient {
-  public isZenMLReady = false;
   private static instance: LSClient | null = null;
   private client: LanguageClient | null = null;
   private eventBus: EventBus = EventBus.getInstance();
   public clientReady: boolean = false;
+  public isZenMLReady = false;
+  public localZenML: LSNotificationIsZenMLInstalled = {
+    is_installed: false,
+    version: ''
+  };
 
   public restartLSPServerDebounced = debounce(async () => {
     await commands.executeCommand(`${PYTOOL_MODULE}.restart`);
@@ -40,9 +46,10 @@ export class LSClient {
    */
   public setupNotificationListeners(): void {
     if (this.client) {
-      this.client.onNotification('zenml/serverChanged', this.handleServerChanged.bind(this));
-      this.client.onNotification('zenml/stackChanged', this.handleStackChanged.bind(this));
-      this.client.onNotification('zenml/ready', this.handleZenMLReady.bind(this));
+      this.client.onNotification(LSP_ZENML_SERVER_CHANGED, this.handleServerChanged.bind(this));
+      this.client.onNotification(LSP_ZENML_STACK_CHANGED, this.handleStackChanged.bind(this));
+      this.client.onNotification(LSP_IS_ZENML_INSTALLED, this.handleZenMLInstalled.bind(this));
+      this.client.onNotification(LSP_ZENML_CLIENT_INITIALIZED, this.handleZenMLReady.bind(this));
     }
   }
 
@@ -56,7 +63,7 @@ export class LSClient {
       if (this.client) {
         await this.client.start();
         this.clientReady = true;
-        this.eventBus.emit('lsClientReady', true);
+        this.eventBus.emit(LSCLIENT_READY, true);
         console.log('Language client started successfully.');
       }
     } catch (error) {
@@ -65,22 +72,35 @@ export class LSClient {
   }
 
   /**
+   * Handles the zenml/isInstalled notification.
+   *  
+   * @param params The installation status of ZenML.
+   */
+  public handleZenMLInstalled(params: { is_installed: boolean, version?: string }): void {
+    console.log(`Received ${LSP_IS_ZENML_INSTALLED} notification: `, params.is_installed);
+    this.localZenML = params;
+    this.eventBus.emit(REFRESH_ENVIRONMENT_VIEW);
+  }
+
+
+  /**
    *  Handles the zenml/ready notification.
    *
    * @param params The ready status of ZenML.
    * @returns A promise resolving to void.
    */
   public async handleZenMLReady(params: { ready: boolean }): Promise<void> {
-    console.log('Received zenml/ready notification: ', params.ready);
+    console.log(`Received ${LSP_ZENML_CLIENT_INITIALIZED} notification: `, params.ready);
     if (!params.ready) {
-      console.log('ZenML is still not installed. Prompting again...');
+      this.eventBus.emit(LSP_ZENML_CLIENT_INITIALIZED, false);
       await commands.executeCommand('zenml.promptForInterpreter');
     } else {
       console.log('ZenML is installed, setting up extension components...');
       await ZenExtension.setupViewsAndCommands();
-      this.eventBus.emit('zenmlReady/lsClientReady');
+      this.eventBus.emit(LSP_ZENML_CLIENT_INITIALIZED, true);
     }
     this.isZenMLReady = params.ready;
+    this.eventBus.emit(REFRESH_ENVIRONMENT_VIEW);
   }
 
   /**
@@ -90,7 +110,7 @@ export class LSClient {
    */
   public async handleServerChanged(details: ConfigUpdateDetails): Promise<void> {
     if (this.isZenMLReady) {
-      console.log('Received zenml/serverChanged notification');
+      console.log(`Received ${LSP_ZENML_SERVER_CHANGED} notification`);
 
       const currentServerUrl = getZenMLServerUrl();
       const { url, api_token } = details;
@@ -121,7 +141,7 @@ export class LSClient {
     try {
       if (this.client) {
         await this.client.stop();
-        this.eventBus.emit('lsClientReady', false);
+        this.eventBus.emit(LSCLIENT_READY, false);
         console.log('Language client stopped successfully.');
       }
     } catch (error) {
@@ -135,9 +155,9 @@ export class LSClient {
    * @param activeStackId The ID of the active stack.
    */
   public async handleStackChanged(activeStackId: string): Promise<void> {
-    console.log('Received zenml/stackChanged notification:', activeStackId);
+    console.log(`Received ${LSP_ZENML_STACK_CHANGED} notification:`, activeStackId);
     await storeActiveStack(activeStackId);
-    this.eventBus.emit('stackChanged', activeStackId);
+    this.eventBus.emit(LSP_ZENML_STACK_CHANGED, activeStackId);
   }
 
   /**
@@ -155,8 +175,8 @@ export class LSClient {
       console.error('Language server is not available.');
       return { error: "Language server is not available." } as T;
     } else if (!this.isZenMLReady) {
-      console.error('ZenML is not installed. Cannot send request to the language server.');
-      return { error: "ZenML is not installed. Cannot send request to the language server." } as T;
+      console.error('ZenML Client is not initialized yet. Cannot send request to the language server.');
+      return { error: "ZenML Client is not initialized yet. Cannot send request to the language server." } as T;
     }
     try {
       const result = await this.client.sendRequest('workspace/executeCommand', {

@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
+import { LSP_ZENML_STACK_CHANGED, LSP_ZENML_CLIENT_INITIALIZED } from '../../../utils/constants';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
 import { Stack, StackComponent, StacksReponse } from '../../../types/StackTypes';
@@ -32,13 +33,11 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
    * Subscribes to relevant events to trigger a refresh of the tree view.
    */
   public subscribeToEvents(): void {
-    this.eventBus.on('zenmlReady/lsClientReady', () => {
-      // Initial refresh upon ready
+    this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, () => {
       this.refresh();
 
-      this.eventBus.off('stackChanged', () => this.refresh());
-      // Listen for 'stackChanged' events from the watcher
-      this.eventBus.on('stackChanged', () => this.refresh());
+      this.eventBus.off(LSP_ZENML_STACK_CHANGED, () => this.refresh());
+      this.eventBus.on(LSP_ZENML_STACK_CHANGED, () => this.refresh());
     });
   }
 

@@ -14,7 +14,7 @@ import { pipelineCommands } from './cmds';
 import { registerCommand } from '../../common/vscodeapi';
 import { ZenExtension } from '../../services/ZenExtension';
 import { PipelineTreeItem } from '../../views/activityBar';
-import { ExtensionContext } from 'vscode';
+import { ExtensionContext, commands } from 'vscode';
 
 /**
  * Registers pipeline-related commands for the extension.
@@ -22,19 +22,26 @@ import { ExtensionContext } from 'vscode';
  * @param {ExtensionContext} context - The context in which the extension operates, used for registering commands and managing their lifecycle.
  */
 export const registerPipelineCommands = (context: ExtensionContext) => {
-  const commands = [
-    registerCommand(
-      'zenml.refreshPipelineView',
-      async () => await pipelineCommands.refreshPipelineView()
-    ),
-    registerCommand(
-      'zenml.deletePipelineRun',
-      async (node: PipelineTreeItem) => await pipelineCommands.deletePipelineRun(node)
-    ),
-  ];
+  try {
+    const registeredCommands = [
+      registerCommand(
+        'zenml.refreshPipelineView',
+        async () => await pipelineCommands.refreshPipelineView()
+      ),
+      registerCommand(
+        'zenml.deletePipelineRun',
+        async (node: PipelineTreeItem) => await pipelineCommands.deletePipelineRun(node)
+      ),
+    ];
 
-  commands.forEach(cmd => {
-    context.subscriptions.push(cmd);
-    ZenExtension.commandDisposables.push(cmd);
-  });
+    registeredCommands.forEach(cmd => {
+      context.subscriptions.push(cmd);
+      ZenExtension.commandDisposables.push(cmd);
+    });
+
+    commands.executeCommand('setContext', 'pipelineCommandsRegistered', true);
+  } catch (error) {
+    console.error("Error registering pipeline commands:", error);
+    commands.executeCommand('setContext', 'pipelineCommandsRegistered', false);
+  }
 };

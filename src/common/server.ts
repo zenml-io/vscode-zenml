@@ -34,6 +34,8 @@ import { updateStatus } from './status';
 import { getLSClientTraceLevel, getProjectRoot } from './utilities';
 import { isVirtualWorkspace } from './vscodeapi';
 import { ZenExtension } from '../services/ZenExtension';
+import { EventBus } from '../services/EventBus';
+import { LSCLIENT_STATE_CHANGED } from '../utils/constants';
 
 export type IInitOptions = { settings: ISettings[]; globalSettings: ISettings };
 
@@ -122,6 +124,7 @@ export async function restartServer(workspaceSetting: ISettings,): Promise<Langu
   traceInfo(`Server: Start requested.`);
   _disposables.push(
     newLSClient.onDidChangeState(e => {
+      EventBus.getInstance().emit(LSCLIENT_STATE_CHANGED, e.newState)
       switch (e.newState) {
         case State.Stopped:
           traceVerbose(`Server State: Stopped`);

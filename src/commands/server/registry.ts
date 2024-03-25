@@ -10,28 +10,33 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import * as vscode from 'vscode';
 import { serverCommands } from './cmds';
 import { registerCommand } from '../../common/vscodeapi';
 import { ZenExtension } from '../../services/ZenExtension';
+import { ExtensionContext, commands } from 'vscode';
 
 /**
  * Registers server-related commands for the extension.
  *
- * @param {vscode.ExtensionContext} context - The context in which the extension operates, used for registering commands and managing their lifecycle.
+ * @param {ExtensionContext} context - The context in which the extension operates, used for registering commands and managing their lifecycle.
  */
-export const registerServerCommands = (context: vscode.ExtensionContext) => {
-  const commands = [
-    registerCommand('zenml.connectServer', async () => await serverCommands.connectServer()),
-    registerCommand('zenml.disconnectServer', async () => await serverCommands.disconnectServer()),
-    registerCommand(
-      'zenml.refreshServerStatus',
-      async () => await serverCommands.refreshServerStatus()
-    ),
-  ];
+export const registerServerCommands = (context: ExtensionContext) => {
+  try {
+    const registeredCommands = [
+      registerCommand('zenml.connectServer', async () => await serverCommands.connectServer()),
+      registerCommand('zenml.disconnectServer', async () => await serverCommands.disconnectServer()),
+      registerCommand('zenml.refreshServerStatus', async () => await serverCommands.refreshServerStatus()),
+    ];
 
-  commands.forEach(cmd => {
-    context.subscriptions.push(cmd);
-    ZenExtension.commandDisposables.push(cmd);
-  });
+    registeredCommands.forEach(cmd => {
+      context.subscriptions.push(cmd);
+      ZenExtension.commandDisposables.push(cmd);
+    });
+
+    commands.executeCommand('setContext', 'serverCommandsRegistered', true);
+  } catch (error) {
+    console.error("Error registering server commands:", error);
+    commands.executeCommand('setContext', 'serverCommandsRegistered', false);
+  }
 };
+
