@@ -24,8 +24,14 @@ export const registerServerCommands = (context: ExtensionContext) => {
   try {
     const registeredCommands = [
       registerCommand('zenml.connectServer', async () => await serverCommands.connectServer()),
-      registerCommand('zenml.disconnectServer', async () => await serverCommands.disconnectServer()),
-      registerCommand('zenml.refreshServerStatus', async () => await serverCommands.refreshServerStatus()),
+      registerCommand(
+        'zenml.disconnectServer',
+        async () => await serverCommands.disconnectServer()
+      ),
+      registerCommand(
+        'zenml.refreshServerStatus',
+        async () => await serverCommands.refreshServerStatus()
+      ),
     ];
 
     registeredCommands.forEach(cmd => {
@@ -35,8 +41,7 @@ export const registerServerCommands = (context: ExtensionContext) => {
 
     commands.executeCommand('setContext', 'serverCommandsRegistered', true);
   } catch (error) {
-    console.error("Error registering server commands:", error);
+    console.error('Error registering server commands:', error);
     commands.executeCommand('setContext', 'serverCommandsRegistered', false);
   }
 };
-

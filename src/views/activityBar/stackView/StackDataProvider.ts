@@ -19,7 +19,8 @@ import { TreeDataProvider, TreeItem, EventEmitter, Event, workspace } from 'vsco
 
 export class StackDataProvider implements TreeDataProvider<TreeItem> {
   private _onDidChangeTreeData = new EventEmitter<TreeItem | undefined | null>();
-  readonly onDidChangeTreeData: Event<TreeItem | undefined | null> = this._onDidChangeTreeData.event;
+  readonly onDidChangeTreeData: Event<TreeItem | undefined | null> =
+    this._onDidChangeTreeData.event;
 
   private static instance: StackDataProvider | null = null;
   public stacks: Stack[] = [];

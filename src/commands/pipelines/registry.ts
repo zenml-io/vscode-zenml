@@ -41,7 +41,7 @@ export const registerPipelineCommands = (context: ExtensionContext) => {
 
     commands.executeCommand('setContext', 'pipelineCommandsRegistered', true);
   } catch (error) {
-    console.error("Error registering pipeline commands:", error);
+    console.error('Error registering pipeline commands:', error);
     commands.executeCommand('setContext', 'pipelineCommandsRegistered', false);
   }
 };

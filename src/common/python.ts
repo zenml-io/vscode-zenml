@@ -83,7 +83,7 @@ export async function runPythonExtensionCommand(command: string, ...rest: any[])
 export function checkVersion(resolved: ResolvedEnvironment | undefined): boolean {
   const version = resolved?.version;
   if (version?.major === 3 && version?.minor >= 8) {
-    traceLog(`Python version ${version?.major}.${version?.minor}.${version?.micro} is supported.`)
+    traceLog(`Python version ${version?.major}.${version?.minor}.${version?.micro} is supported.`);
     return true;
   }
   traceError(`Python version ${version?.major}.${version?.minor} is not supported.`);
@@ -92,7 +92,10 @@ export function checkVersion(resolved: ResolvedEnvironment | undefined): boolean
   return false;
 }
 
-export function isPythonVersonSupported(resolvedEnv: ResolvedEnvironment | undefined): { isSupported: boolean; message?: string } {
+export function isPythonVersonSupported(resolvedEnv: ResolvedEnvironment | undefined): {
+  isSupported: boolean;
+  message?: string;
+} {
   const version = resolvedEnv?.version;
 
   if (version?.major === 3 && version?.minor >= 8) {

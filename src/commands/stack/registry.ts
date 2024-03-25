@@ -50,7 +50,7 @@ export const registerStackCommands = (context: ExtensionContext) => {
 
     commands.executeCommand('setContext', 'stackCommandsRegistered', true);
   } catch (error) {
-    console.error("Error registering stack commands:", error);
+    console.error('Error registering stack commands:', error);
     commands.executeCommand('setContext', 'stackCommandsRegistered', false);
   }
 };

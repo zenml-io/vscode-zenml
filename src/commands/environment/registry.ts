@@ -34,7 +34,7 @@ export const registerEnvironmentCommands = (context: ExtensionContext) => {
       registerCommand(
         'zenml.restartLspServer',
         async () => await environmentCommands.restartLSPServer()
-      )
+      ),
     ];
 
     registeredCommands.forEach(cmd => {
@@ -43,9 +43,8 @@ export const registerEnvironmentCommands = (context: ExtensionContext) => {
     });
 
     commands.executeCommand('setContext', 'environmentCommandsRegistered', true);
-
   } catch (error) {
-    console.error("Error registering environment commands:", error);
+    console.error('Error registering environment commands:', error);
     commands.executeCommand('setContext', 'environmentCommandsRegistered', false);
   }
 };

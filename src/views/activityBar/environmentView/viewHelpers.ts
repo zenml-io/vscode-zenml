@@ -21,14 +21,14 @@ import { State } from 'vscode-languageclient';
 
 /**
  * Creates the LSP client item for the environment view.
- * 
+ *
  * @returns {EnvironmentItem} The LSP client item.
  */
 export function createLSClientItem(lsClientStatus: State): EnvironmentItem {
   const statusMappings = {
     [State.Running]: { description: 'Running', icon: 'globe' },
     [State.Starting]: { description: 'Initializing…', icon: 'sync~spin' },
-    [State.Stopped]: { description: 'Stopped', icon: 'close' }
+    [State.Stopped]: { description: 'Stopped', icon: 'close' },
   };
 
   const { description, icon } = statusMappings[lsClientStatus];
@@ -44,7 +44,7 @@ export function createLSClientItem(lsClientStatus: State): EnvironmentItem {
 
 /**
  * Creates the ZenML status items for the environment view.
- * 
+ *
  * @returns {Promise<EnvironmentItem[]>} The ZenML status items.
  */
 export async function createZenMLStatusItems(): Promise<EnvironmentItem[]> {
@@ -52,20 +52,25 @@ export async function createZenMLStatusItems(): Promise<EnvironmentItem[]> {
   const localZenML = LSClient.getInstance().localZenML;
 
   const zenMLLocalInstallationItem = new EnvironmentItem(
-    'ZenML Local', localZenML.is_installed ? `${localZenML.version}` : 'Not found',
-    TreeItemCollapsibleState.None, localZenML.is_installed ? 'check' : 'warning');
+    'ZenML Local',
+    localZenML.is_installed ? `${localZenML.version}` : 'Not found',
+    TreeItemCollapsibleState.None,
+    localZenML.is_installed ? 'check' : 'warning'
+  );
 
   const zenMLClientStatusItem = new EnvironmentItem(
-    'ZenML Client', !localZenML.is_installed ? '' : zenmlReady ? 'Initialized' : 'Awaiting Initialization',
-    TreeItemCollapsibleState.None, !localZenML.is_installed ? 'error' : zenmlReady ? 'check' : 'sync~spin');
-
+    'ZenML Client',
+    !localZenML.is_installed ? '' : zenmlReady ? 'Initialized' : 'Awaiting Initialization',
+    TreeItemCollapsibleState.None,
+    !localZenML.is_installed ? 'error' : zenmlReady ? 'check' : 'sync~spin'
+  );
 
   return [zenMLLocalInstallationItem, zenMLClientStatusItem];
 }
 
 /**
  * Creates the workspace settings items for the environment view.
- * 
+ *
  * @returns {Promise<EnvironmentItem[]>} The workspace settings items.
  */
 export async function createWorkspaceSettingsItems(): Promise<EnvironmentItem[]> {
@@ -74,13 +79,15 @@ export async function createWorkspaceSettingsItems(): Promise<EnvironmentItem[]>
   return [
     new EnvironmentItem('CWD', settings.cwd),
     new EnvironmentItem('File System', settings.workspace),
-    ...(settings.path && settings.path.length ? [new EnvironmentItem('Path', settings.path.join('; '))] : []),
+    ...(settings.path && settings.path.length
+      ? [new EnvironmentItem('Path', settings.path.join('; '))]
+      : []),
   ];
 }
 
 /**
  * Creates the interpreter details items for the environment view.
- * 
+ *
  * @returns {Promise<EnvironmentItem[]>} The interpreter details items.
  */
 export async function createInterpreterDetails(): Promise<EnvironmentItem[]> {
@@ -93,7 +100,11 @@ export async function createInterpreterDetails(): Promise<EnvironmentItem[]> {
   const resolvedEnv = await resolveInterpreter([interpreterPath]);
   if (!resolvedEnv) {
     return [
-      new EnvironmentItem('Details', 'Could not resolve environment details', TreeItemCollapsibleState.None)
+      new EnvironmentItem(
+        'Details',
+        'Could not resolve environment details',
+        TreeItemCollapsibleState.None
+      ),
     ];
   }
   const pythonVersion = `${resolvedEnv.version?.major}.${resolvedEnv.version?.minor}.${resolvedEnv.version?.micro}`;
@@ -103,20 +114,19 @@ export async function createInterpreterDetails(): Promise<EnvironmentItem[]> {
     new EnvironmentItem('Python Version', pythonVersion, TreeItemCollapsibleState.None),
     new EnvironmentItem('Name', resolvedEnv?.environment?.name, TreeItemCollapsibleState.None),
     new EnvironmentItem('EnvType', resolvedEnv?.environment?.type, TreeItemCollapsibleState.None),
-    new EnvironmentItem('Path', simplifiedPath, TreeItemCollapsibleState.None)
+    new EnvironmentItem('Path', simplifiedPath, TreeItemCollapsibleState.None),
   ];
 }
 
 /**
  * Simplifies the path by replacing the home directory with '~'.
- * 
+ *
  * @param path The path to simplify.
  * @returns {string} The simplified path.
  */
 function simplifyPath(path: string): string {
   if (!path) {
     return '';
-
   }
   const homeDir = process.env.HOME || process.env.USERPROFILE;
   if (homeDir) {

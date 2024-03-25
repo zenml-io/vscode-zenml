@@ -14,7 +14,12 @@ import { EventEmitter, TreeDataProvider, TreeItem, TreeItemCollapsibleState } fr
 import { State } from 'vscode-languageclient';
 import { EventBus } from '../../../services/EventBus';
 import { EnvironmentItem } from './EnvironmentItem';
-import { createInterpreterDetails, createLSClientItem, createWorkspaceSettingsItems, createZenMLStatusItems } from './viewHelpers';
+import {
+  createInterpreterDetails,
+  createLSClientItem,
+  createWorkspaceSettingsItems,
+  createZenMLStatusItems,
+} from './viewHelpers';
 import { LSCLIENT_STATE_CHANGED, REFRESH_ENVIRONMENT_VIEW } from '../../../utils/constants';
 
 export class EnvironmentDataProvider implements TreeDataProvider<TreeItem> {
@@ -56,14 +61,12 @@ export class EnvironmentDataProvider implements TreeDataProvider<TreeItem> {
     this.refresh();
   }
 
-
   /**
    * Refreshes the "Pipeline Runs" view by fetching the latest pipeline run data and updating the view.
    */
   public refresh(): void {
     this._onDidChangeTreeData.fire();
   }
-
 
   /**
    * Retrieves the tree item for a given pipeline run.
@@ -86,13 +89,13 @@ export class EnvironmentDataProvider implements TreeDataProvider<TreeItem> {
     items.push(lsClientStatusItem);
 
     // ZenML Status Items - assuming createZenMLStatusItems returns an array of EnvironmentItem
-    items.push(...await createZenMLStatusItems());
+    items.push(...(await createZenMLStatusItems()));
 
     // Interpreter Details - assuming createInterpreterDetails returns an array of EnvironmentItem
-    items.push(...await createInterpreterDetails());
+    items.push(...(await createInterpreterDetails()));
 
     // Workspace Settings Items - assuming createWorkspaceSettingsItems returns an array of EnvironmentItem
-    items.push(...await createWorkspaceSettingsItems());
+    items.push(...(await createWorkspaceSettingsItems()));
 
     return items;
   }

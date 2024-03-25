@@ -24,13 +24,10 @@ import {
   initializePython,
   isPythonVersonSupported,
   onDidChangePythonInterpreter,
-  resolveInterpreter
+  resolveInterpreter,
 } from '../common/python';
 import { runServer } from '../common/server';
-import {
-  checkIfConfigurationChanged,
-  getInterpreterFromSetting,
-} from '../common/settings';
+import { checkIfConfigurationChanged, getInterpreterFromSetting } from '../common/settings';
 import { registerLanguageStatusItem } from '../common/status';
 import { getLSClientTraceLevel } from '../common/utilities';
 import {

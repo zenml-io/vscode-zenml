@@ -28,7 +28,7 @@ export class EnvironmentItem extends TreeItem {
 
   /**
    * Determines the icon for the tree item based on the label.
-   * 
+   *
    * @param label The label of the tree item.
    * @returns The icon for the tree item.
    */
@@ -49,14 +49,14 @@ export class EnvironmentItem extends TreeItem {
         const pythonLogo = path.join(__dirname, '..', 'resources', 'python.png');
         return {
           light: pythonLogo,
-          dark: pythonLogo
+          dark: pythonLogo,
         };
       case 'ZenML Local':
       case 'ZenML Client':
         const zenmlLogo = path.join(__dirname, '..', 'resources', 'logo.png');
         return {
           light: zenmlLogo,
-          dark: zenmlLogo
+          dark: zenmlLogo,
         };
       default:
         return undefined;

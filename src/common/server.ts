@@ -85,11 +85,11 @@ async function createServer(
     documentSelector: isVirtualWorkspace()
       ? [{ language: 'python' }]
       : [
-        { scheme: 'file', language: 'python' },
-        { scheme: 'untitled', language: 'python' },
-        { scheme: 'vscode-notebook', language: 'python' },
-        { scheme: 'vscode-notebook-cell', language: 'python' },
-      ],
+          { scheme: 'file', language: 'python' },
+          { scheme: 'untitled', language: 'python' },
+          { scheme: 'vscode-notebook', language: 'python' },
+          { scheme: 'vscode-notebook-cell', language: 'python' },
+        ],
     outputChannel: outputChannel,
     traceOutputChannel: outputChannel,
     revealOutputChannelOn: RevealOutputChannelOn.Never,
@@ -103,7 +103,9 @@ async function createServer(
 }
 
 let _disposables: Disposable[] = [];
-export async function restartServer(workspaceSetting: ISettings,): Promise<LanguageClient | undefined> {
+export async function restartServer(
+  workspaceSetting: ISettings
+): Promise<LanguageClient | undefined> {
   const lsClientInstance = LSClient.getInstance();
   const lsClient = lsClientInstance.getLanguageClient();
   if (lsClient) {
@@ -114,17 +116,23 @@ export async function restartServer(workspaceSetting: ISettings,): Promise<Langu
   }
   updateStatus(undefined, LanguageStatusSeverity.Information, true);
 
-  const newLSClient = await createServer(workspaceSetting, ZenExtension.serverId, ZenExtension.serverName, ZenExtension.outputChannel, {
-    settings: await getExtensionSettings(ZenExtension.serverId, true),
-    globalSettings: await getGlobalSettings(ZenExtension.serverId, true),
-  });
+  const newLSClient = await createServer(
+    workspaceSetting,
+    ZenExtension.serverId,
+    ZenExtension.serverName,
+    ZenExtension.outputChannel,
+    {
+      settings: await getExtensionSettings(ZenExtension.serverId, true),
+      globalSettings: await getGlobalSettings(ZenExtension.serverId, true),
+    }
+  );
 
   lsClientInstance.updateClient(newLSClient);
 
   traceInfo(`Server: Start requested.`);
   _disposables.push(
     newLSClient.onDidChangeState(e => {
-      EventBus.getInstance().emit(LSCLIENT_STATE_CHANGED, e.newState)
+      EventBus.getInstance().emit(LSCLIENT_STATE_CHANGED, e.newState);
       switch (e.newState) {
         case State.Stopped:
           traceVerbose(`Server State: Stopped`);
@@ -145,7 +153,9 @@ export async function restartServer(workspaceSetting: ISettings,): Promise<Langu
     updateStatus(l10n.t('Server failed to start.'), LanguageStatusSeverity.Error);
     traceError(`Server: Start failed: ${ex}`);
   }
-  await newLSClient.setTrace(getLSClientTraceLevel(ZenExtension.outputChannel.logLevel, env.logLevel));
+  await newLSClient.setTrace(
+    getLSClientTraceLevel(ZenExtension.outputChannel.logLevel, env.logLevel)
+  );
   return newLSClient;
 }
 
