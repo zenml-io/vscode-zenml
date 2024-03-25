@@ -87,6 +87,16 @@ class GlobalConfigWrapper:
         new_store_config = self.RestZenStoreConfiguration(
             type="rest", url=remote_url, api_token=access_token, verify_ssl=True
         )
+
+        # Method name changed in 0.55.4 - 0.56.1
+        if hasattr(self.gc, "set_store_configuration"):
+            self.gc.set_store_configuration(new_store_config)
+        elif hasattr(self.gc, "set_store"):  # Old method name
+            self.gc.set_store(new_store_config)
+        else:
+            raise AttributeError(
+                "GlobalConfiguration object does not have a method to set store configuration."
+            )
         self.gc.set_store(new_store_config)
 
     def get_global_configuration(self) -> dict:
@@ -164,8 +174,13 @@ class ZenServerWrapper:
             dict: Dictionary containing server info.
         """
         store_info = json.loads(self.gc.zen_store.get_store_info().json(indent=2))
-        ##THIS CHANGED from 0.55.2 to 0.55.5 store -> store_configuration
-        store_config = json.loads(self.gc.store.json(indent=2))
+        # Handle both 'store' and 'store_configuration' depending on version
+        store_attr_name = (
+            "store_configuration"
+            if hasattr(self.gc, "store_configuration")
+            else "store"
+        )
+        store_config = json.loads(getattr(self.gc, store_attr_name).json(indent=2))
         return {"storeInfo": store_info, "storeConfig": store_config}
 
     def connect(self, args, **kwargs) -> dict:
@@ -201,8 +216,13 @@ class ZenServerWrapper:
             dict: Dictionary containing the result of the operation.
         """
         try:
-            ##THIS CHANGED from 0.55.2 to 0.55.5 store -> store_configuration
-            url = self.gc.store.url
+            # Adjust for changes from 'store' to 'store_configuration'
+            store_attr_name = (
+                "store_configuration"
+                if hasattr(self.gc, "store_configuration")
+                else "store"
+            )
+            url = getattr(self.gc, store_attr_name).url
             store_type = self.BaseZenStore.get_store_type(url)
 
             # pylint: disable=not-callable
