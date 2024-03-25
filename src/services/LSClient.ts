@@ -13,7 +13,14 @@
 import { ProgressLocation, commands, window } from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
 import { storeActiveStack } from '../commands/stack/utils';
-import { LSCLIENT_READY, LSP_IS_ZENML_INSTALLED, LSP_ZENML_CLIENT_INITIALIZED, LSP_ZENML_SERVER_CHANGED, LSP_ZENML_STACK_CHANGED, REFRESH_ENVIRONMENT_VIEW } from '../utils/constants';
+import {
+  LSCLIENT_READY,
+  LSP_IS_ZENML_INSTALLED,
+  LSP_ZENML_CLIENT_INITIALIZED,
+  LSP_ZENML_SERVER_CHANGED,
+  LSP_ZENML_STACK_CHANGED,
+  REFRESH_ENVIRONMENT_VIEW,
+} from '../utils/constants';
 import { GenericLSClientResponse } from '../types/LSClientResponseTypes';
 import { LSNotificationIsZenMLInstalled } from '../types/LSNotificationTypes';
 import { ConfigUpdateDetails } from '../types/ServerInfoTypes';
@@ -31,7 +38,7 @@ export class LSClient {
   public isZenMLReady = false;
   public localZenML: LSNotificationIsZenMLInstalled = {
     is_installed: false,
-    version: ''
+    version: '',
   };
 
   public restartLSPServerDebounced = debounce(async () => {
@@ -73,15 +80,14 @@ export class LSClient {
 
   /**
    * Handles the zenml/isInstalled notification.
-   *  
+   *
    * @param params The installation status of ZenML.
    */
-  public handleZenMLInstalled(params: { is_installed: boolean, version?: string }): void {
+  public handleZenMLInstalled(params: { is_installed: boolean; version?: string }): void {
     console.log(`Received ${LSP_IS_ZENML_INSTALLED} notification: `, params.is_installed);
     this.localZenML = params;
     this.eventBus.emit(REFRESH_ENVIRONMENT_VIEW);
   }
-
 
   /**
    *  Handles the zenml/ready notification.
@@ -173,10 +179,14 @@ export class LSClient {
   ): Promise<T> {
     if (!this.clientReady || !this.client) {
       console.error('Language server is not available.');
-      return { error: "Language server is not available." } as T;
+      return { error: 'Language server is not available.' } as T;
     } else if (!this.isZenMLReady) {
-      console.error('ZenML Client is not initialized yet. Cannot send request to the language server.');
-      return { error: "ZenML Client is not initialized yet. Cannot send request to the language server." } as T;
+      console.error(
+        'ZenML Client is not initialized yet. Cannot send request to the language server.'
+      );
+      return {
+        error: 'ZenML Client is not initialized yet. Cannot send request to the language server.',
+      } as T;
     }
     try {
       const result = await this.client.sendRequest('workspace/executeCommand', {

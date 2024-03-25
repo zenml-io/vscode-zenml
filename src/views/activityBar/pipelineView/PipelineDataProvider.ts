@@ -24,7 +24,7 @@ export class PipelineDataProvider implements TreeDataProvider<TreeItem> {
   private _onDidChangeTreeData = new EventEmitter<TreeItem | undefined | null>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-  constructor() { }
+  constructor() {}
 
   /**
    * Retrieves the singleton instance of ServerDataProvider.

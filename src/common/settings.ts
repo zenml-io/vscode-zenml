@@ -172,6 +172,6 @@ export function checkIfConfigurationChanged(
 
 export async function getInterpreterFromWorkspaceSettings(): Promise<string> {
   const projectRoot = await getProjectRoot();
-  const workspaceSettings = await getWorkspaceSettings(PYTOOL_MODULE, projectRoot, true)
+  const workspaceSettings = await getWorkspaceSettings(PYTOOL_MODULE, projectRoot, true);
   return workspaceSettings.interpreter[0];
 }

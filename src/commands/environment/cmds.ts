@@ -21,7 +21,7 @@ import { REFRESH_ENVIRONMENT_VIEW } from '../../utils/constants';
 
 /**
  * Set the Python interpreter for the current workspace.
- * 
+ *
  * @returns {Promise<void>} Resolves after refreshing the view.
  */
 const setPythonInterpreter = async (): Promise<void> => {
@@ -30,7 +30,7 @@ const setPythonInterpreter = async (): Promise<void> => {
       location: ProgressLocation.Window,
       title: 'Refreshing server status...',
     },
-    async (progress) => {
+    async progress => {
       progress.report({ increment: 10 });
       const currentInterpreter = await getInterpreterFromWorkspaceSettings();
 
@@ -40,9 +40,7 @@ const setPythonInterpreter = async (): Promise<void> => {
 
       if (newInterpreter === currentInterpreter) {
         console.log('Interpreter selection unchanged or cancelled. No server restart required.');
-        window.showInformationMessage(
-          'Interpreter selection unchanged. Restart not required.'
-        );
+        window.showInformationMessage('Interpreter selection unchanged. Restart not required.');
         return;
       }
       progress.report({ increment: 90 });
@@ -67,7 +65,7 @@ const refreshEnvironmentView = async (): Promise<void> => {
       EnvironmentDataProvider.getInstance().refresh();
     }
   );
-}
+};
 
 const restartLSPServer = async (): Promise<void> => {
   await window.withProgress(
@@ -75,7 +73,7 @@ const restartLSPServer = async (): Promise<void> => {
       location: ProgressLocation.Window,
       title: 'Restarting LSP Server...',
     },
-    async (progress) => {
+    async progress => {
       progress.report({ increment: 10 });
 
       const lsClient = LSClient.getInstance();
@@ -87,11 +85,10 @@ const restartLSPServer = async (): Promise<void> => {
       progress.report({ increment: 100 });
     }
   );
-}
-
+};
 
 export const environmentCommands = {
   setPythonInterpreter,
   refreshEnvironmentView,
-  restartLSPServer
+  restartLSPServer,
 };

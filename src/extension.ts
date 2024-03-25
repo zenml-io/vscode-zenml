@@ -32,7 +32,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
   eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, handleZenMLClientInitialized);
 
-  vscode.window.createTreeView("zenmlEnvironmentView", { treeDataProvider: EnvironmentDataProvider.getInstance() });
+  vscode.window.createTreeView('zenmlEnvironmentView', {
+    treeDataProvider: EnvironmentDataProvider.getInstance(),
+  });
   registerEnvironmentCommands(context);
 
   await ZenExtension.activate(context, lsClient);
