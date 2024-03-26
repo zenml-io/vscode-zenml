@@ -10,9 +10,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import { EventEmitter, TreeDataProvider, TreeItem, TreeItemCollapsibleState } from 'vscode';
+import { EventEmitter, TreeDataProvider, TreeItem } from 'vscode';
 import { State } from 'vscode-languageclient';
 import { EventBus } from '../../../services/EventBus';
+import { LSCLIENT_STATE_CHANGED, REFRESH_ENVIRONMENT_VIEW } from '../../../utils/constants';
 import { EnvironmentItem } from './EnvironmentItem';
 import {
   createInterpreterDetails,
@@ -20,7 +21,6 @@ import {
   createWorkspaceSettingsItems,
   createZenMLStatusItems,
 } from './viewHelpers';
-import { LSCLIENT_STATE_CHANGED, REFRESH_ENVIRONMENT_VIEW } from '../../../utils/constants';
 
 export class EnvironmentDataProvider implements TreeDataProvider<TreeItem> {
   private static instance: EnvironmentDataProvider | null = null;
@@ -83,18 +83,10 @@ export class EnvironmentDataProvider implements TreeDataProvider<TreeItem> {
    */
   private async createRootItems(): Promise<EnvironmentItem[]> {
     const items: EnvironmentItem[] = [];
-
-    // Directly add the LS Client item
     const lsClientStatusItem = createLSClientItem(this.lsClientStatus);
     items.push(lsClientStatusItem);
-
-    // ZenML Status Items - assuming createZenMLStatusItems returns an array of EnvironmentItem
     items.push(...(await createZenMLStatusItems()));
-
-    // Interpreter Details - assuming createInterpreterDetails returns an array of EnvironmentItem
     items.push(...(await createInterpreterDetails()));
-
-    // Workspace Settings Items - assuming createWorkspaceSettingsItems returns an array of EnvironmentItem
     items.push(...(await createWorkspaceSettingsItems()));
 
     return items;
