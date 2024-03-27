@@ -24,6 +24,7 @@ import {
 import { ErrorTreeItem, createErrorItem } from '../common/ErrorTreeItem';
 import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
 import { PipelineRunTreeItem, PipelineTreeItem } from './PipelineTreeItems';
+import { CommandTreeItem } from '../common/PaginationTreeItems';
 
 /**
  * Provides data for the pipeline run tree view, displaying detailed information about each pipeline run.
@@ -128,7 +129,14 @@ export class PipelineDataProvider implements TreeDataProvider<TreeItem> {
    */
   async getChildren(element?: TreeItem): Promise<TreeItem[] | undefined> {
     if (!element) {
-      return this.pipelineRuns;
+      const runs = await this.fetchPipelineRuns(this.pagination.currentPage, this.pagination.itemsPerPage);
+      if (this.pagination.currentPage < this.pagination.totalPages) {
+        runs.push(new CommandTreeItem("Next Page", 'zenml.nextPipelineRunsPage', undefined, 'arrow-circle-right'));
+      }
+      if (this.pagination.currentPage > 1) {
+        runs.unshift(new CommandTreeItem("Previous Page", 'zenml.previousPipelineRunsPage', undefined, 'arrow-circle-left'));
+      }
+      return runs;
     } else if (element instanceof PipelineTreeItem) {
       return element.children;
     }
