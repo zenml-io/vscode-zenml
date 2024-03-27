@@ -12,7 +12,7 @@
 // permissions and limitations under the License.
 import * as path from 'path';
 
-export const EXTENSION_ID = 'zenml-io.zenml';
+export const EXTENSION_ID = 'ZenML.zenml';
 const folderName = path.basename(__dirname);
 export const EXTENSION_ROOT_DIR =
   folderName === 'common' ? path.dirname(path.dirname(__dirname)) : path.dirname(__dirname);
