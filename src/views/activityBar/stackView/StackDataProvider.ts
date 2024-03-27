@@ -10,12 +10,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import { LSP_ZENML_STACK_CHANGED, LSP_ZENML_CLIENT_INITIALIZED } from '../../../utils/constants';
+import { Event, EventEmitter, TreeDataProvider, TreeItem, workspace } from 'vscode';
+import { State } from 'vscode-languageclient';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
 import { Stack, StackComponent, StacksReponse } from '../../../types/StackTypes';
+import { LSCLIENT_STATE_CHANGED, LSP_ZENML_CLIENT_INITIALIZED, LSP_ZENML_STACK_CHANGED } from '../../../utils/constants';
+import { createErrorItem } from '../common/ErrorTreeItem';
+import { LOADING_TREE_ITEMS, LoadingTreeItem } from '../common/LoadingTreeItem';
 import { StackComponentTreeItem, StackTreeItem } from './StackTreeItems';
-import { TreeDataProvider, TreeItem, EventEmitter, Event, workspace } from 'vscode';
 
 export class StackDataProvider implements TreeDataProvider<TreeItem> {
   private _onDidChangeTreeData = new EventEmitter<TreeItem | undefined | null>();
@@ -23,8 +26,9 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
     this._onDidChangeTreeData.event;
 
   private static instance: StackDataProvider | null = null;
-  public stacks: Stack[] = [];
   private eventBus = EventBus.getInstance();
+  private zenmlClientReady = false;
+  public stacks: Stack[] | TreeItem[] = [LOADING_TREE_ITEMS.get('stacks')!];
 
   constructor() {
     this.subscribeToEvents();
@@ -34,9 +38,24 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
    * Subscribes to relevant events to trigger a refresh of the tree view.
    */
   public subscribeToEvents(): void {
-    this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, () => {
-      this.refresh();
+    this.eventBus.on(LSCLIENT_STATE_CHANGED, (newState: State) => {
+      if (newState === State.Running) {
+        this.refresh();
+      } else {
+        this.stacks = [LOADING_TREE_ITEMS.get('lsClient')!]
+        this._onDidChangeTreeData.fire(undefined);
+      }
+    })
 
+    this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, (isInitialized: boolean) => {
+      this.zenmlClientReady = isInitialized;
+
+      if (!isInitialized) {
+        this.stacks = [LOADING_TREE_ITEMS.get('stacks')!]
+        this._onDidChangeTreeData.fire(undefined);
+        return;
+      }
+      this.refresh();
       this.eventBus.off(LSP_ZENML_STACK_CHANGED, () => this.refresh());
       this.eventBus.on(LSP_ZENML_STACK_CHANGED, () => this.refresh());
     });
@@ -55,16 +74,6 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
   }
 
   /**
-   * Refreshes the tree view data by refetching stacks and triggering the onDidChangeTreeData event.
-   *
-   * @returns {Promise<void>} A promise that resolves when the tree view data has been refreshed.
-   */
-  public async refresh(): Promise<void> {
-    await this.fetchStacksWithComponents();
-    this._onDidChangeTreeData.fire(undefined);
-  }
-
-  /**
    * Returns the provided tree item.
    *
    * @param {TreeItem} element The tree item to return.
@@ -75,17 +84,22 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
   }
 
   /**
-   * Retrieves the children of a given tree item.
+   * Refreshes the tree view data by refetching stacks and triggering the onDidChangeTreeData event.
    *
-   * @param {TreeItem} element The tree item whose children to retrieve.
-   * @returns A promise resolving to an array of child tree items or undefined if there are no children.
+   * @returns {Promise<void>} A promise that resolves when the tree view data has been refreshed.
    */
-  async getChildren(element?: TreeItem): Promise<TreeItem[] | undefined> {
-    if (element instanceof StackTreeItem) {
-      return element.children;
-    } else if (!element) {
-      return await this.fetchStacksWithComponents();
+  public async refresh(): Promise<void> {
+    this.stacks = [LOADING_TREE_ITEMS.get('stacks')!]
+    this._onDidChangeTreeData.fire(undefined);
+
+    try {
+      const newStacksData = await this.fetchStacksWithComponents();
+      this.stacks = newStacksData;
+    } catch (error: any) {
+      this.stacks = createErrorItem(error);
     }
+
+    this._onDidChangeTreeData.fire(undefined);
   }
 
   /**
@@ -93,31 +107,53 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
    *
    * @returns {Promise<StackTreeItem[]>} A promise that resolves with an array of `StackTreeItem` objects.
    */
-  async fetchStacksWithComponents(): Promise<StackTreeItem[]> {
-    const lsClient = LSClient.getInstance();
-    if (!lsClient.clientReady) {
-      this.stacks = [];
-      return [];
+  async fetchStacksWithComponents(): Promise<StackTreeItem[] | TreeItem[]> {
+    if (!this.zenmlClientReady) {
+      return [LOADING_TREE_ITEMS.get('zenmlClient')!]
     }
 
     try {
-      const stacks = await lsClient.sendLsClientRequest<StacksReponse>('fetchStacks');
-
-      if (!stacks || (stacks && 'error' in stacks)) {
-        this.stacks = [];
-        return [];
+      const lsClient = LSClient.getInstance();
+      const result = await lsClient.sendLsClientRequest<StacksReponse>('fetchStacks');
+      if (!result || 'error' in result) {
+        if ("clientVersion" in result && "serverVersion" in result) {
+          return createErrorItem(result);
+        } else {
+          console.error(`Failed to fetch stacks: ${result.error}`);
+          return [];
+        }
       }
 
-      return stacks.map((stack: Stack) => {
-        const activeStackId = workspace.getConfiguration('zenml').get<string>('activeStackId');
-        const isActive = stack.id === activeStackId;
-        this.stacks = stacks;
-        return this.convertToStackTreeItem(stack, isActive);
-      });
-    } catch (error) {
-      console.error('Failed to fetch stacks with components:', error);
-      return [];
+      return result.map((stack: Stack) => this.convertToStackTreeItem(stack, this.isActiveStack(stack.id)));
+    } catch (error: any) {
+      throw error;
     }
+  }
+
+  /**
+   * Retrieves the children of a given tree item.
+   *
+   * @param {TreeItem} element The tree item whose children to retrieve.
+   * @returns A promise resolving to an array of child tree items or undefined if there are no children.
+   */
+  async getChildren(element?: TreeItem): Promise<TreeItem[] | undefined> {
+    if (!element) {
+      return this.stacks
+    } else if (element instanceof StackTreeItem) {
+      return element.children;
+    }
+    return undefined;
+  }
+
+  /**
+   * Helper method to determine if a stack is the active stack.
+   * 
+   * @param {string} stackId The ID of the stack.
+   * @returns {boolean} True if the stack is active; otherwise, false.
+   */
+  private isActiveStack(stackId: string): boolean {
+    const activeStackId = workspace.getConfiguration('zenml').get<string>('activeStackId');
+    return stackId === activeStackId;
   }
 
   /**
