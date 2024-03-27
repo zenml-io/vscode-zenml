@@ -17,6 +17,14 @@ import { ErrorMessageResponse, VersionMismatchError } from './LSClientResponseTy
  * LSClient parses the JSON response from the ZenML Client, and returns the following types.
  * Hydrated types are in the HydratedTypes.ts file.
  ************************************************************************************************/
+interface StacksData {
+  stacks: Stack[];
+  total: number;
+  total_pages: number;
+  current_page: number;
+  items_per_page: number;
+}
+
 interface Stack {
   id: string;
   name: string;
@@ -34,6 +42,6 @@ interface StackComponent {
   type: string;
 }
 
-export type StacksReponse = Stack[] | ErrorMessageResponse | VersionMismatchError;
+export type StacksReponse = StacksData | ErrorMessageResponse | VersionMismatchError;
 
-export { Stack, Components, StackComponent };
+export { Stack, Components, StackComponent, StacksData };
