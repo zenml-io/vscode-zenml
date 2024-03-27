@@ -14,7 +14,7 @@ import { StackDataProvider, StackTreeItem } from '../../views/activityBar';
 import { stackCommands } from './cmds';
 import { registerCommand } from '../../common/vscodeapi';
 import { ZenExtension } from '../../services/ZenExtension';
-import { ExtensionContext, commands } from 'vscode';
+import { ExtensionContext, commands, window } from 'vscode';
 
 /**
  * Registers stack-related commands for the extension.
@@ -25,6 +25,7 @@ export const registerStackCommands = (context: ExtensionContext) => {
   const stackDataProvider = StackDataProvider.getInstance();
   try {
     const registeredCommands = [
+      registerCommand("zenml.setStackItemsPerPage", async () => await stackDataProvider.updateItemsPerPage()),
       registerCommand('zenml.refreshStackView', async () => await stackCommands.refreshStackView()),
       registerCommand(
         'zenml.refreshActiveStack',

@@ -10,12 +10,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import { Event, EventEmitter, TreeDataProvider, TreeItem, workspace } from 'vscode';
+import { Event, EventEmitter, TreeDataProvider, TreeItem, window, workspace } from 'vscode';
 import { State } from 'vscode-languageclient';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
 import { Stack, StackComponent, StacksReponse } from '../../../types/StackTypes';
 import {
+  ITEMS_PER_PAGE_OPTIONS,
   LSCLIENT_STATE_CHANGED,
   LSP_ZENML_CLIENT_INITIALIZED,
   LSP_ZENML_STACK_CHANGED,
@@ -23,7 +24,7 @@ import {
 import { ErrorTreeItem, createErrorItem } from '../common/ErrorTreeItem';
 import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
 import { StackComponentTreeItem, StackTreeItem } from './StackTreeItems';
-import { CommandTreeItem } from '../common/CommandTreeItem';
+import { CommandTreeItem } from '../common/PaginationTreeItems';
 
 export class StackDataProvider implements TreeDataProvider<TreeItem> {
   private _onDidChangeTreeData = new EventEmitter<TreeItem | undefined | null>();
@@ -166,19 +167,31 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
     }
   }
 
-  public goToNextPage() {
+  public async goToNextPage() {
     if (this.pagination.currentPage < this.pagination.totalPages) {
       this.pagination.currentPage++;
-      this.refresh();
+      await this.refresh();
     }
   }
 
-  public goToPreviousPage() {
+  public async goToPreviousPage() {
     if (this.pagination.currentPage > 1) {
       this.pagination.currentPage--;
-      this.refresh();
+      await this.refresh();
     }
   }
+
+  public async updateItemsPerPage() {
+    const selected = await window.showQuickPick(ITEMS_PER_PAGE_OPTIONS, {
+      placeHolder: "Choose the max number of stacks to display per page",
+    });
+    if (selected) {
+      this.pagination.itemsPerPage = parseInt(selected, 10);
+      this.pagination.currentPage = 1;
+      await this.refresh();
+    }
+  }
+
   /**
    * Retrieves the children of a given tree item.
    *

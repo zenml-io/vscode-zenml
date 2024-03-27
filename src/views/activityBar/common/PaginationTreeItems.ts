@@ -10,7 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import { ThemeIcon, TreeItem } from 'vscode';
+import { ThemeIcon, TreeItem, TreeItemCollapsibleState } from 'vscode';
 
 /**
  * A TreeItem for displaying pagination in the VSCode TreeView.
@@ -31,5 +31,18 @@ export class CommandTreeItem extends TreeItem {
     if (icon) {
       this.iconPath = new ThemeIcon(icon);
     }
+  }
+}
+
+
+export class SetItemsPerPageTreeItem extends TreeItem {
+  constructor() {
+    super("Set items per page", TreeItemCollapsibleState.None);
+    this.tooltip = "Click to set the number of items shown per page";
+    this.command = {
+      command: "zenml.setStacksPerPage",
+      title: "Set Stack Items Per Page",
+      arguments: [],
+    };
   }
 }
