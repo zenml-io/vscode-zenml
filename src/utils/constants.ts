@@ -35,6 +35,7 @@ export const REFRESH_ENVIRONMENT_VIEW = 'refreshEnvironmentView';
 
 export const REFRESH_SERVER_STATUS = 'refreshServerStatus';
 export const SERVER_STATUS_UPDATED = 'serverStatusUpdated';
+export const ITEMS_PER_PAGE_OPTIONS = ['5', '10', '15', '20', '25', '30', '35', '40', '45', '50'];
 
 export const INITIAL_ZENML_SERVER_STATUS: ServerStatus = {
   isConnected: false,

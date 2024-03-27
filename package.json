@@ -155,6 +155,12 @@
         "category": "ZenML Server"
       },
       {
+        "command": "zenml.setStackItemsPerPage",
+        "title": "Set Items Per Page",
+        "icon": "$(layers)",
+        "category": "ZenML Stacks"
+      },
+      {
         "command": "zenml.refreshStackView",
         "title": "Refresh Stack View",
         "icon": "$(refresh)",
@@ -266,8 +272,13 @@
         },
         {
           "when": "stackCommandsRegistered && view == zenmlStackView",
+          "command": "zenml.setStackItemsPerPage",
+          "group": "navigation@1"
+        },
+        {
+          "when": "stackCommandsRegistered && view == zenmlStackView",
           "command": "zenml.refreshStackView",
-          "group": "navigation"
+          "group": "navigation@2"
         },
         {
           "when": "pipelineCommandsRegistered && view == zenmlPipelineView",
