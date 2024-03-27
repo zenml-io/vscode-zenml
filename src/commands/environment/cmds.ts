@@ -88,8 +88,6 @@ const restartLSPServer = async (): Promise<void> => {
   );
 };
 
-
-
 export const environmentCommands = {
   setPythonInterpreter,
   refreshEnvironmentView,

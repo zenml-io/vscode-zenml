@@ -200,16 +200,16 @@ export class LSClient {
   }
 
   private handleKnownErrors<T = VersionMismatchError>(error: any): T {
-    let errorType = "Error";
-    let serverVersion = "N/A";
+    let errorType = 'Error';
+    let serverVersion = 'N/A';
     let errorMessage = error.message;
-    let newErrorMessage = "";
+    let newErrorMessage = '';
     const versionRegex = /\b\d+\.\d+\.\d+\b/;
 
     if (errorMessage.includes('ValidationError')) {
-      errorType = "ValidationError";
+      errorType = 'ValidationError';
     } else if (errorMessage.includes('RuntimeError')) {
-      errorType = "RuntimeError";
+      errorType = 'RuntimeError';
       if (errorMessage.includes('revision identified by')) {
         const matches = errorMessage.match(versionRegex);
         if (matches) {

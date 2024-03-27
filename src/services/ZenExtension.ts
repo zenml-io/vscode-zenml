@@ -101,7 +101,6 @@ export class ZenExtension {
       }
       await this.setupViewsAndCommands();
     });
-
   }
 
   /**

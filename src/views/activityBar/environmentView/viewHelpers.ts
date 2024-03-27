@@ -111,9 +111,27 @@ export async function createInterpreterDetails(): Promise<EnvironmentItem[]> {
   const simplifiedPath = simplifyPath(resolvedEnv.path);
 
   return [
-    new EnvironmentItem('Python Version', pythonVersion, TreeItemCollapsibleState.None, '', 'interpreter'),
-    new EnvironmentItem('Name', resolvedEnv?.environment?.name, TreeItemCollapsibleState.None, '', 'interpreter'),
-    new EnvironmentItem('EnvType', resolvedEnv?.environment?.type, TreeItemCollapsibleState.None, '', 'interpreter'),
+    new EnvironmentItem(
+      'Python Version',
+      pythonVersion,
+      TreeItemCollapsibleState.None,
+      '',
+      'interpreter'
+    ),
+    new EnvironmentItem(
+      'Name',
+      resolvedEnv?.environment?.name,
+      TreeItemCollapsibleState.None,
+      '',
+      'interpreter'
+    ),
+    new EnvironmentItem(
+      'EnvType',
+      resolvedEnv?.environment?.type,
+      TreeItemCollapsibleState.None,
+      '',
+      'interpreter'
+    ),
     new EnvironmentItem('Path', simplifiedPath, TreeItemCollapsibleState.None, '', 'interpreter'),
   ];
 }

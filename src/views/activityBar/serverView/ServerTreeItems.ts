@@ -28,8 +28,8 @@ class ServerDetailTreeItem extends vscode.TreeItem {
     // make URL item clickable (if not local db path)
     if (detail.startsWith('http://') || detail.startsWith('https://')) {
       this.command = {
-        title: "Open URL",
-        command: "vscode.open",
+        title: 'Open URL',
+        command: 'vscode.open',
         arguments: [vscode.Uri.parse(detail)],
       };
       this.tooltip = `Click to open ${detail}`;

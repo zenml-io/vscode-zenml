@@ -31,20 +31,17 @@ export class ErrorTreeItem extends TreeItem {
 
 export class VersionMismatchTreeItem extends ErrorTreeItem {
   constructor(clientVersion: string, serverVersion: string) {
-    super(
-      `Version mismatch detected`,
-      `Client: ${clientVersion} – Server: ${serverVersion}`
-    );
+    super(`Version mismatch detected`, `Client: ${clientVersion} – Server: ${serverVersion}`);
     this.iconPath = new ThemeIcon('warning');
   }
 }
 
 export const createErrorItem = (error: any): TreeItem[] => {
   const errorItems: TreeItem[] = [];
-  console.log("Creating error item", error)
+  console.log('Creating error item', error);
   if (error.clientVersion || error.serverVersion) {
     errorItems.push(new VersionMismatchTreeItem(error.clientVersion, error.serverVersion));
   }
-  errorItems.push(new ErrorTreeItem(error.errorType || "Error", error.message));
+  errorItems.push(new ErrorTreeItem(error.errorType || 'Error', error.message));
   return errorItems;
-}
+};

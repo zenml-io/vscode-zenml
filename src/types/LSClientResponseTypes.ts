@@ -23,7 +23,6 @@ export interface ErrorMessageResponse {
   message: string;
 }
 
-
 export interface VersionMismatchError {
   error: string;
   message: string;
@@ -39,7 +38,10 @@ export interface RestServerConnectionResponse {
   access_token: string;
 }
 
-export type ServerStatusInfoResponse = ZenServerDetails | VersionMismatchError | ErrorMessageResponse;
+export type ServerStatusInfoResponse =
+  | ZenServerDetails
+  | VersionMismatchError
+  | ErrorMessageResponse;
 export type ConnectServerResponse = RestServerConnectionResponse | ErrorMessageResponse;
 
 /***** Stack Response Types *****/
@@ -50,4 +52,3 @@ export interface ActiveStackResponse {
 
 export type SetActiveStackResponse = ActiveStackResponse | ErrorMessageResponse;
 export type GetActiveStackResponse = ActiveStackResponse | ErrorMessageResponse;
-
