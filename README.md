@@ -1,4 +1,7 @@
-# vscode-zenml
+# ZenML Extension for Visual Studio Code
+
+![](https://img.shields.io/github/license/zenml-io/vscode-zenml)
+
 
 ![](resources/zenml-extension.gif)
 
