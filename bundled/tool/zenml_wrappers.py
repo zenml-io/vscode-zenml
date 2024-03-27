@@ -367,35 +367,49 @@ class StacksWrapper:
         """Returns the ZenKeyError class."""
         return self.lazy_import("zenml.exceptions", "ZenKeyError")
 
-    def fetch_stacks(self):
-        """Fetches all ZenML stacks and components."""
+    def fetch_stacks(self, args):
+        """Fetches all ZenML stacks and components with pagination."""
+        page = args[0]
+        max_size = args[1]
         try:
-            stacks = self.client.list_stacks(hydrate=True)
-            stacks_data = [
-                {
-                    "id": str(stack.id),
-                    "name": stack.name,
-                    "components": {
-                        component_type: [
-                            {
-                                "id": str(component.id),
-                                "name": component.name,
-                                "flavor": component.flavor,
-                                "type": component.type,
-                            }
-                            for component in components
-                        ]
-                        for component_type, components in stack.components.items()
-                    },
-                }
-                for stack in stacks
-            ]
+            stacks_page = self.client.list_stacks(
+                page=page, size=max_size, hydrate=True
+            )
+            stacks_data = self.process_stacks(stacks_page.items)
 
-            return stacks_data
+            return {
+                "stacks": stacks_data,
+                "total": stacks_page.total,
+                "total_pages": stacks_page.total_pages,
+                "current_page": page,
+                "items_per_page": max_size,
+            }
         except self.ValidationError as e:
             return {"error": "ValidationError", "message": str(e)}
         except self.ZenMLBaseException as e:
             return [{"error": f"Failed to retrieve stacks: {str(e)}"}]
+
+    def process_stacks(self, stacks):
+        """Process stacks to the desired format."""
+        return [
+            {
+                "id": str(stack.id),
+                "name": stack.name,
+                "components": {
+                    component_type: [
+                        {
+                            "id": str(component.id),
+                            "name": component.name,
+                            "flavor": component.flavor,
+                            "type": component.type,
+                        }
+                        for component in components
+                    ]
+                    for component_type, components in stack.components.items()
+                },
+            }
+            for stack in stacks
+        ]
 
     def get_active_stack(self) -> dict:
         """Fetches the active ZenML stack.

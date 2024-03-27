@@ -10,7 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import { StackTreeItem } from '../../views/activityBar';
+import { StackDataProvider, StackTreeItem } from '../../views/activityBar';
 import { stackCommands } from './cmds';
 import { registerCommand } from '../../common/vscodeapi';
 import { ZenExtension } from '../../services/ZenExtension';
@@ -22,6 +22,7 @@ import { ExtensionContext, commands } from 'vscode';
  * @param {ExtensionContext} context - The context in which the extension operates, used for registering commands and managing their lifecycle.
  */
 export const registerStackCommands = (context: ExtensionContext) => {
+  const stackDataProvider = StackDataProvider.getInstance();
   try {
     const registeredCommands = [
       registerCommand('zenml.refreshStackView', async () => await stackCommands.refreshStackView()),
@@ -41,6 +42,8 @@ export const registerStackCommands = (context: ExtensionContext) => {
         'zenml.copyStack',
         async (node: StackTreeItem) => await stackCommands.copyStack(node)
       ),
+      registerCommand('zenml.nextStackPage', async () => stackDataProvider.goToNextPage()),
+      registerCommand('zenml.previousStackPage', async () => stackDataProvider.goToPreviousPage()),
     ];
 
     registeredCommands.forEach(cmd => {
