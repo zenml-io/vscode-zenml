@@ -3,7 +3,7 @@
   "publisher": "ZenML",
   "displayName": "ZenML",
   "description": "Integrates ZenML directly into VS Code, enhancing machine learning workflow with support for pipelines, stacks, and server management.",
-  "version": "0.0.1-beta",
+  "version": "0.0.1",
   "preview": true,
   "license": "Apache-2.0",
   "categories": [
