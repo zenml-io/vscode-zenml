@@ -37,7 +37,6 @@ export const registerPipelineCommands = (context: ExtensionContext) => {
       registerCommand('zenml.nextPipelineRunsPage', async () => pipelineDataProvider.goToNextPage()),
       registerCommand('zenml.previousPipelineRunsPage', async () => pipelineDataProvider.goToPreviousPage()),
       registerCommand("zenml.setPipelineRunsPerPage", async () => await pipelineDataProvider.updateItemsPerPage()),
-
     ];
 
     registeredCommands.forEach(cmd => {
