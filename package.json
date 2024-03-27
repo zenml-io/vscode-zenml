@@ -4,18 +4,27 @@
   "displayName": "ZenML",
   "description": "Integrates ZenML directly into VS Code, enhancing machine learning workflow with support for pipelines, stacks, and server management.",
   "version": "0.0.1",
-  "engines": {
-    "vscode": "^1.86.0"
-  },
   "license": "Apache-2.0",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/zenml-io/vscode-zenml"
-  },
   "categories": [
     "Machine Learning",
     "Visualization"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zenml-io/vscode-zenml"
+  },
+  "keywords": [
+    "zenml",
+    "ml",
+    "machine learning",
+    "mlops",
+    "stack management",
+    "pipeline management",
+    "development tools"
+  ],
+  "engines": {
+    "vscode": "^1.86.0"
+  },
   "activationEvents": [
     "onStartupFinished",
     "onLanguage:python",
