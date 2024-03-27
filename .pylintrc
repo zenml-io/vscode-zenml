@@ -1,0 +1,7 @@
+[MESSAGES CONTROL]
+disable=
+    C0103, # Name doesn't conform to naming style
+    C0415, # Import outside toplevel
+    W0613, # Unused argument
+    R0801, # Similar lines in multiple files
+    R0903, # Too few public methods
