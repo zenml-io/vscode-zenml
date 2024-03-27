@@ -14,6 +14,7 @@ import * as vscode from 'vscode';
 import { stackCommands } from '../../commands/stack/cmds';
 import { getActiveStack } from '../../commands/stack/utils';
 import { EventBus } from '../../services/EventBus';
+import { LSP_ZENML_STACK_CHANGED, SERVER_STATUS_UPDATED } from '../../utils/constants';
 
 /**
  * Represents the ZenML extension's status bar.
@@ -43,12 +44,12 @@ export default class ZenMLStatusBar {
    * @returns void
    */
   private subscribeToEvents(): void {
-    this.eventBus.on('stackChanged', async (activeStackId: string) => {
+    this.eventBus.on(LSP_ZENML_STACK_CHANGED, async () => {
       await this.refreshActiveStack();
       await stackCommands.refreshStackView();
     });
 
-    this.eventBus.on('serverStatusUpdated', ({ isConnected, serverUrl }) => {
+    this.eventBus.on(SERVER_STATUS_UPDATED, ({ isConnected, serverUrl }) => {
       this.updateServerStatusIndicator(isConnected, serverUrl);
     });
   }
