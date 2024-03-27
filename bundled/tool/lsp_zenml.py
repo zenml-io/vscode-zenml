@@ -48,8 +48,6 @@ class ZenLanguageServer(LanguageServer):
 
     async def is_zenml_installed(self) -> bool:
         """Asynchronously checks if ZenML is installed."""
-        # This is a simplified async version of a check.
-        # In real usage, you would replace subprocess.run with an async equivalent.
         try:
             process = await asyncio.create_subprocess_exec(
                 self.python_interpreter,
@@ -147,7 +145,8 @@ class ZenLanguageServer(LanguageServer):
                         if not wrapper_instance:
                             return {"error": f"Wrapper '{wrapper_name}' not found."}
                         return func(wrapper_instance, *args, **kwargs)
-                    return func(self.zenml_client, *args, **kwargs)
+                    else:
+                        return func(self.zenml_client, *args, **kwargs)
 
             return wrapper
 

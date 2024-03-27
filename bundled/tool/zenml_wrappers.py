@@ -91,7 +91,7 @@ class GlobalConfigWrapper:
         # Method name changed in 0.55.4 - 0.56.1
         if hasattr(self.gc, "set_store_configuration"):
             self.gc.set_store_configuration(new_store_config)
-        elif hasattr(self.gc, "set_store"):  # Old method name
+        elif hasattr(self.gc, "set_store"):
             self.gc.set_store(new_store_config)
         else:
             raise AttributeError(
@@ -260,6 +260,11 @@ class PipelineRunsWrapper:
         self.client = client
 
     @property
+    def ValidationError(self):
+        """Returns the ZenML ZenMLBaseException class."""
+        return self.lazy_import("zenml.exceptions", "ValidationError")
+
+    @property
     def ZenMLBaseException(self):
         """Returns the ZenML ZenMLBaseException class."""
         return self.lazy_import("zenml.exceptions", "ZenMLBaseException")
@@ -290,14 +295,24 @@ class PipelineRunsWrapper:
                         if run.metadata.end_time
                         else None
                     ),
-                    "os": run.metadata.client_environment["os"],
-                    "osVersion": run.metadata.client_environment["mac_version"],
-                    "pythonVersion": run.metadata.client_environment["python_version"],
+                    "os": run.metadata.client_environment.get("os", "Unknown OS"),
+                    "osVersion": run.metadata.client_environment.get(
+                        "os_version",
+                        run.metadata.client_environment.get(
+                            "mac_version", "Unknown Version"
+                        ),
+                    ),
+                    "pythonVersion": run.metadata.client_environment.get(
+                        "python_version", "Unknown"
+                    ),
                 }
                 for run in hydrated_runs.items
             ]
 
             return runs
+        except self.ValidationError as e:
+            self.log_to_output(f"ValidationError occurred: {str(e)}")
+            return {"error": "ValidationError", "message": str(e)}
         except self.ZenMLBaseException as e:
             return [{"error": f"Failed to retrieve pipeline runs: {str(e)}"}]
 
@@ -334,6 +349,11 @@ class StacksWrapper:
         return self.lazy_import("zenml.exceptions", "ZenMLBaseException")
 
     @property
+    def ValidationError(self):
+        """Returns the ZenML ZenMLBaseException class."""
+        return self.lazy_import("zenml.exceptions", "ValidationError")
+
+    @property
     def IllegalOperationError(self) -> Any:
         """Returns the IllegalOperationError class."""
         return self.lazy_import("zenml.exceptions", "IllegalOperationError")
@@ -350,39 +370,32 @@ class StacksWrapper:
 
     def fetch_stacks(self):
         """Fetches all ZenML stacks and components."""
-        detailed_stacks = []
         try:
-            stacks_page = self.client.list_stacks(hydrate=False)
-
-            for stack_raw in stacks_page.items:
-                components_page = self.client.list_stack_components(
-                    stack_id=stack_raw.id, hydrate=True
-                )
-                components = [
-                    {
-                        "id": str(component.id),
-                        "name": component.name,
-                        "flavor": component.body.flavor,
-                        "type": component.body.type.value,
-                    }
-                    for component in components_page.items
-                ]
-
-                components_by_type = {}
-                for component in components:
-                    comp_type = component["type"]
-                    if comp_type not in components_by_type:
-                        components_by_type[comp_type] = []
-                    components_by_type[comp_type].append(component)
-
-                stack = {
-                    "id": str(stack_raw.id),
-                    "name": stack_raw.name,
-                    "components": components_by_type,
+            stacks = self.client.list_stacks(hydrate=True)
+            stacks_data = [
+                {
+                    "id": str(stack.id),
+                    "name": stack.name,
+                    "components": {
+                        component_type: [
+                            {
+                                "id": str(component.id),
+                                "name": component.name,
+                                "flavor": component.flavor,
+                                "type": component.type,
+                            }
+                            for component in components
+                        ]
+                        for component_type, components in stack.components.items()
+                    },
                 }
-                detailed_stacks.append(stack)
+                for stack in stacks
+            ]
 
-            return detailed_stacks
+            return stacks_data
+        except self.ValidationError as e:
+            self.log_to_output(f"ValidationError occurred: {str(e)}")
+            return {"error": "ValidationError", "message": str(e)}
         except self.ZenMLBaseException as e:
             return [{"error": f"Failed to retrieve stacks: {str(e)}"}]
 
