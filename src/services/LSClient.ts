@@ -13,22 +13,22 @@
 import { ProgressLocation, commands, window } from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
 import { storeActiveStack } from '../commands/stack/utils';
+import { GenericLSClientResponse, VersionMismatchError } from '../types/LSClientResponseTypes';
+import { LSNotificationIsZenMLInstalled } from '../types/LSNotificationTypes';
+import { ConfigUpdateDetails } from '../types/ServerInfoTypes';
 import {
   LSCLIENT_READY,
   LSP_IS_ZENML_INSTALLED,
   LSP_ZENML_CLIENT_INITIALIZED,
   LSP_ZENML_SERVER_CHANGED,
   LSP_ZENML_STACK_CHANGED,
+  PYTOOL_MODULE,
   REFRESH_ENVIRONMENT_VIEW,
 } from '../utils/constants';
-import { GenericLSClientResponse } from '../types/LSClientResponseTypes';
-import { LSNotificationIsZenMLInstalled } from '../types/LSNotificationTypes';
-import { ConfigUpdateDetails } from '../types/ServerInfoTypes';
-import { PYTOOL_MODULE } from '../utils/constants';
 import { getZenMLServerUrl, updateServerUrlAndToken } from '../utils/global';
-import { debounce, refreshUIComponents } from '../utils/refresh';
+import { debounce } from '../utils/refresh';
 import { EventBus } from './EventBus';
-import { ZenExtension } from './ZenExtension';
+import { ServerDataProvider } from '../views/activityBar';
 
 export class LSClient {
   private static instance: LSClient | null = null;
@@ -43,7 +43,7 @@ export class LSClient {
 
   public restartLSPServerDebounced = debounce(async () => {
     await commands.executeCommand(`${PYTOOL_MODULE}.restart`);
-    await refreshUIComponents();
+    // await refreshUIComponents();
   }, 500);
 
   /**
@@ -101,8 +101,6 @@ export class LSClient {
       this.eventBus.emit(LSP_ZENML_CLIENT_INITIALIZED, false);
       await commands.executeCommand('zenml.promptForInterpreter');
     } else {
-      console.log('ZenML is installed, setting up extension components...');
-      await ZenExtension.setupViewsAndCommands();
       this.eventBus.emit(LSP_ZENML_CLIENT_INITIALIZED, true);
     }
     this.isZenMLReady = params.ready;
@@ -177,16 +175,13 @@ export class LSClient {
     command: string,
     args?: any[]
   ): Promise<T> {
-    if (!this.clientReady || !this.client) {
-      console.error('Language server is not available.');
-      return { error: 'Language server is not available.' } as T;
-    } else if (!this.isZenMLReady) {
-      console.error(
-        'ZenML Client is not initialized yet. Cannot send request to the language server.'
-      );
-      return {
-        error: 'ZenML Client is not initialized yet. Cannot send request to the language server.',
-      } as T;
+    if (!this.client || !this.clientReady) {
+      console.error(`${command}: LSClient is not ready yet.`);
+      return { error: 'LSClient is not ready yet.' } as T;
+    }
+    if (!this.isZenMLReady) {
+      console.error(`${command}: ZenML Client is not initialized yet.`);
+      return { error: 'ZenML Client is not initialized.' } as T;
     }
     try {
       const result = await this.client.sendRequest('workspace/executeCommand', {
@@ -194,10 +189,42 @@ export class LSClient {
         arguments: args,
       });
       return result as T;
-    } catch (error) {
-      console.error(`Failed to execute command ${command}:`, error);
-      throw error;
+    } catch (error: any) {
+      const errorMessage = error.message;
+      console.error(`Failed to execute command ${command}:`, errorMessage || error);
+      if (errorMessage.includes('ValidationError') || errorMessage.includes('RuntimeError')) {
+        return this.handleKnownErrors(error);
+      }
+      return { error: errorMessage } as T;
     }
+  }
+
+  private handleKnownErrors<T = VersionMismatchError>(error: any): T {
+    let errorType = "Error";
+    let serverVersion = "N/A";
+    let errorMessage = error.message;
+    let newErrorMessage = "";
+    const versionRegex = /\b\d+\.\d+\.\d+\b/;
+
+    if (errorMessage.includes('ValidationError')) {
+      errorType = "ValidationError";
+    } else if (errorMessage.includes('RuntimeError')) {
+      errorType = "RuntimeError";
+      if (errorMessage.includes('revision identified by')) {
+        const matches = errorMessage.match(versionRegex);
+        if (matches) {
+          serverVersion = matches[0];
+          newErrorMessage = `Can't locate revision identified by ${serverVersion}`;
+        }
+      }
+    }
+
+    return {
+      error: errorType,
+      message: newErrorMessage || errorMessage,
+      clientVersion: this.localZenML.version || 'N/A',
+      serverVersion,
+    } as T;
   }
 
   /**

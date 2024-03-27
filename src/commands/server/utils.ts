@@ -15,6 +15,7 @@ import { ServerStatus, ZenServerDetails } from '../../types/ServerInfoTypes';
 import { LSClient } from '../../services/LSClient';
 import { INITIAL_ZENML_SERVER_STATUS, PYTOOL_MODULE } from '../../utils/constants';
 import { ServerStatusInfoResponse } from '../../types/LSClientResponseTypes';
+import { ErrorTreeItem, createErrorItem } from '../../views/activityBar/common/ErrorTreeItem';
 
 /**
  * Prompts the user to enter the ZenML server URL and stores it in the global configuration.
@@ -46,7 +47,7 @@ export async function promptAndStoreServerUrl(): Promise<string | undefined> {
  *
  * @returns {Promise<ServerStatus>} A promise that resolves with the server status, parsed from server details.
  */
-export async function checkServerStatus(): Promise<ServerStatus> {
+export async function checkServerStatus(): Promise<ServerStatus | ErrorTreeItem[]> {
   const lsClient = LSClient.getInstance();
   // For debugging
   if (!lsClient.clientReady) {
@@ -55,9 +56,10 @@ export async function checkServerStatus(): Promise<ServerStatus> {
 
   try {
     const result = await lsClient.sendLsClientRequest<ServerStatusInfoResponse>('serverInfo');
-    if (result && 'error' in result) {
-      console.error(result.error);
-      return INITIAL_ZENML_SERVER_STATUS;
+    if (!result || 'error' in result) {
+      if ("clientVersion" in result && "serverVersion" in result) {
+        return createErrorItem(result);
+      }
     } else if (isZenServerDetails(result)) {
       return createServerStatusFromDetails(result);
     }
@@ -79,6 +81,10 @@ function createServerStatusFromDetails(details: ZenServerDetails): ServerStatus 
     url: storeConfig?.url ?? 'unknown',
     store_type: storeConfig?.type ?? 'unknown',
   };
+}
+
+export function isServerStatus(obj: any): obj is ServerStatus {
+  return 'isConnected' in obj && 'url' in obj;
 }
 
 export const serverUtils = {

@@ -39,6 +39,7 @@ import { refreshUIComponents } from '../utils/refresh';
 import { PipelineDataProvider, ServerDataProvider, StackDataProvider } from '../views/activityBar';
 import ZenMLStatusBar from '../views/statusBar';
 import { LSClient } from './LSClient';
+import { toggleCommands } from '../utils/global';
 
 export interface IServerInfo {
   name: string;
@@ -98,7 +99,9 @@ export class ZenExtension {
       } else {
         await runServer();
       }
+      await this.setupViewsAndCommands();
     });
+
   }
 
   /**
@@ -107,7 +110,7 @@ export class ZenExtension {
   static async setupViewsAndCommands(): Promise<void> {
     if (this.viewsAndCommandsSetup) {
       console.log('Views and commands have already been set up. Refreshing views...');
-      await refreshUIComponents();
+      await toggleCommands(true);
       return;
     }
 
@@ -117,7 +120,7 @@ export class ZenExtension {
       this.viewDisposables.push(view);
     });
     this.registries.forEach(register => register(this.context));
-    await refreshUIComponents();
+    await toggleCommands(true);
     this.viewsAndCommandsSetup = true;
   }
 
