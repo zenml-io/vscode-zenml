@@ -11,7 +11,7 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 
-import { ErrorMessageResponse } from './LSClientResponseTypes';
+import { ErrorMessageResponse, VersionMismatchError } from './LSClientResponseTypes';
 
 /************************************************************************************************
  * LSClient parses the JSON response from the ZenML Client, and returns the following types.
@@ -34,6 +34,6 @@ interface StackComponent {
   type: string;
 }
 
-export type StacksReponse = Stack[] | ErrorMessageResponse;
+export type StacksReponse = Stack[] | ErrorMessageResponse | VersionMismatchError;
 
 export { Stack, Components, StackComponent };
