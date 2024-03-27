@@ -1,7 +1,7 @@
 {
   "name": "zenml-vscode",
   "publisher": "ZenML",
-  "displayName": "ZenML",
+  "displayName": "ZenML Studio",
   "description": "Integrates ZenML directly into VS Code, enhancing machine learning workflow with support for pipelines, stacks, and server management.",
   "version": "0.0.1",
   "preview": true,
