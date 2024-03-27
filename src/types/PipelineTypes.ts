@@ -10,7 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 
-import { ErrorMessageResponse } from './LSClientResponseTypes';
+import { ErrorMessageResponse, VersionMismatchError } from './LSClientResponseTypes';
 
 // permissions and limitations under the License.
 export interface PipelineRun {
@@ -26,4 +26,4 @@ export interface PipelineRun {
   pythonVersion: string;
 }
 
-export type PipelineRunsResponse = PipelineRun[] | ErrorMessageResponse;
+export type PipelineRunsResponse = PipelineRun[] | ErrorMessageResponse | VersionMismatchError;

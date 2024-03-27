@@ -14,15 +14,24 @@
 import { ZenServerDetails } from './ServerInfoTypes';
 
 /***** Generic Response Types *****/
-export interface SccessMessageResponse {
+export interface SuccessMessageResponse {
   message: string;
 }
 
 export interface ErrorMessageResponse {
   error: string;
+  message: string;
 }
 
-export type GenericLSClientResponse = SccessMessageResponse | ErrorMessageResponse;
+
+export interface VersionMismatchError {
+  error: string;
+  message: string;
+  clientVersion: string;
+  serverVersion: string;
+}
+
+export type GenericLSClientResponse = SuccessMessageResponse | ErrorMessageResponse;
 
 /***** Server Response Types *****/
 export interface RestServerConnectionResponse {
@@ -30,7 +39,7 @@ export interface RestServerConnectionResponse {
   access_token: string;
 }
 
-export type ServerStatusInfoResponse = ZenServerDetails | ErrorMessageResponse;
+export type ServerStatusInfoResponse = ZenServerDetails | VersionMismatchError | ErrorMessageResponse;
 export type ConnectServerResponse = RestServerConnectionResponse | ErrorMessageResponse;
 
 /***** Stack Response Types *****/
@@ -41,3 +50,4 @@ export interface ActiveStackResponse {
 
 export type SetActiveStackResponse = ActiveStackResponse | ErrorMessageResponse;
 export type GetActiveStackResponse = ActiveStackResponse | ErrorMessageResponse;
+

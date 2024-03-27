@@ -19,6 +19,8 @@ import { ServerDataProvider } from '../../../views/activityBar';
 import { MockLSClient } from '../__mocks__/MockLSClient';
 import { MOCK_REST_SERVER_STATUS, MOCK_SQL_SERVER_STATUS } from '../__mocks__/constants';
 import { MockEventBus } from '../__mocks__/MockEventBus';
+import { ServerStatus } from '../../../types/ServerInfoTypes';
+import { LOADING_TREE_ITEMS } from '../../../views/activityBar/common/LoadingTreeItem';
 
 suite('ServerDataProvider Tests', () => {
   let sandbox: sinon.SinonSandbox;
@@ -36,6 +38,7 @@ suite('ServerDataProvider Tests', () => {
     sandbox.stub(LSClient, 'getInstance').returns(mockLSClientInstance);
     sandbox.stub(EventBus, 'getInstance').returns(mockEventBus);
     sandbox.stub(mockLSClientInstance, 'startLanguageClient').resolves();
+    serverDataProvider['zenmlClientReady'] = true;
   });
 
   teardown(() => {
@@ -52,7 +55,7 @@ suite('ServerDataProvider Tests', () => {
     });
 
     await serverDataProvider.refresh();
-    let serverStatus = serverDataProvider.getCurrentStatus();
+    const serverStatus = serverDataProvider.getCurrentStatus() as ServerStatus;
 
     assert.strictEqual(
       serverStatus.isConnected,
@@ -69,12 +72,24 @@ suite('ServerDataProvider Tests', () => {
     });
 
     await serverDataProvider.refresh();
-    const serverStatus = serverDataProvider.getCurrentStatus();
+    const serverStatus = serverDataProvider.getCurrentStatus() as ServerStatus;
 
     assert.strictEqual(
       serverStatus.isConnected,
       false,
       'Server should be reported as disconnected for SQL config'
     );
+  });
+  test('ServerDataProvider should handle zenmlClient not ready state', async () => {
+    serverDataProvider['zenmlClientReady'] = false;
+
+    await serverDataProvider.refresh();
+    assert.deepStrictEqual(
+      serverDataProvider.getCurrentStatus(),
+      [LOADING_TREE_ITEMS.get('zenmlClient')!],
+      'ServerDataProvider should show loading state for ZenML client not ready'
+    );
+
+    serverDataProvider['zenmlClientReady'] = true;
   });
 });
