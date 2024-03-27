@@ -10,20 +10,24 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import { checkServerStatus } from '../../../commands/server/utils';
+import { EventEmitter, ThemeIcon, TreeDataProvider, TreeItem } from 'vscode';
+import { State } from 'vscode-languageclient';
+import { checkServerStatus, isServerStatus } from '../../../commands/server/utils';
 import { EventBus } from '../../../services/EventBus';
 import { ServerStatus } from '../../../types/ServerInfoTypes';
-import { INITIAL_ZENML_SERVER_STATUS, REFRESH_SERVER_STATUS } from '../../../utils/constants';
+import { INITIAL_ZENML_SERVER_STATUS, LSCLIENT_STATE_CHANGED, LSP_ZENML_CLIENT_INITIALIZED, REFRESH_SERVER_STATUS } from '../../../utils/constants';
+import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
 import { ServerTreeItem } from './ServerTreeItems';
-import { TreeDataProvider, TreeItem, EventEmitter, Event, workspace, ThemeIcon } from 'vscode';
+import { ErrorTreeItem } from '../common/ErrorTreeItem';
 
 export class ServerDataProvider implements TreeDataProvider<TreeItem> {
-  private static instance: ServerDataProvider | null = null;
-  private currentStatus: ServerStatus = INITIAL_ZENML_SERVER_STATUS;
-  private eventBus = EventBus.getInstance();
-
   private _onDidChangeTreeData = new EventEmitter<TreeItem | undefined | null>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+
+  private static instance: ServerDataProvider | null = null;
+  private eventBus = EventBus.getInstance();
+  private zenmlClientReady = false;
+  private currentStatus: ServerStatus | TreeItem[] = INITIAL_ZENML_SERVER_STATUS;
 
   constructor() {
     this.subscribeToEvents();
@@ -33,9 +37,26 @@ export class ServerDataProvider implements TreeDataProvider<TreeItem> {
    * Subscribes to relevant events to trigger a refresh of the tree view.
    */
   public subscribeToEvents(): void {
-    this.eventBus.off(REFRESH_SERVER_STATUS, this.refresh.bind(this));
-    this.eventBus.on(REFRESH_SERVER_STATUS, async () => {
-      await this.refresh();
+    this.eventBus.on(LSCLIENT_STATE_CHANGED, (newState: State) => {
+      if (newState === State.Running) {
+        this.refresh();
+      } else {
+        this.currentStatus = [LOADING_TREE_ITEMS.get('lsClient')!]
+        this._onDidChangeTreeData.fire(undefined);
+      }
+    })
+
+    this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, (isInitialized: boolean) => {
+      this.zenmlClientReady = isInitialized;
+      if (!isInitialized) {
+        this.currentStatus = [LOADING_TREE_ITEMS.get('zenmlClient')!]
+        this._onDidChangeTreeData.fire(undefined);
+        return;
+      }
+
+      this.refresh();
+      this.eventBus.off(REFRESH_SERVER_STATUS, async () => await this.refresh());
+      this.eventBus.on(REFRESH_SERVER_STATUS, async () => await this.refresh());
     });
   }
 
@@ -67,12 +88,23 @@ export class ServerDataProvider implements TreeDataProvider<TreeItem> {
    * @returns {Promise<void>} A promise resolving to void.
    */
   public async refresh(): Promise<void> {
+    this.currentStatus = [LOADING_TREE_ITEMS.get('server')!]
+    this._onDidChangeTreeData.fire(undefined);
+
+    if (!this.zenmlClientReady) {
+      this.currentStatus = [LOADING_TREE_ITEMS.get('zenmlClient')!]
+      this._onDidChangeTreeData.fire(undefined);
+      return;
+    }
+
     const serverStatus = await checkServerStatus();
-    if (JSON.stringify(serverStatus) !== JSON.stringify(this.currentStatus)) {
-      this.eventBus.emit('serverStatusUpdated', {
-        isConnected: serverStatus.isConnected,
-        serverUrl: serverStatus.url,
-      });
+    if (isServerStatus(serverStatus)) {
+      if (JSON.stringify(serverStatus) !== JSON.stringify(this.currentStatus)) {
+        this.eventBus.emit('serverStatusUpdated', {
+          isConnected: serverStatus.isConnected,
+          serverUrl: serverStatus.url,
+        });
+      }
     }
 
     this.currentStatus = serverStatus;
@@ -84,7 +116,7 @@ export class ServerDataProvider implements TreeDataProvider<TreeItem> {
    *
    * @returns {ServerStatus} The current status of the ZenML server, including connectivity, host, port, store type, and store URL.
    */
-  public getCurrentStatus(): ServerStatus {
+  public getCurrentStatus(): ServerStatus | TreeItem[] {
     return this.currentStatus;
   }
 
@@ -113,15 +145,28 @@ export class ServerDataProvider implements TreeDataProvider<TreeItem> {
    */
   async getChildren(element?: TreeItem): Promise<TreeItem[] | undefined> {
     if (!element) {
-      const updatedServerTreeItem = new ServerTreeItem('Server Status', this.currentStatus);
-      if (this.currentStatus.isConnected) {
+      if (isServerStatus(this.currentStatus)) {
+        console.log(this.currentStatus)
+        const updatedServerTreeItem = new ServerTreeItem('Server Status', this.currentStatus);
         return [updatedServerTreeItem];
-      } else {
-        return updatedServerTreeItem.children;
+      } else if (Array.isArray(this.currentStatus)) {
+        return this.currentStatus;
       }
     } else if (element instanceof ServerTreeItem) {
       return element.children;
     }
     return undefined;
+  }
+
+  /**
+   * Retrieves the server version.
+   * 
+   * @returns The server version.
+   */
+  public getServerVersion(): string {
+    if (isServerStatus(this.currentStatus)) {
+      return this.currentStatus.version;
+    }
+    return 'N/A';
   }
 }

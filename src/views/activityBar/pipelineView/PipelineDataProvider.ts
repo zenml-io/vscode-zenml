@@ -10,21 +10,60 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import { PipelineRunTreeItem, PipelineTreeItem } from './PipelineTreeItems';
-import { PipelineRun, PipelineRunsResponse } from '../../../types/PipelineTypes';
+import { EventEmitter, TreeDataProvider, TreeItem } from 'vscode';
 import { LSClient } from '../../../services/LSClient';
-import { TreeDataProvider, TreeItem, EventEmitter } from 'vscode';
+import { PipelineRun, PipelineRunsResponse } from '../../../types/PipelineTypes';
+import { createErrorItem } from '../common/ErrorTreeItem';
+import { LOADING_TREE_ITEMS, LoadingTreeItem } from '../common/LoadingTreeItem';
+import { PipelineRunTreeItem, PipelineTreeItem } from './PipelineTreeItems';
+import { EventBus } from '../../../services/EventBus';
+import { LSCLIENT_STATE_CHANGED, LSP_ZENML_CLIENT_INITIALIZED, LSP_ZENML_STACK_CHANGED } from '../../../utils/constants';
+import { State } from 'vscode-languageclient';
 
 /**
  * Provides data for the pipeline run tree view, displaying detailed information about each pipeline run.
  */
 export class PipelineDataProvider implements TreeDataProvider<TreeItem> {
-  private static instance: PipelineDataProvider | null = null;
-
   private _onDidChangeTreeData = new EventEmitter<TreeItem | undefined | null>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-  constructor() {}
+  private static instance: PipelineDataProvider | null = null;
+  private eventBus = EventBus.getInstance();
+  private zenmlClientReady = false;
+  private pipelineRuns: PipelineTreeItem[] | TreeItem[] = [LOADING_TREE_ITEMS.get('pipelineRuns')!];
+
+  constructor() {
+    this.subscribeToEvents();
+
+  }
+
+  /**
+ * Subscribes to relevant events to trigger a refresh of the tree view.
+ */
+  public subscribeToEvents(): void {
+    this.eventBus.on(LSCLIENT_STATE_CHANGED, (newState: State) => {
+      if (newState === State.Running) {
+        this.refresh();
+      } else {
+        this.pipelineRuns = [LOADING_TREE_ITEMS.get('lsClient')!]
+        this._onDidChangeTreeData.fire(undefined);
+      }
+    })
+
+    this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, (isInitialized: boolean) => {
+      this.zenmlClientReady = isInitialized;
+
+      if (!isInitialized) {
+        this.pipelineRuns = [LOADING_TREE_ITEMS.get('pipelineRuns')!]
+        this._onDidChangeTreeData.fire(undefined);
+        return;
+      }
+
+      this.refresh();
+      this.eventBus.off(LSP_ZENML_STACK_CHANGED, () => this.refresh());
+      this.eventBus.on(LSP_ZENML_STACK_CHANGED, () => this.refresh());
+    });
+  }
 
   /**
    * Retrieves the singleton instance of ServerDataProvider.
@@ -44,7 +83,16 @@ export class PipelineDataProvider implements TreeDataProvider<TreeItem> {
    * @returns A promise resolving to void.
    */
   public async refresh(): Promise<void> {
-    await this.fetchPipelineRuns();
+    this.pipelineRuns = [LOADING_TREE_ITEMS.get('pipelineRuns')!];
+    this._onDidChangeTreeData.fire(undefined);
+
+    try {
+      const newPipelineData = await this.fetchPipelineRuns();
+      this.pipelineRuns = newPipelineData;
+    } catch (error: any) {
+      this.pipelineRuns = createErrorItem(error);
+    }
+
     this._onDidChangeTreeData.fire(undefined);
   }
 
@@ -66,27 +114,31 @@ export class PipelineDataProvider implements TreeDataProvider<TreeItem> {
    */
   async getChildren(element?: TreeItem): Promise<TreeItem[] | undefined> {
     if (!element) {
-      return this.fetchPipelineRuns();
-    } else {
-      return element instanceof PipelineTreeItem ? element.children : undefined;
+      return this.pipelineRuns;
+    } else if (element instanceof PipelineTreeItem) {
+      return element.children;
     }
+    return undefined;
   }
-
   /**
    * Fetches pipeline runs from the server and maps them to tree items for display.
    *
    * @returns A promise resolving to an array of PipelineTreeItems representing fetched pipeline runs.
    */
-  async fetchPipelineRuns(): Promise<PipelineTreeItem[]> {
+  async fetchPipelineRuns(): Promise<PipelineTreeItem[] | TreeItem[]> {
+    if (!this.zenmlClientReady) {
+      return [LOADING_TREE_ITEMS.get('zenmlClient')!]
+    }
     try {
       const lsClient = LSClient.getInstance();
-      if (!lsClient.clientReady) {
-        return [];
-      }
-
       const result = await lsClient.sendLsClientRequest<PipelineRunsResponse>('getPipelineRuns');
-      if (!result || (result && 'error' in result)) {
-        return [];
+      if (!result || 'error' in result) {
+        if ("clientVersion" in result && "serverVersion" in result) {
+          return createErrorItem(result);
+        } else {
+          console.error(`Failed to fetch pipeline runs: ${result.error}`);
+          return [];
+        }
       }
 
       return result.map((run: PipelineRun) => {
@@ -105,8 +157,7 @@ export class PipelineDataProvider implements TreeDataProvider<TreeItem> {
         return new PipelineTreeItem(run, run.id, children);
       });
     } catch (error) {
-      console.error('Failed to fetch pipeline runs:', error);
-      return [];
+      throw error;
     }
   }
 }

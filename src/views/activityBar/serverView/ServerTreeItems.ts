@@ -25,6 +25,15 @@ class ServerDetailTreeItem extends vscode.TreeItem {
    */
   constructor(label: string, detail: string) {
     super(`${label}: ${detail}`, vscode.TreeItemCollapsibleState.None);
+    // make URL item clickable (if not local db path)
+    if (detail.startsWith('http://') || detail.startsWith('https://')) {
+      this.command = {
+        title: "Open URL",
+        command: "vscode.open",
+        arguments: [vscode.Uri.parse(detail)],
+      };
+      this.tooltip = `Click to open ${detail}`;
+    }
   }
 }
 
@@ -43,10 +52,10 @@ export class ServerTreeItem extends vscode.TreeItem {
       label,
       serverStatus.isConnected
         ? vscode.TreeItemCollapsibleState.Expanded
-        : vscode.TreeItemCollapsibleState.None
+        : vscode.TreeItemCollapsibleState.Expanded
     );
 
-    this.description = `${this.serverStatus.isConnected ? 'Connected ✅' : 'Disconnected ❌'}`;
+    this.description = `${this.serverStatus.isConnected ? 'Connected ✅' : 'Disconnected'}`;
     this.children = this.determineChildrenBasedOnStatus();
   }
 
