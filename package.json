@@ -156,7 +156,7 @@
       },
       {
         "command": "zenml.setStackItemsPerPage",
-        "title": "Set Items Per Page",
+        "title": "Set Stacks Per Page",
         "icon": "$(layers)",
         "category": "ZenML Stacks"
       },
@@ -188,6 +188,12 @@
         "title": "Copy Stack",
         "icon": "$(copy)",
         "category": "ZenML"
+      },
+      {
+        "command": "zenml.setPipelineRunsPerPage",
+        "title": "Set Runs Per Page",
+        "icon": "$(layers)",
+        "category": "ZenML Pipeline Runs"
       },
       {
         "command": "zenml.refreshPipelineView",
@@ -282,8 +288,13 @@
         },
         {
           "when": "pipelineCommandsRegistered && view == zenmlPipelineView",
+          "command": "zenml.setPipelineRunsPerPage",
+          "group": "navigation@1"
+        },
+        {
+          "when": "pipelineCommandsRegistered && view == zenmlPipelineView",
           "command": "zenml.refreshPipelineView",
-          "group": "navigation"
+          "group": "navigation@2"
         },
         {
           "when": "environmentCommandsRegistered && view == zenmlEnvironmentView",

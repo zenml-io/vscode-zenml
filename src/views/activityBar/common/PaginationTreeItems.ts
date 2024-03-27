@@ -34,7 +34,6 @@ export class CommandTreeItem extends TreeItem {
   }
 }
 
-
 export class SetItemsPerPageTreeItem extends TreeItem {
   constructor() {
     super("Set items per page", TreeItemCollapsibleState.None);

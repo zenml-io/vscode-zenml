@@ -9,10 +9,19 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
+// permissions and limitations under the License.
 
 import { ErrorMessageResponse, VersionMismatchError } from './LSClientResponseTypes';
 
-// permissions and limitations under the License.
+
+interface PipelineRunsData {
+  runs: PipelineRun[];
+  total: number;
+  total_pages: number;
+  current_page: number;
+  items_per_page: number;
+}
+
 export interface PipelineRun {
   id: string;
   name: string;
@@ -26,4 +35,4 @@ export interface PipelineRun {
   pythonVersion: string;
 }
 
-export type PipelineRunsResponse = PipelineRun[] | ErrorMessageResponse | VersionMismatchError;
+export type PipelineRunsResponse = PipelineRunsData | ErrorMessageResponse | VersionMismatchError;

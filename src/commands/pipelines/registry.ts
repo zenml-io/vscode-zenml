@@ -13,7 +13,7 @@
 import { pipelineCommands } from './cmds';
 import { registerCommand } from '../../common/vscodeapi';
 import { ZenExtension } from '../../services/ZenExtension';
-import { PipelineTreeItem } from '../../views/activityBar';
+import { PipelineDataProvider, PipelineTreeItem } from '../../views/activityBar';
 import { ExtensionContext, commands } from 'vscode';
 
 /**
@@ -22,6 +22,8 @@ import { ExtensionContext, commands } from 'vscode';
  * @param {ExtensionContext} context - The context in which the extension operates, used for registering commands and managing their lifecycle.
  */
 export const registerPipelineCommands = (context: ExtensionContext) => {
+  const pipelineDataProvider = PipelineDataProvider.getInstance();
+
   try {
     const registeredCommands = [
       registerCommand(
@@ -32,6 +34,10 @@ export const registerPipelineCommands = (context: ExtensionContext) => {
         'zenml.deletePipelineRun',
         async (node: PipelineTreeItem) => await pipelineCommands.deletePipelineRun(node)
       ),
+      registerCommand('zenml.nextPipelineRunsPage', async () => pipelineDataProvider.goToNextPage()),
+      registerCommand('zenml.previousPipelineRunsPage', async () => pipelineDataProvider.goToPreviousPage()),
+      registerCommand("zenml.setPipelineRunsPerPage", async () => await pipelineDataProvider.updateItemsPerPage()),
+
     ];
 
     registeredCommands.forEach(cmd => {
