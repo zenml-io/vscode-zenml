@@ -269,16 +269,19 @@ class PipelineRunsWrapper:
         """Returns the ZenML ZenMLBaseException class."""
         return self.lazy_import("zenml.exceptions", "ZenMLBaseException")
 
-    def fetch_pipeline_runs(self):
+    def fetch_pipeline_runs(self, args):
         """Fetches all ZenML pipeline runs.
 
         Returns:
             list: List of dictionaries containing pipeline run data.
         """
+        page = args[0]
+        max_size = args[1]
         try:
-            hydrated_runs = self.client.list_pipeline_runs(hydrate=True)
-
-            runs = [
+            runs_page = self.client.list_pipeline_runs(
+                sort_by="desc:updated", page=page, size=max_size, hydrate=True
+            )
+            runs_data = [
                 {
                     "id": str(run.id),
                     "name": run.body.pipeline.name,
@@ -306,10 +309,16 @@ class PipelineRunsWrapper:
                         "python_version", "Unknown"
                     ),
                 }
-                for run in hydrated_runs.items
+                for run in runs_page.items
             ]
 
-            return runs
+            return {
+                "runs": runs_data,
+                "total": runs_page.total,
+                "total_pages": runs_page.total_pages,
+                "current_page": page,
+                "items_per_page": max_size,
+            }
         except self.ValidationError as e:
             return {"error": "ValidationError", "message": str(e)}
         except self.ZenMLBaseException as e:
