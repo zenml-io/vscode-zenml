@@ -40,7 +40,7 @@ suite('Extension Activation Test Suite', () => {
   });
 
   test('ZenML Extension should be present', () => {
-    assert.ok(vscode.extensions.getExtension('ZenML.zenml'));
+    assert.ok(vscode.extensions.getExtension('ZenML.zenml-vscode'));
   });
 
   test('activate function behaves as expected', async () => {
