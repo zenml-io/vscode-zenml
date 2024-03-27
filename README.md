@@ -4,7 +4,7 @@
 
 ![](resources/zenml-extension.gif)
 
-The ZenML VSCode extension seamlessly integrates with the ZenML CLI to enhance your MLOps workflow within VSCode. It is designed to accurately mirror the current state of your ZenML environment within your IDE, ensuring a smooth and integrated experience.
+The ZenML VSCode extension seamlessly integrates with [ZenML](https://github.com/zenml-io/zenml) to enhance your MLOps workflow within VSCode. It is designed to accurately mirror the current state of your ZenML environment within your IDE, ensuring a smooth and integrated experience.
 
 ## Features
 
@@ -15,7 +15,7 @@ The ZenML VSCode extension seamlessly integrates with the ZenML CLI to enhance y
 
 ## Getting Started
 
-Note that you'll need to have ZenML installed in your Python environment to use
+Note that you'll need to have [ZenML](https://github.com/zenml-io/zenml) installed in your Python environment to use
 this extension and your Python version needs to be 3.8 or greater.
 
 1. **Install the Extension**: Search for "ZenML" in the VSCode Extensions view (`Ctrl+Shift+X`) and install it.
