@@ -1,5 +1,7 @@
 # vscode-zenml
 
+![](resources/zenml-extension.gif)
+
 The ZenML VSCode extension seamlessly integrates with the ZenML CLI to enhance your MLOps workflow within VSCode. It is designed to accurately mirror the current state of your ZenML environment within your IDE, ensuring a smooth and integrated experience.
 
 ## Current Features
