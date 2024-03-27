@@ -28,7 +28,7 @@ The ZenML VSCode extension seamlessly integrates with the ZenML CLI to enhance y
 
 - **ZenML Installation:** ZenML needs to be installed in the local Python environment associated with the Python interpreter selected in the current VS Code workspace. This extension interacts directly with your ZenML environment, so ensuring that ZenML is installed and properly configured is essential.
 - **ZenML Version**: To ensure full functionality and compatibility, make sure you have ZenML version 0.55.0 or newer.
-- **Python Version**: Python 3.8 or greateris required for the operation of the LSP server, which is a part of this extension.
+- **Python Version**: Python 3.8 or greater is required for the operation of the LSP server, which is a part of this extension.
 
 ## Feedback and Contributions
 
