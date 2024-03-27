@@ -8,6 +8,7 @@ We appreciate your interest in contributing to the ZenML VSCode extension! This 
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/vscode-zenml.git
+git checkout develop
 ```
 
 2. **Install Dependencies**: Navigate to the cloned repository directory and install the required dependencies.
@@ -48,7 +49,9 @@ pip install -r requirements.txt
 
 ## Development Workflow
 
-- **Running the Extension**: Press `F5` to open a new VSCode window with the extension running.
+- **Running the Extension**: Press `F5` to open a new VSCode window with the
+  extension running, or click the `Start Debugging` button in the VSCode menubar
+  under the `Run` menu.
 - **Making Changes**: Edit the source code. The TypeScript code is in the `src` directory, and Python logic for the LSP server is in `bundled/tool`.
 
 ### Testing
@@ -67,7 +70,7 @@ npm run test
 
 ## Contributing Changes
 
-1. **Create a Branch**: Make your changes in a new git branch.
+1. **Create a Branch**: Make your changes in a new git branch based on the `develop` branch.
 
 ```bash
 git checkout -b feature/your-feature-name
@@ -80,7 +83,7 @@ git checkout -b feature/your-feature-name
 git push origin feature/your-feature-name
 ```
 
-4. **Open a Pull Request**: Go to the original `zenml-io/vscode-zenml` repository and create a pull request from your feature branch. Please follow our [contribution guidelines](https://github.com/zenml-io/zenml/blob/main/CONTRIBUTING.md) for more details on proposing pull requests.
+4. **Open a Pull Request**: Go to the original `zenml-io/vscode-zenml` repository and create a pull request from your feature branch. Please follow our [contribution guidelines](https://github.com/zenml-io/zenml/blob/develop/CONTRIBUTING.md) for more details on proposing pull requests.
 
 ## Troubleshooting Common Issues
 
@@ -88,10 +91,10 @@ git push origin feature/your-feature-name
 - Rebuild the project (`npm run compile`) after making changes.
 - Reset your development environment if encountering persistent issues by re-running `nox` setup commands and reinstalling dependencies.
 - You can also run the `scripts/clear_and_compile.sh` script, which will delete the cache, `dist` folder, and recompile automatically.
-- Check the [ZenML documentation](https://zenml.io/docs) and [GitHub issues](https://github.com/zenml-io/zenml/issues) for common problems and solutions.
+- Check the [ZenML documentation](https://docs.zenml.io) and [GitHub issues](https://github.com/zenml-io/zenml/issues) for common problems and solutions.
 
 ### Additional Resources
 
 - [ZenML VSCode Extension Repository](https://github.com/zenml-io/vscode-zenml)
 - [ZenML Documentation](https://docs.zenml.io)
-- [ZenML Slack Community](https://zenml.io/slack)
+- [ZenML Slack Community](https://zenml.io/slack-invite)
