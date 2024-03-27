@@ -16,6 +16,9 @@ The ZenML VSCode extension seamlessly integrates with the ZenML CLI to enhance y
 
 ## Getting Started
 
+Note that you'll need to have ZenML installed in your Python environment to use
+this extension and your Python version needs to be 3.8 or greater.
+
 1. **Install the Extension**: Search for "ZenML" in the VSCode Extensions view (`Ctrl+Shift+X`) and install it.
 2. **Connect to ZenML Server**: Use the `ZenML: Connect` command to connect to your ZenML server.
 3. **Explore ZenML Views**: Navigate to the ZenML activity bar to access the Server, Stacks, and Pipeline Runs views.
@@ -35,7 +38,13 @@ The ZenML VSCode extension seamlessly integrates with the ZenML CLI to enhance y
 
 ## Feedback and Contributions
 
-Your feedback and contributions are welcome! Please refer to our [contribution guidelines](https://github.com/zenml-io/vscode-zenml/CONTRIBUTING.md) for more information.
+Your feedback and contributions are welcome! Please refer to our [contribution
+guidelines](https://github.com/zenml-io/vscode-zenml/CONTRIBUTING.md) for more
+information.
+
+For any further questions or issues, please reach out to us in our [Slack
+Community](https://zenml.io/slack-invite). To learn more about ZenML,
+please visit our [website](https://zenml.io/) and read [our documentation](https://docs.zenml.io).
 
 ## License
 
