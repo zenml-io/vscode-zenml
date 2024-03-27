@@ -18,14 +18,16 @@ import { refreshUIComponents } from './utils/refresh';
 import { EnvironmentDataProvider } from './views/activityBar/environmentView/EnvironmentDataProvider';
 import { registerEnvironmentCommands } from './commands/environment/registry';
 import { LSP_ZENML_CLIENT_INITIALIZED } from './utils/constants';
+import { toggleCommands } from './utils/global';
 
 export async function activate(context: vscode.ExtensionContext) {
   const eventBus = EventBus.getInstance();
   const lsClient = LSClient.getInstance();
 
   const handleZenMLClientInitialized = async (isInitialized: boolean) => {
+    console.log('ZenML client initialized: ', isInitialized);
     if (isInitialized) {
-      console.log('ZenML client initialized: ', isInitialized);
+      await toggleCommands(true);
       await refreshUIComponents();
     }
   };

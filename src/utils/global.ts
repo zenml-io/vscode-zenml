@@ -115,3 +115,16 @@ export function getDefaultPythonInterpreterPath(): string {
   const defaultInterpreterPath = config.get<string>('defaultInterpreterPath', '');
   return defaultInterpreterPath;
 }
+
+
+/**
+ * Toggles the registration of commands for the extension.
+ * 
+ * @param state The state to set the commands to.
+ */
+export async function toggleCommands(state: boolean): Promise<void> {
+  await vscode.commands.executeCommand('setContext', 'stackCommandsRegistered', state);
+  await vscode.commands.executeCommand('setContext', 'serverCommandsRegistered', state);
+  await vscode.commands.executeCommand('setContext', 'pipelineCommandsRegistered', state);
+  await vscode.commands.executeCommand('setContext', 'environmentCommandsRegistered', state);
+}

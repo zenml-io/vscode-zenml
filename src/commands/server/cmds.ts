@@ -19,7 +19,7 @@ import {
 } from '../../types/LSClientResponseTypes';
 import { updateServerUrlAndToken } from '../../utils/global';
 import { showInformationMessage } from '../../utils/notifications';
-import { refreshUIComponents, refreshUtils } from '../../utils/refresh';
+import { refreshUtils } from '../../utils/refresh';
 import { ServerDataProvider } from '../../views/activityBar';
 import { promptAndStoreServerUrl } from './utils';
 
@@ -87,12 +87,12 @@ const disconnectServer = async (): Promise<void> => {
         const lsClient = LSClient.getInstance();
         const result = await lsClient.sendLsClientRequest<GenericLSClientResponse>('disconnect');
         if (result && 'error' in result) {
-          throw new Error(result.error);
+          throw result;
         }
         await refreshUtils.refreshUIComponents();
       } catch (error: any) {
         console.error('Failed to disconnect from ZenML server:', error);
-        vscode.window.showErrorMessage('Failed to disconnect from ZenML server: ' + error);
+        vscode.window.showErrorMessage('Failed to disconnect from ZenML server: ' + error.message || error);
       }
     }
   );

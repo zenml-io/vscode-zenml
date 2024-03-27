@@ -14,7 +14,7 @@
 import { ProgressLocation, commands, window } from 'vscode';
 import { getInterpreterFromWorkspaceSettings } from '../../common/settings';
 import { EnvironmentDataProvider } from '../../views/activityBar/environmentView/EnvironmentDataProvider';
-import { PYTOOL_MODULE } from '../../utils/constants';
+import { LSP_ZENML_CLIENT_INITIALIZED, PYTOOL_MODULE } from '../../utils/constants';
 import { LSClient } from '../../services/LSClient';
 import { EventBus } from '../../services/EventBus';
 import { REFRESH_ENVIRONMENT_VIEW } from '../../utils/constants';
@@ -45,6 +45,7 @@ const setPythonInterpreter = async (): Promise<void> => {
       }
       progress.report({ increment: 90 });
       console.log('Interpreter selection completed.');
+
       window.showInformationMessage(
         'ZenML server will restart to apply the new interpreter settings.'
       );
@@ -75,17 +76,19 @@ const restartLSPServer = async (): Promise<void> => {
     },
     async progress => {
       progress.report({ increment: 10 });
-
       const lsClient = LSClient.getInstance();
       lsClient.isZenMLReady = false;
       lsClient.localZenML = { is_installed: false, version: '' };
-      EventBus.getInstance().emit(REFRESH_ENVIRONMENT_VIEW);
-
+      const eventBus = EventBus.getInstance();
+      eventBus.emit(REFRESH_ENVIRONMENT_VIEW);
+      eventBus.emit(LSP_ZENML_CLIENT_INITIALIZED, false);
       await commands.executeCommand(`${PYTOOL_MODULE}.restart`);
       progress.report({ increment: 100 });
     }
   );
 };
+
+
 
 export const environmentCommands = {
   setPythonInterpreter,

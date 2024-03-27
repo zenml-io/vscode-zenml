@@ -20,7 +20,11 @@ import {
   RevealOutputChannelOn,
   ServerOptions,
 } from 'vscode-languageclient/node';
+import { EventBus } from '../services/EventBus';
 import { LSClient } from '../services/LSClient';
+import { ZenExtension } from '../services/ZenExtension';
+import { LSCLIENT_STATE_CHANGED } from '../utils/constants';
+import { toggleCommands } from '../utils/global';
 import { DEBUG_SERVER_SCRIPT_PATH, SERVER_SCRIPT_PATH } from './constants';
 import { traceError, traceInfo, traceVerbose } from './log/logging';
 import { getDebuggerPath } from './python';
@@ -33,9 +37,6 @@ import {
 import { updateStatus } from './status';
 import { getLSClientTraceLevel, getProjectRoot } from './utilities';
 import { isVirtualWorkspace } from './vscodeapi';
-import { ZenExtension } from '../services/ZenExtension';
-import { EventBus } from '../services/EventBus';
-import { LSCLIENT_STATE_CHANGED } from '../utils/constants';
 
 export type IInitOptions = { settings: ISettings[]; globalSettings: ISettings };
 
@@ -85,11 +86,11 @@ async function createServer(
     documentSelector: isVirtualWorkspace()
       ? [{ language: 'python' }]
       : [
-          { scheme: 'file', language: 'python' },
-          { scheme: 'untitled', language: 'python' },
-          { scheme: 'vscode-notebook', language: 'python' },
-          { scheme: 'vscode-notebook-cell', language: 'python' },
-        ],
+        { scheme: 'file', language: 'python' },
+        { scheme: 'untitled', language: 'python' },
+        { scheme: 'vscode-notebook', language: 'python' },
+        { scheme: 'vscode-notebook-cell', language: 'python' },
+      ],
     outputChannel: outputChannel,
     traceOutputChannel: outputChannel,
     revealOutputChannelOn: RevealOutputChannelOn.Never,
@@ -160,6 +161,8 @@ export async function restartServer(
 }
 
 export async function runServer() {
+  await toggleCommands(false);
+
   const projectRoot = await getProjectRoot();
   const workspaceSetting = await getWorkspaceSettings(ZenExtension.serverId, projectRoot, true);
   if (workspaceSetting.interpreter.length === 0) {

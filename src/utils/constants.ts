@@ -16,6 +16,7 @@ export const PYTOOL_MODULE = 'zenml-python';
 export const PYTOOL_DISPLAY_NAME = 'ZenML';
 export const LANGUAGE_SERVER_NAME = 'zen-language-server';
 export const MIN_ZENML_VERSION = '0.55.0';
+export const ZENML_EMOJI = '⛩️'
 
 export const ZENML_PYPI_URL = 'https://pypi.org/pypi/zenml/json';
 export const DEFAULT_LOCAL_ZENML_SERVER_URL = 'http://127.0.0.1:8237';
@@ -30,7 +31,6 @@ export const LSP_ZENML_REQUIREMENTS_NOT_MET = 'zenml/requirementsNotMet';
 // EventBus emitted events
 export const LSCLIENT_READY = 'lsClientReady';
 export const LSCLIENT_STATE_CHANGED = 'lsClientStateChanged';
-
 export const REFRESH_ENVIRONMENT_VIEW = 'refreshEnvironmentView';
 
 export const REFRESH_SERVER_STATUS = 'refreshServerStatus';
