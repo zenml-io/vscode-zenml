@@ -16,7 +16,7 @@ export const PYTOOL_MODULE = 'zenml-python';
 export const PYTOOL_DISPLAY_NAME = 'ZenML';
 export const LANGUAGE_SERVER_NAME = 'zen-language-server';
 export const MIN_ZENML_VERSION = '0.55.0';
-export const ZENML_EMOJI = '⛩️'
+export const ZENML_EMOJI = '⛩️';
 
 export const ZENML_PYPI_URL = 'https://pypi.org/pypi/zenml/json';
 export const DEFAULT_LOCAL_ZENML_SERVER_URL = 'http://127.0.0.1:8237';

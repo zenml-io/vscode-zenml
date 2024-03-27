@@ -15,7 +15,11 @@ import { State } from 'vscode-languageclient';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
 import { Stack, StackComponent, StacksReponse } from '../../../types/StackTypes';
-import { LSCLIENT_STATE_CHANGED, LSP_ZENML_CLIENT_INITIALIZED, LSP_ZENML_STACK_CHANGED } from '../../../utils/constants';
+import {
+  LSCLIENT_STATE_CHANGED,
+  LSP_ZENML_CLIENT_INITIALIZED,
+  LSP_ZENML_STACK_CHANGED,
+} from '../../../utils/constants';
 import { createErrorItem } from '../common/ErrorTreeItem';
 import { LOADING_TREE_ITEMS, LoadingTreeItem } from '../common/LoadingTreeItem';
 import { StackComponentTreeItem, StackTreeItem } from './StackTreeItems';
@@ -42,16 +46,16 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
       if (newState === State.Running) {
         this.refresh();
       } else {
-        this.stacks = [LOADING_TREE_ITEMS.get('lsClient')!]
+        this.stacks = [LOADING_TREE_ITEMS.get('lsClient')!];
         this._onDidChangeTreeData.fire(undefined);
       }
-    })
+    });
 
     this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, (isInitialized: boolean) => {
       this.zenmlClientReady = isInitialized;
 
       if (!isInitialized) {
-        this.stacks = [LOADING_TREE_ITEMS.get('stacks')!]
+        this.stacks = [LOADING_TREE_ITEMS.get('stacks')!];
         this._onDidChangeTreeData.fire(undefined);
         return;
       }
@@ -89,7 +93,7 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
    * @returns {Promise<void>} A promise that resolves when the tree view data has been refreshed.
    */
   public async refresh(): Promise<void> {
-    this.stacks = [LOADING_TREE_ITEMS.get('stacks')!]
+    this.stacks = [LOADING_TREE_ITEMS.get('stacks')!];
     this._onDidChangeTreeData.fire(undefined);
 
     try {
@@ -109,14 +113,14 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
    */
   async fetchStacksWithComponents(): Promise<StackTreeItem[] | TreeItem[]> {
     if (!this.zenmlClientReady) {
-      return [LOADING_TREE_ITEMS.get('zenmlClient')!]
+      return [LOADING_TREE_ITEMS.get('zenmlClient')!];
     }
 
     try {
       const lsClient = LSClient.getInstance();
       const result = await lsClient.sendLsClientRequest<StacksReponse>('fetchStacks');
       if (!result || 'error' in result) {
-        if ("clientVersion" in result && "serverVersion" in result) {
+        if ('clientVersion' in result && 'serverVersion' in result) {
           return createErrorItem(result);
         } else {
           console.error(`Failed to fetch stacks: ${result.error}`);
@@ -124,7 +128,9 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
         }
       }
 
-      return result.map((stack: Stack) => this.convertToStackTreeItem(stack, this.isActiveStack(stack.id)));
+      return result.map((stack: Stack) =>
+        this.convertToStackTreeItem(stack, this.isActiveStack(stack.id))
+      );
     } catch (error: any) {
       throw error;
     }
@@ -138,7 +144,7 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
    */
   async getChildren(element?: TreeItem): Promise<TreeItem[] | undefined> {
     if (!element) {
-      return this.stacks
+      return this.stacks;
     } else if (element instanceof StackTreeItem) {
       return element.children;
     }
@@ -147,7 +153,7 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
 
   /**
    * Helper method to determine if a stack is the active stack.
-   * 
+   *
    * @param {string} stackId The ID of the stack.
    * @returns {boolean} True if the stack is active; otherwise, false.
    */

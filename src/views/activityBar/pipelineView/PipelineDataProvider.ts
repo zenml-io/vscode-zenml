@@ -17,7 +17,11 @@ import { createErrorItem } from '../common/ErrorTreeItem';
 import { LOADING_TREE_ITEMS, LoadingTreeItem } from '../common/LoadingTreeItem';
 import { PipelineRunTreeItem, PipelineTreeItem } from './PipelineTreeItems';
 import { EventBus } from '../../../services/EventBus';
-import { LSCLIENT_STATE_CHANGED, LSP_ZENML_CLIENT_INITIALIZED, LSP_ZENML_STACK_CHANGED } from '../../../utils/constants';
+import {
+  LSCLIENT_STATE_CHANGED,
+  LSP_ZENML_CLIENT_INITIALIZED,
+  LSP_ZENML_STACK_CHANGED,
+} from '../../../utils/constants';
 import { State } from 'vscode-languageclient';
 
 /**
@@ -34,27 +38,26 @@ export class PipelineDataProvider implements TreeDataProvider<TreeItem> {
 
   constructor() {
     this.subscribeToEvents();
-
   }
 
   /**
- * Subscribes to relevant events to trigger a refresh of the tree view.
- */
+   * Subscribes to relevant events to trigger a refresh of the tree view.
+   */
   public subscribeToEvents(): void {
     this.eventBus.on(LSCLIENT_STATE_CHANGED, (newState: State) => {
       if (newState === State.Running) {
         this.refresh();
       } else {
-        this.pipelineRuns = [LOADING_TREE_ITEMS.get('lsClient')!]
+        this.pipelineRuns = [LOADING_TREE_ITEMS.get('lsClient')!];
         this._onDidChangeTreeData.fire(undefined);
       }
-    })
+    });
 
     this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, (isInitialized: boolean) => {
       this.zenmlClientReady = isInitialized;
 
       if (!isInitialized) {
-        this.pipelineRuns = [LOADING_TREE_ITEMS.get('pipelineRuns')!]
+        this.pipelineRuns = [LOADING_TREE_ITEMS.get('pipelineRuns')!];
         this._onDidChangeTreeData.fire(undefined);
         return;
       }
@@ -127,13 +130,13 @@ export class PipelineDataProvider implements TreeDataProvider<TreeItem> {
    */
   async fetchPipelineRuns(): Promise<PipelineTreeItem[] | TreeItem[]> {
     if (!this.zenmlClientReady) {
-      return [LOADING_TREE_ITEMS.get('zenmlClient')!]
+      return [LOADING_TREE_ITEMS.get('zenmlClient')!];
     }
     try {
       const lsClient = LSClient.getInstance();
       const result = await lsClient.sendLsClientRequest<PipelineRunsResponse>('getPipelineRuns');
       if (!result || 'error' in result) {
-        if ("clientVersion" in result && "serverVersion" in result) {
+        if ('clientVersion' in result && 'serverVersion' in result) {
           return createErrorItem(result);
         } else {
           console.error(`Failed to fetch pipeline runs: ${result.error}`);

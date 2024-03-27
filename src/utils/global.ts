@@ -116,10 +116,9 @@ export function getDefaultPythonInterpreterPath(): string {
   return defaultInterpreterPath;
 }
 
-
 /**
  * Toggles the registration of commands for the extension.
- * 
+ *
  * @param state The state to set the commands to.
  */
 export async function toggleCommands(state: boolean): Promise<void> {

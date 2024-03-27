@@ -57,7 +57,7 @@ export async function checkServerStatus(): Promise<ServerStatus | ErrorTreeItem[
   try {
     const result = await lsClient.sendLsClientRequest<ServerStatusInfoResponse>('serverInfo');
     if (!result || 'error' in result) {
-      if ("clientVersion" in result && "serverVersion" in result) {
+      if ('clientVersion' in result && 'serverVersion' in result) {
         return createErrorItem(result);
       }
     } else if (isZenServerDetails(result)) {

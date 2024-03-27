@@ -92,7 +92,9 @@ const disconnectServer = async (): Promise<void> => {
         await refreshUtils.refreshUIComponents();
       } catch (error: any) {
         console.error('Failed to disconnect from ZenML server:', error);
-        vscode.window.showErrorMessage('Failed to disconnect from ZenML server: ' + error.message || error);
+        vscode.window.showErrorMessage(
+          'Failed to disconnect from ZenML server: ' + error.message || error
+        );
       }
     }
   );

@@ -311,7 +311,6 @@ class PipelineRunsWrapper:
 
             return runs
         except self.ValidationError as e:
-            self.log_to_output(f"ValidationError occurred: {str(e)}")
             return {"error": "ValidationError", "message": str(e)}
         except self.ZenMLBaseException as e:
             return [{"error": f"Failed to retrieve pipeline runs: {str(e)}"}]
@@ -394,7 +393,6 @@ class StacksWrapper:
 
             return stacks_data
         except self.ValidationError as e:
-            self.log_to_output(f"ValidationError occurred: {str(e)}")
             return {"error": "ValidationError", "message": str(e)}
         except self.ZenMLBaseException as e:
             return [{"error": f"Failed to retrieve stacks: {str(e)}"}]

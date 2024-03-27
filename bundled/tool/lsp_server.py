@@ -97,7 +97,7 @@ async def initialize(params: lsp.InitializeParams) -> None:
         f"Workspace settings:\r\n{json.dumps(WORKSPACE_SETTINGS, indent=4, ensure_ascii=False)}\r\n"
     )
 
-    log_to_output(f"ZenML LSP is initializing.")
+    log_to_output("ZenML LSP is initializing.")
     LSP_SERVER.send_custom_notification("sanityCheck", "ZenML LSP is initializing.")
 
     # Below is not needed as the interpreter path gets automatically updated when changed in vscode.

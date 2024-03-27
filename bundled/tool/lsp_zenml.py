@@ -145,8 +145,7 @@ class ZenLanguageServer(LanguageServer):
                         if not wrapper_instance:
                             return {"error": f"Wrapper '{wrapper_name}' not found."}
                         return func(wrapper_instance, *args, **kwargs)
-                    else:
-                        return func(self.zenml_client, *args, **kwargs)
+                    return func(self.zenml_client, *args, **kwargs)
 
             return wrapper
 
