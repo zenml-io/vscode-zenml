@@ -1,0 +1,38 @@
+name: Spellcheck
+
+on:
+  pull_request:
+    branches: [main] # Adjust branch name if needed
+
+jobs:
+  spellcheck:
+    name: Spell Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Run Spellcheck
+        run: |
+          bash scripts/spellcheck.sh
+        env:
+          TYPOS_CONFIG: _typos.toml
+
+      - name: Commit Changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git diff-index --quiet HEAD || git commit -m "Auto spellcheck fixes"
+        if: success()
+
+      - name: Push Changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
