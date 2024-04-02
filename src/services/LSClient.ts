@@ -24,6 +24,7 @@ import {
   LSP_ZENML_STACK_CHANGED,
   PYTOOL_MODULE,
   REFRESH_ENVIRONMENT_VIEW,
+  ZENML_CLIENT_STATE_CHANGED,
 } from '../utils/constants';
 import { getZenMLServerUrl, updateServerUrlAndToken } from '../utils/global';
 import { debounce } from '../utils/refresh';
@@ -85,7 +86,11 @@ export class LSClient {
    */
   public handleZenMLInstalled(params: { is_installed: boolean; version?: string }): void {
     console.log(`Received ${LSP_IS_ZENML_INSTALLED} notification: `, params.is_installed);
-    this.localZenML = params;
+    this.localZenML = {
+      is_installed: params.is_installed,
+      version: params.version || '',
+    };
+    this.eventBus.emit(LSP_IS_ZENML_INSTALLED, this.localZenML);
     this.eventBus.emit(REFRESH_ENVIRONMENT_VIEW);
   }
 
@@ -157,6 +162,7 @@ export class LSClient {
    * Handles the zenml/stackChanged notification.
    *
    * @param activeStackId The ID of the active stack.
+   * @returns A promise resolving to void.
    */
   public async handleStackChanged(activeStackId: string): Promise<void> {
     console.log(`Received ${LSP_ZENML_STACK_CHANGED} notification:`, activeStackId);

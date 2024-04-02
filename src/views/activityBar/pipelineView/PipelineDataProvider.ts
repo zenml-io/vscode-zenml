@@ -129,6 +129,10 @@ export class PipelineDataProvider implements TreeDataProvider<TreeItem> {
    */
   async getChildren(element?: TreeItem): Promise<TreeItem[] | undefined> {
     if (!element) {
+      if (Array.isArray(this.pipelineRuns) && this.pipelineRuns.length > 0) {
+        return this.pipelineRuns;
+      }
+
       const runs = await this.fetchPipelineRuns(this.pagination.currentPage, this.pagination.itemsPerPage);
       if (this.pagination.currentPage < this.pagination.totalPages) {
         runs.push(new CommandTreeItem("Next Page", 'zenml.nextPipelineRunsPage', undefined, 'arrow-circle-right'));

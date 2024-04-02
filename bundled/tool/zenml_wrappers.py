@@ -378,8 +378,7 @@ class StacksWrapper:
 
     def fetch_stacks(self, args):
         """Fetches all ZenML stacks and components with pagination."""
-        page = args[0]
-        max_size = args[1]
+        page, max_size = args[0], args[1]
         try:
             stacks_page = self.client.list_stacks(
                 page=page, size=max_size, hydrate=True

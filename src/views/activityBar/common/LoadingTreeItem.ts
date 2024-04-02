@@ -13,19 +13,18 @@
 import { TreeItem, TreeItemCollapsibleState, ThemeIcon } from 'vscode';
 
 export class LoadingTreeItem extends TreeItem {
-  constructor(message: string) {
+  constructor(message: string, description: string = 'Refreshing...') {
     super(message, TreeItemCollapsibleState.None);
-    this.description = 'Refreshing...';
+    this.description = description;
     this.iconPath = new ThemeIcon('sync~spin');
   }
 }
 
-// create a MAP of loading tree items and labels
 export const LOADING_TREE_ITEMS = new Map<string, LoadingTreeItem>([
   ['server', new LoadingTreeItem('Refreshing Server View...')],
   ['stacks', new LoadingTreeItem('Refreshing Stacks View...')],
   ['pipelineRuns', new LoadingTreeItem('Refreshing Pipeline Runs...')],
   ['environment', new LoadingTreeItem('Refreshing Environments...')],
-  ['lsClient', new LoadingTreeItem('Waiting for Language Server to start...')],
-  ['zenmlClient', new LoadingTreeItem('Waiting for ZenML Client to initialize...')],
+  ['lsClient', new LoadingTreeItem('Waiting for Language Server to start...', '')],
+  ['zenmlClient', new LoadingTreeItem('Waiting for ZenML Client to initialize...', '')],
 ]);

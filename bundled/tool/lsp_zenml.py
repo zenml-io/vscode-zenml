@@ -91,7 +91,7 @@ class ZenLanguageServer(LanguageServer):
         self.log_to_output("🚀 Initializing ZenML client...")
         try:
             self.zenml_client = ZenMLClient()
-            self.notify_user("✅ ZenML client initialized successfully.")
+            self.show_message_log("✅ ZenML client initialized successfully.")
             # register pytool module commands
             self.register_commands()
             # initialize watcher
@@ -264,7 +264,6 @@ class ZenLanguageServer(LanguageServer):
         @self.zenml_command(wrapper_name="stacks_wrapper")
         def set_active_stack(wrapper_instance, args):
             """Sets the active ZenML stack to the specified stack."""
-            print(f"args received: {args}")
             return wrapper_instance.set_active_stack(args)
 
         @self.command(f"{TOOL_MODULE_NAME}.renameStack")

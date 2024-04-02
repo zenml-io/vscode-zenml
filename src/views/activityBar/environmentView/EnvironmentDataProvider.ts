@@ -13,14 +13,16 @@
 import { EventEmitter, TreeDataProvider, TreeItem } from 'vscode';
 import { State } from 'vscode-languageclient';
 import { EventBus } from '../../../services/EventBus';
-import { LSCLIENT_STATE_CHANGED, REFRESH_ENVIRONMENT_VIEW } from '../../../utils/constants';
+import { LSCLIENT_STATE_CHANGED, LSP_IS_ZENML_INSTALLED, REFRESH_ENVIRONMENT_VIEW, ZENML_CLIENT_STATE_CHANGED } from '../../../utils/constants';
 import { EnvironmentItem } from './EnvironmentItem';
 import {
   createInterpreterDetails,
   createLSClientItem,
   createWorkspaceSettingsItems,
-  createZenMLStatusItems,
+  createZenMLInstallationItem,
+  createZenMLClientStatusItem,
 } from './viewHelpers';
+import { LSNotificationIsZenMLInstalled } from '../../../types/LSNotificationTypes';
 
 export class EnvironmentDataProvider implements TreeDataProvider<TreeItem> {
   private static instance: EnvironmentDataProvider | null = null;
@@ -28,16 +30,22 @@ export class EnvironmentDataProvider implements TreeDataProvider<TreeItem> {
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
   private lsClientStatus: State = State.Stopped;
+  private zenmlClientStatus: State = State.Stopped;
+  private zenmlInstallationStatus: LSNotificationIsZenMLInstalled | null = null;
 
   private eventBus = EventBus.getInstance();
 
   constructor() {
-    this.eventBus.off(LSCLIENT_STATE_CHANGED, this.handleLsClientStateChangey.bind(this));
-    this.eventBus.on(LSCLIENT_STATE_CHANGED, this.handleLsClientStateChangey.bind(this));
-
-    this.eventBus.off(REFRESH_ENVIRONMENT_VIEW, () => this.refresh());
-    this.eventBus.on(REFRESH_ENVIRONMENT_VIEW, () => this.refresh());
+    this.subscribeToEvents();
   }
+
+  private subscribeToEvents() {
+    this.eventBus.on(LSCLIENT_STATE_CHANGED, this.handleLsClientStateChange.bind(this));
+    this.eventBus.on(ZENML_CLIENT_STATE_CHANGED, this.handleZenMLClientStateChange.bind(this));
+    this.eventBus.on(LSP_IS_ZENML_INSTALLED, this.handleIsZenMLInstalled.bind(this));
+    this.eventBus.on(REFRESH_ENVIRONMENT_VIEW, this.refresh.bind(this));
+  }
+
 
   /**
    * Retrieves the singleton instance of ServerDataProvider.
@@ -52,12 +60,43 @@ export class EnvironmentDataProvider implements TreeDataProvider<TreeItem> {
   }
 
   /**
+  * Explicitly trigger loading state for ZenML installation check and ZenML client initialization.
+  */
+  private triggerLoadingStateForZenMLChecks() {
+    this.zenmlClientStatus = State.Starting;
+    this.refresh();
+  }
+
+  /**
    * Handles the change in the LSP client state.
    *
    * @param {State} status The new LSP client state.
    */
-  private handleLsClientStateChangey(status: State) {
+  private handleLsClientStateChange(status: State) {
     this.lsClientStatus = status;
+    if (status !== State.Running) {
+      this.triggerLoadingStateForZenMLChecks();
+    }
+    this.refresh();
+  }
+
+  /**
+   * Handles the change in the ZenML client state.
+   *
+   * @param {State} status The new ZenML client state.
+   */
+  private handleZenMLClientStateChange(status: State) {
+    this.zenmlClientStatus = status;
+    this.refresh();
+  }
+
+  /**
+   * Handles the change in the ZenML installation status.
+   *
+   * @param {LSNotificationIsZenMLInstalled} params The new ZenML installation status.
+   */
+  private handleIsZenMLInstalled(params: LSNotificationIsZenMLInstalled) {
+    this.zenmlInstallationStatus = params;
     this.refresh();
   }
 
@@ -82,13 +121,13 @@ export class EnvironmentDataProvider implements TreeDataProvider<TreeItem> {
    * Adjusts createRootItems to set each item to not collapsible and directly return items for Interpreter, Workspace, etc.
    */
   private async createRootItems(): Promise<EnvironmentItem[]> {
-    const items: EnvironmentItem[] = [];
-    const lsClientStatusItem = createLSClientItem(this.lsClientStatus);
-    items.push(lsClientStatusItem);
-    items.push(...(await createZenMLStatusItems()));
-    items.push(...(await createInterpreterDetails()));
-    items.push(...(await createWorkspaceSettingsItems()));
-
+    const items: EnvironmentItem[] = [
+      createLSClientItem(this.lsClientStatus),
+      createZenMLInstallationItem(this.zenmlInstallationStatus),
+      createZenMLClientStatusItem(),
+      ...(await createInterpreterDetails()),
+      ...(await createWorkspaceSettingsItems()),
+    ];
     return items;
   }
 
