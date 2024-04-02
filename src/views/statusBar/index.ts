@@ -46,7 +46,8 @@ export default class ZenMLStatusBar {
   private subscribeToEvents(): void {
     this.eventBus.on(LSP_ZENML_STACK_CHANGED, async () => {
       await this.refreshActiveStack();
-      await stackCommands.refreshStackView();
+      // no need to refresh stack view here, stack data provider does this already
+      // await stackCommands.refreshStackView();
     });
 
     this.eventBus.on(SERVER_STATUS_UPDATED, ({ isConnected, serverUrl }) => {

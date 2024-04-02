@@ -105,6 +105,7 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
   public async refresh(): Promise<void> {
     this.stacks = [LOADING_TREE_ITEMS.get('stacks')!];
     this._onDidChangeTreeData.fire(undefined);
+
     const page = this.pagination.currentPage;
     const itemsPerPage = this.pagination.itemsPerPage;
 
@@ -200,6 +201,10 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
    */
   async getChildren(element?: TreeItem): Promise<TreeItem[] | undefined> {
     if (!element) {
+      if (Array.isArray(this.stacks) && this.stacks.length > 0) {
+        return this.stacks;
+      }
+
       const stacks = await this.fetchStacksWithComponents(this.pagination.currentPage, this.pagination.itemsPerPage);
       if (this.pagination.currentPage < this.pagination.totalPages) {
         stacks.push(new CommandTreeItem("Next Page", 'zenml.nextStackPage', undefined, 'arrow-circle-right'));

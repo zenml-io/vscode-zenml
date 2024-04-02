@@ -150,7 +150,6 @@ export class ServerDataProvider implements TreeDataProvider<TreeItem> {
   async getChildren(element?: TreeItem): Promise<TreeItem[] | undefined> {
     if (!element) {
       if (isServerStatus(this.currentStatus)) {
-        console.log(this.currentStatus);
         const updatedServerTreeItem = new ServerTreeItem('Server Status', this.currentStatus);
         return [updatedServerTreeItem];
       } else if (Array.isArray(this.currentStatus)) {

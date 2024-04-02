@@ -97,4 +97,4 @@ git push origin feature/your-feature-name
 
 - [ZenML VSCode Extension Repository](https://github.com/zenml-io/vscode-zenml)
 - [ZenML Documentation](https://docs.zenml.io)
-- [ZenML Slack Community](https://zenml.io/slack-invite)
+- [ZenML Slack Community](https://zenml.io/slack)
