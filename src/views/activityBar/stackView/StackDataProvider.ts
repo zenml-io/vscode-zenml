@@ -14,7 +14,7 @@ import { Event, EventEmitter, TreeDataProvider, TreeItem, window, workspace } fr
 import { State } from 'vscode-languageclient';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
-import { Stack, StackComponent, StacksReponse } from '../../../types/StackTypes';
+import { Stack, StackComponent, StacksResponse } from '../../../types/StackTypes';
 import {
   ITEMS_PER_PAGE_OPTIONS,
   LSCLIENT_STATE_CHANGED,
@@ -130,7 +130,7 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
 
     try {
       const lsClient = LSClient.getInstance();
-      const result = await lsClient.sendLsClientRequest<StacksReponse>(
+      const result = await lsClient.sendLsClientRequest<StacksResponse>(
         'fetchStacks',
         [page, itemsPerPage]
       );

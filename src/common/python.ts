@@ -92,7 +92,7 @@ export function checkVersion(resolved: ResolvedEnvironment | undefined): boolean
   return false;
 }
 
-export function isPythonVersonSupported(resolvedEnv: ResolvedEnvironment | undefined): {
+export function isPythonVersionSupported(resolvedEnv: ResolvedEnvironment | undefined): {
   isSupported: boolean;
   message?: string;
 } {

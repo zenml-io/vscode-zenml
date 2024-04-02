@@ -22,7 +22,7 @@ import { registerLogger, traceLog, traceVerbose } from '../common/log/logging';
 import {
   IInterpreterDetails,
   initializePython,
-  isPythonVersonSupported,
+  isPythonVersionSupported,
   onDidChangePythonInterpreter,
   resolveInterpreter,
 } from '../common/python';
@@ -132,7 +132,7 @@ export class ZenExtension {
         this.interpreterCheckInProgress = true;
         if (interpreterDetails.path) {
           const resolvedEnv = await resolveInterpreter(interpreterDetails.path);
-          const { isSupported, message } = isPythonVersonSupported(resolvedEnv);
+          const { isSupported, message } = isPythonVersionSupported(resolvedEnv);
           if (!isSupported) {
             vscode.window.showErrorMessage(`Interpreter not supported: ${message}`);
             this.interpreterCheckInProgress = false;

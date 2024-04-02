@@ -42,6 +42,6 @@ interface StackComponent {
   type: string;
 }
 
-export type StacksReponse = StacksData | ErrorMessageResponse | VersionMismatchError;
+export type StacksResponse = StacksData | ErrorMessageResponse | VersionMismatchError;
 
 export { Stack, Components, StackComponent, StacksData };
