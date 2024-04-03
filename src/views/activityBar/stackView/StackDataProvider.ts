@@ -14,14 +14,14 @@ import { Event, EventEmitter, TreeDataProvider, TreeItem, window, workspace } fr
 import { State } from 'vscode-languageclient';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
-import { Stack, StackComponent, StacksReponse } from '../../../types/StackTypes';
+import { Stack, StackComponent, StacksResponse } from '../../../types/StackTypes';
 import {
   ITEMS_PER_PAGE_OPTIONS,
   LSCLIENT_STATE_CHANGED,
   LSP_ZENML_CLIENT_INITIALIZED,
   LSP_ZENML_STACK_CHANGED,
 } from '../../../utils/constants';
-import { ErrorTreeItem, createErrorItem } from '../common/ErrorTreeItem';
+import { ErrorTreeItem, createErrorItem, createAuthErrorItem } from '../common/ErrorTreeItem';
 import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
 import { StackComponentTreeItem, StackTreeItem } from './StackTreeItems';
 import { CommandTreeItem } from '../common/PaginationTreeItems';
@@ -131,10 +131,18 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
 
     try {
       const lsClient = LSClient.getInstance();
-      const result = await lsClient.sendLsClientRequest<StacksReponse>(
+      const result = await lsClient.sendLsClientRequest<StacksResponse>(
         'fetchStacks',
         [page, itemsPerPage]
       );
+
+      if (Array.isArray(result) && result.length === 1 && 'error' in result[0]) {
+        const errorMessage = result[0].error;
+        if (errorMessage.includes('Authentication error')) {
+          return createAuthErrorItem(errorMessage);
+        }
+      }
+
       if (!result || 'error' in result) {
         if ('clientVersion' in result && 'serverVersion' in result) {
           return createErrorItem(result);
