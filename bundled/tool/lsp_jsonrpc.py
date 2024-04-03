@@ -60,7 +60,9 @@ class JsonWriter:
         with self._lock:
             content = json.dumps(data)
             length = len(content.encode("utf-8"))
-            self._writer.write(f"{CONTENT_LENGTH}{length}\r\n\r\n{content}".encode("utf-8"))
+            self._writer.write(
+                f"{CONTENT_LENGTH}{length}\r\n\r\n{content}".encode("utf-8")
+            )
             self._writer.flush()
 
 
@@ -110,11 +112,11 @@ class JsonRpc:
         """Closes the underlying streams."""
         try:
             self._reader.close()
-        except:  # pylint: disable=bare-except
+        except:  # noqa: E722 # pylint: disable=bare-except
             pass
         try:
             self._writer.close()
-        except:  # pylint: disable=bare-except
+        except:  # noqa: E722 # pylint: disable=bare-except
             pass
 
     def send_data(self, data):
@@ -146,7 +148,7 @@ class ProcessManager:
         for i in self._rpc.values():
             try:
                 i.send_data({"id": str(uuid.uuid4()), "method": "exit"})
-            except:  # pylint: disable=bare-except
+            except:  # noqa: E722 # pylint: disable=bare-except
                 pass
         self._thread_pool.shutdown(wait=False)
 
@@ -169,7 +171,7 @@ class ProcessManager:
                     del self._processes[workspace]
                     rpc = self._rpc.pop(workspace)
                     rpc.close()
-                except:  # pylint: disable=bare-except
+                except:  # noqa: E722 # pylint: disable=bare-except
                     pass
 
         self._thread_pool.submit(_monitor_process)
@@ -249,7 +251,9 @@ def run_over_json_rpc(
     data = rpc.receive_data()
 
     if data["id"] != msg_id:
-        return RpcRunResult("", f"Invalid result for request: {json.dumps(msg, indent=4)}")
+        return RpcRunResult(
+            "", f"Invalid result for request: {json.dumps(msg, indent=4)}"
+        )
 
     result = data["result"] if "result" in data else ""
     if "error" in data:
