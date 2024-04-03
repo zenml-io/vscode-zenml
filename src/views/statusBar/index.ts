@@ -10,8 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import * as vscode from 'vscode';
-import { stackCommands } from '../../commands/stack/cmds';
+import { StatusBarAlignment, StatusBarItem, ThemeColor, window } from 'vscode';
 import { getActiveStack } from '../../commands/stack/utils';
 import { EventBus } from '../../services/EventBus';
 import { LSP_ZENML_STACK_CHANGED, SERVER_STATUS_UPDATED } from '../../utils/constants';
@@ -22,8 +21,8 @@ import { LSP_ZENML_STACK_CHANGED, SERVER_STATUS_UPDATED } from '../../utils/cons
  */
 export default class ZenMLStatusBar {
   private static instance: ZenMLStatusBar;
-  private serverStatusItem: vscode.StatusBarItem;
-  private activeStackItem: vscode.StatusBarItem;
+  private statusBarItem: StatusBarItem;
+  private currentStatus = { isConnected: false, serverUrl: '' }
   private activeStack: string = 'Loading...';
   private eventBus = EventBus.getInstance();
 
@@ -33,8 +32,7 @@ export default class ZenMLStatusBar {
    * and initiates the initial refresh of the status bar state.
    */
   constructor() {
-    this.serverStatusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-    this.activeStackItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 99);
+    this.statusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 100);
     this.subscribeToEvents();
   }
 
@@ -46,12 +44,11 @@ export default class ZenMLStatusBar {
   private subscribeToEvents(): void {
     this.eventBus.on(LSP_ZENML_STACK_CHANGED, async () => {
       await this.refreshActiveStack();
-      // no need to refresh stack view here, stack data provider does this already
-      // await stackCommands.refreshStackView();
     });
 
     this.eventBus.on(SERVER_STATUS_UPDATED, ({ isConnected, serverUrl }) => {
-      this.updateServerStatusIndicator(isConnected, serverUrl);
+      this.updateStatusBarItem(isConnected, serverUrl);
+      this.currentStatus = { isConnected, serverUrl };
     });
   }
 
@@ -71,34 +68,32 @@ export default class ZenMLStatusBar {
   /**
    * Asynchronously refreshes the active stack display in the status bar.
    * Attempts to retrieve the current active stack name and updates the status bar item accordingly.
-   * Displays an error message in the status bar if unable to fetch the active stack.
    */
   public async refreshActiveStack(): Promise<void> {
+    this.statusBarItem.text = `$(loading~spin) Loading...`;
+    this.statusBarItem.show();
+
     try {
       const activeStack = await getActiveStack();
       this.activeStack = activeStack?.name || 'default';
-      this.activeStackItem.text = `${this.activeStack}`;
-      this.activeStackItem.tooltip = 'Active ZenML stack.';
-      this.activeStackItem.show();
     } catch (error) {
       console.error('Failed to fetch active ZenML stack:', error);
       this.activeStack = 'Error';
     }
+    this.updateStatusBarItem(this.currentStatus.isConnected, this.currentStatus.serverUrl);
   }
 
   /**
-   * Updates the server status indicator in the status bar.
-   * Sets the text, color, and tooltip of the server status item based on the connection status.
-   *
-   * @param {boolean} isConnected Whether the server is currently connected.
-   * @param {string} serverAddress The address of the server, used in the tooltip.
-   */
-  public updateServerStatusIndicator(isConnected: boolean, serverAddress: string) {
-    this.serverStatusItem.text = isConnected ? `$(vm-active)` : `$(vm-connect)`;
-    this.serverStatusItem.color = isConnected ? 'green' : '';
-    this.serverStatusItem.tooltip = isConnected
-      ? `Server running at ${serverAddress}.`
-      : 'Server not running. Click to refresh status.';
-    this.serverStatusItem.show();
+    * Updates the status bar item with the server status and active stack information.
+    *
+    * @param {boolean} isConnected Whether the server is currently connected.
+    * @param {string} serverUrl The url of the server, used in the tooltip.
+    */
+  private updateStatusBarItem(isConnected: boolean, serverUrl: string) {
+    this.statusBarItem.text = `⛩ ${this.activeStack}`;
+    this.statusBarItem.tooltip = isConnected
+      ? `URL: ${serverUrl}. Active stack: ${this.activeStack}`
+      : 'ZenML server not running. Click to refresh status.';
+    this.statusBarItem.show();
   }
 }

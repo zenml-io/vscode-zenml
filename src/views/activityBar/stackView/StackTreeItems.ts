@@ -33,7 +33,7 @@ export class StackTreeItem extends vscode.TreeItem {
     this.isActive = isActive || false;
 
     if (isActive) {
-      this.label = `${this.label} 🟢`;
+      this.iconPath = new vscode.ThemeIcon('pass-filled', new vscode.ThemeColor('charts.green'));
     }
   }
 }
