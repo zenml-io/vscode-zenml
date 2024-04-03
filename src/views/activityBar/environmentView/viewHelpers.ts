@@ -49,16 +49,15 @@ export function createLSClientItem(lsClientStatus: State): EnvironmentItem {
  *
  * @returns {EnvironmentItem} The ZenML status items.
  */
-export function createZenMLClientStatusItem(): EnvironmentItem {
-  const zenmlReady = LSClient.getInstance().isZenMLReady;
+export function createZenMLClientStatusItem(zenmlClientReady: boolean): EnvironmentItem {
   const localZenML = LSClient.getInstance().localZenML;
 
 
   const zenMLClientStatusItem = new EnvironmentItem(
     'ZenML Client',
-    !localZenML.is_installed ? '' : zenmlReady ? 'Initialized' : 'Awaiting Initialization',
+    !localZenML.is_installed ? '' : zenmlClientReady ? 'Initialized' : 'Awaiting Initialization',
     TreeItemCollapsibleState.None,
-    !localZenML.is_installed ? 'error' : zenmlReady ? 'check' : 'sync~spin'
+    !localZenML.is_installed ? 'error' : zenmlClientReady ? 'check' : 'sync~spin'
   );
 
   return zenMLClientStatusItem;
