@@ -28,7 +28,6 @@ import {
 import { getZenMLServerUrl, updateServerUrlAndToken } from '../utils/global';
 import { debounce } from '../utils/refresh';
 import { EventBus } from './EventBus';
-import { ServerDataProvider } from '../views/activityBar';
 
 export class LSClient {
   private static instance: LSClient | null = null;

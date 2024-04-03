@@ -10,7 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import { ThemeIcon, TreeItem } from 'vscode';
+import { ThemeColor, ThemeIcon, TreeItem } from 'vscode';
 
 export interface GenericErrorTreeItem {
   label: string;
@@ -25,14 +25,14 @@ export class ErrorTreeItem extends TreeItem {
   constructor(label: string, description: string) {
     super(label);
     this.description = description;
-    this.iconPath = new ThemeIcon('error');
+    this.iconPath = new ThemeIcon('error', new ThemeColor('errorForeground'));
   }
 }
 
 export class VersionMismatchTreeItem extends ErrorTreeItem {
   constructor(clientVersion: string, serverVersion: string) {
     super(`Version mismatch detected`, `Client: ${clientVersion} – Server: ${serverVersion}`);
-    this.iconPath = new ThemeIcon('warning');
+    this.iconPath = new ThemeIcon('warning', new ThemeColor('warningForeground'));
   }
 }
 
@@ -45,3 +45,28 @@ export const createErrorItem = (error: any): TreeItem[] => {
   errorItems.push(new ErrorTreeItem(error.errorType || 'Error', error.message));
   return errorItems;
 };
+
+// Long-lived connections/Expiration of access token. Example:
+export const createAuthErrorItem = (errorMessage: string): ErrorTreeItem[] => {
+  const parts = errorMessage.split(':').map(part => part.trim());
+
+  let generalError = "";
+  let detailedError = "";
+  let actionSuggestion = "";
+
+  if (parts.length > 2) {
+    generalError = parts[0]; // "Failed to retrieve pipeline runs"
+    detailedError = parts[1] + ": " + parts[2].split('.')[0]; // "Authentication error: error decoding access token"
+    actionSuggestion = parts[2].split('. ')[1]; // "You may need to rerun zenml connect"
+  }
+
+  const errorItems = [
+    new ErrorTreeItem(parts[1], parts[2].split('.')[0]),
+  ];
+
+  if (actionSuggestion) {
+    errorItems.push(new ErrorTreeItem(actionSuggestion, ''));
+  }
+
+  return errorItems;
+}
