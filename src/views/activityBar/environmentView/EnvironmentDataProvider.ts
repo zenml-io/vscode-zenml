@@ -13,7 +13,7 @@
 import { EventEmitter, TreeDataProvider, TreeItem } from 'vscode';
 import { State } from 'vscode-languageclient';
 import { EventBus } from '../../../services/EventBus';
-import { LSCLIENT_STATE_CHANGED, LSP_IS_ZENML_INSTALLED, REFRESH_ENVIRONMENT_VIEW, ZENML_CLIENT_STATE_CHANGED } from '../../../utils/constants';
+import { LSCLIENT_STATE_CHANGED, LSP_IS_ZENML_INSTALLED, REFRESH_ENVIRONMENT_VIEW, LSP_ZENML_CLIENT_INITIALIZED } from '../../../utils/constants';
 import { EnvironmentItem } from './EnvironmentItem';
 import {
   createInterpreterDetails,
@@ -30,7 +30,7 @@ export class EnvironmentDataProvider implements TreeDataProvider<TreeItem> {
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
   private lsClientStatus: State = State.Stopped;
-  private zenmlClientStatus: State = State.Stopped;
+  private zenmlClientReady: boolean = false;
   private zenmlInstallationStatus: LSNotificationIsZenMLInstalled | null = null;
 
   private eventBus = EventBus.getInstance();
@@ -41,7 +41,7 @@ export class EnvironmentDataProvider implements TreeDataProvider<TreeItem> {
 
   private subscribeToEvents() {
     this.eventBus.on(LSCLIENT_STATE_CHANGED, this.handleLsClientStateChange.bind(this));
-    this.eventBus.on(ZENML_CLIENT_STATE_CHANGED, this.handleZenMLClientStateChange.bind(this));
+    this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, this.handleZenMLClientStateChange.bind(this));
     this.eventBus.on(LSP_IS_ZENML_INSTALLED, this.handleIsZenMLInstalled.bind(this));
     this.eventBus.on(REFRESH_ENVIRONMENT_VIEW, this.refresh.bind(this));
   }
@@ -63,7 +63,8 @@ export class EnvironmentDataProvider implements TreeDataProvider<TreeItem> {
   * Explicitly trigger loading state for ZenML installation check and ZenML client initialization.
   */
   private triggerLoadingStateForZenMLChecks() {
-    this.zenmlClientStatus = State.Starting;
+    this.zenmlClientReady = false;
+    this.zenmlInstallationStatus = null;
     this.refresh();
   }
 
@@ -83,10 +84,10 @@ export class EnvironmentDataProvider implements TreeDataProvider<TreeItem> {
   /**
    * Handles the change in the ZenML client state.
    *
-   * @param {State} status The new ZenML client state.
+   * @param {boolean} isReady The new ZenML client state.
    */
-  private handleZenMLClientStateChange(status: State) {
-    this.zenmlClientStatus = status;
+  private handleZenMLClientStateChange(isReady: boolean) {
+    this.zenmlClientReady = isReady;
     this.refresh();
   }
 
@@ -124,7 +125,7 @@ export class EnvironmentDataProvider implements TreeDataProvider<TreeItem> {
     const items: EnvironmentItem[] = [
       createLSClientItem(this.lsClientStatus),
       createZenMLInstallationItem(this.zenmlInstallationStatus),
-      createZenMLClientStatusItem(),
+      createZenMLClientStatusItem(this.zenmlClientReady),
       ...(await createInterpreterDetails()),
       ...(await createWorkspaceSettingsItems()),
     ];

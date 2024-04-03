@@ -24,7 +24,6 @@ import {
   LSP_ZENML_STACK_CHANGED,
   PYTOOL_MODULE,
   REFRESH_ENVIRONMENT_VIEW,
-  ZENML_CLIENT_STATE_CHANGED,
 } from '../utils/constants';
 import { getZenMLServerUrl, updateServerUrlAndToken } from '../utils/global';
 import { debounce } from '../utils/refresh';
