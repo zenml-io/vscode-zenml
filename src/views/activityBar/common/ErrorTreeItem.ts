@@ -48,16 +48,16 @@ export const createErrorItem = (error: any): TreeItem[] => {
 
 /**
  * Creates an error item for authentication errors.
- * 
+ *
  * @param errorMessage The error message to parse.
  * @returns The error tree item(s),
  */
 export const createAuthErrorItem = (errorMessage: string): ErrorTreeItem[] => {
   const parts = errorMessage.split(':').map(part => part.trim());
 
-  let generalError = "";
-  let detailedError = "";
-  let actionSuggestion = "";
+  let generalError = '';
+  let detailedError = '';
+  let actionSuggestion = '';
 
   if (parts.length > 2) {
     generalError = parts[0]; // "Failed to retrieve pipeline runs"
@@ -76,4 +76,4 @@ export const createAuthErrorItem = (errorMessage: string): ErrorTreeItem[] => {
   }
 
   return errorItems;
-}
+};

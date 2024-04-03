@@ -82,10 +82,14 @@ export class ServerTreeItem extends TreeItem {
       children.push(new ServerDetailTreeItem('Username', this.serverStatus.username, 'account'));
     }
     if (this.serverStatus.debug !== undefined) {
-      children.push(new ServerDetailTreeItem('Debug', this.serverStatus.debug ? 'true' : 'false', 'bug'));
+      children.push(
+        new ServerDetailTreeItem('Debug', this.serverStatus.debug ? 'true' : 'false', 'bug')
+      );
     }
     if (this.serverStatus.auth_scheme) {
-      children.push(new ServerDetailTreeItem('Auth Scheme', this.serverStatus.auth_scheme, 'shield'));
+      children.push(
+        new ServerDetailTreeItem('Auth Scheme', this.serverStatus.auth_scheme, 'shield')
+      );
     }
     // Specific to SQL Server Status
     if (this.serverStatus.database) {
@@ -97,7 +101,9 @@ export class ServerTreeItem extends TreeItem {
       );
     }
     if (this.serverStatus.backup_strategy) {
-      children.push(new ServerDetailTreeItem('Backup Strategy', this.serverStatus.backup_strategy, 'shield'));
+      children.push(
+        new ServerDetailTreeItem('Backup Strategy', this.serverStatus.backup_strategy, 'shield')
+      );
     }
 
     return children;

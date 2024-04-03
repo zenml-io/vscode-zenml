@@ -13,7 +13,6 @@
 
 import { ErrorMessageResponse, VersionMismatchError } from './LSClientResponseTypes';
 
-
 interface PipelineRunsData {
   runs: PipelineRun[];
   total: number;

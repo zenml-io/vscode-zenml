@@ -35,7 +35,7 @@ async function getPythonExtensionAPI(): Promise<PythonExtension | undefined> {
 
 /**
  * Initialize the python extension.
- * 
+ *
  * @param disposables - List of disposables to be disposed when the extension is deactivated.
  */
 export async function initializePython(disposables: Disposable[]): Promise<void> {
@@ -57,12 +57,12 @@ export async function initializePython(disposables: Disposable[]): Promise<void>
   }
 }
 
-/** 
+/**
  * Resolve the python interpreter.
- * 
+ *
  * @param interpreter - The interpreter to resolve.
  * @returns The resolved environment.
-*/
+ */
 export async function resolveInterpreter(
   interpreter: string[]
 ): Promise<ResolvedEnvironment | undefined> {
@@ -72,7 +72,7 @@ export async function resolveInterpreter(
 
 /**
  * Get the interpreter details.
- * 
+ *
  * @param resource - The resource to get the interpreter details from.
  * @returns The interpreter details.
  */
@@ -89,7 +89,7 @@ export async function getInterpreterDetails(resource?: Uri): Promise<IInterprete
 
 /**
  * Get the path to the debugger.
- * 
+ *
  * @returns The path to the debugger.
  */
 export async function getDebuggerPath(): Promise<string | undefined> {
@@ -99,7 +99,7 @@ export async function getDebuggerPath(): Promise<string | undefined> {
 
 /**
  * Run a python extension command.
- * 
+ *
  * @param command - The command to run.
  * @param rest - The rest of the arguments.
  * @returns The result of the command.
@@ -111,7 +111,7 @@ export async function runPythonExtensionCommand(command: string, ...rest: any[])
 
 /**
  * Check if the python version is supported.
- * 
+ *
  * @param resolved - The resolved environment.
  * @returns True if the version is supported, false otherwise.
  */
@@ -127,12 +127,12 @@ export function checkVersion(resolved: ResolvedEnvironment | undefined): boolean
   return false;
 }
 
-/**  
+/**
  * Check if the python version is supported.
- * 
+ *
  * @param resolvedEnv - The resolved environment.
  * @returns An object with the result and an optional message.
-*/
+ */
 export function isPythonVersionSupported(resolvedEnv: ResolvedEnvironment | undefined): {
   isSupported: boolean;
   message?: string;
