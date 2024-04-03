@@ -45,7 +45,6 @@ export class PipelineDataProvider implements TreeDataProvider<TreeItem> {
     totalPages: 0,
   };
 
-
   constructor() {
     this.subscribeToEvents();
   }
@@ -133,12 +132,29 @@ export class PipelineDataProvider implements TreeDataProvider<TreeItem> {
         return this.pipelineRuns;
       }
 
-      const runs = await this.fetchPipelineRuns(this.pagination.currentPage, this.pagination.itemsPerPage);
+      const runs = await this.fetchPipelineRuns(
+        this.pagination.currentPage,
+        this.pagination.itemsPerPage
+      );
       if (this.pagination.currentPage < this.pagination.totalPages) {
-        runs.push(new CommandTreeItem("Next Page", 'zenml.nextPipelineRunsPage', undefined, 'arrow-circle-right'));
+        runs.push(
+          new CommandTreeItem(
+            'Next Page',
+            'zenml.nextPipelineRunsPage',
+            undefined,
+            'arrow-circle-right'
+          )
+        );
       }
       if (this.pagination.currentPage > 1) {
-        runs.unshift(new CommandTreeItem("Previous Page", 'zenml.previousPipelineRunsPage', undefined, 'arrow-circle-left'));
+        runs.unshift(
+          new CommandTreeItem(
+            'Previous Page',
+            'zenml.previousPipelineRunsPage',
+            undefined,
+            'arrow-circle-left'
+          )
+        );
       }
       return runs;
     } else if (element instanceof PipelineTreeItem) {
@@ -157,10 +173,10 @@ export class PipelineDataProvider implements TreeDataProvider<TreeItem> {
     }
     try {
       const lsClient = LSClient.getInstance();
-      const result = await lsClient.sendLsClientRequest<PipelineRunsResponse>(
-        'getPipelineRuns',
-        [page, itemsPerPage]
-      );
+      const result = await lsClient.sendLsClientRequest<PipelineRunsResponse>('getPipelineRuns', [
+        page,
+        itemsPerPage,
+      ]);
 
       if (Array.isArray(result) && result.length === 1 && 'error' in result[0]) {
         const errorMessage = result[0].error;
@@ -209,7 +225,12 @@ export class PipelineDataProvider implements TreeDataProvider<TreeItem> {
       }
     } catch (error: any) {
       console.error(`Failed to fetch stacks: ${error}`);
-      return [new ErrorTreeItem("Error", `Failed to fetch pipeline runs: ${error.message || error.toString()}`)];
+      return [
+        new ErrorTreeItem(
+          'Error',
+          `Failed to fetch pipeline runs: ${error.message || error.toString()}`
+        ),
+      ];
     }
   }
 
@@ -229,7 +250,7 @@ export class PipelineDataProvider implements TreeDataProvider<TreeItem> {
 
   public async updateItemsPerPage() {
     const selected = await window.showQuickPick(ITEMS_PER_PAGE_OPTIONS, {
-      placeHolder: "Choose the max number of pipeline runs to display per page",
+      placeHolder: 'Choose the max number of pipeline runs to display per page',
     });
     if (selected) {
       this.pagination.itemsPerPage = parseInt(selected, 10);

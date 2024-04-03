@@ -134,7 +134,10 @@ export class ServerDataProvider implements TreeDataProvider<TreeItem> {
   getTreeItem(element: TreeItem): TreeItem {
     if (element instanceof ServerTreeItem) {
       if (element.serverStatus.isConnected) {
-        element.iconPath = new ThemeIcon('vm-active', new ThemeColor('gitDecoration.addedResourceForeground'));
+        element.iconPath = new ThemeIcon(
+          'vm-active',
+          new ThemeColor('gitDecoration.addedResourceForeground')
+        );
       } else {
         element.iconPath = new ThemeIcon('vm-connect');
       }

@@ -43,7 +43,6 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
     totalPages: 0,
   };
 
-
   constructor() {
     this.subscribeToEvents();
   }
@@ -124,17 +123,20 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
    *
    * @returns {Promise<StackTreeItem[]>} A promise that resolves with an array of `StackTreeItem` objects.
    */
-  async fetchStacksWithComponents(page: number = 1, itemsPerPage: number = 20): Promise<TreeItem[]> {
+  async fetchStacksWithComponents(
+    page: number = 1,
+    itemsPerPage: number = 20
+  ): Promise<TreeItem[]> {
     if (!this.zenmlClientReady) {
       return [LOADING_TREE_ITEMS.get('zenmlClient')!];
     }
 
     try {
       const lsClient = LSClient.getInstance();
-      const result = await lsClient.sendLsClientRequest<StacksResponse>(
-        'fetchStacks',
-        [page, itemsPerPage]
-      );
+      const result = await lsClient.sendLsClientRequest<StacksResponse>('fetchStacks', [
+        page,
+        itemsPerPage,
+      ]);
 
       if (Array.isArray(result) && result.length === 1 && 'error' in result[0]) {
         const errorMessage = result[0].error;
@@ -171,8 +173,9 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
       }
     } catch (error: any) {
       console.error(`Failed to fetch stacks: ${error}`);
-      return [new ErrorTreeItem("Error", `Failed to fetch stacks: ${error.message || error.toString()}`)];
-
+      return [
+        new ErrorTreeItem('Error', `Failed to fetch stacks: ${error.message || error.toString()}`),
+      ];
     }
   }
 
@@ -192,7 +195,7 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
 
   public async updateItemsPerPage() {
     const selected = await window.showQuickPick(ITEMS_PER_PAGE_OPTIONS, {
-      placeHolder: "Choose the max number of stacks to display per page",
+      placeHolder: 'Choose the max number of stacks to display per page',
     });
     if (selected) {
       this.pagination.itemsPerPage = parseInt(selected, 10);
@@ -213,12 +216,24 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
         return this.stacks;
       }
 
-      const stacks = await this.fetchStacksWithComponents(this.pagination.currentPage, this.pagination.itemsPerPage);
+      const stacks = await this.fetchStacksWithComponents(
+        this.pagination.currentPage,
+        this.pagination.itemsPerPage
+      );
       if (this.pagination.currentPage < this.pagination.totalPages) {
-        stacks.push(new CommandTreeItem("Next Page", 'zenml.nextStackPage', undefined, 'arrow-circle-right'));
+        stacks.push(
+          new CommandTreeItem('Next Page', 'zenml.nextStackPage', undefined, 'arrow-circle-right')
+        );
       }
       if (this.pagination.currentPage > 1) {
-        stacks.unshift(new CommandTreeItem("Previous Page", 'zenml.previousStackPage', undefined, 'arrow-circle-left'));
+        stacks.unshift(
+          new CommandTreeItem(
+            'Previous Page',
+            'zenml.previousStackPage',
+            undefined,
+            'arrow-circle-left'
+          )
+        );
       }
       return stacks;
     } else if (element instanceof StackTreeItem) {

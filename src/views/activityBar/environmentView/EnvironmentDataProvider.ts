@@ -13,7 +13,12 @@
 import { EventEmitter, TreeDataProvider, TreeItem } from 'vscode';
 import { State } from 'vscode-languageclient';
 import { EventBus } from '../../../services/EventBus';
-import { LSCLIENT_STATE_CHANGED, LSP_IS_ZENML_INSTALLED, REFRESH_ENVIRONMENT_VIEW, LSP_ZENML_CLIENT_INITIALIZED } from '../../../utils/constants';
+import {
+  LSCLIENT_STATE_CHANGED,
+  LSP_IS_ZENML_INSTALLED,
+  REFRESH_ENVIRONMENT_VIEW,
+  LSP_ZENML_CLIENT_INITIALIZED,
+} from '../../../utils/constants';
 import { EnvironmentItem } from './EnvironmentItem';
 import {
   createInterpreterDetails,
@@ -46,7 +51,6 @@ export class EnvironmentDataProvider implements TreeDataProvider<TreeItem> {
     this.eventBus.on(REFRESH_ENVIRONMENT_VIEW, this.refresh.bind(this));
   }
 
-
   /**
    * Retrieves the singleton instance of ServerDataProvider.
    *
@@ -60,8 +64,8 @@ export class EnvironmentDataProvider implements TreeDataProvider<TreeItem> {
   }
 
   /**
-  * Explicitly trigger loading state for ZenML installation check and ZenML client initialization.
-  */
+   * Explicitly trigger loading state for ZenML installation check and ZenML client initialization.
+   */
   private triggerLoadingStateForZenMLChecks() {
     this.zenmlClientReady = false;
     this.zenmlInstallationStatus = null;

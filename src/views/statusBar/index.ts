@@ -22,7 +22,7 @@ import { LSP_ZENML_STACK_CHANGED, SERVER_STATUS_UPDATED } from '../../utils/cons
 export default class ZenMLStatusBar {
   private static instance: ZenMLStatusBar;
   private statusBarItem: StatusBarItem;
-  private currentStatus = { isConnected: false, serverUrl: '' }
+  private currentStatus = { isConnected: false, serverUrl: '' };
   private activeStack: string = 'Loading...';
   private eventBus = EventBus.getInstance();
 
@@ -84,11 +84,11 @@ export default class ZenMLStatusBar {
   }
 
   /**
-    * Updates the status bar item with the server status and active stack information.
-    *
-    * @param {boolean} isConnected Whether the server is currently connected.
-    * @param {string} serverUrl The url of the server, used in the tooltip.
-    */
+   * Updates the status bar item with the server status and active stack information.
+   *
+   * @param {boolean} isConnected Whether the server is currently connected.
+   * @param {string} serverUrl The url of the server, used in the tooltip.
+   */
   private updateStatusBarItem(isConnected: boolean, serverUrl: string) {
     this.statusBarItem.text = `⛩ ${this.activeStack}`;
     this.statusBarItem.tooltip = isConnected

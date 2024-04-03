@@ -32,7 +32,6 @@ export function createLSClientItem(lsClientStatus: State): EnvironmentItem {
     [State.Stopped]: { description: 'Stopped', icon: 'close' },
   };
 
-
   const { description, icon } = statusMappings[lsClientStatus];
 
   return new EnvironmentItem(
@@ -52,7 +51,6 @@ export function createLSClientItem(lsClientStatus: State): EnvironmentItem {
 export function createZenMLClientStatusItem(zenmlClientReady: boolean): EnvironmentItem {
   const localZenML = LSClient.getInstance().localZenML;
 
-
   const zenMLClientStatusItem = new EnvironmentItem(
     'ZenML Client',
     !localZenML.is_installed ? '' : zenmlClientReady ? 'Initialized' : 'Awaiting Initialization',
@@ -65,11 +63,13 @@ export function createZenMLClientStatusItem(zenmlClientReady: boolean): Environm
 
 /**
  * Creates the ZenML installation item for the environment view.
- * 
+ *
  * @param installationStatus The installation status of ZenML.
  * @returns {EnvironmentItem} The ZenML installation item.
  */
-export function createZenMLInstallationItem(installationStatus: LSNotificationIsZenMLInstalled | null): EnvironmentItem {
+export function createZenMLInstallationItem(
+  installationStatus: LSNotificationIsZenMLInstalled | null
+): EnvironmentItem {
   if (!installationStatus) {
     return new EnvironmentItem(
       'ZenML Local Installation',
@@ -79,7 +79,9 @@ export function createZenMLInstallationItem(installationStatus: LSNotificationIs
     );
   }
 
-  const description = installationStatus.is_installed ? `Installed (v${installationStatus.version})` : 'Not Installed';
+  const description = installationStatus.is_installed
+    ? `Installed (v${installationStatus.version})`
+    : 'Not Installed';
   const icon = installationStatus.is_installed ? 'check' : 'warning';
 
   return new EnvironmentItem(
@@ -89,7 +91,6 @@ export function createZenMLInstallationItem(installationStatus: LSNotificationIs
     icon
   );
 }
-
 
 /**
  * Creates the workspace settings items for the environment view.
