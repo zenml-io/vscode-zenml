@@ -57,7 +57,7 @@ export function createZenMLClientStatusItem(zenmlClientReady: boolean): Environm
     'ZenML Client',
     !localZenML.is_installed ? '' : zenmlClientReady ? 'Initialized' : 'Awaiting Initialization',
     TreeItemCollapsibleState.None,
-    !localZenML.is_installed ? 'error' : zenmlClientReady ? 'check' : 'sync~spin'
+    !localZenML.is_installed ? 'warning' : zenmlClientReady ? 'check' : 'sync~spin'
   );
 
   return zenMLClientStatusItem;
@@ -80,7 +80,7 @@ export function createZenMLInstallationItem(installationStatus: LSNotificationIs
   }
 
   const description = installationStatus.is_installed ? `Installed (v${installationStatus.version})` : 'Not Installed';
-  const icon = installationStatus.is_installed ? 'check' : 'error';
+  const icon = installationStatus.is_installed ? 'check' : 'warning';
 
   return new EnvironmentItem(
     'ZenML Local Installation',

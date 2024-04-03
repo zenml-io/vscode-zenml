@@ -41,6 +41,8 @@ export class EnvironmentItem extends TreeItem {
           return new ThemeIcon('close', new ThemeColor('gitDecoration.deletedResourceForeground'));
         case 'error':
           return new ThemeIcon('error', new ThemeColor('errorForeground'));
+        case 'warning':
+          return new ThemeIcon('warning', new ThemeColor('charts.yellow'));
         default:
           return new ThemeIcon(this.customIcon);
       }
