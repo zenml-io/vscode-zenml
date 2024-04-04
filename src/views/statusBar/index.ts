@@ -10,10 +10,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import { StatusBarAlignment, StatusBarItem, ThemeColor, window } from 'vscode';
-import { getActiveStack } from '../../commands/stack/utils';
+import { QuickPickItemKind, StatusBarAlignment, StatusBarItem, commands, window } from 'vscode';
+import { getActiveStack, switchActiveStack } from '../../commands/stack/utils';
 import { EventBus } from '../../services/EventBus';
 import { LSP_ZENML_STACK_CHANGED, SERVER_STATUS_UPDATED } from '../../utils/constants';
+import { StackDataProvider } from '../activityBar';
 
 /**
  * Represents the ZenML extension's status bar.
@@ -22,8 +23,9 @@ import { LSP_ZENML_STACK_CHANGED, SERVER_STATUS_UPDATED } from '../../utils/cons
 export default class ZenMLStatusBar {
   private static instance: ZenMLStatusBar;
   private statusBarItem: StatusBarItem;
-  private currentStatus = { isConnected: false, serverUrl: '' };
-  private activeStack: string = 'Loading...';
+  private serverStatus = { isConnected: false, serverUrl: '' };
+  private activeStack: string = '$(loading~spin) Loading...';
+  private activeStackId: string = '';
   private eventBus = EventBus.getInstance();
 
   /**
@@ -34,6 +36,9 @@ export default class ZenMLStatusBar {
   constructor() {
     this.statusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 100);
     this.subscribeToEvents();
+
+    this.statusBarItem.command = 'zenml.switchStack';
+    commands.registerCommand('zenml.switchStack', () => this.switchStack());
   }
 
   /**
@@ -47,8 +52,8 @@ export default class ZenMLStatusBar {
     });
 
     this.eventBus.on(SERVER_STATUS_UPDATED, ({ isConnected, serverUrl }) => {
-      this.updateStatusBarItem(isConnected, serverUrl);
-      this.currentStatus = { isConnected, serverUrl };
+      this.updateStatusBarItem(isConnected);
+      this.serverStatus = { isConnected, serverUrl };
     });
   }
 
@@ -75,12 +80,13 @@ export default class ZenMLStatusBar {
 
     try {
       const activeStack = await getActiveStack();
+      this.activeStackId = activeStack?.id || '';
       this.activeStack = activeStack?.name || 'default';
     } catch (error) {
       console.error('Failed to fetch active ZenML stack:', error);
       this.activeStack = 'Error';
     }
-    this.updateStatusBarItem(this.currentStatus.isConnected, this.currentStatus.serverUrl);
+    this.updateStatusBarItem(this.serverStatus.isConnected);
   }
 
   /**
@@ -89,11 +95,78 @@ export default class ZenMLStatusBar {
    * @param {boolean} isConnected Whether the server is currently connected.
    * @param {string} serverUrl The url of the server, used in the tooltip.
    */
-  private updateStatusBarItem(isConnected: boolean, serverUrl: string) {
-    this.statusBarItem.text = `⛩ ${this.activeStack}`;
-    this.statusBarItem.tooltip = isConnected
-      ? `URL: ${serverUrl}. Active stack: ${this.activeStack}`
-      : 'ZenML server not running. Click to refresh status.';
+  private updateStatusBarItem(isConnected: boolean) {
+    this.statusBarItem.text = this.activeStack.includes('loading') ? this.activeStack : `⛩ ${this.activeStack}`;
+    const serverStatusText = isConnected ? 'Connected ✅' : 'Disconnected';
+    this.statusBarItem.tooltip = `Server Status: ${serverStatusText}\nActive Stack: ${this.activeStack}\n(click to switch stacks)`;
     this.statusBarItem.show();
+  }
+
+  /**
+   * Switches the active stack by prompting the user to select a stack from the available options.
+   * 
+   * @returns {Promise<void>} A promise that resolves when the active stack has been successfully switched.
+   */
+  private async switchStack(): Promise<void> {
+    const stackDataProvider = StackDataProvider.getInstance();
+    const stacks = await stackDataProvider.fetchStacksWithComponents();
+
+    if (stacks.length === 0) {
+      window.showErrorMessage('No stacks found.');
+      return;
+    }
+
+    const activeStack = stacks.find((stack) => stack.id === this.activeStackId);
+    const otherStacks = stacks.filter((stack) => stack.id !== this.activeStackId);
+
+    const quickPickItems = [
+      {
+        label: 'Current Active',
+        kind: QuickPickItemKind.Separator,
+      },
+      {
+        label: activeStack?.label as string,
+        id: activeStack?.id,
+        kind: QuickPickItemKind.Default,
+        disabled: true,
+      },
+      ...otherStacks.map((stack) => ({
+        id: stack.id,
+        label: stack.label as string,
+        kind: QuickPickItemKind.Default,
+      })),
+    ];
+
+    // Temporarily disable the tooltip to prevent it from appearing after making a selection
+    this.statusBarItem.tooltip = undefined;
+
+    const selectedStack = await window.showQuickPick(quickPickItems, {
+      placeHolder: 'Select a stack to switch to',
+      matchOnDescription: true,
+      matchOnDetail: true,
+      ignoreFocusOut: false,
+    });
+
+
+    if (selectedStack && selectedStack.id !== this.activeStackId) {
+      this.statusBarItem.text = `$(loading~spin) Switching...`;
+      this.statusBarItem.show();
+
+      const stackId = otherStacks.find((stack) => stack.label === selectedStack.label)?.id;
+      if (stackId) {
+        await switchActiveStack(stackId);
+        await StackDataProvider.getInstance().refresh();
+        this.activeStackId = stackId;
+        this.activeStack = selectedStack.label;
+        this.statusBarItem.text = `⛩ ${selectedStack.label}`;
+      }
+    }
+
+    this.statusBarItem.hide();
+    setTimeout(() => {
+      const serverStatusText = this.serverStatus.isConnected ? 'Connected ✅' : 'Disconnected (local)';
+      this.statusBarItem.tooltip = `Server Status: ${serverStatusText}\nActive Stack: ${this.activeStack}\n(click to switch stacks)`
+      this.statusBarItem.show();
+    }, 0);
   }
 }
