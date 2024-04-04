@@ -14,4 +14,3 @@ packaging
 # Tool-specific packages for ZenML extension
 watchdog
 PyYAML
-ruff
