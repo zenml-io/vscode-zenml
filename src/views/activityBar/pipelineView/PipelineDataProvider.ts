@@ -132,6 +132,7 @@ export class PipelineDataProvider implements TreeDataProvider<TreeItem> {
         return this.pipelineRuns;
       }
 
+      // Fetch pipeline runs for the current page and add pagination controls if necessary
       const runs = await this.fetchPipelineRuns(
         this.pagination.currentPage,
         this.pagination.itemsPerPage

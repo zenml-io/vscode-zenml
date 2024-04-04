@@ -113,7 +113,6 @@ const refreshServerStatus = async (): Promise<void> => {
     },
     async () => {
       await ServerDataProvider.getInstance().refresh();
-      // showInformationMessage('Server status refreshed.');
     }
   );
 };
