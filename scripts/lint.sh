@@ -7,7 +7,7 @@ export PYTHONPATH
 
 # Lint Python files with ruff
 echo "Linting Python files..."
-ruff bundled/tool
+ruff bundled/tool || { echo "Linting Python files failed"; exit 1; }
 
 # Lint TypeScript files with eslint
 echo "Linting TypeScript files..."
