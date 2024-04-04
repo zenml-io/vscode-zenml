@@ -34,7 +34,7 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
   private static instance: StackDataProvider | null = null;
   private eventBus = EventBus.getInstance();
   private zenmlClientReady = false;
-  public stacks: Stack[] | TreeItem[] = [LOADING_TREE_ITEMS.get('stacks')!];
+  public stacks: StackTreeItem[] | TreeItem[] = [LOADING_TREE_ITEMS.get('stacks')!];
 
   private pagination = {
     currentPage: 1,
