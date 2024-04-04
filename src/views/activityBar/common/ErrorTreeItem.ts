@@ -36,6 +36,12 @@ export class VersionMismatchTreeItem extends ErrorTreeItem {
   }
 }
 
+/**
+ * Creates an error item for the given error.
+ * 
+ * @param error The error to create an item for.
+ * @returns The error tree item(s).
+ */
 export const createErrorItem = (error: any): TreeItem[] => {
   const errorItems: TreeItem[] = [];
   console.log('Creating error item', error);
@@ -57,9 +63,9 @@ export const createAuthErrorItem = (errorMessage: string): ErrorTreeItem[] => {
   let [generalError, detailedError, actionSuggestion] = ['', '', ''];
 
   if (parts.length > 2) {
-    generalError = parts[0];
-    detailedError = `${parts[1]}: ${(parts[2].split('.')[0] || '').trim()}`;
-    actionSuggestion = (parts[2].split('. ')[1] || '').trim();
+    generalError = parts[0]; // "Failed to retrieve pipeline runs"
+    detailedError = `${parts[1]}: ${(parts[2].split('.')[0] || '').trim()}`; // "Authentication error: error decoding access token"
+    actionSuggestion = (parts[2].split('. ')[1] || '').trim(); // "You may need to rerun zenml connect"
   }
 
   const errorItems: ErrorTreeItem[] = [];
