@@ -38,7 +38,7 @@ export class VersionMismatchTreeItem extends ErrorTreeItem {
 
 /**
  * Creates an error item for the given error.
- * 
+ *
  * @param error The error to create an item for.
  * @returns The error tree item(s).
  */
