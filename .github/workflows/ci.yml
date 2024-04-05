@@ -23,10 +23,10 @@ jobs:
       - name: Build VSCode Extension
         run: npm run compile
 
-      - name: Run VSCode Extension Formatter
+      - name: Run Format Script for Python & TypeScript Files
         run: ./scripts/format.sh
 
-      - name: Run VSCode Extension Linter
+      - name: Run Lint Script for Python & TypeScript Files
         run: ./scripts/lint.sh
 
       - name: Run headless test

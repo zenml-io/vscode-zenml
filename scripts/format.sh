@@ -4,14 +4,6 @@ set -euxo pipefail
 # Source directory for Python tool
 python_src="bundled/tool"
 
-# Process arguments
-for arg in "$@"; do
-    if [ "$arg" = "--dry-run" ]; then
-        echo "Dry run mode enabled"
-        dry_run=true
-    fi
-done
-
 echo "Formatting Python files in bundled/tool..."
 find $python_src -name "*.py" -print0 | xargs -0 autoflake --in-place --remove-all-unused-imports
 find $python_src -name "*.py" -print0 | xargs -0 isort --

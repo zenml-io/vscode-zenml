@@ -3,6 +3,7 @@ set -euxo pipefail
 
 cd "$(dirname "$0")/.." || exit
 
+# Set PYTHONPATH to include bundled/tool
 PYTHONPATH="${PYTHONPATH-}:$(pwd)/bundled/tool"
 export PYTHONPATH
 
