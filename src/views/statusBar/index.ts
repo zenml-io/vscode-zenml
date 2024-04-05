@@ -15,6 +15,7 @@ import { getActiveStack, switchActiveStack } from '../../commands/stack/utils';
 import { EventBus } from '../../services/EventBus';
 import { LSP_ZENML_STACK_CHANGED, SERVER_STATUS_UPDATED } from '../../utils/constants';
 import { StackDataProvider } from '../activityBar';
+import { ErrorTreeItem } from '../activityBar/common/ErrorTreeItem';
 
 /**
  * Represents the ZenML extension's status bar.
@@ -116,10 +117,12 @@ export default class ZenMLStatusBar {
    */
   private async switchStack(): Promise<void> {
     const stackDataProvider = StackDataProvider.getInstance();
-    const stacks = await stackDataProvider.fetchStacksWithComponents();
+    const { stacks } = stackDataProvider;
 
-    if (stacks.length === 0) {
-      window.showErrorMessage('No stacks found.');
+    const containsErrors = stacks.some(stack => stack instanceof ErrorTreeItem);
+
+    if (containsErrors || stacks.length === 0) {
+      window.showErrorMessage('No stacks available.');
       return;
     }
 
