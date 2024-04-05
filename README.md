@@ -11,7 +11,8 @@ The ZenML VSCode extension seamlessly integrates with [ZenML](https://github.com
 - **Server, Stacks, and Pipeline Runs Views**: Interact directly with ML stacks, pipeline runs, and server configurations from the Activity Bar.
 - **Python Tool Integration**: Utilizes a Language Server Protocol (LSP) server for real-time synchronization with the ZenML environment.
 - **Real-Time Configuration Monitoring**: Leverages `watchdog` to dynamically update configurations, keeping the extension in sync with your ZenML setup.
-- **Status Bar Indicators**: Display the current stack name and connection status.
+- **Status Bar**: Display the current stack name and connection status. You can
+  also change your active stack from the status bar.
 
 ## Getting Started
 
