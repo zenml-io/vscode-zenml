@@ -11,7 +11,7 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import path from 'path';
-import { ThemeIcon, TreeItem, TreeItemCollapsibleState } from 'vscode';
+import { ThemeColor, ThemeIcon, TreeItem, TreeItemCollapsibleState } from 'vscode';
 
 export class EnvironmentItem extends TreeItem {
   constructor(
@@ -34,7 +34,18 @@ export class EnvironmentItem extends TreeItem {
    */
   private determineIcon(label: string): { light: string; dark: string } | ThemeIcon | undefined {
     if (this.customIcon) {
-      return new ThemeIcon(this.customIcon);
+      switch (this.customIcon) {
+        case 'check':
+          return new ThemeIcon('check', new ThemeColor('gitDecoration.addedResourceForeground'));
+        case 'close':
+          return new ThemeIcon('close', new ThemeColor('gitDecoration.deletedResourceForeground'));
+        case 'error':
+          return new ThemeIcon('error', new ThemeColor('errorForeground'));
+        case 'warning':
+          return new ThemeIcon('warning', new ThemeColor('charts.yellow'));
+        default:
+          return new ThemeIcon(this.customIcon);
+      }
     }
     switch (label) {
       case 'Workspace':

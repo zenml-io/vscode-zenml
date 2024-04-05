@@ -36,11 +36,11 @@ export class CommandTreeItem extends TreeItem {
 
 export class SetItemsPerPageTreeItem extends TreeItem {
   constructor() {
-    super("Set items per page", TreeItemCollapsibleState.None);
-    this.tooltip = "Click to set the number of items shown per page";
+    super('Set items per page', TreeItemCollapsibleState.None);
+    this.tooltip = 'Click to set the number of items shown per page';
     this.command = {
-      command: "zenml.setStacksPerPage",
-      title: "Set Stack Items Per Page",
+      command: 'zenml.setStacksPerPage',
+      title: 'Set Stack Items Per Page',
       arguments: [],
     };
   }

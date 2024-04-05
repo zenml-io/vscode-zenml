@@ -33,6 +33,11 @@ async function getPythonExtensionAPI(): Promise<PythonExtension | undefined> {
   return _api;
 }
 
+/**
+ * Initialize the python extension.
+ *
+ * @param disposables - List of disposables to be disposed when the extension is deactivated.
+ */
 export async function initializePython(disposables: Disposable[]): Promise<void> {
   try {
     const api = await getPythonExtensionAPI();
@@ -52,6 +57,12 @@ export async function initializePython(disposables: Disposable[]): Promise<void>
   }
 }
 
+/**
+ * Resolve the python interpreter.
+ *
+ * @param interpreter - The interpreter to resolve.
+ * @returns The resolved environment.
+ */
 export async function resolveInterpreter(
   interpreter: string[]
 ): Promise<ResolvedEnvironment | undefined> {
@@ -59,6 +70,12 @@ export async function resolveInterpreter(
   return api?.environments.resolveEnvironment(interpreter[0]);
 }
 
+/**
+ * Get the interpreter details.
+ *
+ * @param resource - The resource to get the interpreter details from.
+ * @returns The interpreter details.
+ */
 export async function getInterpreterDetails(resource?: Uri): Promise<IInterpreterDetails> {
   const api = await getPythonExtensionAPI();
   const environment = await api?.environments.resolveEnvironment(
@@ -70,16 +87,34 @@ export async function getInterpreterDetails(resource?: Uri): Promise<IInterprete
   return { path: undefined, resource };
 }
 
+/**
+ * Get the path to the debugger.
+ *
+ * @returns The path to the debugger.
+ */
 export async function getDebuggerPath(): Promise<string | undefined> {
   const api = await getPythonExtensionAPI();
   return api?.debug.getDebuggerPackagePath();
 }
 
+/**
+ * Run a python extension command.
+ *
+ * @param command - The command to run.
+ * @param rest - The rest of the arguments.
+ * @returns The result of the command.
+ */
 export async function runPythonExtensionCommand(command: string, ...rest: any[]) {
   await getPythonExtensionAPI();
   return await commands.executeCommand(command, ...rest);
 }
 
+/**
+ * Check if the python version is supported.
+ *
+ * @param resolved - The resolved environment.
+ * @returns True if the version is supported, false otherwise.
+ */
 export function checkVersion(resolved: ResolvedEnvironment | undefined): boolean {
   const version = resolved?.version;
   if (version?.major === 3 && version?.minor >= 8) {
@@ -92,7 +127,13 @@ export function checkVersion(resolved: ResolvedEnvironment | undefined): boolean
   return false;
 }
 
-export function isPythonVersonSupported(resolvedEnv: ResolvedEnvironment | undefined): {
+/**
+ * Check if the python version is supported.
+ *
+ * @param resolvedEnv - The resolved environment.
+ * @returns An object with the result and an optional message.
+ */
+export function isPythonVersionSupported(resolvedEnv: ResolvedEnvironment | undefined): {
   isSupported: boolean;
   message?: string;
 } {

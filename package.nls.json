@@ -1,6 +1,6 @@
 {
   "extension.description": "Integrates ZenML directly into VS Code, enhancing machine learning workflow with support for pipelines, stacks, and server management.",
-  "zenml.promptForInterpreter": "Prompt to select a Python interpreter from the command palette in VSCode.",
+  "command.promptForInterpreter": "Prompt to select a Python interpreter from the command palette in VSCode.",
   "command.connectServer": "Establishes a connection to a specified ZenML server.",
   "command.disconnectServer": "Disconnects from the currently connected ZenML server.",
   "command.refreshServerStatus": "Refreshes the status of the ZenML server to reflect the current state.",

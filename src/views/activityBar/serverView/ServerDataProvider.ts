@@ -10,7 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import { EventEmitter, ThemeIcon, TreeDataProvider, TreeItem } from 'vscode';
+import { EventEmitter, ThemeColor, ThemeIcon, TreeDataProvider, TreeItem } from 'vscode';
 import { State } from 'vscode-languageclient';
 import { checkServerStatus, isServerStatus } from '../../../commands/server/utils';
 import { EventBus } from '../../../services/EventBus';
@@ -20,6 +20,7 @@ import {
   LSCLIENT_STATE_CHANGED,
   LSP_ZENML_CLIENT_INITIALIZED,
   REFRESH_SERVER_STATUS,
+  SERVER_STATUS_UPDATED,
 } from '../../../utils/constants';
 import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
 import { ServerTreeItem } from './ServerTreeItems';
@@ -104,7 +105,7 @@ export class ServerDataProvider implements TreeDataProvider<TreeItem> {
     const serverStatus = await checkServerStatus();
     if (isServerStatus(serverStatus)) {
       if (JSON.stringify(serverStatus) !== JSON.stringify(this.currentStatus)) {
-        this.eventBus.emit('serverStatusUpdated', {
+        this.eventBus.emit(SERVER_STATUS_UPDATED, {
           isConnected: serverStatus.isConnected,
           serverUrl: serverStatus.url,
         });
@@ -133,7 +134,10 @@ export class ServerDataProvider implements TreeDataProvider<TreeItem> {
   getTreeItem(element: TreeItem): TreeItem {
     if (element instanceof ServerTreeItem) {
       if (element.serverStatus.isConnected) {
-        element.iconPath = new ThemeIcon('vm-active');
+        element.iconPath = new ThemeIcon(
+          'vm-active',
+          new ThemeColor('gitDecoration.addedResourceForeground')
+        );
       } else {
         element.iconPath = new ThemeIcon('vm-connect');
       }
@@ -150,7 +154,6 @@ export class ServerDataProvider implements TreeDataProvider<TreeItem> {
   async getChildren(element?: TreeItem): Promise<TreeItem[] | undefined> {
     if (!element) {
       if (isServerStatus(this.currentStatus)) {
-        console.log(this.currentStatus);
         const updatedServerTreeItem = new ServerTreeItem('Server Status', this.currentStatus);
         return [updatedServerTreeItem];
       } else if (Array.isArray(this.currentStatus)) {
