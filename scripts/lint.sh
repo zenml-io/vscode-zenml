@@ -3,7 +3,7 @@ set -euxo pipefail
 
 cd "$(dirname "$0")/.." || exit
 
-PYTHONPATH="$PYTHONPATH:$(pwd)/bundled/tool"
+PYTHONPATH="${PYTHONPATH-}:$(pwd)/bundled/tool"
 export PYTHONPATH
 
 # Lint Python files with ruff
