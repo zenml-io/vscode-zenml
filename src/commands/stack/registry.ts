@@ -25,7 +25,10 @@ export const registerStackCommands = (context: ExtensionContext) => {
   const stackDataProvider = StackDataProvider.getInstance();
   try {
     const registeredCommands = [
-      registerCommand("zenml.setStackItemsPerPage", async () => await stackDataProvider.updateItemsPerPage()),
+      registerCommand(
+        'zenml.setStackItemsPerPage',
+        async () => await stackDataProvider.updateItemsPerPage()
+      ),
       registerCommand('zenml.refreshStackView', async () => await stackCommands.refreshStackView()),
       registerCommand(
         'zenml.refreshActiveStack',

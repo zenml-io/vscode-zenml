@@ -47,9 +47,7 @@ class GlobalConfigWrapper:
     def RestZenStoreConfiguration(self):
         """Returns the RestZenStoreConfiguration class for store configuration."""
         # pylint: disable=not-callable
-        return self.lazy_import(
-            "zenml.zen_stores.rest_zen_store", "RestZenStoreConfiguration"
-        )
+        return self.lazy_import("zenml.zen_stores.rest_zen_store", "RestZenStoreConfiguration")
 
     def get_global_config_directory_path(self) -> str:
         """Get the global configuration directory path.
@@ -176,9 +174,7 @@ class ZenServerWrapper:
         store_info = json.loads(self.gc.zen_store.get_store_info().json(indent=2))
         # Handle both 'store' and 'store_configuration' depending on version
         store_attr_name = (
-            "store_configuration"
-            if hasattr(self.gc, "store_configuration")
-            else "store"
+            "store_configuration" if hasattr(self.gc, "store_configuration") else "store"
         )
         store_config = json.loads(getattr(self.gc, store_attr_name).json(indent=2))
         return {"storeInfo": store_info, "storeConfig": store_config}
@@ -200,9 +196,7 @@ class ZenServerWrapper:
         try:
             # pylint: disable=not-callable
             access_token = self.web_login(url=url, verify_ssl=verify_ssl)
-            self._config_wrapper.set_store_configuration(
-                remote_url=url, access_token=access_token
-            )
+            self._config_wrapper.set_store_configuration(remote_url=url, access_token=access_token)
             return {"message": "Connected successfully.", "access_token": access_token}
         except self.AuthorizationException as e:
             return {"error": f"Authorization failed: {str(e)}"}
@@ -218,9 +212,7 @@ class ZenServerWrapper:
         try:
             # Adjust for changes from 'store' to 'store_configuration'
             store_attr_name = (
-                "store_configuration"
-                if hasattr(self.gc, "store_configuration")
-                else "store"
+                "store_configuration" if hasattr(self.gc, "store_configuration") else "store"
             )
             url = getattr(self.gc, store_attr_name).url
             store_type = self.BaseZenStore.get_store_type(url)
@@ -289,21 +281,15 @@ class PipelineRunsWrapper:
                     "version": run.body.pipeline.body.version,
                     "stackName": run.body.stack.name,
                     "startTime": (
-                        run.metadata.start_time.isoformat()
-                        if run.metadata.start_time
-                        else None
+                        run.metadata.start_time.isoformat() if run.metadata.start_time else None
                     ),
                     "endTime": (
-                        run.metadata.end_time.isoformat()
-                        if run.metadata.end_time
-                        else None
+                        run.metadata.end_time.isoformat() if run.metadata.end_time else None
                     ),
                     "os": run.metadata.client_environment.get("os", "Unknown OS"),
                     "osVersion": run.metadata.client_environment.get(
                         "os_version",
-                        run.metadata.client_environment.get(
-                            "mac_version", "Unknown Version"
-                        ),
+                        run.metadata.client_environment.get("mac_version", "Unknown Version"),
                     ),
                     "pythonVersion": run.metadata.client_environment.get(
                         "python_version", "Unknown"
@@ -378,12 +364,11 @@ class StacksWrapper:
 
     def fetch_stacks(self, args):
         """Fetches all ZenML stacks and components with pagination."""
-        page = args[0]
-        max_size = args[1]
+        if len(args) < 2:
+            return {"error": "Insufficient arguments provided."}
+        page, max_size = args
         try:
-            stacks_page = self.client.list_stacks(
-                page=page, size=max_size, hydrate=True
-            )
+            stacks_page = self.client.list_stacks(page=page, size=max_size, hydrate=True)
             stacks_data = self.process_stacks(stacks_page.items)
 
             return {
@@ -496,23 +481,17 @@ class StacksWrapper:
         target_stack_name = args[1]
 
         if not source_stack_name_or_id or not target_stack_name:
-            return {
-                "error": "Both source stack name/id and target stack name are required"
-            }
+            return {"error": "Both source stack name/id and target stack name are required"}
 
         try:
-            stack_to_copy = self.client.get_stack(
-                name_id_or_prefix=source_stack_name_or_id
-            )
+            stack_to_copy = self.client.get_stack(name_id_or_prefix=source_stack_name_or_id)
             component_mapping = {
                 c_type: [c.id for c in components][0]
                 for c_type, components in stack_to_copy.components.items()
                 if components
             }
 
-            self.client.create_stack(
-                name=target_stack_name, components=component_mapping
-            )
+            self.client.create_stack(name=target_stack_name, components=component_mapping)
             return {
                 "message": (
                     f"Stack `{source_stack_name_or_id}` successfully copied "

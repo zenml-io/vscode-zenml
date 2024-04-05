@@ -18,7 +18,6 @@ import {
   RestServerConnectionResponse,
 } from '../../types/LSClientResponseTypes';
 import { updateServerUrlAndToken } from '../../utils/global';
-import { showInformationMessage } from '../../utils/notifications';
 import { refreshUtils } from '../../utils/refresh';
 import { ServerDataProvider } from '../../views/activityBar';
 import { promptAndStoreServerUrl } from './utils';
@@ -41,7 +40,7 @@ const connectServer = async (): Promise<boolean> => {
       {
         location: vscode.ProgressLocation.Notification,
         title: 'Connecting to ZenML server...',
-        cancellable: false,
+        cancellable: true,
       },
       async progress => {
         try {
@@ -80,7 +79,7 @@ const disconnectServer = async (): Promise<void> => {
     {
       location: vscode.ProgressLocation.Notification,
       title: 'Disconnecting from ZenML server...',
-      cancellable: false,
+      cancellable: true,
     },
     async progress => {
       try {
@@ -114,7 +113,6 @@ const refreshServerStatus = async (): Promise<void> => {
     },
     async () => {
       await ServerDataProvider.getInstance().refresh();
-      showInformationMessage('Server status refreshed.');
     }
   );
 };

@@ -14,14 +14,14 @@ import { Event, EventEmitter, TreeDataProvider, TreeItem, window, workspace } fr
 import { State } from 'vscode-languageclient';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
-import { Stack, StackComponent, StacksReponse } from '../../../types/StackTypes';
+import { Stack, StackComponent, StacksResponse } from '../../../types/StackTypes';
 import {
   ITEMS_PER_PAGE_OPTIONS,
   LSCLIENT_STATE_CHANGED,
   LSP_ZENML_CLIENT_INITIALIZED,
   LSP_ZENML_STACK_CHANGED,
 } from '../../../utils/constants';
-import { ErrorTreeItem, createErrorItem } from '../common/ErrorTreeItem';
+import { ErrorTreeItem, createErrorItem, createAuthErrorItem } from '../common/ErrorTreeItem';
 import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
 import { StackComponentTreeItem, StackTreeItem } from './StackTreeItems';
 import { CommandTreeItem } from '../common/PaginationTreeItems';
@@ -34,7 +34,7 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
   private static instance: StackDataProvider | null = null;
   private eventBus = EventBus.getInstance();
   private zenmlClientReady = false;
-  public stacks: Stack[] | TreeItem[] = [LOADING_TREE_ITEMS.get('stacks')!];
+  public stacks: StackTreeItem[] | TreeItem[] = [LOADING_TREE_ITEMS.get('stacks')!];
 
   private pagination = {
     currentPage: 1,
@@ -42,7 +42,6 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
     totalItems: 0,
     totalPages: 0,
   };
-
 
   constructor() {
     this.subscribeToEvents();
@@ -105,6 +104,7 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
   public async refresh(): Promise<void> {
     this.stacks = [LOADING_TREE_ITEMS.get('stacks')!];
     this._onDidChangeTreeData.fire(undefined);
+
     const page = this.pagination.currentPage;
     const itemsPerPage = this.pagination.itemsPerPage;
 
@@ -123,17 +123,28 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
    *
    * @returns {Promise<StackTreeItem[]>} A promise that resolves with an array of `StackTreeItem` objects.
    */
-  async fetchStacksWithComponents(page: number = 1, itemsPerPage: number = 20): Promise<TreeItem[]> {
+  async fetchStacksWithComponents(
+    page: number = 1,
+    itemsPerPage: number = 20
+  ): Promise<TreeItem[]> {
     if (!this.zenmlClientReady) {
       return [LOADING_TREE_ITEMS.get('zenmlClient')!];
     }
 
     try {
       const lsClient = LSClient.getInstance();
-      const result = await lsClient.sendLsClientRequest<StacksReponse>(
-        'fetchStacks',
-        [page, itemsPerPage]
-      );
+      const result = await lsClient.sendLsClientRequest<StacksResponse>('fetchStacks', [
+        page,
+        itemsPerPage,
+      ]);
+
+      if (Array.isArray(result) && result.length === 1 && 'error' in result[0]) {
+        const errorMessage = result[0].error;
+        if (errorMessage.includes('Authentication error')) {
+          return createAuthErrorItem(errorMessage);
+        }
+      }
+
       if (!result || 'error' in result) {
         if ('clientVersion' in result && 'serverVersion' in result) {
           return createErrorItem(result);
@@ -162,8 +173,9 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
       }
     } catch (error: any) {
       console.error(`Failed to fetch stacks: ${error}`);
-      return [new ErrorTreeItem("Error", `Failed to fetch stacks: ${error.message || error.toString()}`)];
-
+      return [
+        new ErrorTreeItem('Error', `Failed to fetch stacks: ${error.message || error.toString()}`),
+      ];
     }
   }
 
@@ -183,7 +195,7 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
 
   public async updateItemsPerPage() {
     const selected = await window.showQuickPick(ITEMS_PER_PAGE_OPTIONS, {
-      placeHolder: "Choose the max number of stacks to display per page",
+      placeHolder: 'Choose the max number of stacks to display per page',
     });
     if (selected) {
       this.pagination.itemsPerPage = parseInt(selected, 10);
@@ -200,12 +212,28 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
    */
   async getChildren(element?: TreeItem): Promise<TreeItem[] | undefined> {
     if (!element) {
-      const stacks = await this.fetchStacksWithComponents(this.pagination.currentPage, this.pagination.itemsPerPage);
+      if (Array.isArray(this.stacks) && this.stacks.length > 0) {
+        return this.stacks;
+      }
+
+      const stacks = await this.fetchStacksWithComponents(
+        this.pagination.currentPage,
+        this.pagination.itemsPerPage
+      );
       if (this.pagination.currentPage < this.pagination.totalPages) {
-        stacks.push(new CommandTreeItem("Next Page", 'zenml.nextStackPage', undefined, 'arrow-circle-right'));
+        stacks.push(
+          new CommandTreeItem('Next Page', 'zenml.nextStackPage', undefined, 'arrow-circle-right')
+        );
       }
       if (this.pagination.currentPage > 1) {
-        stacks.unshift(new CommandTreeItem("Previous Page", 'zenml.previousStackPage', undefined, 'arrow-circle-left'));
+        stacks.unshift(
+          new CommandTreeItem(
+            'Previous Page',
+            'zenml.previousStackPage',
+            undefined,
+            'arrow-circle-left'
+          )
+        );
       }
       return stacks;
     } else if (element instanceof StackTreeItem) {

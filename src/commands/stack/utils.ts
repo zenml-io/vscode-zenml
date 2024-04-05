@@ -60,8 +60,7 @@ export const getActiveStack = async (): Promise<{ id: string; name: string } | u
     }
     return result;
   } catch (error: any) {
-    console.error(`Error getting active stack information: ${error}`);
-    showErrorMessage(`Failed to get active stack information: ${error.message}`);
+    console.error(`Failed to get active stack information: ${error}`);
     return undefined;
   }
 };

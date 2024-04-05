@@ -31,6 +31,8 @@ export const LSP_ZENML_REQUIREMENTS_NOT_MET = 'zenml/requirementsNotMet';
 // EventBus emitted events
 export const LSCLIENT_READY = 'lsClientReady';
 export const LSCLIENT_STATE_CHANGED = 'lsClientStateChanged';
+export const ZENML_CLIENT_STATE_CHANGED = 'zenmlClientStateChanged';
+
 export const REFRESH_ENVIRONMENT_VIEW = 'refreshEnvironmentView';
 
 export const REFRESH_SERVER_STATUS = 'refreshServerStatus';

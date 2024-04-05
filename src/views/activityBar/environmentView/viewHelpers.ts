@@ -18,6 +18,7 @@ import { PYTOOL_MODULE } from '../../../utils/constants';
 import { getProjectRoot } from '../../../common/utilities';
 import { LSClient } from '../../../services/LSClient';
 import { State } from 'vscode-languageclient';
+import { LSNotificationIsZenMLInstalled } from '../../../types/LSNotificationTypes';
 
 /**
  * Creates the LSP client item for the environment view.
@@ -45,27 +46,50 @@ export function createLSClientItem(lsClientStatus: State): EnvironmentItem {
 /**
  * Creates the ZenML status items for the environment view.
  *
- * @returns {Promise<EnvironmentItem[]>} The ZenML status items.
+ * @returns {EnvironmentItem} The ZenML status items.
  */
-export async function createZenMLStatusItems(): Promise<EnvironmentItem[]> {
-  const zenmlReady = LSClient.getInstance().isZenMLReady;
+export function createZenMLClientStatusItem(zenmlClientReady: boolean): EnvironmentItem {
   const localZenML = LSClient.getInstance().localZenML;
-
-  const zenMLLocalInstallationItem = new EnvironmentItem(
-    'ZenML Local',
-    localZenML.is_installed ? `${localZenML.version}` : 'Not found',
-    TreeItemCollapsibleState.None,
-    localZenML.is_installed ? 'check' : 'warning'
-  );
 
   const zenMLClientStatusItem = new EnvironmentItem(
     'ZenML Client',
-    !localZenML.is_installed ? '' : zenmlReady ? 'Initialized' : 'Awaiting Initialization',
+    !localZenML.is_installed ? '' : zenmlClientReady ? 'Initialized' : 'Awaiting Initialization',
     TreeItemCollapsibleState.None,
-    !localZenML.is_installed ? 'error' : zenmlReady ? 'check' : 'sync~spin'
+    !localZenML.is_installed ? 'warning' : zenmlClientReady ? 'check' : 'sync~spin'
   );
 
-  return [zenMLLocalInstallationItem, zenMLClientStatusItem];
+  return zenMLClientStatusItem;
+}
+
+/**
+ * Creates the ZenML installation item for the environment view.
+ *
+ * @param installationStatus The installation status of ZenML.
+ * @returns {EnvironmentItem} The ZenML installation item.
+ */
+export function createZenMLInstallationItem(
+  installationStatus: LSNotificationIsZenMLInstalled | null
+): EnvironmentItem {
+  if (!installationStatus) {
+    return new EnvironmentItem(
+      'ZenML Local Installation',
+      'Checking...',
+      TreeItemCollapsibleState.None,
+      'sync~spin'
+    );
+  }
+
+  const description = installationStatus.is_installed
+    ? `Installed (v${installationStatus.version})`
+    : 'Not Installed';
+  const icon = installationStatus.is_installed ? 'check' : 'warning';
+
+  return new EnvironmentItem(
+    'ZenML Local Installation',
+    description,
+    TreeItemCollapsibleState.None,
+    icon
+  );
 }
 
 /**
