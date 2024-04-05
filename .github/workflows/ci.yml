@@ -16,16 +16,18 @@ jobs:
           node-version: '18.x'
 
       - name: Install dependencies
-        run: npm install
+        run: |
+          npm install
+          pip install autoflake isort black ruff
 
       - name: Build VSCode Extension
         run: npm run compile
 
       - name: Run VSCode Extension Formatter
-        run: npm run format
+        run: ./scripts/format.sh
 
       - name: Run VSCode Extension Linter
-        run: npm run lint
+        run: ./scripts/lint.sh
 
       - name: Run headless test
         uses: coactions/setup-xvfb@v1

@@ -36,9 +36,11 @@ export default class ZenMLStatusBar {
   constructor() {
     this.statusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 100);
     this.subscribeToEvents();
+    this.statusBarItem.command = 'zenml/statusBar/switchStack';
+  }
 
-    this.statusBarItem.command = 'zenml.switchStack';
-    commands.registerCommand('zenml.switchStack', () => this.switchStack());
+  public registerCommand() {
+    commands.registerCommand('zenml/statusBar/switchStack', () => this.switchStack());
   }
 
   /**

@@ -113,7 +113,9 @@ export class ZenExtension {
       return;
     }
 
-    ZenMLStatusBar.getInstance();
+    const zenmlStatusBar = ZenMLStatusBar.getInstance();
+    zenmlStatusBar.registerCommand();
+
     this.dataProviders.forEach((provider, viewId) => {
       const view = vscode.window.createTreeView(viewId, { treeDataProvider: provider });
       this.viewDisposables.push(view);

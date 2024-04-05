@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euxo pipefail
 
 cd "$(dirname "$0")/.." || exit
 
@@ -11,6 +12,6 @@ ruff bundled/tool || { echo "Linting Python files failed"; exit 1; }
 
 # Lint TypeScript files with eslint
 echo "Linting TypeScript files..."
-eslint 'src/**/*.ts'
+npx eslint 'src/**/*.ts' || { echo "Linting TypeScript files failed"; exit 1; }
 
 unset PYTHONPATH
