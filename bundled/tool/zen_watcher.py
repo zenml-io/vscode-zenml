@@ -75,12 +75,18 @@ class ZenConfigWatcher(FileSystemEventHandler):
                         self.last_known_url = new_url
                     # Send ZENML_STACK_CHANGED if stack_id changed
                     if stack_id_changed:
-                        self.LSP_SERVER.send_custom_notification(ZENML_STACK_CHANGED, new_stack_id)
+                        self.LSP_SERVER.send_custom_notification(
+                            ZENML_STACK_CHANGED, new_stack_id
+                        )
                         self.last_known_stack_id = new_stack_id
             except (FileNotFoundError, PermissionError) as e:
-                self.log_error(f"Configuration file access error: {e} - {config_file_path}")
+                self.log_error(
+                    f"Configuration file access error: {e} - {config_file_path}"
+                )
             except yaml.YAMLError as e:
-                self.log_error(f"YAML parsing error in configuration: {e} - {config_file_path}")
+                self.log_error(
+                    f"YAML parsing error in configuration: {e} - {config_file_path}"
+                )
             except Exception as e:
                 self.log_error(f"Unexpected error while monitoring configuration: {e}")
 
@@ -117,7 +123,9 @@ class ZenConfigWatcher(FileSystemEventHandler):
                 self.observer = Observer()
                 self.observer.schedule(self, config_dir_path, recursive=False)
                 self.observer.start()
-                self.LSP_SERVER.log_to_output(f"Started watching {config_dir_path} for changes.")
+                self.LSP_SERVER.log_to_output(
+                    f"Started watching {config_dir_path} for changes."
+                )
             except Exception as e:
                 self.log_error(f"Failed to start file watcher: {e}")
         else:
@@ -130,7 +138,9 @@ class ZenConfigWatcher(FileSystemEventHandler):
         if self.observer is not None:
             self.observer.stop()
             self.observer.join()  # waits for observer to fully stop
-            self.LSP_SERVER.log_to_output("Stopped watching config directory for changes.")
+            self.LSP_SERVER.log_to_output(
+                "Stopped watching config directory for changes."
+            )
 
     def log_error(self, message: str):
         """Log error."""
