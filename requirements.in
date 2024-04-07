@@ -14,3 +14,6 @@ packaging
 # Tool-specific packages for ZenML extension
 watchdog
 PyYAML
+# Conda env fixes: Ensure hash generation for typing-extensions and exceptiongroup on Python < 3.11
+typing-extensions>=4.1.0,!=4.6.3; python_version < "3.11"
+exceptiongroup==1.2.0; python_version < '3.11'
