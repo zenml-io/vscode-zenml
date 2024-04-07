@@ -22,7 +22,7 @@ import subprocess
 import threading
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from typing import BinaryIO, Dict, Optional, Sequence, Union
+from typing import cast, BinaryIO, Dict, Optional, Sequence, Union
 
 CONTENT_LENGTH = "Content-Length: "
 RUNNER_SCRIPT = str(pathlib.Path(__file__).parent / "lsp_runner.py")
@@ -60,7 +60,10 @@ class JsonWriter:
         with self._lock:
             content = json.dumps(data)
             length = len(content.encode("utf-8"))
-            self._writer.write(f"{CONTENT_LENGTH}{length}\r\n\r\n{content}".encode("utf-8"))
+            self._writer.write(f"{CONTENT_LENGTH}{length}\r\n\r\n{content}")
+            # self._writer.write(
+            #     f"{CONTENT_LENGTH}{length}\r\n\r\n{content}".encode("utf-8")
+            # )
             self._writer.flush()
 
 
@@ -128,7 +131,9 @@ class JsonRpc:
 
 def create_json_rpc(readable: BinaryIO, writable: BinaryIO) -> JsonRpc:
     """Creates JSON-RPC wrapper for the readable and writable streams."""
-    return JsonRpc(readable, writable)
+    text_readable = io.TextIOWrapper(readable, encoding="utf-8")
+    text_writable = io.TextIOWrapper(writable, encoding="utf-8")
+    return JsonRpc(text_readable, text_writable)
 
 
 class ProcessManager:
@@ -159,8 +164,13 @@ class ProcessManager:
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
         )
+
+        # Use cast to assure mypy that stdout and stdin are not None
+        stdout = cast(BinaryIO, proc.stdout)
+        stdin = cast(BinaryIO, proc.stdin)
+
         self._processes[workspace] = proc
-        self._rpc[workspace] = create_json_rpc(proc.stdout, proc.stdin)
+        self._rpc[workspace] = create_json_rpc(stdout, stdin)
 
         def _monitor_process():
             proc.wait()
@@ -224,7 +234,7 @@ def run_over_json_rpc(
     argv: Sequence[str],
     use_stdin: bool,
     cwd: str,
-    source: str = None,
+    source: Optional[str] = None,
 ) -> RpcRunResult:
     """Uses JSON-RPC to execute a command."""
     rpc: Union[JsonRpc, None] = get_or_start_json_rpc(workspace, interpreter, cwd)
@@ -249,7 +259,9 @@ def run_over_json_rpc(
     data = rpc.receive_data()
 
     if data["id"] != msg_id:
-        return RpcRunResult("", f"Invalid result for request: {json.dumps(msg, indent=4)}")
+        return RpcRunResult(
+            "", f"Invalid result for request: {json.dumps(msg, indent=4)}"
+        )
 
     result = data["result"] if "result" in data else ""
     if "error" in data:
