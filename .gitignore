@@ -28,6 +28,9 @@ build/
 # Output of 'npm pack'
 *.tgz
 
+# mypy
+.mypy_cache/
+
 # From vscode-python-tools-extension-template
 *.vsix
 .venv/
@@ -37,4 +40,3 @@ bundled/libs/
 **/__pycache__
 **/.pytest_cache
 **/.vs
-
