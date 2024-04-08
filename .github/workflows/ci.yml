@@ -1,34 +1,26 @@
+---
 name: VSCode Extension CI
-
 on: [push, pull_request]
-
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
-
       - name: Install Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '18.x'
-
+          node-version: 18.x
       - name: Install dependencies
         run: |
           npm install
-          pip install autoflake isort black ruff
-
-      - name: Build VSCode Extension
-        run: npm run compile
-
-      - name: Run Format Script for Python & TypeScript Files
+          pip install autoflake isort black ruff yamlfix
+      - name: Format Python, TypeScript, and YAML Files
         run: ./scripts/format.sh
-
-      - name: Run Lint Script for Python & TypeScript Files
+      - name: Lint Python, TypeScript, and YAML files
         run: ./scripts/lint.sh
-
+      - name: Compile VSCode Extension
+        run: npm run compile
       - name: Run headless test
         uses: coactions/setup-xvfb@v1
         with:
