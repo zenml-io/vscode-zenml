@@ -47,17 +47,18 @@
     "module": "zenml-python"
   },
   "scripts": {
-    "vscode:prepublish": "npm run package",
     "compile": "webpack",
-    "watch": "webpack --watch",
-    "package": "webpack --mode production --devtool source-map --config ./webpack.config.js",
     "compile-tests": "tsc -p . --outDir out",
-    "watch-tests": "tsc -p . -w --outDir out",
-    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "deploy": "vsce publish",
     "format": "prettier --ignore-path .gitignore --write \"**/*.+(ts|json)\"",
     "lint": "eslint src --ext ts",
+    "package": "webpack --mode production --devtool source-map --config ./webpack.config.js",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "test": "vscode-test",
-    "vsce-package": "vsce package -o zenml.vsix"
+    "vsce-package": "vsce package -o zenml.vsix",
+    "vscode:prepublish": "npm run package",
+    "watch": "webpack --watch",
+    "watch-tests": "tsc -p . -w --outDir out"
   },
   "contributes": {
     "configuration": {
