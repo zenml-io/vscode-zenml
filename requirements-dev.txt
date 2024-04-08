@@ -4,3 +4,5 @@ isort
 mypy
 ruff
 yamlfix
+PyYAML
+types-PyYAML
