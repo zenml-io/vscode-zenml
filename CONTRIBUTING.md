@@ -85,23 +85,6 @@ git push origin feature/your-feature-name
 
 4. **Open a Pull Request**: Go to the original `zenml-io/vscode-zenml` repository and create a pull request from your feature branch. Please follow our [contribution guidelines](https://github.com/zenml-io/zenml/blob/develop/CONTRIBUTING.md) for more details on proposing pull requests.
 
-## Release Process
-
-The ZenML VSCode extension uses a GitHub Actions workflow defined in `.github/workflows/release.yml` to automate the release process when a new tag is pushed to the repository.
-
-To create a new release:
-
-1. Ensure that your changes have been merged into the main branch.
-2. Create a new tag following the SemVer format (e.g., `v1.0.0`).
-3. Push the tag to the zenml-io/vscode-zenml repository.
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-The `release.yml` workflow will automatically trigger, package the extension, and publish it to the Visual Studio Marketplace.
-
 ## Troubleshooting Common Issues
 
 - Ensure all dependencies are up to date and compatible.
