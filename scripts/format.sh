@@ -13,6 +13,6 @@ echo "Formatting TypeScript files..."
 npx prettier --ignore-path .gitignore --write "**/*.+(ts|json)"
 
 echo "Formatting YAML files..."
-yamlfix .github/workflows/*.yml
+find .github -name "*.yml" -print0 | xargs -0 yamlfix --
 
 echo "Formatting complete."
