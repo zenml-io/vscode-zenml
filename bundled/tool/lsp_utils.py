@@ -23,7 +23,7 @@ import site
 import subprocess
 import sys
 import threading
-from typing import Any, Callable, List, Sequence, Tuple, Union, Optional
+from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
 
 # Save the working directory used when loading this module
 SERVER_CWD = os.getcwd()
