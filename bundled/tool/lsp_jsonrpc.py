@@ -22,7 +22,7 @@ import subprocess
 import threading
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from typing import cast, BinaryIO, Dict, Optional, Sequence, Union
+from typing import BinaryIO, Dict, Optional, Sequence, Union, cast
 
 CONTENT_LENGTH = "Content-Length: "
 RUNNER_SCRIPT = str(pathlib.Path(__file__).parent / "lsp_runner.py")
@@ -259,9 +259,7 @@ def run_over_json_rpc(
     data = rpc.receive_data()
 
     if data["id"] != msg_id:
-        return RpcRunResult(
-            "", f"Invalid result for request: {json.dumps(msg, indent=4)}"
-        )
+        return RpcRunResult("", f"Invalid result for request: {json.dumps(msg, indent=4)}")
 
     result = data["result"] if "result" in data else ""
     if "error" in data:

@@ -17,7 +17,7 @@ import json
 import os
 import pathlib
 import sys
-from typing import Any, Dict, Optional, Tuple, List
+from typing import Any, Dict, List, Optional, Tuple
 
 from constants import TOOL_DISPLAY_NAME, TOOL_MODULE_NAME, ZENML_CLIENT_INITIALIZED
 
@@ -56,9 +56,7 @@ RUNNER = pathlib.Path(__file__).parent / "lsp_runner.py"
 
 MAX_WORKERS = 5
 
-LSP_SERVER = ZenLanguageServer(
-    name="zen-language-server", version="0.0.1", max_workers=MAX_WORKERS
-)
+LSP_SERVER = ZenLanguageServer(name="zen-language-server", version="0.0.1", max_workers=MAX_WORKERS)
 
 # **********************************************************
 # Tool specific code goes below this.
@@ -183,9 +181,7 @@ def get_cwd(settings: Dict[str, Any], document: Optional[workspace.Document]) ->
 # *****************************************************
 # Logging and notification.
 # *****************************************************
-def log_to_output(
-    message: str, msg_type: lsp.MessageType = lsp.MessageType.Log
-) -> None:
+def log_to_output(message: str, msg_type: lsp.MessageType = lsp.MessageType.Log) -> None:
     """Log to output."""
     LSP_SERVER.show_message_log(message, msg_type)
 
