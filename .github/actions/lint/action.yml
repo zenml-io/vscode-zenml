@@ -9,7 +9,7 @@ runs:
       with:
         node-version: 18.x
         cache: npm
-        cache-dependency-path: 'package-lock.json'
+        cache-dependency-path: package-lock.json
     - name: Install Node dependencies
       run: npm ci
       shell: bash
