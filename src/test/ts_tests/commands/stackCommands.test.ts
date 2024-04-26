@@ -20,6 +20,7 @@ import { MockEventBus } from '../__mocks__/MockEventBus';
 import { MockLSClient } from '../__mocks__/MockLSClient';
 import { LSClient } from '../../../services/LSClient';
 import { EventBus } from '../../../services/EventBus';
+import * as globalUtils from '../../../utils/global';
 import stackUtils from '../../../commands/stack/utils';
 import { MockStackDataProvider, MockZenMLStatusBar } from '../__mocks__/MockViewProviders';
 
@@ -40,6 +41,7 @@ suite('Stack Commands Test Suite', () => {
     mockLSClient = new MockLSClient(mockEventBus);
     mockStackDataProvider = new MockStackDataProvider();
     mockStatusBar = new MockZenMLStatusBar();
+    const stubbedServerUrl = 'http://mocked-server.com';
 
     // Stub classes to return mock instances
     sandbox.stub(StackDataProvider, 'getInstance').returns(mockStackDataProvider);
@@ -47,6 +49,7 @@ suite('Stack Commands Test Suite', () => {
     sandbox.stub(LSClient, 'getInstance').returns(mockLSClient);
     sandbox.stub(EventBus, 'getInstance').returns(mockEventBus);
     sandbox.stub(stackUtils, 'storeActiveStack').resolves();
+    sandbox.stub(globalUtils, 'getZenMLServerUrl').returns(stubbedServerUrl);
 
     showInputBoxStub = sandbox.stub(vscode.window, 'showInputBox');
     showInformationMessageStub = sandbox.stub(vscode.window, 'showInformationMessage');
@@ -103,6 +106,24 @@ suite('Stack Commands Test Suite', () => {
       showInputBoxStub.calledWithExactly({ prompt: 'Enter the name for the copied stack' }),
       true,
       'Input box was not called with the correct prompt'
+    );
+  });
+
+  test('goToStackUrl opens the correct URL and shows an information message', () => {
+    const stackId = 'stack-id-123';
+    const expectedUrl = stackUtils.getStackDashboardUrl(stackId);
+
+    const openExternalStub = sandbox.stub(vscode.env, 'openExternal');
+
+    stackCommands.goToStackUrl({ label: 'Stack', id: stackId } as any);
+
+    assert.strictEqual(openExternalStub.calledOnce, true, 'openExternal should be called once');
+    assert.strictEqual(openExternalStub.args[0][0].toString(), expectedUrl, 'Correct URL should be passed to openExternal');
+    assert.strictEqual(showInformationMessageStub.calledOnce, true, 'showInformationMessage should be called once');
+    assert.strictEqual(
+      showInformationMessageStub.args[0][0],
+      `Opening: ${expectedUrl}`,
+      'Correct information message should be shown'
     );
   });
 
