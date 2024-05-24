@@ -89,12 +89,10 @@ export const getActiveStackIdFromConfig = (): string | undefined => {
  * @returns {string} - The URL corresponding to the pipeline in the ZenML Dashboard
  */
 export const getStackDashboardUrl = (id: string): string => {
-  const STACK_URL_STUB = "SERVER_URL/workspaces/default/stacks/STACK_ID/configuration";
+  const STACK_URL_STUB = 'SERVER_URL/workspaces/default/stacks/STACK_ID/configuration';
   const currentServerUrl = getZenMLServerUrl();
 
-  const stackUrl = STACK_URL_STUB
-    .replace("SERVER_URL", currentServerUrl)
-    .replace("STACK_ID", id);
+  const stackUrl = STACK_URL_STUB.replace('SERVER_URL', currentServerUrl).replace('STACK_ID', id);
 
   return stackUrl;
 };

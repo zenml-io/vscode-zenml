@@ -184,5 +184,5 @@ export const stackCommands = {
   renameStack,
   copyStack,
   setActiveStack,
-  goToStackUrl
+  goToStackUrl,
 };
