@@ -13,7 +13,7 @@
 import * as vscode from 'vscode';
 import { StackDataProvider, StackTreeItem } from '../../views/activityBar';
 import ZenMLStatusBar from '../../views/statusBar';
-import { switchActiveStack } from './utils';
+import { getStackDashboardUrl, switchActiveStack } from './utils';
 import { LSClient } from '../../services/LSClient';
 import { showInformationMessage } from '../../utils/notifications';
 
@@ -157,10 +157,32 @@ const setActiveStack = async (node: StackTreeItem): Promise<void> => {
   );
 };
 
+/**
+ * Opens the selected stack in the ZenML Dashboard in the browser
+ *
+ * @param {StackTreeItem} node The stack to open.
+ */
+const goToStackUrl = (node: StackTreeItem) => {
+  const url = getStackDashboardUrl(node.id);
+
+  if (url) {
+    try {
+      const parsedUrl = vscode.Uri.parse(url);
+
+      vscode.env.openExternal(parsedUrl);
+      vscode.window.showInformationMessage(`Opening: ${url}`);
+    } catch (error) {
+      console.log(error);
+      vscode.window.showErrorMessage(`Failed to open stack URL: ${error}`);
+    }
+  }
+};
+
 export const stackCommands = {
   refreshStackView,
   refreshActiveStack,
   renameStack,
   copyStack,
   setActiveStack,
+  goToStackUrl
 };
