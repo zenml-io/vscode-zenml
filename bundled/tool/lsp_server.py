@@ -17,7 +17,7 @@ import json
 import os
 import pathlib
 import sys
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from constants import TOOL_DISPLAY_NAME, TOOL_MODULE_NAME, ZENML_CLIENT_INITIALIZED
 
@@ -50,8 +50,8 @@ import lsprotocol.types as lsp  # noqa: E402
 from lsp_zenml import ZenLanguageServer  # noqa: E402
 from pygls import uris, workspace  # noqa: E402
 
-WORKSPACE_SETTINGS = {}
-GLOBAL_SETTINGS = {}
+WORKSPACE_SETTINGS: Dict[str, Any] = {}
+GLOBAL_SETTINGS: Dict[str, Any] = {}
 RUNNER = pathlib.Path(__file__).parent / "lsp_runner.py"
 
 MAX_WORKERS = 5
@@ -63,8 +63,8 @@ LSP_SERVER = ZenLanguageServer(name="zen-language-server", version="0.0.1", max_
 # **********************************************************
 TOOL_MODULE = TOOL_MODULE_NAME
 TOOL_DISPLAY = TOOL_DISPLAY_NAME
-# Default arguments always passed to zenml.
-TOOL_ARGS = []
+# Default arguments always passed to zenml. (Not currently used)
+TOOL_ARGS: List[str] = []
 # Versions of zenml found by workspace
 VERSION_LOOKUP: Dict[str, Tuple[int, int, int]] = {}
 
@@ -81,13 +81,20 @@ async def initialize(params: lsp.InitializeParams) -> None:
     paths = "\r\n   ".join(sys.path)
     log_to_output(f"sys.path used to run Server:\r\n   {paths}")
 
-    GLOBAL_SETTINGS.update(**params.initialization_options.get("globalSettings", {}))
+    # Check if initialization_options is a dictionary and update GLOBAL_SETTINGS safely
+    if isinstance(params.initialization_options, dict):
+        global_settings = params.initialization_options.get("globalSettings", {})
+        if isinstance(global_settings, dict):
+            GLOBAL_SETTINGS.update(**global_settings)
 
-    settings = params.initialization_options["settings"]
-    _update_workspace_settings(settings)
-    log_to_output(
-        f"Settings used to run Server:\r\n{json.dumps(settings, indent=4, ensure_ascii=False)}\r\n"
-    )
+        # Safely access 'settings' from initialization_options if present
+        settings = params.initialization_options.get("settings")
+        if settings is not None:
+            _update_workspace_settings(settings)
+            log_to_output(
+                f"Settings used to run Server:\r\n{json.dumps(settings, indent=4, ensure_ascii=False)}\r\n"
+            )
+
     log_to_output(
         f"Global settings:\r\n{json.dumps(GLOBAL_SETTINGS, indent=4, ensure_ascii=False)}\r\n"
     )

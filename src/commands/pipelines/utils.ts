@@ -19,12 +19,13 @@ import { getZenMLServerUrl } from '../../utils/global';
  * @returns {string} - The URL corresponding to the pipeline run in the ZenML Dashboard
  */
 export const getPipelineRunDashboardUrl = (id: string): string => {
-  const PIPELINE_URL_STUB = "SERVER_URL/workspaces/default/all-runs/PIPELINE_ID/dag";
+  const PIPELINE_URL_STUB = 'SERVER_URL/workspaces/default/all-runs/PIPELINE_ID/dag';
   const currentServerUrl = getZenMLServerUrl();
 
-  const pipelineUrl = PIPELINE_URL_STUB
-    .replace("SERVER_URL", currentServerUrl)
-    .replace("PIPELINE_ID", id);
+  const pipelineUrl = PIPELINE_URL_STUB.replace('SERVER_URL', currentServerUrl).replace(
+    'PIPELINE_ID',
+    id
+  );
 
   return pipelineUrl;
 };
