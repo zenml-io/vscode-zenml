@@ -15,6 +15,7 @@ import { showErrorMessage, showInformationMessage } from '../../utils/notificati
 import { PipelineTreeItem } from '../../views/activityBar';
 import { PipelineDataProvider } from '../../views/activityBar/pipelineView/PipelineDataProvider';
 import * as vscode from 'vscode';
+import { getPipelineRunDashboardUrl } from './utils';
 
 /**
  * Triggers a refresh of the pipeline view within the UI components.
@@ -72,7 +73,29 @@ const deletePipelineRun = async (node: PipelineTreeItem): Promise<void> => {
   }
 };
 
+/**
+ * Opens the selected pipieline run in the ZenML Dashboard in the browser
+ *
+ * @param {PipelineTreeItem} node The pipeline run to open.
+ */
+const goToPipelineUrl = (node: PipelineTreeItem): void => {
+  const url = getPipelineRunDashboardUrl(node.id);
+
+  if (url) {
+    try {
+      const parsedUrl = vscode.Uri.parse(url);
+
+      vscode.env.openExternal(parsedUrl);
+      vscode.window.showInformationMessage(`Opening: ${url}`);
+    } catch (error) {
+      console.log(error);
+      vscode.window.showErrorMessage(`Failed to open pipeline run URL: ${error}`);
+    }
+  }
+};
+
 export const pipelineCommands = {
   refreshPipelineView,
   deletePipelineRun,
+  goToPipelineUrl,
 };
