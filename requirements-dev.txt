@@ -1,0 +1,8 @@
+autoflake
+black
+isort
+mypy
+ruff
+yamlfix
+PyYAML
+types-PyYAML

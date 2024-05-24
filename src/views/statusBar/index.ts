@@ -99,7 +99,6 @@ export default class ZenMLStatusBar {
    * Updates the status bar item with the server status and active stack information.
    *
    * @param {boolean} isConnected Whether the server is currently connected.
-   * @param {string} serverUrl The url of the server, used in the tooltip.
    */
   private updateStatusBarItem(isConnected: boolean) {
     this.statusBarItem.text = this.activeStack.includes('loading')
