@@ -14,6 +14,7 @@ import * as vscode from 'vscode';
 import { LSClient } from '../../services/LSClient';
 import { GetActiveStackResponse, SetActiveStackResponse } from '../../types/LSClientResponseTypes';
 import { showErrorMessage } from '../../utils/notifications';
+import { getZenMLServerUrl } from '../../utils/global';
 
 /**
  * Switches the active ZenML stack to the specified stack name.
@@ -81,10 +82,28 @@ export const getActiveStackIdFromConfig = (): string | undefined => {
   return config.get<string>('activeStackId');
 };
 
+/**
+ * Gets the Dashboard URL for the corresponding ZenML stack
+ *
+ * @param {string} id - The id of the ZenML stack to be opened
+ * @returns {string} - The URL corresponding to the pipeline in the ZenML Dashboard
+ */
+export const getStackDashboardUrl = (id: string): string => {
+  const STACK_URL_STUB = "SERVER_URL/workspaces/default/stacks/STACK_ID/configuration";
+  const currentServerUrl = getZenMLServerUrl();
+
+  const stackUrl = STACK_URL_STUB
+    .replace("SERVER_URL", currentServerUrl)
+    .replace("STACK_ID", id);
+
+  return stackUrl;
+};
+
 const stackUtils = {
   switchActiveStack,
   getActiveStack,
   storeActiveStack,
+  getStackDashboardUrl,
 };
 
 export default stackUtils;

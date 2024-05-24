@@ -34,6 +34,9 @@ export const registerPipelineCommands = (context: ExtensionContext) => {
         'zenml.deletePipelineRun',
         async (node: PipelineTreeItem) => await pipelineCommands.deletePipelineRun(node)
       ),
+      registerCommand(
+        'zenml.goToPipelineUrl',
+        async (node:PipelineTreeItem) => await pipelineCommands.goToPipelineUrl(node)),
       registerCommand('zenml.nextPipelineRunsPage', async () =>
         pipelineDataProvider.goToNextPage()
       ),

@@ -200,6 +200,12 @@
         "category": "ZenML"
       },
       {
+        "command": "zenml.goToStackUrl",
+        "title": "Go to URL",
+        "icon": "$(globe)",
+        "category": "ZenML"
+      },
+      {
         "command": "zenml.setPipelineRunsPerPage",
         "title": "Set Runs Per Page",
         "icon": "$(layers)",
@@ -215,6 +221,12 @@
         "command": "zenml.deletePipelineRun",
         "title": "Delete Pipeline Run",
         "icon": "$(trash)",
+        "category": "ZenML Pipeline Runs"
+      },
+      {
+        "command": "zenml.goToPipelineUrl",
+        "title": "Go to URL",
+        "icon": "$(globe)",
         "category": "ZenML Pipeline Runs"
       },
       {
@@ -329,9 +341,19 @@
           "group": "inline@3"
         },
         {
+          "when": "stackCommandsRegistered && view == zenmlStackView && viewItem == stack",
+          "command": "zenml.goToStackUrl",
+          "group": "inline@4"
+        },
+        {
           "when": "pipelineCommandsRegistered && view == zenmlPipelineView && viewItem == pipelineRun",
           "command": "zenml.deletePipelineRun",
-          "group": "inline"
+          "group": "inline@1"
+        },
+        {
+          "when": "pipelineCommandsRegistered && view == zenmlPipelineView && viewItem == pipelineRun",
+          "command": "zenml.goToPipelineUrl",
+          "group": "inline@2"
         },
         {
           "when": "environmentCommandsRegistered && view == zenmlEnvironmentView && viewItem == interpreter",

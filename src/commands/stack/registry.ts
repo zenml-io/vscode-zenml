@@ -15,6 +15,7 @@ import { stackCommands } from './cmds';
 import { registerCommand } from '../../common/vscodeapi';
 import { ZenExtension } from '../../services/ZenExtension';
 import { ExtensionContext, commands, window } from 'vscode';
+import { node } from 'webpack';
 
 /**
  * Registers stack-related commands for the extension.
@@ -42,6 +43,9 @@ export const registerStackCommands = (context: ExtensionContext) => {
         'zenml.setActiveStack',
         async (node: StackTreeItem) => await stackCommands.setActiveStack(node)
       ),
+      registerCommand(
+        'zenml.goToStackUrl', 
+        async (node: StackTreeItem) => await stackCommands.goToStackUrl(node)),
       registerCommand(
         'zenml.copyStack',
         async (node: StackTreeItem) => await stackCommands.copyStack(node)
