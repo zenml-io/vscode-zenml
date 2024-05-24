@@ -118,8 +118,16 @@ suite('Stack Commands Test Suite', () => {
     stackCommands.goToStackUrl({ label: 'Stack', id: stackId } as any);
 
     assert.strictEqual(openExternalStub.calledOnce, true, 'openExternal should be called once');
-    assert.strictEqual(openExternalStub.args[0][0].toString(), expectedUrl, 'Correct URL should be passed to openExternal');
-    assert.strictEqual(showInformationMessageStub.calledOnce, true, 'showInformationMessage should be called once');
+    assert.strictEqual(
+      openExternalStub.args[0][0].toString(),
+      expectedUrl,
+      'Correct URL should be passed to openExternal'
+    );
+    assert.strictEqual(
+      showInformationMessageStub.calledOnce,
+      true,
+      'showInformationMessage should be called once'
+    );
     assert.strictEqual(
       showInformationMessageStub.args[0][0],
       `Opening: ${expectedUrl}`,

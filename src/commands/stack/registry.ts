@@ -44,8 +44,9 @@ export const registerStackCommands = (context: ExtensionContext) => {
         async (node: StackTreeItem) => await stackCommands.setActiveStack(node)
       ),
       registerCommand(
-        'zenml.goToStackUrl', 
-        async (node: StackTreeItem) => await stackCommands.goToStackUrl(node)),
+        'zenml.goToStackUrl',
+        async (node: StackTreeItem) => await stackCommands.goToStackUrl(node)
+      ),
       registerCommand(
         'zenml.copyStack',
         async (node: StackTreeItem) => await stackCommands.copyStack(node)
