@@ -39,7 +39,7 @@ this extension and your Python version needs to be 3.8 or greater.
 ## Feedback and Contributions
 
 Your feedback and contributions are welcome! Please refer to our [contribution
-guidelines](https://github.com/zenml-io/vscode-zenml/CONTRIBUTING.md) for more
+guidelines](https://github.com/zenml-io/vscode-zenml/blob/develop/CONTRIBUTING.md) for more
 information.
 
 For any further questions or issues, please reach out to us in our [Slack
