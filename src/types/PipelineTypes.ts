@@ -34,4 +34,24 @@ export interface PipelineRun {
   pythonVersion: string;
 }
 
+export interface DagNode {
+  id: string;
+  type: 'step' | 'artifact';
+  data: {
+    execution_id: string;
+    name: string;
+  };
+}
+
+export interface DagEdge {
+  id: string;
+  source: string;
+  target: string;
+}
+
+export interface DagResp {
+  nodes: Array<DagNode>;
+  edges: Array<DagEdge>;
+}
+
 export type PipelineRunsResponse = PipelineRunsData | ErrorMessageResponse | VersionMismatchError;
