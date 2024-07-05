@@ -11,18 +11,23 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import { ArrayXY, PointArrayAlias, SVG, SvgType, registerWindow } from '@svgdotjs/svg.js';
-import Dagre from 'dagre';
 
 import { LSClient } from '../../services/LSClient';
 import { showErrorMessage, showInformationMessage } from '../../utils/notifications';
 import { PipelineTreeItem } from '../../views/activityBar';
 import { PipelineDataProvider } from '../../views/activityBar/pipelineView/PipelineDataProvider';
 import * as vscode from 'vscode';
-import { getPipelineRunDashboardUrl } from './utils';
-import { getZenMLAccessToken, getZenMLServerUrl } from '../../utils/global';
+import {
+  getPipelineRunDashboardUrl,
+  getDagPanel,
+  registerDagPanel,
+  getDagData,
+  layoutDag,
+  drawDag,
+  getWebviewContent,
+} from './utils';
+import { getPath } from '../../utils/global';
 import { DagResp } from '../../types/PipelineTypes';
-
-let openPanels: vscode.WebviewPanel[] = [];
 
 /**
  * Triggers a refresh of the pipeline view within the UI components.
@@ -103,65 +108,21 @@ const goToPipelineUrl = (node: PipelineTreeItem): void => {
 
 const renderDag = async (node: PipelineTreeItem): Promise<void> => {
   // if DAG has already been rendered, switch to that panel
-  const existingPanel = openPanels.find(p => p.viewType === `DAG-${node.id}`);
+  const existingPanel = getDagPanel(node.id);
   if (existingPanel) {
     existingPanel.reveal();
     return;
   }
 
-  const token = getZenMLAccessToken();
-  const server = getZenMLServerUrl();
-  const pathToApi = `/api/v1/runs/${node.id}/graph`;
-  console.log(node.id);
+  let dagData: DagResp;
+  try {
+    dagData = await getDagData(node.id);
+  } catch {
+    // do an error
+    return;
+  }
 
-  const { createSVGWindow } = await import('svgdom');
-
-  const response = await fetch(server + pathToApi, {
-    headers: {
-      Authorization: 'Bearer ' + token,
-    },
-  });
-
-  const { edges, nodes } = (await response.json()) as DagResp;
-
-  const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
-  g.setGraph({ rankdir: 'TB', ranksep: 35, nodesep: 5 });
-
-  edges.forEach(edge => g.setEdge(edge.source, edge.target));
-  nodes.forEach(node => g.setNode(node.id, { width: 300, height: node.type === 'step' ? 50 : 44 }));
-
-  Dagre.layout(g);
-
-  const window = createSVGWindow();
-  const document = window.document;
-
-  registerWindow(window, document);
-  const canvas = SVG().addTo(document.documentElement);
-  canvas.size(g.graph().width, g.graph().height);
-
-  g.edges().forEach(edge => {
-    // console.log(edge, g.node(edge.v));
-    const line: ArrayXY[] = g.edge(edge).points.map(({ x, y }) => [x, y]);
-    canvas
-      .polyline(line)
-      .fill('none')
-      .stroke({ color: '#f06', width: 4, linecap: 'round', linejoin: 'round' });
-  });
-
-  nodes.forEach(node => {
-    const { width, height, x, y } = g.node(node.id);
-    const group = canvas
-      .group()
-      .translate(x - width / 2, y - height / 2)
-      .attr('data-id', node.id);
-    if (node.type === 'step') {
-      group.rect(width, height).fill('white').stroke({ color: 'black', width: 2 });
-    } else {
-      group.rect(width, height).radius(20).fill('orange').stroke({ color: 'red', width: 2 });
-    }
-    const label = group.text(node.data.name);
-    label.center(width / 2, height / 2);
-  });
+  const graph = layoutDag(dagData);
 
   const panel = vscode.window.createWebviewPanel(
     `DAG-${node.id}`,
@@ -169,34 +130,20 @@ const renderDag = async (node: PipelineTreeItem): Promise<void> => {
     vscode.ViewColumn.One,
     {
       enableScripts: true,
-      retainContextWhenHidden: true,
     }
   );
 
+  const svg = await drawDag(dagData.nodes, graph, panel);
+
+  const onDiskPath = vscode.Uri.file(getPath() + '/resources/dag-view/dag.css');
+  const cssUri = panel.webview.asWebviewUri(onDiskPath).toString();
+
   // And set its HTML content
-  panel.webview.html = getWebviewContent(canvas.svg());
+  panel.webview.html = getWebviewContent({ svg, cssUri });
 
   // To track which DAGs are currently open
-  openPanels.push(panel);
-
-  panel.onDidDispose(() => {
-    openPanels = openPanels.filter(p => p !== panel);
-  }, null);
+  registerDagPanel(node.id, panel);
 };
-
-function getWebviewContent(svg: string) {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cat Coding</title>
-</head>
-<body>
-    ${svg}
-</body>
-</html>`;
-}
 
 export const pipelineCommands = {
   refreshPipelineView,
