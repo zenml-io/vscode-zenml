@@ -22,6 +22,8 @@ import { getPipelineRunDashboardUrl } from './utils';
 import { getZenMLAccessToken, getZenMLServerUrl } from '../../utils/global';
 import { DagResp } from '../../types/PipelineTypes';
 
+let openPanels: vscode.WebviewPanel[] = [];
+
 /**
  * Triggers a refresh of the pipeline view within the UI components.
  *
@@ -100,6 +102,13 @@ const goToPipelineUrl = (node: PipelineTreeItem): void => {
 };
 
 const renderDag = async (node: PipelineTreeItem): Promise<void> => {
+  // if DAG has already been rendered, switch to that panel
+  const existingPanel = openPanels.find(p => p.viewType === `DAG-${node.id}`);
+  if (existingPanel) {
+    existingPanel.reveal();
+    return;
+  }
+
   const token = getZenMLAccessToken();
   const server = getZenMLServerUrl();
   const pathToApi = `/api/v1/runs/${node.id}/graph`;
@@ -166,6 +175,13 @@ const renderDag = async (node: PipelineTreeItem): Promise<void> => {
 
   // And set its HTML content
   panel.webview.html = getWebviewContent(canvas.svg());
+
+  // To track which DAGs are currently open
+  openPanels.push(panel);
+
+  panel.onDidDispose(() => {
+    openPanels = openPanels.filter(p => p !== panel);
+  }, null);
 };
 
 function getWebviewContent(svg: string) {
