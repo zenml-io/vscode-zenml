@@ -18,7 +18,7 @@ import { refreshUIComponents } from './utils/refresh';
 import { EnvironmentDataProvider } from './views/activityBar/environmentView/EnvironmentDataProvider';
 import { registerEnvironmentCommands } from './commands/environment/registry';
 import { LSP_ZENML_CLIENT_INITIALIZED } from './utils/constants';
-import { toggleCommands } from './utils/global';
+import { toggleCommands, setPath } from './utils/global';
 
 export async function activate(context: vscode.ExtensionContext) {
   const eventBus = EventBus.getInstance();
@@ -46,6 +46,8 @@ export async function activate(context: vscode.ExtensionContext) {
       eventBus.off(LSP_ZENML_CLIENT_INITIALIZED, handleZenMLClientInitialized);
     })
   );
+
+  setPath(context);
 }
 
 /**
