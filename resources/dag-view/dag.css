@@ -10,32 +10,21 @@ svg {
   stroke: var(--vscode-editor-foreground);
 }
 
-#container,
-#container > svg,
-#nodes {
-  position: absolute;
-  top: 0;
-  left: 0;
+.node {
   width: 100%;
   height: 100%;
-}
-
-.node {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 300px;
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1;
 }
 
-.node > div {
+.node div {
   display: flex;
   justify-content: center;
   align-items: center;
   border: 2px var(--vscode-editor-foreground) solid;
+  width: auto;
   max-width: 280px;
   height: 100%;
   box-sizing: border-box;
@@ -50,7 +39,7 @@ svg {
 }
 
 .step {
-  border-radius: 10%;
+  border-radius: 10px;
 }
 
 .artifact {

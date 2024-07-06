@@ -149,20 +149,18 @@ export const drawDag = async (
     edgeGroup.polyline(line).fill('none').stroke({ width: 2, linecap: 'round', linejoin: 'round' });
   });
 
-  const nodesGroup = canvas.element('div').attr('id', 'nodes');
+  const nodesGroup = canvas.group().attr('id', 'nodes');
 
   nodes.forEach(node => {
     const { width, height, x, y } = graph.node(node.id);
     const iconUri = uris.get(node);
 
     const container = nodesGroup
-      .element('div')
-      .attr('class', 'node')
-      .attr(
-        'style',
-        `transform: translate(${x - Math.floor(width / 2)}px, ${y - Math.floor(height / 2)}px)`
-      );
-    const box = container.element('div').attr('class', node.type);
+      .foreignObject(width, height)
+      .translate(x - width / 2, y - height / 2);
+
+    const div = container.element('div').attr('class', 'node');
+    const box = div.element('div').attr('class', node.type);
     box.element('img').attr('src', iconUri);
     box.element('p').words(node.data.name);
     // const group = nodesGroup
@@ -178,6 +176,8 @@ export const drawDag = async (
     // const label = group.text(node.data.name);
     // label.center(width / 2, height / 2);
   });
+
+  console.log(canvas.svg());
 
   return canvas.svg();
 };
@@ -196,9 +196,9 @@ export const getWebviewContent = ({ svg, cssUri }: { svg: string; cssUri: string
     ${svg}
   </div>
   <script>
-    const container = document.getElementById('container');
-    const nodes = document.getElementById('nodes');
-    container.append(nodes);
+  //   const container = document.getElementById('container');
+  //   const nodes = document.getElementById('nodes');
+  //   container.append(nodes);
   </script>
 </body>
 </html>`;
