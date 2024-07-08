@@ -20,7 +20,7 @@ body > svg {
   z-index: 1;
 }
 
-.node div {
+.node > div {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -39,10 +39,12 @@ body > svg {
   height: 20px;
 }
 
-.step {
+.node > .step {
   border-radius: 10px;
+  color: lightpink;
+  background: rgb(70, 0, 70);
 }
 
-.artifact {
+.node > .artifact {
   border-radius: 9999px;
 }

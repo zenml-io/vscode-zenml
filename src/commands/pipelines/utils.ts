@@ -155,8 +155,8 @@ export const drawDag = async (
   const document = window.document;
 
   registerWindow(window, document);
-  const canvas = SVG().addTo(document.documentElement);
-  canvas.viewbox(0, 0, graph.graph().width as number, graph.graph().height as number);
+  const canvas = SVG().addTo(document.documentElement).id('dag');
+  canvas.size(graph.graph().width, graph.graph().height);
   const orthoEdges = calculateEdges(graph);
 
   const edgeGroup = canvas.group().attr('id', 'edges');
@@ -198,7 +198,6 @@ export const drawDag = async (
     // const label = group.text(node.data.name);
     // label.center(width / 2, height / 2);
   });
-
   return canvas.svg();
 };
 
@@ -209,16 +208,29 @@ export const getWebviewContent = ({ svg, cssUri }: { svg: string; cssUri: string
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="${cssUri}">
-    <title>Cat Coding</title>
+  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.5.0/dist/svg-pan-zoom.min.js"></script>
+    <title>DAG</title>
 </head>
 <body>
   <div id="container">
     ${svg}
   </div>
   <script>
-  //   const container = document.getElementById('container');
-  //   const nodes = document.getElementById('nodes');
-  //   container.append(nodes);
+    const dag = document.querySelector('#dag');
+    const panZoom = svgPanZoom(dag);
+    panZoom.enableControlIcons();
+    panZoom.setMaxZoom(40)
+
+    const resize = () => {
+      dag.setAttribute('width', String(window.innerWidth * 0.95) + 'px' );
+      dag.setAttribute('height', String(window.innerHeight * 0.95) + 'px');
+      panZoom.resize();
+      panZoom.fit();
+      panZoom.center();
+    }
+
+    resize();
+    window.addEventListener('resize', resize);
   </script>
 </body>
 </html>`;
