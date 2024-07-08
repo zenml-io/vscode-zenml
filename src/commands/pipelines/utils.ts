@@ -127,6 +127,23 @@ const getIconUris = (panel: WebviewPanel): IconUris => {
   return uris;
 };
 
+const calculateEdges = (g: Dagre.graphlib.Graph): Array<ArrayXY[]> => {
+  const edges = g.edges();
+  return edges.map(edge => {
+    const currentLine = g.edge(edge).points.map<ArrayXY>(point => [point.x, point.y]);
+    const startNode = g.node(edge.v);
+    const endNode = g.node(edge.w);
+
+    const rest = currentLine.slice(1, currentLine.length - 1);
+    const start = [startNode.x, startNode.y + startNode.height / 2];
+    const end = [endNode.x, endNode.y - endNode.height / 2];
+    const second = [startNode.x, rest[0][1]];
+    const penultimate = [endNode.x, rest[rest.length - 1][1]];
+
+    return [start, second, ...rest, penultimate, end] as ArrayXY[];
+  });
+};
+
 export const drawDag = async (
   nodes: Array<DagNode>,
   graph: Dagre.graphlib.Graph,
@@ -139,15 +156,20 @@ export const drawDag = async (
 
   registerWindow(window, document);
   const canvas = SVG().addTo(document.documentElement);
-  canvas.size(graph.graph().width, graph.graph().height);
+  canvas.viewbox(0, 0, graph.graph().width as number, graph.graph().height as number);
+  const orthoEdges = calculateEdges(graph);
 
   const edgeGroup = canvas.group().attr('id', 'edges');
 
-  graph.edges().forEach(edge => {
-    // console.log(edge, g.node(edge.v));
-    const line: ArrayXY[] = graph.edge(edge).points.map(({ x, y }) => [x, y]);
+  orthoEdges.forEach(line => {
     edgeGroup.polyline(line).fill('none').stroke({ width: 2, linecap: 'round', linejoin: 'round' });
   });
+
+  // graph.edges().forEach(edge => {
+  //   // console.log(edge, g.node(edge.v));
+  //   const line: ArrayXY[] = graph.edge(edge).points.map(({ x, y }) => [x, y]);
+  //   edgeGroup.polyline(line).fill('none').stroke({ width: 2, linecap: 'round', linejoin: 'round' });
+  // });
 
   const nodesGroup = canvas.group().attr('id', 'nodes');
 
@@ -176,8 +198,6 @@ export const drawDag = async (
     // const label = group.text(node.data.name);
     // label.center(width / 2, height / 2);
   });
-
-  console.log(canvas.svg());
 
   return canvas.svg();
 };
