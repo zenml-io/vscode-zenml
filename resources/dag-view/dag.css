@@ -2,8 +2,9 @@ body {
   background-color: var(--vscode-editor-background);
 }
 
-svg {
+body > svg {
   z-index: 0;
+  width: 100%;
 }
 
 #edges polyline {
