@@ -53,9 +53,15 @@ const deregisterDagPanel = (runId: string) => {
   delete openPanels[runId];
 };
 
+export class LocalDatabaseError extends Error {}
+
 export const getDagData = async (runId: string): Promise<DagResp> => {
-  const token = getZenMLAccessToken();
   const server = getZenMLServerUrl();
+
+  if (server.startsWith('sqlite')) {
+    throw new LocalDatabaseError();
+  }
+  const token = getZenMLAccessToken();
   const pathToApi = `/api/v1/runs/${runId}/graph`;
 
   const response = await fetch(server + pathToApi, {
