@@ -133,7 +133,12 @@ const getIconUris = (panel: WebviewPanel): IconUris => {
   return uris;
 };
 
-const calculateEdges = (g: Dagre.graphlib.Graph): Array<ArrayXY[]> => {
+interface Edge {
+  from: string;
+  points: ArrayXY[];
+}
+
+const calculateEdges = (g: Dagre.graphlib.Graph): Array<Edge> => {
   const edges = g.edges();
   return edges.map(edge => {
     const currentLine = g.edge(edge).points.map<ArrayXY>(point => [point.x, point.y]);
@@ -146,7 +151,10 @@ const calculateEdges = (g: Dagre.graphlib.Graph): Array<ArrayXY[]> => {
     const second = [startNode.x, rest[0][1]];
     const penultimate = [endNode.x, rest[rest.length - 1][1]];
 
-    return [start, second, ...rest, penultimate, end] as ArrayXY[];
+    return {
+      from: edge.v,
+      points: [start, second, ...rest, penultimate, end] as ArrayXY[],
+    };
   });
 };
 
@@ -167,8 +175,12 @@ export const drawDag = async (
 
   const edgeGroup = canvas.group().attr('id', 'edges');
 
-  orthoEdges.forEach(line => {
-    edgeGroup.polyline(line).fill('none').stroke({ width: 2, linecap: 'round', linejoin: 'round' });
+  orthoEdges.forEach(edge => {
+    edgeGroup
+      .polyline(edge.points)
+      .fill('none')
+      .stroke({ width: 2, linecap: 'round', linejoin: 'round' })
+      .attr('data-from', edge.from);
   });
 
   // graph.edges().forEach(edge => {
@@ -187,7 +199,7 @@ export const drawDag = async (
       .foreignObject(width, height)
       .translate(x - width / 2, y - height / 2);
 
-    const div = container.element('div').attr('class', 'node');
+    const div = container.element('div').attr('class', 'node').attr('data-id', node.id);
     const box = div.element('div').attr('class', node.type);
     box.element('img').attr('src', iconUri);
     box.element('p').words(node.data.name);
@@ -207,7 +219,15 @@ export const drawDag = async (
   return canvas.svg();
 };
 
-export const getWebviewContent = ({ svg, cssUri }: { svg: string; cssUri: string }): string => {
+export const getWebviewContent = ({
+  svg,
+  cssUri,
+  jsUri,
+}: {
+  svg: string;
+  cssUri: string;
+  jsUri: string;
+}): string => {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -221,23 +241,7 @@ export const getWebviewContent = ({ svg, cssUri }: { svg: string; cssUri: string
   <div id="container">
     ${svg}
   </div>
-  <script>
-    const dag = document.querySelector('#dag');
-    const panZoom = svgPanZoom(dag);
-    panZoom.enableControlIcons();
-    panZoom.setMaxZoom(40)
-
-    const resize = () => {
-      dag.setAttribute('width', String(window.innerWidth * 0.95) + 'px' );
-      dag.setAttribute('height', String(window.innerHeight * 0.95) + 'px');
-      panZoom.resize();
-      panZoom.fit();
-      panZoom.center();
-    }
-
-    resize();
-    window.addEventListener('resize', resize);
-  </script>
+  <script src="${jsUri}"></script>
 </body>
 </html>`;
 };

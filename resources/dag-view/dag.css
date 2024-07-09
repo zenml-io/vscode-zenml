@@ -48,3 +48,23 @@ body > svg {
 .node > .artifact {
   border-radius: 9999px;
 }
+
+body.vscode-light .highlight,
+body.vscode-high-contrast .highlight {
+  filter: drop-shadow(5px 0px 8px rgb(150, 0, 150));
+}
+
+body.vscode-dark .highlight {
+  filter: drop-shadow(5px 0px 8px lightpink);
+}
+
+body.vscode-light #edges .highlight,
+body.vscode-high-contrast #edges .highlight {
+  stroke: rgb(150, 0, 150);
+  stroke-width: 4px;
+}
+
+body.vscode-dark #edges .highlight {
+  stroke: lightpink;
+  stroke-width: 4px;
+}
