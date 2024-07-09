@@ -20,6 +20,7 @@ import * as vscode from 'vscode';
 import {
   getPipelineRunDashboardUrl,
   getDagPanel,
+  getLoadingContent,
   registerDagPanel,
   getDagData,
   layoutDag,
@@ -114,6 +115,17 @@ const renderDag = async (node: PipelineTreeItem): Promise<void> => {
     return;
   }
 
+  const panel = vscode.window.createWebviewPanel(
+    `DAG-${node.id}`,
+    `DAG Visualization`,
+    vscode.ViewColumn.One,
+    {
+      enableScripts: true,
+    }
+  );
+
+  panel.webview.html = getLoadingContent();
+
   let dagData: DagResp;
   try {
     dagData = await getDagData(node.id);
@@ -123,15 +135,6 @@ const renderDag = async (node: PipelineTreeItem): Promise<void> => {
   }
 
   const graph = layoutDag(dagData);
-
-  const panel = vscode.window.createWebviewPanel(
-    `DAG-${node.id}`,
-    `DAG Visualization`,
-    vscode.ViewColumn.One,
-    {
-      enableScripts: true,
-    }
-  );
 
   const svg = await drawDag(dagData.nodes, graph, panel);
 
