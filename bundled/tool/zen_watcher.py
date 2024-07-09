@@ -49,6 +49,11 @@ class ZenConfigWatcher(FileSystemEventHandler):
             "always",
         ]
 
+        with suppress_stdout_temporarily():
+            config_wrapper_instance = self.LSP_SERVER.zenml_client.config_wrapper
+            self.config_path = config_wrapper_instance.get_global_config_file_path()
+        
+
     def process_config_change(self, config_file_path: str):
         """Process the configuration file change."""
         with suppress_stdout_temporarily():
@@ -88,8 +93,12 @@ class ZenConfigWatcher(FileSystemEventHandler):
         """
         Handles the modification event triggered when the global configuration file is changed.
         """
+        if event.src_path != self.config_path:
+            return
+        
         if self._timer is not None:
             self._timer.cancel()
+        
         self._timer = Timer(self.debounce_interval, self.process_event, [event])
         self._timer.start()
 
@@ -97,11 +106,7 @@ class ZenConfigWatcher(FileSystemEventHandler):
         """
         Processes the event with a debounce mechanism.
         """
-        with suppress_stdout_temporarily():
-            config_wrapper_instance = self.LSP_SERVER.zenml_client.config_wrapper
-            config_file_path = config_wrapper_instance.get_global_config_file_path()
-            if event.src_path == str(config_file_path):
-                self.process_config_change(config_file_path)
+        self.process_config_change(event.src_path)
 
     def watch_zenml_config_yaml(self):
         """
