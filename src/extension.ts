@@ -18,7 +18,8 @@ import { refreshUIComponents } from './utils/refresh';
 import { EnvironmentDataProvider } from './views/activityBar/environmentView/EnvironmentDataProvider';
 import { registerEnvironmentCommands } from './commands/environment/registry';
 import { LSP_ZENML_CLIENT_INITIALIZED } from './utils/constants';
-import { toggleCommands, setPath } from './utils/global';
+import { toggleCommands } from './utils/global';
+import DagRenderer from './commands/pipelines/DagRender';
 
 export async function activate(context: vscode.ExtensionContext) {
   const eventBus = EventBus.getInstance();
@@ -47,7 +48,7 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  setPath(context);
+  new DagRenderer(context);
 }
 
 /**
@@ -62,4 +63,5 @@ export async function deactivate(): Promise<void> {
     await lsClient.stop();
     EventBus.getInstance().emit('lsClientReady', false);
   }
+  DagRenderer.getInstance()?.deactivate();
 }

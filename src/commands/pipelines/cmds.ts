@@ -10,26 +10,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import { ArrayXY, PointArrayAlias, SVG, SvgType, registerWindow } from '@svgdotjs/svg.js';
-
 import { LSClient } from '../../services/LSClient';
 import { showErrorMessage, showInformationMessage } from '../../utils/notifications';
 import { PipelineTreeItem } from '../../views/activityBar';
 import { PipelineDataProvider } from '../../views/activityBar/pipelineView/PipelineDataProvider';
 import * as vscode from 'vscode';
-import {
-  getPipelineRunDashboardUrl,
-  getDagPanel,
-  getLoadingContent,
-  registerDagPanel,
-  getDagData,
-  layoutDag,
-  drawDag,
-  getWebviewContent,
-  LocalDatabaseError,
-} from './utils';
-import { getPath } from '../../utils/global';
-import { DagResp } from '../../types/PipelineTypes';
+import { getPipelineRunDashboardUrl } from './utils';
+import DagRenderer from './DagRender';
 
 /**
  * Triggers a refresh of the pipeline view within the UI components.
@@ -108,54 +95,8 @@ const goToPipelineUrl = (node: PipelineTreeItem): void => {
   }
 };
 
-const renderDag = async (node: PipelineTreeItem): Promise<void> => {
-  // if DAG has already been rendered, switch to that panel
-  const existingPanel = getDagPanel(node.id);
-  if (existingPanel) {
-    existingPanel.reveal();
-    return;
-  }
-
-  const panel = vscode.window.createWebviewPanel(
-    `DAG-${node.id}`,
-    `DAG Visualization`,
-    vscode.ViewColumn.One,
-    {
-      enableScripts: true,
-    }
-  );
-
-  panel.webview.html = getLoadingContent();
-
-  let dagData: DagResp;
-  try {
-    dagData = await getDagData(node.id);
-  } catch (e) {
-    if (e instanceof LocalDatabaseError) {
-      vscode.window.showInformationMessage('Zenml must be connected to a server to visualize DAG');
-    } else {
-      vscode.window.showErrorMessage('Unable to receive response from Zenml server');
-    }
-
-    return;
-  }
-
-  const graph = layoutDag(dagData);
-
-  const svg = await drawDag(dagData.nodes, graph, panel);
-
-  const path = getPath();
-  const cssOnDiskPath = vscode.Uri.file(path + '/resources/dag-view/dag.css');
-  const cssUri = panel.webview.asWebviewUri(cssOnDiskPath).toString();
-
-  const jsOnDiskPath = vscode.Uri.file(path + '/resources/dag-view/dag.js');
-  const jsUri = panel.webview.asWebviewUri(jsOnDiskPath).toString();
-
-  // And set its HTML content
-  panel.webview.html = getWebviewContent({ svg, cssUri, jsUri });
-
-  // To track which DAGs are currently open
-  registerDagPanel(node.id, panel);
+const renderDag = (node: PipelineTreeItem): void => {
+  DagRenderer.getInstance()?.createView(node);
 };
 
 export const pipelineCommands = {

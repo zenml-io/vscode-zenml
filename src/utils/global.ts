@@ -127,13 +127,3 @@ export async function toggleCommands(state: boolean): Promise<void> {
   await vscode.commands.executeCommand('setContext', 'pipelineCommandsRegistered', state);
   await vscode.commands.executeCommand('setContext', 'environmentCommandsRegistered', state);
 }
-
-let path: string = '';
-
-export function setPath(context: vscode.ExtensionContext) {
-  path = context.extensionPath;
-}
-
-export function getPath() {
-  return path;
-}
