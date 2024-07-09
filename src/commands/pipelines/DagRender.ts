@@ -1,3 +1,4 @@
+import fs from 'fs/promises';
 import * as vscode from 'vscode';
 import * as Dagre from 'dagre';
 import { ArrayXY, SVG, registerWindow } from '@svgdotjs/svg.js';
@@ -26,12 +27,14 @@ export default class DagRenderer {
   private openPanels: { [id: string]: vscode.WebviewPanel };
   private extensionPath: string;
   private createSVGWindow: Function = () => {};
+  private iconSvgs: { [name: string]: string } = {};
 
   constructor(context: vscode.ExtensionContext) {
     DagRenderer.instance = this;
     this.openPanels = {};
     this.extensionPath = context.extensionPath;
     this.loadSvgWindowLib();
+    this.loadIcons();
   }
 
   public static getInstance(): DagRenderer | undefined {
@@ -146,44 +149,65 @@ export default class DagRenderer {
     return g;
   }
 
-  private getIconUris(panel: vscode.WebviewPanel): IconUris {
-    const uris = {
-      get(node: DagNode): string {
-        if (node.type === 'step') {
-          switch (node.data.status) {
-            case 'completed':
-              return this.check;
-            case 'failed':
-              return this.alert;
-            case 'cached':
-              return this.cached;
-            default:
-              return this.alert;
-          }
-        }
-
-        if (node.data.artifact_type === 'ModelArtifact') {
-          return this.dataflow;
-        }
-
-        return this.database;
-      },
-    } as IconUris;
-    const keys: Array<Exclude<keyof IconUris, 'get'>> = [
-      'alert',
-      'cached',
-      'check',
-      'database',
-      'dataflow',
-    ];
-
-    keys.forEach(key => {
-      const uri = vscode.Uri.file(`${this.extensionPath}/resources/dag-view/icons/${key}.svg`);
-      uris[key] = panel.webview.asWebviewUri(uri).toString();
+  private loadIcons(): void {
+    const ICON_MAP = {
+      failed: 'alert.svg',
+      completed: 'check.svg',
+      cached: 'cached.svg',
+      initializing: 'initializing.svg',
+      running: 'play.svg',
+      database: 'database.svg',
+      dataflow: 'dataflow.svg',
+    };
+    const basePath = `${this.extensionPath}/resources/dag-view/icons/`;
+    Object.entries(ICON_MAP).forEach(async ([name, fileName]) => {
+      try {
+        const file = await fs.readFile(basePath + fileName);
+        this.iconSvgs[name] = file.toString();
+      } catch {
+        this.iconSvgs[name] = '';
+      }
     });
-
-    return uris;
   }
+
+  // private getIconUris(panel: vscode.WebviewPanel): IconUris {
+  //   const uris = {
+  //     get(node: DagNode): string {
+  //       if (node.type === 'step') {
+  //         switch (node.data.status) {
+  //           case 'completed':
+  //             return this.check;
+  //           case 'failed':
+  //             return this.alert;
+  //           case 'cached':
+  //             return this.cached;
+  //           default:
+  //             return this.alert;
+  //         }
+  //       }
+
+  //       if (node.data.artifact_type === 'ModelArtifact') {
+  //         return this.dataflow;
+  //       }
+
+  //       return this.database;
+  //     },
+  //   } as IconUris;
+  //   const keys: Array<Exclude<keyof IconUris, 'get'>> = [
+  //     'alert',
+  //     'cached',
+  //     'check',
+  //     'database',
+  //     'dataflow',
+  //   ];
+
+  //   keys.forEach(key => {
+  //     const uri = vscode.Uri.file(`${this.extensionPath}/resources/dag-view/icons/${key}.svg`);
+  //     uris[key] = panel.webview.asWebviewUri(uri).toString();
+  //   });
+
+  //   return uris;
+  // }
 
   private calculateEdges = (g: Dagre.graphlib.Graph): Array<Edge> => {
     const edges = g.edges();
@@ -210,7 +234,7 @@ export default class DagRenderer {
     graph: Dagre.graphlib.Graph,
     panel: vscode.WebviewPanel
   ): Promise<string> {
-    const uris = this.getIconUris(panel);
+    // const uris = this.getIconUris(panel);
     const window = this.createSVGWindow();
     const document = window.document;
 
@@ -233,7 +257,19 @@ export default class DagRenderer {
 
     nodes.forEach(node => {
       const { width, height, x, y } = graph.node(node.id);
-      const iconUri = uris.get(node);
+      let iconSVG: string;
+      let status: string = '';
+
+      if (node.type === 'step') {
+        iconSVG = this.iconSvgs[node.data.status];
+        status = node.data.status;
+      } else {
+        if (node.data.artifact_type === 'ModelArtifact') {
+          iconSVG = this.iconSvgs.dataflow;
+        } else {
+          iconSVG = this.iconSvgs.database;
+        }
+      }
 
       const container = nodesGroup
         .foreignObject(width, height)
@@ -241,9 +277,11 @@ export default class DagRenderer {
 
       const div = container.element('div').attr('class', 'node').attr('data-id', node.id);
       const box = div.element('div').attr('class', node.type);
-      box.element('img').attr('src', iconUri);
+      const icon = SVG(iconSVG);
+      box.add(SVG(icon).attr('class', `icon ${status}`));
       box.element('p').words(node.data.name);
     });
+    console.log(canvas.svg());
     return canvas.svg();
   }
 

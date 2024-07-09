@@ -33,16 +33,10 @@ body > svg {
   background: var(--vscode-editor-background);
 }
 
-.node img {
-  filter: invert(1);
-  width: 20px;
-  height: 20px;
-}
-
 .node > .step {
   border-radius: 10px;
-  color: lightpink;
-  background: rgb(70, 0, 70);
+  color: lightblue;
+  background: rgb(0, 10, 50);
 }
 
 .node > .artifact {
@@ -67,4 +61,42 @@ body.vscode-high-contrast #edges .highlight {
 body.vscode-dark #edges .highlight {
   stroke: lightpink;
   stroke-width: 4px;
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
+}
+
+.artifact .icon {
+  fill: var(--vscode-editor-foreground);
+}
+
+.completed {
+  fill: hsl(137 85% 50%);
+}
+
+.failed {
+  fill: hsl(3 81% 52%);
+}
+
+.cached {
+  fill: hsl(220 35% 50%);
+}
+
+.initializing {
+  fill: hsl(259 90% 50%);
+}
+
+.running {
+  fill: hsl(33 96% 50%);
+}
+
+rect.svg-pan-zoom-control-background {
+  fill: var(--vscode-editor-foreground);
+}
+
+g.svg-pan-zoom-control {
+  fill: var(--vscode-editor-background);
+  fill-opacity: 100%;
 }
