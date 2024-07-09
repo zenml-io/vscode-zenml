@@ -26,6 +26,7 @@ import {
   layoutDag,
   drawDag,
   getWebviewContent,
+  LocalDatabaseError,
 } from './utils';
 import { getPath } from '../../utils/global';
 import { DagResp } from '../../types/PipelineTypes';
@@ -129,8 +130,13 @@ const renderDag = async (node: PipelineTreeItem): Promise<void> => {
   let dagData: DagResp;
   try {
     dagData = await getDagData(node.id);
-  } catch {
-    // do an error
+  } catch (e) {
+    if (e instanceof LocalDatabaseError) {
+      vscode.window.showInformationMessage('Zenml must be connected to a server to visualize DAG');
+    } else {
+      vscode.window.showErrorMessage('Unable to receive response from Zenml server');
+    }
+
     return;
   }
 
