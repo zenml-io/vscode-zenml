@@ -144,11 +144,15 @@ const renderDag = async (node: PipelineTreeItem): Promise<void> => {
 
   const svg = await drawDag(dagData.nodes, graph, panel);
 
-  const onDiskPath = vscode.Uri.file(getPath() + '/resources/dag-view/dag.css');
-  const cssUri = panel.webview.asWebviewUri(onDiskPath).toString();
+  const path = getPath();
+  const cssOnDiskPath = vscode.Uri.file(path + '/resources/dag-view/dag.css');
+  const cssUri = panel.webview.asWebviewUri(cssOnDiskPath).toString();
+
+  const jsOnDiskPath = vscode.Uri.file(path + '/resources/dag-view/dag.js');
+  const jsUri = panel.webview.asWebviewUri(jsOnDiskPath).toString();
 
   // And set its HTML content
-  panel.webview.html = getWebviewContent({ svg, cssUri });
+  panel.webview.html = getWebviewContent({ svg, cssUri, jsUri });
 
   // To track which DAGs are currently open
   registerDagPanel(node.id, panel);
