@@ -324,6 +324,44 @@ class PipelineRunsWrapper:
             return {"message": f"Pipeline run `{run_id}` deleted successfully."}
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to delete pipeline run: {str(e)}"}
+        
+    def get_pipeline_run(self, args) -> dict:
+        """Gets a ZenML pipeline run.
+        
+        Args:
+            args (list): List of arguments.
+        Returns:
+            dict: Dictionary containing the result of the operation.
+        """
+        try:
+            run_id = args[0]
+            run = self.client.get_pipeline_run(run_id, hydrate=True)
+            run_data = {
+                "id": str(run.id),
+                    "name": run.body.pipeline.name,
+                    "status": run.body.status,
+                    "version": run.body.pipeline.body.version,
+                    "stackName": run.body.stack.name,
+                    "startTime": (
+                        run.metadata.start_time.isoformat() if run.metadata.start_time else None
+                    ),
+                    "endTime": (
+                        run.metadata.end_time.isoformat() if run.metadata.end_time else None
+                    ),
+                    "os": run.metadata.client_environment.get("os", "Unknown OS"),
+                    "osVersion": run.metadata.client_environment.get(
+                        "os_version",
+                        run.metadata.client_environment.get("mac_version", "Unknown Version"),
+                    ),
+                    "pythonVersion": run.metadata.client_environment.get(
+                        "python_version", "Unknown"
+                    ),
+            }
+
+            return run_data
+        except self.ZenMLBaseException as e:
+            return {"error": f"Failed to retrieve pipeline run: {str(e)}"}
+
 
 
 class StacksWrapper:

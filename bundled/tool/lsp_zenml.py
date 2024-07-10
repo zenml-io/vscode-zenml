@@ -273,3 +273,9 @@ class ZenLanguageServer(LanguageServer):
         def delete_pipeline_run(wrapper_instance, args):
             """Deletes a specified ZenML pipeline run."""
             return wrapper_instance.delete_pipeline_run(args)
+        
+        @self.command(f"{TOOL_MODULE_NAME}.getPipelineRun")
+        @self.zenml_command(wrapper_name="pipeline_runs_wrapper")
+        def get_pipeline_run(wrapper_instance, args):
+            """Gets a specified ZenML pipeline run."""
+            return wrapper_instance.get_pipeline_run(args)
