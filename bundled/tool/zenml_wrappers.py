@@ -260,6 +260,11 @@ class PipelineRunsWrapper:
     def ZenMLBaseException(self):
         """Returns the ZenML ZenMLBaseException class."""
         return self.lazy_import("zenml.exceptions", "ZenMLBaseException")
+    
+    @property
+    def LineageGraph(self):
+        """Returns the ZenML LineageGraph class."""
+        return self.lazy_import("zenml.lineage_graph.lineage_graph", "LineageGraph")
 
     def fetch_pipeline_runs(self, args):
         """Fetches all ZenML pipeline runs.
@@ -361,6 +366,46 @@ class PipelineRunsWrapper:
             return run_data
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve pipeline run: {str(e)}"}
+        
+    def get_pipeline_run_graph(self, args) -> dict:
+        """Gets a ZenML pipeline run step DAG.
+        
+        Args:
+            args (list): List of arguments.
+        Returns:
+            dict: Dictionary containing the result of the operation.
+        """
+        try:
+            run_id = args[0]
+            run = self.client.get_pipeline_run(run_id, hydrate=False)
+            graph = self.LineageGraph()
+            graph.generate_run_nodes_and_edges(run)
+
+            dag_data = {
+                "nodes": [
+                    {
+                        "id": node.id,
+                        "type": node.type,
+                        "data": {
+                            "execution_id": node.data.execution_id,
+                            "name": node.data.name,
+                            "status": node.data.status if node.type == 'step' else None,
+                            "artifact_type": node.data.artifact_type if node.type == 'artifact' else None,
+                        }
+                    } for node in graph.nodes
+                ],
+                "edges": [
+                    {
+                        "id": edge.id,
+                        "source": edge.source,
+                        "target": edge.target
+                    } for edge in graph.edges
+                ]
+            }
+
+            return dag_data
+        except self.ZenMLBaseException as e:
+            return {"error": f"Failed to retrieve pipeline run graph: {str(e)}"}
 
     def get_run_step(self, args) -> dict:
         """Gets a ZenML pipeline run step.
