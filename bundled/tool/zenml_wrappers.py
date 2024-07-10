@@ -362,6 +362,89 @@ class PipelineRunsWrapper:
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve pipeline run: {str(e)}"}
 
+    def get_run_step(self, args) -> dict:
+        """Gets a ZenML pipeline run step.
+        
+        Args:
+            args (list): List of arguments.
+        Returns:
+            dict: Dictionary containing the result of the operation.
+        """
+        try:
+            step_run_id = args[0]
+            step = self.client.get_run_step(step_run_id, hydrate=True)
+            run = self.client.get_pipeline_run(step.metadata.pipeline_run_id, hydrate=True)
+
+            step_data = {
+                "id": str(step.id),
+                "name": step.name,
+                "status": step.body.status,
+                "author": {
+                    "fullName": step.body.user.body.full_name,
+                    "email": step.body.user.name,
+                },
+                "cacheKey": step.metadata.cache_key,
+                "pipeline": {
+                    "name": run.body.pipeline.name,
+                    "status": run.body.status,
+                    "version": run.body.pipeline.body.version,
+                },
+                "stackName": run.body.stack.name,
+                "startTime": (
+                    step.metadata.start_time.isoformat() if step.metadata.start_time else None
+                ),
+                "endTime": (
+                    step.metadata.end_time.isoformat() if step.metadata.end_time else None
+                ),
+                "duration": (
+                    str(step.metadata.end_time - step.metadata.start_time) if step.metadata.end_time and step.metadata.start_time else None
+                ),
+                "orchestrator": {
+                    "runId": str(run.metadata.orchestrator_run_id)
+                },
+                "sourceCode": step.metadata.source_code,
+                "logsUri": step.metadata.logs.body.uri
+            }
+            return step_data
+        except self.ZenMLBaseException as e:
+            return {"error": f"Failed to retrieve pipeline run step: {str(e)}"}
+        
+    def get_run_artifact(self, args) -> dict:
+        """Gets a ZenML pipeline run artifact.
+        
+        Args:
+            args (list): List of arguments.
+        Returns:
+            dict: Dictionary containing the result of the operation.
+        """
+        try:
+            artifact_id = args[0]
+            artifact = self.client.get_artifact_version(artifact_id, hydrate=True)
+
+            metadata = {}
+            for key in artifact.metadata.run_metadata:
+                metadata[key] = artifact.metadata.run_metadata[key].body.value
+
+            artifact_data = {
+                "author": {
+                    "fullName": artifact.body.user.body.full_name,
+                    "email": artifact.body.user.name,
+                },
+                "data": {
+                    "uri": artifact.body.uri,
+                    "dataType": artifact.body.data_type.attribute,
+                },
+                "id": str(artifact.id),
+                "metadata": metadata,
+                "name": artifact.body.artifact.name,
+                "type": artifact.body.type,
+                "updated": artifact.body.updated.isoformat(),
+                "version": artifact.body.version,
+            }
+            return artifact_data
+
+        except self.ZenMLBaseException as e:
+            return {"error": f"Failed to retrieve pipeline run artifact: {str(e)}"}
 
 
 class StacksWrapper:
