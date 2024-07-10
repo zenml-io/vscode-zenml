@@ -279,3 +279,15 @@ class ZenLanguageServer(LanguageServer):
         def get_pipeline_run(wrapper_instance, args):
             """Gets a specified ZenML pipeline run."""
             return wrapper_instance.get_pipeline_run(args)
+        
+        @self.command(f"{TOOL_MODULE_NAME}.getPipelineRunStep")
+        @self.zenml_command(wrapper_name="pipeline_runs_wrapper")
+        def get_run_step(wrapper_instance, args):
+            """Gets a specified ZenML pipeline run step."""
+            return wrapper_instance.get_run_step(args)
+
+        @self.command(f"{TOOL_MODULE_NAME}.getPipelineRunArtifact")
+        @self.zenml_command(wrapper_name="pipeline_runs_wrapper")
+        def get_run_artifact(wrapper_instance, args):
+            """Gets a specified ZenML pipeline artifact"""
+            return wrapper_instance.get_run_artifact(args)
