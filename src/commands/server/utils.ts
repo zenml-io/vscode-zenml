@@ -75,11 +75,20 @@ function isZenServerDetails(response: any): response is ZenServerDetails {
 
 function createServerStatusFromDetails(details: ZenServerDetails): ServerStatus {
   const { storeInfo, storeConfig } = details;
+
+  let dashboardUrl = storeInfo.dashboard_url;
+  if (storeInfo.deployment_type !== 'cloud' && storeInfo.deployment_type !== 'other') {
+    dashboardUrl = storeConfig.url;
+  } else if (storeInfo.deployment_type === 'other') {
+    dashboardUrl = 'N/A';
+  }
+
   return {
     ...storeInfo,
     isConnected: storeConfig?.type === 'rest',
     url: storeConfig?.url ?? 'unknown',
     store_type: storeConfig?.type ?? 'unknown',
+    dashboard_url: dashboardUrl,
   };
 }
 
