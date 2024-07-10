@@ -67,6 +67,7 @@ export class ServerTreeItem extends TreeItem {
   private determineChildrenBasedOnStatus(): ServerDetailTreeItem[] {
     const children: ServerDetailTreeItem[] = [
       new ServerDetailTreeItem('URL', this.serverStatus.url, 'link'),
+      new ServerDetailTreeItem('Dashboard URL', this.serverStatus.dashboard_url, 'link'),
       new ServerDetailTreeItem('Version', this.serverStatus.version, 'versions'),
       new ServerDetailTreeItem('Store Type', this.serverStatus.store_type || 'N/A', 'database'),
       new ServerDetailTreeItem('Deployment Type', this.serverStatus.deployment_type, 'rocket'),
