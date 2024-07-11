@@ -68,6 +68,8 @@ export interface DagResp {
   nodes: Array<DagNode>;
   edges: Array<DagEdge>;
   status: string;
+  name: string;
+  version: string;
 }
 
 export type PipelineRunsResponse = PipelineRunsData | ErrorMessageResponse | VersionMismatchError;

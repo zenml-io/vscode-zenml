@@ -400,7 +400,10 @@ class PipelineRunsWrapper:
                         "source": edge.source,
                         "target": edge.target
                     } for edge in graph.edges
-                ]
+                ],
+                "status": run.body.status,
+                "name": run.body.pipeline.name,
+                "version": run.body.pipeline.body.version,
             }
 
             return dag_data

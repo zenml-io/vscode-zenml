@@ -56,7 +56,7 @@ export default class DagRenderer {
 
     const panel = vscode.window.createWebviewPanel(
       `DAG-${node.id}`,
-      `DAG Visualization`,
+      node.label as string,
       vscode.ViewColumn.One,
       {
         enableScripts: true,
@@ -80,22 +80,13 @@ export default class DagRenderer {
   private async renderDag(panel: vscode.WebviewPanel, node: PipelineTreeItem) {
     panel.webview.html = this.getLoadingContent();
 
-    let dagData: DagResp;
-    let dagStatus: string;
-    let newData: DagResp;
-    try {
-      dagData = await this.getDagData(node.id);
-      newData = await LSClient.getInstance().sendLsClientRequest('getPipelineRun', [node.id]);
-      // dagStatus = await this.getDagStatus(node.id);
-    } catch (e) {
-      if (e instanceof LocalDatabaseError) {
-        vscode.window.showInformationMessage(
-          'Zenml must be connected to a server to visualize DAG'
-        );
-      } else {
-        vscode.window.showErrorMessage('Unable to receive response from Zenml server');
-      }
+    const client = LSClient.getInstance();
 
+    let dagData: DagResp;
+    try {
+      dagData = await client.sendLsClientRequest<DagResp>('getPipelineRunDag', [node.id]);
+    } catch (e) {
+      vscode.window.showErrorMessage(`Unable to receive response from Zenml server: ${e}`);
       return;
     }
 
@@ -108,10 +99,12 @@ export default class DagRenderer {
 
     const jsOnDiskPath = vscode.Uri.file(this.extensionPath + '/resources/dag-view/dag.js');
     const jsUri = panel.webview.asWebviewUri(jsOnDiskPath).toString();
-    dagStatus = newData.status;
+
+    const updateButton = dagData.status === 'running' || dagData.status === 'initializing';
+    const title = `${dagData.name} - v${dagData.version}`;
 
     // And set its HTML content
-    panel.webview.html = this.getWebviewContent({ svg, cssUri, jsUri, dagStatus });
+    panel.webview.html = this.getWebviewContent({ svg, cssUri, jsUri, updateButton, title });
   }
 
   private async loadSvgWindowLib() {
@@ -133,42 +126,6 @@ export default class DagRenderer {
     panel.onDidDispose(() => {
       this.deregisterDagPanel(runId);
     }, null);
-  }
-
-  private async getDagData(runId: string): Promise<DagResp> {
-    const server = getZenMLServerUrl();
-
-    if (server.startsWith('sqlite')) {
-      throw new LocalDatabaseError();
-    }
-    const token = getZenMLAccessToken();
-    const pathToApi = `/api/v1/runs/${runId}/graph`;
-
-    const response = await fetch(server + pathToApi, {
-      headers: {
-        Authorization: 'Bearer ' + token,
-      },
-    });
-
-    return (await response.json()) as DagResp;
-  }
-
-  private async getDagStatus(runId: string): Promise<string> {
-    const server = getZenMLServerUrl();
-
-    if (server.startsWith('sqlite')) {
-      throw new LocalDatabaseError();
-    }
-    const token = getZenMLAccessToken();
-    const pathToApi = `/api/v1/runs/${runId}/status`;
-
-    const response = await fetch(server + pathToApi, {
-      headers: {
-        Authorization: 'Bearer ' + token,
-      },
-    });
-
-    return (await response.json()) as string;
   }
 
   private layoutDag(dagData: DagResp): Dagre.graphlib.Graph {
@@ -205,45 +162,6 @@ export default class DagRenderer {
       }
     });
   }
-
-  // private getIconUris(panel: vscode.WebviewPanel): IconUris {
-  //   const uris = {
-  //     get(node: DagNode): string {
-  //       if (node.type === 'step') {
-  //         switch (node.data.status) {
-  //           case 'completed':
-  //             return this.check;
-  //           case 'failed':
-  //             return this.alert;
-  //           case 'cached':
-  //             return this.cached;
-  //           default:
-  //             return this.alert;
-  //         }
-  //       }
-
-  //       if (node.data.artifact_type === 'ModelArtifact') {
-  //         return this.dataflow;
-  //       }
-
-  //       return this.database;
-  //     },
-  //   } as IconUris;
-  //   const keys: Array<Exclude<keyof IconUris, 'get'>> = [
-  //     'alert',
-  //     'cached',
-  //     'check',
-  //     'database',
-  //     'dataflow',
-  //   ];
-
-  //   keys.forEach(key => {
-  //     const uri = vscode.Uri.file(`${this.extensionPath}/resources/dag-view/icons/${key}.svg`);
-  //     uris[key] = panel.webview.asWebviewUri(uri).toString();
-  //   });
-
-  //   return uris;
-  // }
 
   private calculateEdges = (g: Dagre.graphlib.Graph): Array<Edge> => {
     const edges = g.edges();
@@ -317,7 +235,6 @@ export default class DagRenderer {
       box.add(SVG(icon).attr('class', `icon ${status}`));
       box.element('p').words(node.data.name);
     });
-    console.log(canvas.svg());
     return canvas.svg();
   }
 
@@ -355,12 +272,14 @@ export default class DagRenderer {
     svg,
     cssUri,
     jsUri,
-    dagStatus,
+    updateButton,
+    title,
   }: {
     svg: string;
     cssUri: string;
     jsUri: string;
-    dagStatus: string;
+    updateButton: boolean;
+    title: string;
   }): string {
     return `<!DOCTYPE html>
 <html lang="en">
@@ -372,20 +291,9 @@ export default class DagRenderer {
     <title>DAG</title>
 </head>
 <body>
-    <div id="update">
-      <button onclick="update()">click to update</button>
+    <div id="update" ${updateButton ? 'class="needs-update"' : ''}>
+      <p>${title}</p>${updateButton ? '<button>click to update</button>' : ''}
     </div>
-  <script>
-    const div = document.getElementById('update');
-    console.log("Status: ${dagStatus}");
-    if ("${dagStatus}" !== 'running' && "${dagStatus}" !== 'initializing') {
-      div.remove();
-    }
-    const vscode = acquireVsCodeApi();
-    function update() {
-      vscode.postMessage({ command: 'update' });
-    }
-  </script>
   <div id="container">
     ${svg}
   </div>
