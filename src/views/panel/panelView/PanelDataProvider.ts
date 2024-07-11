@@ -26,28 +26,52 @@ export class PanelDataProvider implements TreeDataProvider<TreeItem> {
   private data: JsonObject | null = null;
   private dataType: string = '';
 
-  static getInstance(): PanelDataProvider {
+  /**
+   * Retrieves the singleton instance of PanelDataProvider
+   * @returns {PanelDataProvider} The singleton instance
+   */
+  public static getInstance(): PanelDataProvider {
     if (!this.instance) {
       this.instance = new PanelDataProvider();
     }
     return this.instance;
   }
 
-  refresh() {
+  /**
+   * Refreshes the ZenML Panel View
+   */
+  public refresh(): void {
     this._onDidChangeTreeData.fire(undefined);
   }
 
-  setData(data: JsonObject, dataType = 'data'): void {
+  /**
+   * Sets the data to be viewed in the ZenML Panel View
+   * @param data Data to visualize
+   * @param dataType Type of data being visualized
+   */
+  public setData(data: JsonObject, dataType = 'data'): void {
     this.data = data;
     this.dataType = dataType;
     this.refresh();
   }
 
-  getTreeItem(element: TreeItem): TreeItem | Thenable<TreeItem> {
+  /**
+   * Retrieves the tree item for a given data property
+   *
+   * @param element The data property.
+   * @returns The corresponding VS Code tree item.
+   */
+  public getTreeItem(element: TreeItem): TreeItem | Thenable<TreeItem> {
     return element;
   }
 
-  getChildren(element?: TreeItem | undefined): TreeItem[] | undefined {
+  /**
+   * Retrieves the children for a given tree item.
+   *
+   * @param element The parent tree item. If undefined, a PanelTreeItem is created
+   * @returns An array of child tree items or undefined if there are no children.
+   */
+  public getChildren(element?: TreeItem | undefined): TreeItem[] | undefined {
     if (!element && this.data) {
       return [new PanelTreeItem(this.dataType, this.data)];
     } else if (

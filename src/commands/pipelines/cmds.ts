@@ -95,6 +95,11 @@ const goToPipelineUrl = (node: PipelineTreeItem): void => {
   }
 };
 
+/**
+ * Opens the selected pipeline run in a DAG visualizer Webview Panel
+ *
+ * @param {PipelineTreeItem} node The pipeline run to render.
+ */
 const renderDag = (node: PipelineTreeItem): void => {
   DagRenderer.getInstance()?.createView(node);
 };

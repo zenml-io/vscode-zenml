@@ -21,6 +21,11 @@ export interface JsonObject {
 export class PanelDetailTreeItem extends TreeItem {
   public children: PanelDetailTreeItem[] = [];
 
+  /**
+   * Constructs a PanelDetailTreeItem object
+   * @param key Property key for TreeItem
+   * @param value Property value for the TreeItem
+   */
   constructor(key: string, value: JsonType) {
     const simpleValue = typeof value === 'string' || typeof value === 'number';
     super(key, simpleValue ? TreeItemCollapsibleState.None : TreeItemCollapsibleState.Collapsed);
@@ -38,6 +43,11 @@ export class PanelDetailTreeItem extends TreeItem {
 export class PanelTreeItem extends TreeItem {
   public children: Array<PanelDetailTreeItem | SourceCodeTreeItem> = [];
 
+  /**
+   * Constructs a PanelTreeItem
+   * @param label Data Type Label for the PanelTreeItem
+   * @param data Object Data to build children
+   */
   constructor(label: string, data: JsonObject) {
     super(label, TreeItemCollapsibleState.Expanded);
     this.children = Object.entries(data).map(([key, value]) => {
@@ -52,6 +62,11 @@ export class PanelTreeItem extends TreeItem {
 export class SourceCodeTreeItem extends TreeItem {
   public children: TreeItem[] = [];
 
+  /**
+   * Constructs a SourceCodeTreeItem that builds its childrens based on string passed to it
+   * @param label Property Label for parent object
+   * @param sourceCode Raw string of source code
+   */
   constructor(label: string, sourceCode: string) {
     super(label, TreeItemCollapsibleState.Collapsed);
     this.description = '...';
