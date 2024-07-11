@@ -40,16 +40,28 @@ export default class DagRenderer {
     this.loadSvgWindowLib();
     this.loadIcons();
   }
-
+  /**
+   * Retrieves a singleton instance of DagRenderer
+   *
+   * @returns {DagRenderer | undefined} The singleton instance if it exists
+   */
   public static getInstance(): DagRenderer | undefined {
     return DagRenderer.instance;
   }
 
+  /**
+   * Used to remove DagRenderer WebviewPanels when the extension is deactivated.
+   */
   public deactivate(): void {
     DagRenderer.instance = undefined;
     Object.values<vscode.WebviewPanel>(this.openPanels).forEach(panel => panel.dispose());
   }
 
+  /**
+   * Renders DAG Visualization for a piepline run into Webview Panel
+   * @param node The Pipeline run to render
+   * @returns
+   */
   public async createView(node: PipelineTreeItem) {
     const existingPanel = this.getDagPanel(node.id);
     if (existingPanel) {
