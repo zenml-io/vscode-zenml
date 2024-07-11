@@ -14,6 +14,8 @@ import Dagre from 'dagre';
 
 import { WebviewPanel, Uri } from 'vscode';
 import { getZenMLServerUrl } from '../../utils/global';
+import { ServerDataProvider } from '../../views/activityBar';
+import { isServerStatus } from '../server/utils';
 
 const openPanels: { [id: string]: WebviewPanel | undefined } = {};
 
@@ -24,8 +26,14 @@ const openPanels: { [id: string]: WebviewPanel | undefined } = {};
  * @returns {string} - The URL corresponding to the pipeline run in the ZenML Dashboard
  */
 export const getPipelineRunDashboardUrl = (id: string): string => {
-  const PIPELINE_URL_STUB = 'SERVER_URL/workspaces/default/all-runs/PIPELINE_ID/dag';
-  const currentServerUrl = getZenMLServerUrl();
+  const PIPELINE_URL_STUB = 'SERVER_URL/runs/PIPELINE_ID';
+  const status = ServerDataProvider.getInstance().getCurrentStatus();
+
+  if (!isServerStatus(status) || status.deployment_type === 'other') {
+    return '';
+  }
+
+  const currentServerUrl = status.dashboard_url;
 
   const pipelineUrl = PIPELINE_URL_STUB.replace('SERVER_URL', currentServerUrl).replace(
     'PIPELINE_ID',
