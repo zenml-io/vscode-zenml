@@ -5,7 +5,7 @@ panZoom.setMaxZoom(40);
 
 const resize = () => {
   dag.setAttribute('width', String(window.innerWidth * 0.95) + 'px');
-  dag.setAttribute('height', String(window.innerHeight * 0.95) + 'px');
+  dag.setAttribute('height', String(window.innerHeight * 0.94) + 'px');
   panZoom.resize();
   panZoom.fit();
   panZoom.center();
