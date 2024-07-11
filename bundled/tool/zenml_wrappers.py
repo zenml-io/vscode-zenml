@@ -424,20 +424,13 @@ class PipelineRunsWrapper:
             run = self.client.get_pipeline_run(step.metadata.pipeline_run_id, hydrate=True)
 
             step_data = {
-                "id": str(step.id),
                 "name": step.name,
+                "id": str(step.id),
                 "status": step.body.status,
                 "author": {
                     "fullName": step.body.user.body.full_name,
                     "email": step.body.user.name,
                 },
-                "cacheKey": step.metadata.cache_key,
-                "pipeline": {
-                    "name": run.body.pipeline.name,
-                    "status": run.body.status,
-                    "version": run.body.pipeline.body.version,
-                },
-                "stackName": run.body.stack.name,
                 "startTime": (
                     step.metadata.start_time.isoformat() if step.metadata.start_time else None
                 ),
@@ -447,9 +440,16 @@ class PipelineRunsWrapper:
                 "duration": (
                     str(step.metadata.end_time - step.metadata.start_time) if step.metadata.end_time and step.metadata.start_time else None
                 ),
+                "stackName": run.body.stack.name,
                 "orchestrator": {
                     "runId": str(run.metadata.orchestrator_run_id)
                 },
+                "pipeline": {
+                    "name": run.body.pipeline.name,
+                    "status": run.body.status,
+                    "version": run.body.pipeline.body.version,
+                },
+                "cacheKey": step.metadata.cache_key,
                 "sourceCode": step.metadata.source_code,
                 "logsUri": step.metadata.logs.body.uri
             }
@@ -474,20 +474,20 @@ class PipelineRunsWrapper:
                 metadata[key] = artifact.metadata.run_metadata[key].body.value
 
             artifact_data = {
+                "name": artifact.body.artifact.name,
+                "version": artifact.body.version,
+                "id": str(artifact.id),
+                "type": artifact.body.type,
                 "author": {
                     "fullName": artifact.body.user.body.full_name,
                     "email": artifact.body.user.name,
                 },
+                "updated": artifact.body.updated.isoformat(),
                 "data": {
                     "uri": artifact.body.uri,
                     "dataType": artifact.body.data_type.attribute,
                 },
-                "id": str(artifact.id),
                 "metadata": metadata,
-                "name": artifact.body.artifact.name,
-                "type": artifact.body.type,
-                "updated": artifact.body.updated.isoformat(),
-                "version": artifact.body.version,
             }
             return artifact_data
 

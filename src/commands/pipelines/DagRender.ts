@@ -1,27 +1,29 @@
+// Copyright(c) ZenML GmbH 2024. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0(the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at:
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+// or implied.See the License for the specific language governing
+// permissions and limitations under the License.
 import fs from 'fs/promises';
 import * as vscode from 'vscode';
 import * as Dagre from 'dagre';
 import { ArrayXY, SVG, registerWindow } from '@svgdotjs/svg.js';
 import { PipelineTreeItem, ServerDataProvider } from '../../views/activityBar';
 import { DagResp, DagNode } from '../../types/PipelineTypes';
-import { getZenMLAccessToken, getZenMLServerUrl } from '../../utils/global';
 import { LSClient } from '../../services/LSClient';
 import { ServerStatus } from '../../types/ServerInfoTypes';
-
-class LocalDatabaseError extends Error {}
+import { JsonObject } from '../../views/panel/panelView/PanelTreeItem';
+import { PanelDataProvider } from '../../views/panel/panelView/PanelDataProvider';
 
 interface Edge {
   from: string;
   points: ArrayXY[];
-}
-
-interface IconUris {
-  alert: string;
-  cached: string;
-  check: string;
-  database: string;
-  dataflow: string;
-  get: (node: DagNode) => string;
 }
 
 export default class DagRenderer {
@@ -67,7 +69,7 @@ export default class DagRenderer {
     const dashboardUrl = status.dashboard_url;
     const deploymentType = status.deployment_type;
 
-    panel.webview.onDidReceiveMessage(message => {
+    panel.webview.onDidReceiveMessage(async message => {
       switch (message.command) {
         case 'update':
           this.renderDag(panel, node);
@@ -77,6 +79,13 @@ export default class DagRenderer {
             const uri = vscode.Uri.parse(`${dashboardUrl}/runs/${node.id}?tab=overview`);
             vscode.env.openExternal(uri);
           }
+
+          const stepData = await LSClient.getInstance().sendLsClientRequest<JsonObject>(
+            'getPipelineRunStep',
+            [message.id]
+          );
+          PanelDataProvider.getInstance().setData(stepData, 'Pipeline Run Step Data');
+          vscode.commands.executeCommand('zenmlPanelView.focus');
           break;
         case 'artifact':
           if (deploymentType === 'cloud') {
@@ -88,6 +97,13 @@ export default class DagRenderer {
             const uri = vscode.Uri.parse(`${dashboardUrl}/runs/${node.id}?tab=overview`);
             vscode.env.openExternal(uri);
           }
+
+          const artifactData = await LSClient.getInstance().sendLsClientRequest<JsonObject>(
+            'getPipelineRunArtifact',
+            [message.id]
+          );
+          PanelDataProvider.getInstance().setData(artifactData, 'Artifact Version Data');
+          vscode.commands.executeCommand('zenmlPanelView.focus');
           break;
       }
     }, undefined);
