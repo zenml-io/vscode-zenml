@@ -2,10 +2,11 @@ import fs from 'fs/promises';
 import * as vscode from 'vscode';
 import * as Dagre from 'dagre';
 import { ArrayXY, SVG, registerWindow } from '@svgdotjs/svg.js';
-import { PipelineTreeItem } from '../../views/activityBar';
+import { PipelineTreeItem, ServerDataProvider } from '../../views/activityBar';
 import { DagResp, DagNode } from '../../types/PipelineTypes';
 import { getZenMLAccessToken, getZenMLServerUrl } from '../../utils/global';
 import { LSClient } from '../../services/LSClient';
+import { ServerStatus } from '../../types/ServerInfoTypes';
 
 class LocalDatabaseError extends Error {}
 
@@ -62,11 +63,31 @@ export default class DagRenderer {
         enableScripts: true,
       }
     );
+    const status = ServerDataProvider.getInstance().getCurrentStatus() as ServerStatus;
+    const dashboardUrl = status.dashboard_url;
+    const deploymentType = status.deployment_type;
 
     panel.webview.onDidReceiveMessage(message => {
       switch (message.command) {
         case 'update':
           this.renderDag(panel, node);
+          break;
+        case 'step':
+          if (deploymentType !== 'other') {
+            const uri = vscode.Uri.parse(`${dashboardUrl}/runs/${node.id}?tab=overview`);
+            vscode.env.openExternal(uri);
+          }
+          break;
+        case 'artifact':
+          if (deploymentType === 'cloud') {
+            const uri = vscode.Uri.parse(
+              `${dashboardUrl}/artifact-versions/${message.id}?tab=overview`
+            );
+            vscode.env.openExternal(uri);
+          } else if (deploymentType !== 'other') {
+            const uri = vscode.Uri.parse(`${dashboardUrl}/runs/${node.id}?tab=overview`);
+            vscode.env.openExternal(uri);
+          }
           break;
       }
     }, undefined);
@@ -213,11 +234,14 @@ export default class DagRenderer {
       const { width, height, x, y } = graph.node(node.id);
       let iconSVG: string;
       let status: string = '';
+      const executionId = { attr: '', value: node.data.execution_id };
 
       if (node.type === 'step') {
         iconSVG = this.iconSvgs[node.data.status];
         status = node.data.status;
+        executionId.attr = 'data-stepid';
       } else {
+        executionId.attr = 'data-artifactid';
         if (node.data.artifact_type === 'ModelArtifact') {
           iconSVG = this.iconSvgs.dataflow;
         } else {
@@ -230,7 +254,10 @@ export default class DagRenderer {
         .translate(x - width / 2, y - height / 2);
 
       const div = container.element('div').attr('class', 'node').attr('data-id', node.id);
-      const box = div.element('div').attr('class', node.type);
+      const box = div
+        .element('div')
+        .attr('class', node.type)
+        .attr(executionId.attr, executionId.value);
       const icon = SVG(iconSVG);
       box.add(SVG(icon).attr('class', `icon ${status}`));
       box.element('p').words(node.data.name);
