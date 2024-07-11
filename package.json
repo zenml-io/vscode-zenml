@@ -263,6 +263,13 @@
           "title": "ZenML",
           "icon": "resources/logo.png"
         }
+      ],
+      "panel": [
+        {
+          "id": "zenmlPanel",
+          "title": "ZenML",
+          "icon": "resources/logo.png"
+        }
       ]
     },
     "views": {
@@ -286,6 +293,12 @@
           "id": "zenmlEnvironmentView",
           "name": "Environment",
           "icon": "$(server-environment)"
+        }
+      ],
+      "zenmlPanel": [
+        {
+          "id": "zenmlPanelView",
+          "name": "ZenML"
         }
       ]
     },
