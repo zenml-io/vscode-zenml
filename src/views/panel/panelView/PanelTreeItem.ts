@@ -10,7 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import { TreeItem, TreeItemCollapsibleState } from 'vscode';
+import { ThemeColor, ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri } from 'vscode';
 
 type JsonType = string | number | Array<JsonType> | JsonObject;
 
@@ -36,6 +36,16 @@ export class PanelDetailTreeItem extends TreeItem {
       this.children = Object.entries(value).map(
         ([key, value]) => new PanelDetailTreeItem(key, value)
       );
+    }
+
+    if (typeof value === 'string' && value.startsWith('http')) {
+      this.command = {
+        title: 'Open URL',
+        command: 'vscode.open',
+        arguments: [Uri.parse(value)],
+      };
+      this.iconPath = new ThemeIcon('link', new ThemeColor('textLink.foreground'));
+      this.tooltip = `Click to open ${value}`;
     }
   }
 }

@@ -41,6 +41,25 @@
     const stepId = evt.target.closest('[data-stepid]')?.dataset.stepid;
     const artifactId = evt.target.closest('[data-artifactid]')?.dataset.artifactid;
 
+    if (!stepId && !artifactId) {
+      return;
+    }
+
+    if (!panZoom.isDblClickZoomEnabled()) {
+      // double click
+      if (stepId) {
+        vscode.postMessage({ command: 'stepUrl', id: stepId });
+      }
+
+      if (artifactId) {
+        vscode.postMessage({ command: 'artifactUrl', id: artifactId });
+      }
+      return;
+    }
+
+    panZoom.disableDblClickZoom();
+    setTimeout(() => panZoom.enableDblClickZoom(), 500);
+
     if (stepId) {
       vscode.postMessage({ command: 'step', id: stepId });
     }

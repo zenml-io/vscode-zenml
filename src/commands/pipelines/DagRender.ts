@@ -80,42 +80,59 @@ export default class DagRenderer {
     const status = ServerDataProvider.getInstance().getCurrentStatus() as ServerStatus;
     const dashboardUrl = status.dashboard_url;
     const deploymentType = status.deployment_type;
+    const runUrl = deploymentType === 'other' ? '' : `${dashboardUrl}/runs/${node.id}?tab=overview`;
 
     panel.webview.onDidReceiveMessage(async message => {
       switch (message.command) {
         case 'update':
           this.renderDag(panel, node);
           break;
-        case 'step':
-          if (deploymentType !== 'other') {
-            const uri = vscode.Uri.parse(`${dashboardUrl}/runs/${node.id}?tab=overview`);
-            vscode.env.openExternal(uri);
-          }
 
+        case 'step':
           const stepData = await LSClient.getInstance().sendLsClientRequest<JsonObject>(
             'getPipelineRunStep',
             [message.id]
           );
-          PanelDataProvider.getInstance().setData(stepData, 'Pipeline Run Step Data');
+          PanelDataProvider.getInstance().setData(
+            { runUrl, ...stepData },
+            'Pipeline Run Step Data'
+          );
           vscode.commands.executeCommand('zenmlPanelView.focus');
           break;
+
         case 'artifact':
+          const artifactData = await LSClient.getInstance().sendLsClientRequest<JsonObject>(
+            'getPipelineRunArtifact',
+            [message.id]
+          );
+          if (deploymentType === 'cloud') {
+            const artifactUrl = `${dashboardUrl}/artifact-versions/${message.id}?tab=overview`;
+            PanelDataProvider.getInstance().setData(
+              { artifactUrl, ...artifactData },
+              'Artifact Version Data'
+            );
+          } else {
+            PanelDataProvider.getInstance().setData(
+              { runUrl, ...artifactData },
+              'Artifact Version Data'
+            );
+          }
+
+          vscode.commands.executeCommand('zenmlPanelView.focus');
+          break;
+
+        case 'artifactUrl':
           if (deploymentType === 'cloud') {
             const uri = vscode.Uri.parse(
               `${dashboardUrl}/artifact-versions/${message.id}?tab=overview`
             );
             vscode.env.openExternal(uri);
-          } else if (deploymentType !== 'other') {
-            const uri = vscode.Uri.parse(`${dashboardUrl}/runs/${node.id}?tab=overview`);
-            vscode.env.openExternal(uri);
+            break;
           }
 
-          const artifactData = await LSClient.getInstance().sendLsClientRequest<JsonObject>(
-            'getPipelineRunArtifact',
-            [message.id]
-          );
-          PanelDataProvider.getInstance().setData(artifactData, 'Artifact Version Data');
-          vscode.commands.executeCommand('zenmlPanelView.focus');
+        case 'stepUrl':
+          const uri = vscode.Uri.parse(runUrl);
+          vscode.env.openExternal(uri);
           break;
       }
     }, undefined);
