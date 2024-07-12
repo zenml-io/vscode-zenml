@@ -80,6 +80,8 @@ export class PanelDataProvider implements TreeDataProvider<TreeItem> {
       element instanceof SourceCodeTreeItem
     ) {
       return element.children;
+    } else if (!element && !this.data) {
+      return [new TreeItem('No data has been requested for visualization yet')];
     }
     return undefined;
   }
