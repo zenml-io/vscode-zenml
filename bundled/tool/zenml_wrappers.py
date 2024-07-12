@@ -15,6 +15,7 @@
 import json
 import pathlib
 from typing import Any
+from zenml_grapher import Grapher
 
 
 class GlobalConfigWrapper:
@@ -260,11 +261,6 @@ class PipelineRunsWrapper:
     def ZenMLBaseException(self):
         """Returns the ZenML ZenMLBaseException class."""
         return self.lazy_import("zenml.exceptions", "ZenMLBaseException")
-    
-    @property
-    def LineageGraph(self):
-        """Returns the ZenML LineageGraph class."""
-        return self.lazy_import("zenml.lineage_graph.lineage_graph", "LineageGraph")
 
     def fetch_pipeline_runs(self, args):
         """Fetches all ZenML pipeline runs.
@@ -377,36 +373,11 @@ class PipelineRunsWrapper:
         """
         try:
             run_id = args[0]
-            run = self.client.get_pipeline_run(run_id, hydrate=False)
-            graph = self.LineageGraph()
-            graph.generate_run_nodes_and_edges(run)
-
-            dag_data = {
-                "nodes": [
-                    {
-                        "id": node.id,
-                        "type": node.type,
-                        "data": {
-                            "execution_id": node.data.execution_id,
-                            "name": node.data.name,
-                            "status": node.data.status if node.type == 'step' else None,
-                            "artifact_type": node.data.artifact_type if node.type == 'artifact' else None,
-                        }
-                    } for node in graph.nodes
-                ],
-                "edges": [
-                    {
-                        "id": edge.id,
-                        "source": edge.source,
-                        "target": edge.target
-                    } for edge in graph.edges
-                ],
-                "status": run.body.status,
-                "name": run.body.pipeline.name,
-                "version": run.body.pipeline.body.version,
-            }
-
-            return dag_data
+            run = self.client.get_pipeline_run(run_id, hydrate=True)
+            graph = Grapher(run)
+            graph.build_nodes_from_steps()
+            graph.build_edges_from_steps()
+            return graph.to_dict()
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve pipeline run graph: {str(e)}"}
 
