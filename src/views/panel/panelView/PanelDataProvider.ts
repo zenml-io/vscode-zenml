@@ -18,12 +18,16 @@ import {
   SourceCodeTreeItem,
 } from './PanelTreeItem';
 
+import { LoadingTreeItem } from '../../activityBar/common/LoadingTreeItem';
+
 export class PanelDataProvider implements TreeDataProvider<TreeItem> {
   private _onDidChangeTreeData = new EventEmitter<TreeItem | undefined | null>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
   private static instance: PanelDataProvider | null = null;
-  private data: JsonObject | null = null;
+  private data: JsonObject | TreeItem = new TreeItem(
+    'No data has been requested for visualization yet'
+  );
   private dataType: string = '';
 
   /**
@@ -55,6 +59,11 @@ export class PanelDataProvider implements TreeDataProvider<TreeItem> {
     this.refresh();
   }
 
+  public setLoading(): void {
+    this.data = new LoadingTreeItem('Retrieving data');
+    this.refresh();
+  }
+
   /**
    * Retrieves the tree item for a given data property
    *
@@ -72,17 +81,22 @@ export class PanelDataProvider implements TreeDataProvider<TreeItem> {
    * @returns An array of child tree items or undefined if there are no children.
    */
   public getChildren(element?: TreeItem | undefined): TreeItem[] | undefined {
-    if (!element && this.data) {
-      return [new PanelTreeItem(this.dataType, this.data)];
-    } else if (
-      element instanceof PanelTreeItem ||
-      element instanceof PanelDetailTreeItem ||
-      element instanceof SourceCodeTreeItem
-    ) {
-      return element.children;
-    } else if (!element && !this.data) {
-      return [new TreeItem('No data has been requested for visualization yet')];
+    if (element) {
+      if (
+        element instanceof PanelTreeItem ||
+        element instanceof PanelDetailTreeItem ||
+        element instanceof SourceCodeTreeItem
+      ) {
+        return element.children;
+      }
+
+      return undefined;
     }
-    return undefined;
+
+    if (this.data instanceof TreeItem) {
+      return [this.data];
+    }
+
+    return [new PanelTreeItem(this.dataType, this.data)];
   }
 }
