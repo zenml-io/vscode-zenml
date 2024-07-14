@@ -31,6 +31,19 @@ this extension and your Python version needs to be 3.8 or greater.
 - **Pipeline Runs**: Monitor and manage pipeline runs, including deleting runs from the system and rendering DAGs.
 - **Environment Information**: Get detailed snapshots of the development environment, aiding troubleshooting.
 
+### DAG Rendering
+
+![](resources/zenml-extension-dag.gif)
+
+- **Directed Acyclic Graph rendering**
+  - click on the Render Dag context action(labeled 1 in above image) next to the pipeline run you want to render. This will render the DAG in the editor window.
+- **Graph manuevering**
+  - Panning the graph can be done by clicking and dragging anywhere on the graph.
+  - Zooming can be controlled by the mousewheel, the control panel(labeled 2 in the above graph) or double clicking anywhere there is not a node.
+  - Mousing over a node will highlight all edges being output by that node
+  - Clicking a node will display the data related to it in the ZenML panel view(labeled 3 in the above image)
+  - Double clicking a node will open the dashboard in a web browser to either the pipeline run or the artifact version.
+
 ## Requirements
 
 - **ZenML Installation:** ZenML needs to be installed in the local Python environment associated with the Python interpreter selected in the current VS Code workspace. This extension interacts directly with your ZenML environment, so ensuring that ZenML is installed and properly configured is essential.
