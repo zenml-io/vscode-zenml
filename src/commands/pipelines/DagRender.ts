@@ -15,31 +15,37 @@ import * as vscode from 'vscode';
 import * as Dagre from 'dagre';
 import { ArrayXY, SVG, registerWindow } from '@svgdotjs/svg.js';
 import { PipelineTreeItem, ServerDataProvider } from '../../views/activityBar';
-import { DagResp, DagNode } from '../../types/PipelineTypes';
+import { PipelineRunDag, DagNode } from '../../types/PipelineTypes';
 import { LSClient } from '../../services/LSClient';
 import { ServerStatus } from '../../types/ServerInfoTypes';
 import { JsonObject } from '../../views/panel/panelView/PanelTreeItem';
 import { PanelDataProvider } from '../../views/panel/panelView/PanelDataProvider';
 
-interface Edge {
-  from: string;
-  points: ArrayXY[];
-}
+const ROOT_PATH = ['resources', 'dag-view'];
+const CSS_FILE = 'dag.css';
+const JS_FILE = 'dag-packed.js';
+const ICONS_DIRECTORY = '/resources/dag-view/icons/';
 
 export default class DagRenderer {
   private static instance: DagRenderer | undefined;
   private openPanels: { [id: string]: vscode.WebviewPanel };
-  private extensionPath: string;
   private createSVGWindow: Function = () => {};
   private iconSvgs: { [name: string]: string } = {};
+  private root: vscode.Uri;
+  private javaScript: vscode.Uri;
+  private css: vscode.Uri;
 
   constructor(context: vscode.ExtensionContext) {
     DagRenderer.instance = this;
     this.openPanels = {};
-    this.extensionPath = context.extensionPath;
+    this.root = vscode.Uri.joinPath(context.extensionUri, ...ROOT_PATH);
+    this.javaScript = vscode.Uri.joinPath(this.root, JS_FILE);
+    this.css = vscode.Uri.joinPath(this.root, CSS_FILE);
+
     this.loadSvgWindowLib();
-    this.loadIcons();
+    this.loadIcons(context.extensionPath + ICONS_DIRECTORY);
   }
+
   /**
    * Retrieves a singleton instance of DagRenderer
    *
@@ -75,12 +81,19 @@ export default class DagRenderer {
       vscode.ViewColumn.One,
       {
         enableScripts: true,
+        localResourceRoots: [this.root],
       }
     );
+
+    panel.webview.html = this.getLoadingContent();
+
     const status = ServerDataProvider.getInstance().getCurrentStatus() as ServerStatus;
     const dashboardUrl = status.dashboard_url;
     const deploymentType = status.deployment_type;
     const runUrl = deploymentType === 'other' ? '' : `${dashboardUrl}/runs/${node.id}?tab=overview`;
+
+    const client = LSClient.getInstance();
+    const dataPanel = PanelDataProvider.getInstance();
 
     panel.webview.onDidReceiveMessage(async message => {
       switch (message.command) {
@@ -89,33 +102,25 @@ export default class DagRenderer {
           break;
 
         case 'step':
-          const stepData = await LSClient.getInstance().sendLsClientRequest<JsonObject>(
-            'getPipelineRunStep',
-            [message.id]
-          );
-          PanelDataProvider.getInstance().setData(
-            { runUrl, ...stepData },
-            'Pipeline Run Step Data'
-          );
+          const stepData = await client.sendLsClientRequest<JsonObject>('getPipelineRunStep', [
+            message.id,
+          ]);
+
+          dataPanel.setData({ runUrl, ...stepData }, 'Pipeline Run Step Data');
           vscode.commands.executeCommand('zenmlPanelView.focus');
           break;
 
         case 'artifact':
-          const artifactData = await LSClient.getInstance().sendLsClientRequest<JsonObject>(
+          const artifactData = await client.sendLsClientRequest<JsonObject>(
             'getPipelineRunArtifact',
             [message.id]
           );
+
           if (deploymentType === 'cloud') {
             const artifactUrl = `${dashboardUrl}/artifact-versions/${message.id}?tab=overview`;
-            PanelDataProvider.getInstance().setData(
-              { artifactUrl, ...artifactData },
-              'Artifact Version Data'
-            );
+            dataPanel.setData({ artifactUrl, ...artifactData }, 'Artifact Version Data');
           } else {
-            PanelDataProvider.getInstance().setData(
-              { runUrl, ...artifactData },
-              'Artifact Version Data'
-            );
+            dataPanel.setData({ runUrl, ...artifactData }, 'Artifact Version Data');
           }
 
           vscode.commands.executeCommand('zenmlPanelView.focus');
@@ -144,28 +149,20 @@ export default class DagRenderer {
   }
 
   private async renderDag(panel: vscode.WebviewPanel, node: PipelineTreeItem) {
-    panel.webview.html = this.getLoadingContent();
-
     const client = LSClient.getInstance();
 
-    let dagData: DagResp;
+    let dagData: PipelineRunDag;
     try {
-      dagData = await client.sendLsClientRequest<DagResp>('getPipelineRunDag', [node.id]);
+      dagData = await client.sendLsClientRequest<PipelineRunDag>('getPipelineRunDag', [node.id]);
     } catch (e) {
       vscode.window.showErrorMessage(`Unable to receive response from Zenml server: ${e}`);
       return;
     }
 
+    const cssUri = panel.webview.asWebviewUri(this.css);
+    const jsUri = panel.webview.asWebviewUri(this.javaScript);
     const graph = this.layoutDag(dagData);
-
-    const svg = await this.drawDag(dagData.nodes, graph, panel);
-
-    const cssOnDiskPath = vscode.Uri.file(this.extensionPath + '/resources/dag-view/dag.css');
-    const cssUri = panel.webview.asWebviewUri(cssOnDiskPath).toString();
-
-    const jsOnDiskPath = vscode.Uri.file(this.extensionPath + '/resources/dag-view/dag.js');
-    const jsUri = panel.webview.asWebviewUri(jsOnDiskPath).toString();
-
+    const svg = await this.drawDag(graph);
     const updateButton = dagData.status === 'running' || dagData.status === 'initializing';
     const title = `${dagData.name} - v${dagData.version}`;
 
@@ -176,6 +173,27 @@ export default class DagRenderer {
   private async loadSvgWindowLib() {
     const { createSVGWindow } = await import('svgdom');
     this.createSVGWindow = createSVGWindow;
+  }
+
+  private loadIcons(path: string): void {
+    const ICON_MAP = {
+      failed: 'alert.svg',
+      completed: 'check.svg',
+      cached: 'cached.svg',
+      initializing: 'initializing.svg',
+      running: 'play.svg',
+      database: 'database.svg',
+      dataflow: 'dataflow.svg',
+    };
+    Object.entries(ICON_MAP).forEach(async ([name, fileName]) => {
+      try {
+        const file = await fs.readFile(path + fileName);
+        this.iconSvgs[name] = file.toString();
+      } catch (e) {
+        this.iconSvgs[name] = '';
+        console.error(`Unable to load icon ${name}: ${e}`);
+      }
+    });
   }
 
   private deregisterDagPanel(runId: string) {
@@ -194,42 +212,23 @@ export default class DagRenderer {
     }, null);
   }
 
-  private layoutDag(dagData: DagResp): Dagre.graphlib.Graph {
+  private layoutDag(dagData: PipelineRunDag): Dagre.graphlib.Graph {
     const { nodes, edges } = dagData;
-    const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
-    g.setGraph({ rankdir: 'TB', ranksep: 35, nodesep: 5 });
+    const graph = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
+    graph.setGraph({ rankdir: 'TB', ranksep: 35, nodesep: 5 });
 
-    edges.forEach(edge => g.setEdge(edge.source, edge.target));
+    edges.forEach(edge => graph.setEdge(edge.source, edge.target));
     nodes.forEach(node =>
-      g.setNode(node.id, { width: 300, height: node.type === 'step' ? 50 : 44 })
+      graph.setNode(node.id, { width: 300, height: node.type === 'step' ? 50 : 44, ...node })
     );
 
-    Dagre.layout(g);
-    return g;
+    Dagre.layout(graph);
+    return graph;
   }
 
-  private loadIcons(): void {
-    const ICON_MAP = {
-      failed: 'alert.svg',
-      completed: 'check.svg',
-      cached: 'cached.svg',
-      initializing: 'initializing.svg',
-      running: 'play.svg',
-      database: 'database.svg',
-      dataflow: 'dataflow.svg',
-    };
-    const basePath = `${this.extensionPath}/resources/dag-view/icons/`;
-    Object.entries(ICON_MAP).forEach(async ([name, fileName]) => {
-      try {
-        const file = await fs.readFile(basePath + fileName);
-        this.iconSvgs[name] = file.toString();
-      } catch {
-        this.iconSvgs[name] = '';
-      }
-    });
-  }
-
-  private calculateEdges = (g: Dagre.graphlib.Graph): Array<Edge> => {
+  private calculateEdges = (
+    g: Dagre.graphlib.Graph
+  ): Array<{ from: string; points: ArrayXY[] }> => {
     const edges = g.edges();
     return edges.map(edge => {
       const currentLine = g.edge(edge).points.map<ArrayXY>(point => [point.x, point.y]);
@@ -249,12 +248,7 @@ export default class DagRenderer {
     });
   };
 
-  private async drawDag(
-    nodes: Array<DagNode>,
-    graph: Dagre.graphlib.Graph,
-    panel: vscode.WebviewPanel
-  ): Promise<string> {
-    // const uris = this.getIconUris(panel);
+  private async drawDag(graph: Dagre.graphlib.Graph): Promise<string> {
     const window = this.createSVGWindow();
     const document = window.document;
 
@@ -273,10 +267,10 @@ export default class DagRenderer {
         .attr('data-from', edge.from);
     });
 
-    const nodesGroup = canvas.group().attr('id', 'nodes');
+    const nodeGroup = canvas.group().attr('id', 'nodes');
 
-    nodes.forEach(node => {
-      const { width, height, x, y } = graph.node(node.id);
+    graph.nodes().forEach(nodeId => {
+      const node = graph.node(nodeId) as DagNode & ReturnType<typeof graph.node>;
       let iconSVG: string;
       let status: string = '';
       const executionId = { attr: '', value: node.data.execution_id };
@@ -294,15 +288,17 @@ export default class DagRenderer {
         }
       }
 
-      const container = nodesGroup
-        .foreignObject(width, height)
-        .translate(x - width / 2, y - height / 2);
+      const container = nodeGroup
+        .foreignObject(node.width, node.height)
+        .translate(node.x - node.width / 2, node.y - node.height / 2);
 
       const div = container.element('div').attr('class', 'node').attr('data-id', node.id);
+
       const box = div
         .element('div')
         .attr('class', node.type)
         .attr(executionId.attr, executionId.value);
+
       const icon = SVG(iconSVG);
       box.add(SVG(icon).attr('class', `icon ${status}`));
       box.element('p').words(node.data.name);
@@ -316,6 +312,7 @@ export default class DagRenderer {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Secuirty-Policy" content="default-src 'none';">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Loading</title>
     <style>
@@ -348,8 +345,8 @@ export default class DagRenderer {
     title,
   }: {
     svg: string;
-    cssUri: string;
-    jsUri: string;
+    cssUri: vscode.Uri;
+    jsUri: vscode.Uri;
     updateButton: boolean;
     title: string;
   }): string {
@@ -358,8 +355,8 @@ export default class DagRenderer {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Secuirty-Policy" content="default-src 'none'; script-src ${jsUri}; style-src ${cssUri};">
     <link rel="stylesheet" href="${cssUri}">
-  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.5.0/dist/svg-pan-zoom.min.js"></script>
     <title>DAG</title>
 </head>
 <body>
