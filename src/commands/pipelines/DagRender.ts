@@ -102,6 +102,7 @@ export default class DagRenderer {
           break;
 
         case 'step':
+          dataPanel.setLoading();
           const stepData = await client.sendLsClientRequest<JsonObject>('getPipelineRunStep', [
             message.id,
           ]);
@@ -111,6 +112,7 @@ export default class DagRenderer {
           break;
 
         case 'artifact':
+          dataPanel.setLoading();
           const artifactData = await client.sendLsClientRequest<JsonObject>(
             'getPipelineRunArtifact',
             [message.id]
