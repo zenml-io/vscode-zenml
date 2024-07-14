@@ -10,10 +10,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import Dagre from 'dagre';
 
-import { WebviewPanel, Uri } from 'vscode';
-import { getZenMLServerUrl } from '../../utils/global';
+import { WebviewPanel } from 'vscode';
 import { ServerDataProvider } from '../../views/activityBar';
 import { isServerStatus } from '../server/utils';
 
