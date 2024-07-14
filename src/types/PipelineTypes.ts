@@ -34,11 +34,8 @@ export interface PipelineRun {
   pythonVersion: string;
 }
 
-interface DagNodeBase {
+export interface DagStep {
   id: string;
-}
-
-export interface DagStep extends DagNodeBase {
   type: 'step';
   data: {
     execution_id: string;
@@ -47,7 +44,8 @@ export interface DagStep extends DagNodeBase {
   };
 }
 
-export interface DagArtifact extends DagNodeBase {
+export interface DagArtifact {
+  id: string;
   type: 'artifact';
   data: {
     execution_id: string;
@@ -64,7 +62,7 @@ export interface DagEdge {
   target: string;
 }
 
-export interface DagResp {
+export interface PipelineRunDag {
   nodes: Array<DagNode>;
   edges: Array<DagEdge>;
   status: string;

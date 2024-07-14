@@ -1,3 +1,5 @@
+import svgPanZoom from 'svg-pan-zoom';
+
 (() => {
   const dag = document.querySelector('#dag');
   const panZoom = svgPanZoom(dag);
