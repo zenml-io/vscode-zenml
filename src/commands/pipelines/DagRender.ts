@@ -101,7 +101,7 @@ export default class DagRenderer {
           this.renderDag(panel, node);
           break;
 
-        case 'step':
+        case 'step': {
           dataPanel.setLoading();
           const stepData = await client.sendLsClientRequest<JsonObject>('getPipelineRunStep', [
             message.id,
@@ -110,8 +110,9 @@ export default class DagRenderer {
           dataPanel.setData({ runUrl, ...stepData }, 'Pipeline Run Step Data');
           vscode.commands.executeCommand('zenmlPanelView.focus');
           break;
+        }
 
-        case 'artifact':
+        case 'artifact': {
           dataPanel.setLoading();
           const artifactData = await client.sendLsClientRequest<JsonObject>(
             'getPipelineRunArtifact',
@@ -127,8 +128,9 @@ export default class DagRenderer {
 
           vscode.commands.executeCommand('zenmlPanelView.focus');
           break;
+        }
 
-        case 'artifactUrl':
+        case 'artifactUrl': {
           if (deploymentType === 'cloud') {
             const uri = vscode.Uri.parse(
               `${dashboardUrl}/artifact-versions/${message.id}?tab=overview`
@@ -136,11 +138,16 @@ export default class DagRenderer {
             vscode.env.openExternal(uri);
             break;
           }
-
-        case 'stepUrl':
           const uri = vscode.Uri.parse(runUrl);
           vscode.env.openExternal(uri);
           break;
+        }
+
+        case 'stepUrl': {
+          const uri = vscode.Uri.parse(runUrl);
+          vscode.env.openExternal(uri);
+          break;
+        }
       }
     }, undefined);
 

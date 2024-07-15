@@ -75,13 +75,14 @@ function isZenServerDetails(response: any): response is ZenServerDetails {
 
 function createServerStatusFromDetails(details: ZenServerDetails): ServerStatus {
   const { storeInfo, storeConfig } = details;
+  const { deployment_type, dashboard_url } = storeInfo;
 
-  let dashboardUrl = storeInfo.dashboard_url;
-  if (storeInfo.deployment_type !== 'cloud' && storeInfo.deployment_type !== 'other') {
-    dashboardUrl = storeConfig.url;
-  } else if (storeInfo.deployment_type === 'other') {
-    dashboardUrl = 'N/A';
-  }
+  const dashboardUrl =
+    deployment_type === 'cloud'
+      ? dashboard_url
+      : deployment_type === 'other'
+        ? 'N/A'
+        : storeConfig.url;
 
   return {
     ...storeInfo,
