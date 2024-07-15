@@ -49,9 +49,12 @@ class ZenConfigWatcher(FileSystemEventHandler):
             "always",
         ]
 
-        with suppress_stdout_temporarily():
-            config_wrapper_instance = self.LSP_SERVER.zenml_client.config_wrapper
-            self.config_path = config_wrapper_instance.get_global_config_file_path()
+        try:
+            with suppress_stdout_temporarily():
+                config_wrapper_instance = self.LSP_SERVER.zenml_client.config_wrapper
+                self.config_path = config_wrapper_instance.get_global_config_file_path()
+        except Exception as e:
+            self.log_error(f"Failed to retrieve global config file path: {e}")
         
 
     def process_config_change(self, config_file_path: str):

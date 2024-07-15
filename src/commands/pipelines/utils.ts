@@ -11,11 +11,8 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 
-import { WebviewPanel } from 'vscode';
 import { ServerDataProvider } from '../../views/activityBar';
 import { isServerStatus } from '../server/utils';
-
-const openPanels: { [id: string]: WebviewPanel | undefined } = {};
 
 /**
  * Gets the Dashboard URL for the corresponding ZenML pipeline run
@@ -24,7 +21,6 @@ const openPanels: { [id: string]: WebviewPanel | undefined } = {};
  * @returns {string} - The URL corresponding to the pipeline run in the ZenML Dashboard
  */
 export const getPipelineRunDashboardUrl = (id: string): string => {
-  const PIPELINE_URL_STUB = 'SERVER_URL/runs/PIPELINE_ID';
   const status = ServerDataProvider.getInstance().getCurrentStatus();
 
   if (!isServerStatus(status) || status.deployment_type === 'other') {
@@ -33,12 +29,7 @@ export const getPipelineRunDashboardUrl = (id: string): string => {
 
   const currentServerUrl = status.dashboard_url;
 
-  const pipelineUrl = PIPELINE_URL_STUB.replace('SERVER_URL', currentServerUrl).replace(
-    'PIPELINE_ID',
-    id
-  );
-
-  return pipelineUrl;
+  return `${currentServerUrl}/runs/${id}`;
 };
 
 const pipelineUtils = {

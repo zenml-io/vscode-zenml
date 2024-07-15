@@ -35,10 +35,11 @@ export class PanelDataProvider implements TreeDataProvider<TreeItem> {
    * @returns {PanelDataProvider} The singleton instance
    */
   public static getInstance(): PanelDataProvider {
-    if (!this.instance) {
-      this.instance = new PanelDataProvider();
+    if (!PanelDataProvider.instance) {
+      PanelDataProvider.instance = new PanelDataProvider();
     }
-    return this.instance;
+
+    return PanelDataProvider.instance;
   }
 
   /**
