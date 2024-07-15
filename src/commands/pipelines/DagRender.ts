@@ -87,12 +87,24 @@ export default class DagRenderer {
 
     panel.webview.html = this.getLoadingContent();
 
+    panel.webview.onDidReceiveMessage(this.createMessageHandler(panel, node));
+
+    this.renderDag(panel, node);
+
+    // To track which DAGs are currently open
+    this.registerDagPanel(node.id, panel);
+  }
+
+  private createMessageHandler(
+    panel: vscode.WebviewPanel,
+    node: PipelineTreeItem
+  ): (message: { command: string; id: string }) => Promise<void> {
     const status = ServerDataProvider.getInstance().getCurrentStatus() as ServerStatus;
     const dashboardUrl = status.dashboard_url;
     const deploymentType = status.deployment_type;
     const runUrl = deploymentType === 'other' ? '' : `${dashboardUrl}/runs/${node.id}?tab=overview`;
 
-    panel.webview.onDidReceiveMessage(async message => {
+    return async (message: { command: string; id: string }): Promise<void> => {
       switch (message.command) {
         case 'update':
           this.renderDag(panel, node);
@@ -126,12 +138,7 @@ export default class DagRenderer {
           break;
         }
       }
-    }, undefined);
-
-    this.renderDag(panel, node);
-
-    // To track which DAGs are currently open
-    this.registerDagPanel(node.id, panel);
+    };
   }
 
   private async loadStepDataIntoPanel(id: string, runUrl: string): Promise<void> {
