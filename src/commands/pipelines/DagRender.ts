@@ -119,24 +119,13 @@ export default class DagRenderer {
           break;
         }
 
-        case 'artifactUrl': {
-          if (deploymentType === 'cloud') {
-            const uri = vscode.Uri.parse(
-              `${dashboardUrl}/artifact-versions/${message.id}?tab=overview`
-            );
-            vscode.env.openExternal(uri);
-            break;
-          }
-          const uri = vscode.Uri.parse(runUrl);
-          vscode.env.openExternal(uri);
+        case 'artifactUrl':
+          this.openArtifactUrl(message.id, dashboardUrl, deploymentType, runUrl);
           break;
-        }
 
-        case 'stepUrl': {
-          const uri = vscode.Uri.parse(runUrl);
-          vscode.env.openExternal(uri);
+        case 'stepUrl':
+          this.openStepUrl(runUrl);
           break;
-        }
       }
     };
   }
@@ -153,6 +142,7 @@ export default class DagRenderer {
       vscode.commands.executeCommand('zenmlPanelView.focus');
     } catch (e) {
       vscode.window.showErrorMessage(`Unable to retrieve step ${id}: ${e}`);
+      console.error(e);
     }
   }
 
@@ -181,7 +171,25 @@ export default class DagRenderer {
       vscode.commands.executeCommand('zenmlPanelView.focus');
     } catch (e) {
       vscode.window.showErrorMessage(`Unable to retrieve artifact version ${id}: ${e}`);
+      console.error(e);
     }
+  }
+
+  private openArtifactUrl(
+    id: string,
+    dashboardUrl: string,
+    deploymentType: string,
+    runUrl: string
+  ): void {
+    const uri = vscode.Uri.parse(
+      deploymentType === 'cloud' ? `${dashboardUrl}/artifact-versions/${id}?tab=overview` : runUrl
+    );
+    vscode.env.openExternal(uri);
+  }
+
+  private openStepUrl(runUrl: string): void {
+    const uri = vscode.Uri.parse(runUrl);
+    vscode.env.openExternal(uri);
   }
 
   private async renderDag(panel: vscode.WebviewPanel, node: PipelineTreeItem) {
