@@ -92,41 +92,18 @@ export default class DagRenderer {
     const deploymentType = status.deployment_type;
     const runUrl = deploymentType === 'other' ? '' : `${dashboardUrl}/runs/${node.id}?tab=overview`;
 
-    const client = LSClient.getInstance();
-    const dataPanel = PanelDataProvider.getInstance();
-
     panel.webview.onDidReceiveMessage(async message => {
       switch (message.command) {
         case 'update':
           this.renderDag(panel, node);
           break;
 
-        case 'step': {
-          dataPanel.setLoading();
-          const stepData = await client.sendLsClientRequest<JsonObject>('getPipelineRunStep', [
-            message.id,
-          ]);
-
-          dataPanel.setData({ runUrl, ...stepData }, 'Pipeline Run Step Data');
-          vscode.commands.executeCommand('zenmlPanelView.focus');
+        case 'step':
+          this.loadStepDataIntoPanel(message.id, runUrl);
           break;
-        }
 
         case 'artifact': {
-          dataPanel.setLoading();
-          const artifactData = await client.sendLsClientRequest<JsonObject>(
-            'getPipelineRunArtifact',
-            [message.id]
-          );
-
-          if (deploymentType === 'cloud') {
-            const artifactUrl = `${dashboardUrl}/artifact-versions/${message.id}?tab=overview`;
-            dataPanel.setData({ artifactUrl, ...artifactData }, 'Artifact Version Data');
-          } else {
-            dataPanel.setData({ runUrl, ...artifactData }, 'Artifact Version Data');
-          }
-
-          vscode.commands.executeCommand('zenmlPanelView.focus');
+          this.loadArtifactDataIntoPanel(message.id, runUrl, dashboardUrl, deploymentType);
           break;
         }
 
@@ -155,6 +132,49 @@ export default class DagRenderer {
 
     // To track which DAGs are currently open
     this.registerDagPanel(node.id, panel);
+  }
+
+  private async loadStepDataIntoPanel(id: string, runUrl: string): Promise<void> {
+    const dataPanel = PanelDataProvider.getInstance();
+    dataPanel.setLoading();
+
+    const client = LSClient.getInstance();
+    try {
+      const stepData = await client.sendLsClientRequest<JsonObject>('getPipelineRunStep', [id]);
+
+      dataPanel.setData({ runUrl, ...stepData }, 'Pipeline Run Step Data');
+      vscode.commands.executeCommand('zenmlPanelView.focus');
+    } catch (e) {
+      vscode.window.showErrorMessage(`Unable to retrieve step ${id}: ${e}`);
+    }
+  }
+
+  private async loadArtifactDataIntoPanel(
+    id: string,
+    runUrl: string,
+    dashboardUrl: string,
+    deploymentType: string
+  ) {
+    const dataPanel = PanelDataProvider.getInstance();
+    dataPanel.setLoading();
+
+    const client = LSClient.getInstance();
+    try {
+      const artifactData = await client.sendLsClientRequest<JsonObject>('getPipelineRunArtifact', [
+        id,
+      ]);
+
+      if (deploymentType === 'cloud') {
+        const artifactUrl = `${dashboardUrl}/artifact-versions/${id}?tab=overview`;
+        dataPanel.setData({ artifactUrl, ...artifactData }, 'Artifact Version Data');
+      } else {
+        dataPanel.setData({ runUrl, ...artifactData }, 'Artifact Version Data');
+      }
+
+      vscode.commands.executeCommand('zenmlPanelView.focus');
+    } catch (e) {
+      vscode.window.showErrorMessage(`Unable to retrieve artifact version ${id}: ${e}`);
+    }
   }
 
   private async renderDag(panel: vscode.WebviewPanel, node: PipelineTreeItem) {
