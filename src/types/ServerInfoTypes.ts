@@ -13,6 +13,7 @@
 export interface ServerStatus {
   isConnected: boolean;
   url: string;
+  dashboard_url: string;
   version: string;
   store_type: string;
   deployment_type: string;
@@ -54,6 +55,7 @@ export interface ZenServerStoreInfo {
   auth_scheme: string;
   base_url?: string;
   metadata?: any;
+  dashboard_url: string;
 }
 
 /************************************************************************************************

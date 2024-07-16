@@ -43,6 +43,7 @@ export const MOCK_REST_SERVER_STATUS: ServerStatus = {
   database_type: 'sqlite',
   secrets_store_type: 'sql',
   auth_scheme: MOCK_AUTH_SCHEME,
+  dashboard_url: '',
 };
 
 export const MOCK_REST_SERVER_DETAILS: ZenServerDetails = {
@@ -54,6 +55,7 @@ export const MOCK_REST_SERVER_DETAILS: ZenServerDetails = {
     database_type: 'sqlite',
     secrets_store_type: 'sql',
     auth_scheme: MOCK_AUTH_SCHEME,
+    dashboard_url: '',
   },
   storeConfig: {
     type: 'rest',
@@ -80,6 +82,7 @@ export const MOCK_SQL_SERVER_STATUS: ServerStatus = {
   database_type: 'sqlite',
   secrets_store_type: 'sql',
   auth_scheme: MOCK_AUTH_SCHEME,
+  dashboard_url: '',
 };
 
 export const MOCK_SQL_SERVER_DETAILS: ZenServerDetails = {
@@ -91,6 +94,7 @@ export const MOCK_SQL_SERVER_DETAILS: ZenServerDetails = {
     database_type: 'sqlite',
     secrets_store_type: 'sql',
     auth_scheme: MOCK_AUTH_SCHEME,
+    dashboard_url: '',
   },
   storeConfig: {
     type: 'sql',

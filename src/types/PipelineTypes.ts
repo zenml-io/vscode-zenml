@@ -34,4 +34,40 @@ export interface PipelineRun {
   pythonVersion: string;
 }
 
+export interface DagStep {
+  id: string;
+  type: 'step';
+  data: {
+    execution_id: string;
+    name: string;
+    status: 'initializing' | 'failed' | 'completed' | 'running' | 'cached';
+  };
+}
+
+export interface DagArtifact {
+  id: string;
+  type: 'artifact';
+  data: {
+    execution_id: string;
+    name: string;
+    artifact_type: string;
+  };
+}
+
+export type DagNode = DagStep | DagArtifact;
+
+export interface DagEdge {
+  id: string;
+  source: string;
+  target: string;
+}
+
+export interface PipelineRunDag {
+  nodes: Array<DagNode>;
+  edges: Array<DagEdge>;
+  status: string;
+  name: string;
+  version: string;
+}
+
 export type PipelineRunsResponse = PipelineRunsData | ErrorMessageResponse | VersionMismatchError;

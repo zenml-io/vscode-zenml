@@ -1,0 +1,145 @@
+body {
+  background-color: var(--vscode-editor-background);
+  color: var(--vscode-editor-foreground);
+}
+
+body > svg {
+  z-index: 0;
+  width: 100%;
+}
+
+#edges polyline {
+  stroke: var(--vscode-editor-foreground);
+}
+
+.node {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1;
+}
+
+.node > div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px var(--vscode-editor-foreground) solid;
+  width: auto;
+  max-width: 280px;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 0 10px;
+  background: var(--vscode-editor-background);
+  cursor: pointer;
+}
+
+.node > .step {
+  border-radius: 10px;
+  color: lightblue;
+  background: rgb(0, 10, 50);
+}
+
+.node > .artifact {
+  border-radius: 9999px;
+}
+
+body.vscode-light .highlight,
+body.vscode-high-contrast .highlight {
+  filter: drop-shadow(5px 0px 8px rgb(150, 0, 150));
+}
+
+body.vscode-dark .highlight {
+  filter: drop-shadow(5px 0px 8px lightpink);
+}
+
+body.vscode-light #edges .highlight,
+body.vscode-high-contrast #edges .highlight {
+  stroke: rgb(150, 0, 150);
+  stroke-width: 4px;
+}
+
+body.vscode-dark #edges .highlight {
+  stroke: lightpink;
+  stroke-width: 4px;
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
+  margin-right: 5px;
+}
+
+.artifact .icon {
+  fill: var(--vscode-editor-foreground);
+}
+
+.completed {
+  fill: hsl(137 85% 50%);
+}
+
+.failed {
+  fill: hsl(3 81% 52%);
+}
+
+.cached {
+  fill: hsl(220 35% 50%);
+}
+
+.initializing {
+  fill: hsl(259 90% 50%);
+}
+
+.running {
+  fill: hsl(33 96% 50%);
+}
+
+rect.svg-pan-zoom-control-background {
+  fill: var(--vscode-editor-foreground);
+}
+
+g.svg-pan-zoom-control {
+  fill: var(--vscode-editor-background);
+  fill-opacity: 100%;
+}
+
+#update {
+  position: absolute;
+  box-sizing: border-box;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4vh;
+  padding: 0.5em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+#update button {
+  border: none;
+  background-color: inherit;
+  color: lightblue;
+  display: inline-block;
+  text-decoration: underline;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.needs-update {
+  background-color: rgb(0, 10, 50);
+}
+
+#container {
+  box-sizing: border-box;
+  width: 100%;
+  height: 99vh;
+  padding: 4vh 0 0.25vh;
+}
+
+#dag {
+  width: 100%;
+  height: 100%;
+}
