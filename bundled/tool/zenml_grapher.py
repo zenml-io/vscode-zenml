@@ -18,8 +18,8 @@ class Grapher:
     def __init__(self, run):
         self.run = run
         self.nodes = []
+        self.edges = []
         self.artifacts = {}
-        self.edges = {}
 
     def build_nodes_from_steps(self) -> None:
         """Builds internal node list from run steps"""
