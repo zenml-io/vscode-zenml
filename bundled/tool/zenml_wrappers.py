@@ -14,7 +14,8 @@
 
 import json
 import pathlib
-from typing import Any
+from typing import Any, Tuple, Union
+from type_hints import GraphResponse, ErrorResponse, RunStepResponse, RunArtifactResponse
 from zenml_grapher import Grapher
 
 
@@ -326,7 +327,7 @@ class PipelineRunsWrapper:
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to delete pipeline run: {str(e)}"}
         
-    def get_pipeline_run(self, args) -> dict:
+    def get_pipeline_run(self, args: Tuple[str]) -> dict:
         """Gets a ZenML pipeline run.
         
         Args:
@@ -363,7 +364,7 @@ class PipelineRunsWrapper:
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve pipeline run: {str(e)}"}
         
-    def get_pipeline_run_graph(self, args) -> dict:
+    def get_pipeline_run_graph(self, args: Tuple[str]) -> Union[GraphResponse, ErrorResponse]:
         """Gets a ZenML pipeline run step DAG.
         
         Args:
@@ -381,7 +382,7 @@ class PipelineRunsWrapper:
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve pipeline run graph: {str(e)}"}
 
-    def get_run_step(self, args) -> dict:
+    def get_run_step(self, args: Tuple[str]) -> Union[RunStepResponse, ErrorResponse]:
         """Gets a ZenML pipeline run step.
         
         Args:
@@ -428,7 +429,7 @@ class PipelineRunsWrapper:
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve pipeline run step: {str(e)}"}
         
-    def get_run_artifact(self, args) -> dict:
+    def get_run_artifact(self, args: Tuple[str]) -> Union[RunArtifactResponse, ErrorResponse]:
         """Gets a ZenML pipeline run artifact.
         
         Args:

@@ -12,7 +12,6 @@
 #  permissions and limitations under the License.
 """ZenML client class. Initializes all wrappers."""
 
-
 class ZenMLClient:
     """Provides a high-level interface to ZenML functionalities by wrapping core components."""
 
