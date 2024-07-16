@@ -52,6 +52,7 @@
     "deploy": "vsce publish",
     "format": "prettier --ignore-path .gitignore --write \"**/*.+(ts|json)\"",
     "format-check": "prettier --ignore-path .gitignore --check \"**/*.+(ts|json)\"",
+    "install": "pip install -r requirements.txt --target bundled/libs",
     "lint": "eslint src --ext ts",
     "package": "webpack --mode production --devtool source-map --config ./webpack.config.js",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
