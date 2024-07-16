@@ -20,6 +20,7 @@ import { LSClient } from '../../services/LSClient';
 import { ServerStatus } from '../../types/ServerInfoTypes';
 import { JsonObject } from '../../views/panel/panelView/PanelTreeItem';
 import { PanelDataProvider } from '../../views/panel/panelView/PanelDataProvider';
+import Panels from '../../common/panels';
 
 const ROOT_PATH = ['resources', 'dag-view'];
 const CSS_FILE = 'dag.css';
@@ -28,7 +29,6 @@ const ICONS_DIRECTORY = '/resources/dag-view/icons/';
 
 export default class DagRenderer {
   private static instance: DagRenderer | undefined;
-  private openPanels: { [id: string]: vscode.WebviewPanel };
   private createSVGWindow: Function = () => {};
   private iconSvgs: { [name: string]: string } = {};
   private root: vscode.Uri;
@@ -37,7 +37,6 @@ export default class DagRenderer {
 
   constructor(context: vscode.ExtensionContext) {
     DagRenderer.instance = this;
-    this.openPanels = {};
     this.root = vscode.Uri.joinPath(context.extensionUri, ...ROOT_PATH);
     this.javaScript = vscode.Uri.joinPath(this.root, JS_FILE);
     this.css = vscode.Uri.joinPath(this.root, CSS_FILE);
@@ -60,7 +59,6 @@ export default class DagRenderer {
    */
   public deactivate(): void {
     DagRenderer.instance = undefined;
-    Object.values<vscode.WebviewPanel>(this.openPanels).forEach(panel => panel.dispose());
   }
 
   /**
@@ -69,30 +67,21 @@ export default class DagRenderer {
    * @returns
    */
   public async createView(node: PipelineTreeItem) {
-    const existingPanel = this.getDagPanel(node.id);
+    const p = Panels.getInstance();
+    const existingPanel = p.getPanel(node.id);
     if (existingPanel) {
       existingPanel.reveal();
       return;
     }
 
-    const panel = vscode.window.createWebviewPanel(
-      `DAG-${node.id}`,
-      node.label as string,
-      vscode.ViewColumn.One,
-      {
-        enableScripts: true,
-        localResourceRoots: [this.root],
-      }
-    );
-
-    panel.webview.html = this.getLoadingContent();
+    const panel = p.createPanel(node.id, node.label as string, {
+      enableScripts: true,
+      localResourceRoots: [this.root],
+    });
 
     panel.webview.onDidReceiveMessage(this.createMessageHandler(panel, node));
 
     this.renderDag(panel, node);
-
-    // To track which DAGs are currently open
-    this.registerDagPanel(node.id, panel);
   }
 
   private createMessageHandler(
@@ -240,22 +229,6 @@ export default class DagRenderer {
     });
   }
 
-  private deregisterDagPanel(runId: string) {
-    delete this.openPanels[runId];
-  }
-
-  private getDagPanel(runId: string): vscode.WebviewPanel | undefined {
-    return this.openPanels[runId];
-  }
-
-  private registerDagPanel(runId: string, panel: vscode.WebviewPanel) {
-    this.openPanels[runId] = panel;
-
-    panel.onDidDispose(() => {
-      this.deregisterDagPanel(runId);
-    }, null);
-  }
-
   private layoutDag(dagData: PipelineRunDag): Dagre.graphlib.Graph {
     const { nodes, edges } = dagData;
     const graph = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
@@ -348,37 +321,6 @@ export default class DagRenderer {
       box.element('p').words(node.data.name);
     });
     return canvas.svg();
-  }
-
-  private getLoadingContent(): string {
-    return `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="Content-Secuirty-Policy" content="default-src 'none';">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loading</title>
-    <style>
-        body { display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .spinner {
-            border: 8px solid #f3f3f3;
-            border-top: 8px solid #3498db;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            animation: spin 2s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
-</head>
-<body>
-    <div class="spinner"></div>
-</body>
-</html>`;
   }
 
   private getWebviewContent({
