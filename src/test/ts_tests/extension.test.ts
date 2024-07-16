@@ -28,7 +28,11 @@ suite('Extension Activation Test Suite', () => {
 
   setup(() => {
     sandbox = sinon.createSandbox();
-    contextMock = { subscriptions: [] };
+    contextMock = {
+      subscriptions: [],
+      extensionPath: '',
+      extensionUri: vscode.Uri.file('/'),
+    };
     initializeSpy = sinon.spy(ZenExtension, 'activate');
     lsClient = LSClient.getInstance();
     sandbox.stub(EventBus, 'getInstance').returns(mockEventBus);

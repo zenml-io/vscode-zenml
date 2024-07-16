@@ -40,6 +40,7 @@ import { PipelineDataProvider, ServerDataProvider, StackDataProvider } from '../
 import ZenMLStatusBar from '../views/statusBar';
 import { LSClient } from './LSClient';
 import { toggleCommands } from '../utils/global';
+import { PanelDataProvider } from '../views/panel/panelView/PanelDataProvider';
 
 export interface IServerInfo {
   name: string;
@@ -61,6 +62,7 @@ export class ZenExtension {
     ['zenmlServerView', ServerDataProvider.getInstance()],
     ['zenmlStackView', StackDataProvider.getInstance()],
     ['zenmlPipelineView', PipelineDataProvider.getInstance()],
+    ['zenmlPanelView', PanelDataProvider.getInstance()],
   ]);
 
   private static registries = [

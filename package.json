@@ -232,6 +232,12 @@
         "category": "ZenML Pipeline Runs"
       },
       {
+        "command": "zenml.renderDag",
+        "title": "Render DAG",
+        "icon": "$(type-hierarchy)",
+        "category": "ZenML Pipeline Runs"
+      },
+      {
         "command": "zenml.refreshEnvironmentView",
         "title": "Refresh Environment View",
         "icon": "$(refresh)",
@@ -254,6 +260,13 @@
       "activitybar": [
         {
           "id": "zenml",
+          "title": "ZenML",
+          "icon": "resources/logo.png"
+        }
+      ],
+      "panel": [
+        {
+          "id": "zenmlPanel",
           "title": "ZenML",
           "icon": "resources/logo.png"
         }
@@ -280,6 +293,12 @@
           "id": "zenmlEnvironmentView",
           "name": "Environment",
           "icon": "$(server-environment)"
+        }
+      ],
+      "zenmlPanel": [
+        {
+          "id": "zenmlPanelView",
+          "name": "ZenML"
         }
       ]
     },
@@ -350,12 +369,17 @@
         {
           "when": "pipelineCommandsRegistered && view == zenmlPipelineView && viewItem == pipelineRun",
           "command": "zenml.deletePipelineRun",
-          "group": "inline@1"
+          "group": "inline@2"
         },
         {
           "when": "pipelineCommandsRegistered && view == zenmlPipelineView && viewItem == pipelineRun",
           "command": "zenml.goToPipelineUrl",
-          "group": "inline@2"
+          "group": "inline@3"
+        },
+        {
+          "when": "pipelineCommandsRegistered && view == zenmlPipelineView && viewItem == pipelineRun",
+          "command": "zenml.renderDag",
+          "group": "inline@1"
         },
         {
           "when": "environmentCommandsRegistered && view == zenmlEnvironmentView && viewItem == interpreter",
@@ -366,10 +390,12 @@
     }
   },
   "devDependencies": {
+    "@types/dagre": "^0.7.52",
     "@types/fs-extra": "^11.0.4",
     "@types/mocha": "^10.0.6",
     "@types/node": "^18.19.18",
     "@types/sinon": "^17.0.3",
+    "@types/svgdom": "^0.1.2",
     "@types/vscode": "^1.86.0",
     "@types/webpack": "^5.28.5",
     "@typescript-eslint/eslint-plugin": "^6.19.1",
@@ -388,9 +414,13 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
+    "@svgdotjs/svg.js": "^3.2.4",
     "@vscode/python-extension": "^1.0.5",
     "axios": "^1.6.7",
+    "dagre": "^0.8.5",
     "fs-extra": "^11.2.0",
+    "svg-pan-zoom": "github:bumbu/svg-pan-zoom",
+    "svgdom": "^0.1.19",
     "vscode-languageclient": "^9.0.1"
   }
 }

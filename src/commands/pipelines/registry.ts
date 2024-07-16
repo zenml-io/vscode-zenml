@@ -38,6 +38,10 @@ export const registerPipelineCommands = (context: ExtensionContext) => {
         'zenml.goToPipelineUrl',
         async (node: PipelineTreeItem) => await pipelineCommands.goToPipelineUrl(node)
       ),
+      registerCommand(
+        'zenml.renderDag',
+        async (node: PipelineTreeItem) => await pipelineCommands.renderDag(node)
+      ),
       registerCommand('zenml.nextPipelineRunsPage', async () =>
         pipelineDataProvider.goToNextPage()
       ),

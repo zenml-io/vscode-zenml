@@ -19,6 +19,7 @@ out/
 build/
 *.tsbuildinfo
 .history/
+dag-packed.js
 
 # env
 .env

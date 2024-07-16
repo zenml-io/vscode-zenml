@@ -16,6 +16,7 @@ import { PipelineTreeItem } from '../../views/activityBar';
 import { PipelineDataProvider } from '../../views/activityBar/pipelineView/PipelineDataProvider';
 import * as vscode from 'vscode';
 import { getPipelineRunDashboardUrl } from './utils';
+import DagRenderer from './DagRender';
 
 /**
  * Triggers a refresh of the pipeline view within the UI components.
@@ -94,8 +95,18 @@ const goToPipelineUrl = (node: PipelineTreeItem): void => {
   }
 };
 
+/**
+ * Opens the selected pipeline run in a DAG visualizer Webview Panel
+ *
+ * @param {PipelineTreeItem} node The pipeline run to render.
+ */
+const renderDag = (node: PipelineTreeItem): void => {
+  DagRenderer.getInstance()?.createView(node);
+};
+
 export const pipelineCommands = {
   refreshPipelineView,
   deletePipelineRun,
   goToPipelineUrl,
+  renderDag,
 };

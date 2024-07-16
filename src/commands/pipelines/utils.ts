@@ -10,7 +10,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import { getZenMLServerUrl } from '../../utils/global';
+
+import { ServerDataProvider } from '../../views/activityBar';
+import { isServerStatus } from '../server/utils';
 
 /**
  * Gets the Dashboard URL for the corresponding ZenML pipeline run
@@ -19,15 +21,15 @@ import { getZenMLServerUrl } from '../../utils/global';
  * @returns {string} - The URL corresponding to the pipeline run in the ZenML Dashboard
  */
 export const getPipelineRunDashboardUrl = (id: string): string => {
-  const PIPELINE_URL_STUB = 'SERVER_URL/workspaces/default/all-runs/PIPELINE_ID/dag';
-  const currentServerUrl = getZenMLServerUrl();
+  const status = ServerDataProvider.getInstance().getCurrentStatus();
 
-  const pipelineUrl = PIPELINE_URL_STUB.replace('SERVER_URL', currentServerUrl).replace(
-    'PIPELINE_ID',
-    id
-  );
+  if (!isServerStatus(status) || status.deployment_type === 'other') {
+    return '';
+  }
 
-  return pipelineUrl;
+  const currentServerUrl = status.dashboard_url;
+
+  return `${currentServerUrl}/runs/${id}`;
 };
 
 const pipelineUtils = {

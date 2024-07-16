@@ -9,6 +9,7 @@ The ZenML VSCode extension seamlessly integrates with [ZenML](https://github.com
 ## Features
 
 - **Server, Stacks, and Pipeline Runs Views**: Interact directly with ML stacks, pipeline runs, and server configurations from the Activity Bar.
+- **DAG Visualization for Pipeline Runs**: Explore Directed Acyclic Graphs for each pipeline view directly directly on the Activity Bar.
 - **Python Tool Integration**: Utilizes a Language Server Protocol (LSP) server for real-time synchronization with the ZenML environment.
 - **Real-Time Configuration Monitoring**: Leverages `watchdog` to dynamically update configurations, keeping the extension in sync with your ZenML setup.
 - **Status Bar**: Display the current stack name and connection status. You can
@@ -27,8 +28,21 @@ this extension and your Python version needs to be 3.8 or greater.
 
 - **Manage Server Connections**: Connect or disconnect from ZenML servers and refresh server status.
 - **Stack Operations**: View stack details, rename, copy, or set active stacks directly from VSCode.
-- **Pipeline Runs**: Monitor and manage pipeline runs, including deleting runs from the system.
+- **Pipeline Runs**: Monitor and manage pipeline runs, including deleting runs from the system and rendering DAGs.
 - **Environment Information**: Get detailed snapshots of the development environment, aiding troubleshooting.
+
+### DAG Visualization
+
+![DAG Visualization Example](resources/zenml-extension-dag.gif)
+
+- **Directed Acyclic Graph rendering**
+  - click on the Render Dag context action (labeled 1 in above image) next to the pipeline run you want to render. This will render the DAG in the editor window.
+- **Graph manuevering**
+  - Panning the graph can be done by clicking and dragging anywhere on the graph.
+  - Zooming can be controlled by the mousewheel, the control panel (labeled 2 in the above graph) or double-clicking anywhere there is not a node.
+  - Mousing over a node will highlight all edges being output by that node
+  - Clicking a node will display the data related to it in the ZenML panel view (labeled 3 in the above image)
+  - Double-clicking a node will open the dashboard in a web browser to either the pipeline run or the artifact version.
 
 ## Requirements
 

@@ -42,6 +42,7 @@ export const ITEMS_PER_PAGE_OPTIONS = ['5', '10', '15', '20', '25', '30', '35', 
 export const INITIAL_ZENML_SERVER_STATUS: ServerStatus = {
   isConnected: false,
   url: '',
+  dashboard_url: '',
   store_type: '',
   deployment_type: '',
   version: '',
