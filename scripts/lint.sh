@@ -9,7 +9,7 @@ export PYTHONPATH
 
 # Lint Python files with ruff
 echo "Linting Python files..."
-ruff bundled/tool || { echo "Linting Python files failed"; exit 1; }
+ruff check bundled/tool || { echo "Linting Python files failed"; exit 1; }
 
 # Type check Python files with mypy
 echo "Type checking Python files with mypy..."
