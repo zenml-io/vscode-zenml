@@ -12,14 +12,17 @@
 #  permissions and limitations under the License.
 """This module contains a tool to mimic LineageGraph output for pipeline runs"""
 
+from typing import Dict, List
+from type_hints import GraphEdge, GraphNode, GraphResponse, StepArtifact
+
 class Grapher:
     """Quick and dirty implementation of ZenML/LineageGraph to reduce number of api calls"""
 
     def __init__(self, run):
         self.run = run
-        self.nodes = []
-        self.edges = []
-        self.artifacts = {}
+        self.nodes: List[GraphNode] = []
+        self.edges: List[GraphEdge] = []
+        self.artifacts: Dict[str, bool] = {}
 
     def build_nodes_from_steps(self) -> None:
         """Builds internal node list from run steps"""
@@ -41,10 +44,10 @@ class Grapher:
             self.add_artifacts_from_list(step_data.body.outputs)
 
 
-    def add_artifacts_from_list(self, list) -> None:
+    def add_artifacts_from_list(self, dictOfArtifacts: Dict[str, StepArtifact]) -> None:
         """Used to add unique artifacts to the internal nodes list by build_nodes_from_steps"""
-        for artifact in list:
-            id = str(list[artifact].body.artifact.id)
+        for artifact in dictOfArtifacts:
+            id = str(dictOfArtifacts[artifact].body.artifact.id)
             if id in self.artifacts:
                 continue
 
@@ -55,8 +58,8 @@ class Grapher:
                 "id": id,
                 "data": {
                     "name": artifact,
-                    "artifact_type": list[artifact].body.type,
-                    "execution_id": str(list[artifact].id),
+                    "artifact_type": dictOfArtifacts[artifact].body.type,
+                    "execution_id": str(dictOfArtifacts[artifact].id),
                 },
             })
 
@@ -78,7 +81,7 @@ class Grapher:
                 self.add_edge(step_id, output_id)
 
 
-    def add_edge(self, v, w) -> None:
+    def add_edge(self, v: str, w: str) -> None:
         """Helper method to add an edge to the internal edges list"""
         self.edges.append({
             "id": f"{v}_{w}",
@@ -86,7 +89,7 @@ class Grapher:
             "target": w,
         })
         
-    def to_dict(self) -> dict:
+    def to_dict(self) -> GraphResponse:
         """Returns dictionary containing graph data"""
         return {
             "nodes": self.nodes,
