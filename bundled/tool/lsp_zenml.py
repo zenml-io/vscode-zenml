@@ -32,7 +32,9 @@ from pygls.server import LanguageServer
 from zen_watcher import ZenConfigWatcher
 from zenml_client import ZenMLClient
 
-zenml_init_error = {"error": "ZenML is not initialized. Please check ZenML version requirements."}
+zenml_init_error = {
+    "error": "ZenML is not initialized. Please check ZenML version requirements."
+}
 
 
 class ZenLanguageServer(LanguageServer):
@@ -58,7 +60,9 @@ class ZenLanguageServer(LanguageServer):
             if process.returncode == 0:
                 self.show_message_log("✅ ZenML installation check: Successful.")
                 return True
-            self.show_message_log("❌ ZenML installation check failed.", lsp.MessageType.Error)
+            self.show_message_log(
+                "❌ ZenML installation check failed.", lsp.MessageType.Error
+            )
             return False
         except Exception as e:
             self.show_message_log(
@@ -93,7 +97,9 @@ class ZenLanguageServer(LanguageServer):
             # initialize watcher
             self.initialize_global_config_watcher()
         except Exception as e:
-            self.notify_user(f"Failed to initialize ZenML client: {str(e)}", lsp.MessageType.Error)
+            self.notify_user(
+                f"Failed to initialize ZenML client: {str(e)}", lsp.MessageType.Error
+            )
 
     def initialize_global_config_watcher(self):
         """Sets up and starts the Global Configuration Watcher."""
@@ -133,7 +139,9 @@ class ZenLanguageServer(LanguageServer):
 
                 with suppress_stdout_temporarily():
                     if wrapper_name:
-                        wrapper_instance = getattr(self.zenml_client, wrapper_name, None)
+                        wrapper_instance = getattr(
+                            self.zenml_client, wrapper_name, None
+                        )
                         if not wrapper_instance:
                             return {"error": f"Wrapper '{wrapper_name}' not found."}
                         return func(wrapper_instance, *args, **kwargs)
@@ -177,25 +185,33 @@ class ZenLanguageServer(LanguageServer):
 
     def send_custom_notification(self, method: str, args: dict):
         """Sends a custom notification to the LSP client."""
-        self.show_message_log(f"Sending custom notification: {method} with args: {args}")
+        self.show_message_log(
+            f"Sending custom notification: {method} with args: {args}"
+        )
         self.send_notification(method, args)
 
     def update_python_interpreter(self, interpreter_path):
         """Updates the Python interpreter path and handles errors."""
         try:
             self.python_interpreter = interpreter_path
-            self.show_message_log(f"LSP_Python_Interpreter Updated: {self.python_interpreter}")
+            self.show_message_log(
+                f"LSP_Python_Interpreter Updated: {self.python_interpreter}"
+            )
         # pylint: disable=broad-exception-caught
         except Exception as e:
             self.show_message_log(
                 f"Failed to update Python interpreter: {str(e)}", lsp.MessageType.Error
             )
 
-    def notify_user(self, message: str, msg_type: lsp.MessageType = lsp.MessageType.Info):
+    def notify_user(
+        self, message: str, msg_type: lsp.MessageType = lsp.MessageType.Info
+    ):
         """Logs a message and also notifies the user."""
         self.show_message(message, msg_type)
 
-    def log_to_output(self, message: str, msg_type: lsp.MessageType = lsp.MessageType.Log) -> None:
+    def log_to_output(
+        self, message: str, msg_type: lsp.MessageType = lsp.MessageType.Log
+    ) -> None:
         """Log to output."""
         self.show_message_log(message, msg_type)
 
@@ -273,13 +289,13 @@ class ZenLanguageServer(LanguageServer):
         def delete_pipeline_run(wrapper_instance, args):
             """Deletes a specified ZenML pipeline run."""
             return wrapper_instance.delete_pipeline_run(args)
-        
+
         @self.command(f"{TOOL_MODULE_NAME}.getPipelineRun")
         @self.zenml_command(wrapper_name="pipeline_runs_wrapper")
         def get_pipeline_run(wrapper_instance, args):
             """Gets a specified ZenML pipeline run."""
             return wrapper_instance.get_pipeline_run(args)
-        
+
         @self.command(f"{TOOL_MODULE_NAME}.getPipelineRunStep")
         @self.zenml_command(wrapper_name="pipeline_runs_wrapper")
         def get_run_step(wrapper_instance, args):
@@ -291,9 +307,15 @@ class ZenLanguageServer(LanguageServer):
         def get_run_artifact(wrapper_instance, args):
             """Gets a specified ZenML pipeline artifact"""
             return wrapper_instance.get_run_artifact(args)
-        
+
         @self.command(f"{TOOL_MODULE_NAME}.getPipelineRunDag")
         @self.zenml_command(wrapper_name="pipeline_runs_wrapper")
         def get_run_dag(wrapper_instance, args):
             """Gets graph data for a specified ZenML pipeline run"""
             return wrapper_instance.get_pipeline_run_graph(args)
+
+        @self.command(f"{TOOL_MODULE_NAME}.listComponents")
+        @self.zenml_command(wrapper_name="stacks_wrapper")
+        def list_components(wrapper_instance, args):
+            """Get paginated stack components from ZenML"""
+            return wrapper_instance.list_components(args)
