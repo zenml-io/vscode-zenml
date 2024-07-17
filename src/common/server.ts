@@ -111,7 +111,11 @@ export async function restartServer(
   const lsClient = lsClientInstance.getLanguageClient();
   if (lsClient) {
     traceInfo(`Server: Stop requested`);
-    await lsClient.stop();
+    try {
+      await lsClient.stop();
+    } catch (e) {
+      traceInfo(`Server: Stop failed - ${e}`, '\nContinuing to attempt to start');
+    }
     _disposables.forEach(d => d.dispose());
     _disposables = [];
   }
