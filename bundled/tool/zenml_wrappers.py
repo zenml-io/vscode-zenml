@@ -15,7 +15,7 @@
 import json
 import pathlib
 from typing import Any, Tuple, Union
-from type_hints import GraphResponse, ErrorResponse, RunStepResponse, RunArtifactResponse
+from type_hints import GraphResponse, ErrorResponse, RunStepResponse, RunArtifactResponse, ZenmlServerInfoResp
 from zenml_grapher import Grapher
 
 
@@ -167,19 +167,38 @@ class ZenServerWrapper:
         """Returns the function to get the active ZenML server deployment."""
         return self.lazy_import("zenml.zen_server.utils", "get_active_deployment")
 
-    def get_server_info(self) -> dict:
+    def get_server_info(self) -> ZenmlServerInfoResp:
         """Fetches the ZenML server info.
 
         Returns:
             dict: Dictionary containing server info.
         """
-        store_info = json.loads(self.gc.zen_store.get_store_info().json(indent=2))
+        store_info = self.gc.zen_store.get_store_info()
+
         # Handle both 'store' and 'store_configuration' depending on version
         store_attr_name = (
             "store_configuration" if hasattr(self.gc, "store_configuration") else "store"
         )
-        store_config = json.loads(getattr(self.gc, store_attr_name).json(indent=2))
-        return {"storeInfo": store_info, "storeConfig": store_config}
+        store_config = getattr(self.gc, store_attr_name)
+        
+        return {
+            "storeInfo": {
+                "id": str(store_info.id),
+                "version": store_info.version,
+                "debug": store_info.debug,
+                "deployment_type": store_info.deployment_type,
+                "database_type": store_info.database_type,
+                "secrets_store_type": store_info.secrets_store_type,
+                "auth_scheme": store_info.auth_scheme,
+                "server_url": store_info.server_url,
+                "dashboard_url": store_info.dashboard_url,
+            }, 
+            "storeConfig": {
+                "type": store_config.type,
+                "url": store_config.url,
+                "api_token": store_config.api_token if "api_token" in store_config else None
+            }
+        }
 
     def connect(self, args, **kwargs) -> dict:
         """Connects to a ZenML server.
