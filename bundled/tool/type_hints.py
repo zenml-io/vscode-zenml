@@ -56,3 +56,23 @@ class RunArtifactResponse(TypedDict):
     update: str
     data: Dict[str, str]
     metadata: Dict[str, Any]
+
+class ZenmlStoreInfo(TypedDict):
+    id: str
+    version: str
+    debug: bool
+    deployment_type: str
+    database_type: str
+    secrets_store_type: str
+    auth_scheme: str
+    server_url: str
+    dashboard_url: str
+
+class ZenmlStoreConfig(TypedDict):
+    type: str
+    url: str
+    api_token: Union[str, None]
+
+class ZenmlServerInfoResp(TypedDict):
+    store_info: ZenmlStoreInfo
+    store_config: ZenmlStoreConfig
