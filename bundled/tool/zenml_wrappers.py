@@ -48,7 +48,9 @@ class GlobalConfigWrapper:
     def RestZenStoreConfiguration(self):
         """Returns the RestZenStoreConfiguration class for store configuration."""
         # pylint: disable=not-callable
-        return self.lazy_import("zenml.zen_stores.rest_zen_store", "RestZenStoreConfiguration")
+        return self.lazy_import(
+            "zenml.zen_stores.rest_zen_store", "RestZenStoreConfiguration"
+        )
 
     def get_global_config_directory_path(self) -> str:
         """Get the global configuration directory path.
@@ -189,7 +191,9 @@ class ZenServerWrapper:
 
         # Handle both 'store' and 'store_configuration' depending on version
         store_attr_name = (
-            "store_configuration" if hasattr(self.gc, "store_configuration") else "store"
+            "store_configuration"
+            if hasattr(self.gc, "store_configuration")
+            else "store"
         )
         store_config = getattr(self.gc, store_attr_name)
         
@@ -229,7 +233,9 @@ class ZenServerWrapper:
         try:
             # pylint: disable=not-callable
             access_token = self.web_login(url=url, verify_ssl=verify_ssl)
-            self._config_wrapper.set_store_configuration(remote_url=url, access_token=access_token)
+            self._config_wrapper.set_store_configuration(
+                remote_url=url, access_token=access_token
+            )
             return {"message": "Connected successfully.", "access_token": access_token}
         except self.AuthorizationException as e:
             return {"error": f"Authorization failed: {str(e)}"}
@@ -245,7 +251,9 @@ class ZenServerWrapper:
         try:
             # Adjust for changes from 'store' to 'store_configuration'
             store_attr_name = (
-                "store_configuration" if hasattr(self.gc, "store_configuration") else "store"
+                "store_configuration"
+                if hasattr(self.gc, "store_configuration")
+                else "store"
             )
             url = getattr(self.gc, store_attr_name).url
             store_type = self.BaseZenStore.get_store_type(url)
@@ -314,15 +322,21 @@ class PipelineRunsWrapper:
                     "version": run.body.pipeline.body.version,
                     "stackName": run.body.stack.name,
                     "startTime": (
-                        run.metadata.start_time.isoformat() if run.metadata.start_time else None
+                        run.metadata.start_time.isoformat()
+                        if run.metadata.start_time
+                        else None
                     ),
                     "endTime": (
-                        run.metadata.end_time.isoformat() if run.metadata.end_time else None
+                        run.metadata.end_time.isoformat()
+                        if run.metadata.end_time
+                        else None
                     ),
                     "os": run.metadata.client_environment.get("os", "Unknown OS"),
                     "osVersion": run.metadata.client_environment.get(
                         "os_version",
-                        run.metadata.client_environment.get("mac_version", "Unknown Version"),
+                        run.metadata.client_environment.get(
+                            "mac_version", "Unknown Version"
+                        ),
                     ),
                     "pythonVersion": run.metadata.client_environment.get(
                         "python_version", "Unknown"
@@ -357,10 +371,10 @@ class PipelineRunsWrapper:
             return {"message": f"Pipeline run `{run_id}` deleted successfully."}
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to delete pipeline run: {str(e)}"}
-        
+
     def get_pipeline_run(self, args: Tuple[str]) -> dict:
         """Gets a ZenML pipeline run.
-        
+
         Args:
             args (list): List of arguments.
         Returns:
@@ -371,33 +385,39 @@ class PipelineRunsWrapper:
             run = self.client.get_pipeline_run(run_id, hydrate=True)
             run_data = {
                 "id": str(run.id),
-                    "name": run.body.pipeline.name,
-                    "status": run.body.status,
-                    "version": run.body.pipeline.body.version,
-                    "stackName": run.body.stack.name,
-                    "startTime": (
-                        run.metadata.start_time.isoformat() if run.metadata.start_time else None
+                "name": run.body.pipeline.name,
+                "status": run.body.status,
+                "version": run.body.pipeline.body.version,
+                "stackName": run.body.stack.name,
+                "startTime": (
+                    run.metadata.start_time.isoformat()
+                    if run.metadata.start_time
+                    else None
+                ),
+                "endTime": (
+                    run.metadata.end_time.isoformat() if run.metadata.end_time else None
+                ),
+                "os": run.metadata.client_environment.get("os", "Unknown OS"),
+                "osVersion": run.metadata.client_environment.get(
+                    "os_version",
+                    run.metadata.client_environment.get(
+                        "mac_version", "Unknown Version"
                     ),
-                    "endTime": (
-                        run.metadata.end_time.isoformat() if run.metadata.end_time else None
-                    ),
-                    "os": run.metadata.client_environment.get("os", "Unknown OS"),
-                    "osVersion": run.metadata.client_environment.get(
-                        "os_version",
-                        run.metadata.client_environment.get("mac_version", "Unknown Version"),
-                    ),
-                    "pythonVersion": run.metadata.client_environment.get(
-                        "python_version", "Unknown"
-                    ),
+                ),
+                "pythonVersion": run.metadata.client_environment.get(
+                    "python_version", "Unknown"
+                ),
             }
 
             return run_data
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve pipeline run: {str(e)}"}
-        
-    def get_pipeline_run_graph(self, args: Tuple[str]) -> Union[GraphResponse, ErrorResponse]:
+
+    def get_pipeline_run_graph(
+        self, args: Tuple[str]
+    ) -> Union[GraphResponse, ErrorResponse]:
         """Gets a ZenML pipeline run step DAG.
-        
+
         Args:
             args (list): List of arguments.
         Returns:
@@ -415,7 +435,7 @@ class PipelineRunsWrapper:
 
     def get_run_step(self, args: Tuple[str]) -> Union[RunStepResponse, ErrorResponse]:
         """Gets a ZenML pipeline run step.
-        
+
         Args:
             args (list): List of arguments.
         Returns:
@@ -424,7 +444,9 @@ class PipelineRunsWrapper:
         try:
             step_run_id = args[0]
             step = self.client.get_run_step(step_run_id, hydrate=True)
-            run = self.client.get_pipeline_run(step.metadata.pipeline_run_id, hydrate=True)
+            run = self.client.get_pipeline_run(
+                step.metadata.pipeline_run_id, hydrate=True
+            )
 
             step_data = {
                 "name": step.name,
@@ -435,18 +457,22 @@ class PipelineRunsWrapper:
                     "email": step.body.user.name,
                 },
                 "startTime": (
-                    step.metadata.start_time.isoformat() if step.metadata.start_time else None
+                    step.metadata.start_time.isoformat()
+                    if step.metadata.start_time
+                    else None
                 ),
                 "endTime": (
-                    step.metadata.end_time.isoformat() if step.metadata.end_time else None
+                    step.metadata.end_time.isoformat()
+                    if step.metadata.end_time
+                    else None
                 ),
                 "duration": (
-                    str(step.metadata.end_time - step.metadata.start_time) if step.metadata.end_time and step.metadata.start_time else None
+                    str(step.metadata.end_time - step.metadata.start_time)
+                    if step.metadata.end_time and step.metadata.start_time
+                    else None
                 ),
                 "stackName": run.body.stack.name,
-                "orchestrator": {
-                    "runId": str(run.metadata.orchestrator_run_id)
-                },
+                "orchestrator": {"runId": str(run.metadata.orchestrator_run_id)},
                 "pipeline": {
                     "name": run.body.pipeline.name,
                     "status": run.body.status,
@@ -454,15 +480,17 @@ class PipelineRunsWrapper:
                 },
                 "cacheKey": step.metadata.cache_key,
                 "sourceCode": step.metadata.source_code,
-                "logsUri": step.metadata.logs.body.uri
+                "logsUri": step.metadata.logs.body.uri,
             }
             return step_data
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve pipeline run step: {str(e)}"}
-        
-    def get_run_artifact(self, args: Tuple[str]) -> Union[RunArtifactResponse, ErrorResponse]:
+
+    def get_run_artifact(
+        self, args: Tuple[str]
+    ) -> Union[RunArtifactResponse, ErrorResponse]:
         """Gets a ZenML pipeline run artifact.
-        
+
         Args:
             args (list): List of arguments.
         Returns:
@@ -540,7 +568,9 @@ class StacksWrapper:
             return {"error": "Insufficient arguments provided."}
         page, max_size = args
         try:
-            stacks_page = self.client.list_stacks(page=page, size=max_size, hydrate=True)
+            stacks_page = self.client.list_stacks(
+                page=page, size=max_size, hydrate=True
+            )
             stacks_data = self.process_stacks(stacks_page.items)
 
             return {
@@ -653,17 +683,23 @@ class StacksWrapper:
         target_stack_name = args[1]
 
         if not source_stack_name_or_id or not target_stack_name:
-            return {"error": "Both source stack name/id and target stack name are required"}
+            return {
+                "error": "Both source stack name/id and target stack name are required"
+            }
 
         try:
-            stack_to_copy = self.client.get_stack(name_id_or_prefix=source_stack_name_or_id)
+            stack_to_copy = self.client.get_stack(
+                name_id_or_prefix=source_stack_name_or_id
+            )
             component_mapping = {
                 c_type: [c.id for c in components][0]
                 for c_type, components in stack_to_copy.components.items()
                 if components
             }
 
-            self.client.create_stack(name=target_stack_name, components=component_mapping)
+            self.client.create_stack(
+                name=target_stack_name, components=component_mapping
+            )
             return {
                 "message": (
                     f"Stack `{source_stack_name_or_id}` successfully copied "
@@ -675,3 +711,26 @@ class StacksWrapper:
             self.StackComponentValidationError,
         ) as e:
             return {"error": str(e)}
+
+    def list_components(self, args) -> dict:
+        page = args[0]
+        components = self.client.list_stack_components(page=page, hydrate=True)
+        return {
+            "index": components.index,
+            "max_size": components.max_size,
+            "total_pages": components.total_pages,
+            "total": components.total,
+            "items": [
+                {
+                    "id": str(item.id),
+                    "name": item.name,
+                    "flavor": item.body.flavor,
+                    "type": item.body.type,
+                }
+                for item in components.items
+            ],
+        }
+
+    # index, max_size, total_pages, total
+    # items []
+    # id, name, body.flavor, body.type

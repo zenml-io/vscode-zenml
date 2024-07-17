@@ -255,6 +255,12 @@
         "title": "Restart LSP Server",
         "icon": "$(debug-restart)",
         "category": "ZenML Environment"
+      },
+      {
+        "command": "zenml.createStack",
+        "title": "Create Stack",
+        "icon": "$(add)",
+        "category": "ZenML Stacks"
       }
     ],
     "viewsContainers": {
@@ -322,13 +328,18 @@
         },
         {
           "when": "stackCommandsRegistered && view == zenmlStackView",
-          "command": "zenml.setStackItemsPerPage",
+          "command": "zenml.createStack",
           "group": "navigation@1"
         },
         {
           "when": "stackCommandsRegistered && view == zenmlStackView",
-          "command": "zenml.refreshStackView",
+          "command": "zenml.setStackItemsPerPage",
           "group": "navigation@2"
+        },
+        {
+          "when": "stackCommandsRegistered && view == zenmlStackView",
+          "command": "zenml.refreshStackView",
+          "group": "navigation@3"
         },
         {
           "when": "pipelineCommandsRegistered && view == zenmlPipelineView",
