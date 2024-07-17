@@ -76,3 +76,12 @@ class ZenmlStoreConfig(TypedDict):
 class ZenmlServerInfoResp(TypedDict):
     store_info: ZenmlStoreInfo
     store_config: ZenmlStoreConfig
+
+class ZenmlGlobalConfigResp(TypedDict):
+    user_id: str
+    user_email: str
+    analytics_opt_in: bool
+    version: str
+    active_stack_id: str
+    active_workspace_name: str
+    store: ZenmlStoreConfig
