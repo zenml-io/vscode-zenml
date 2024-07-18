@@ -197,6 +197,18 @@
         "category": "ZenML Stacks"
       },
       {
+        "command": "zenml.setComponentItemsPerPage",
+        "title": "Set Components Per Page",
+        "icon": "$(layers)",
+        "category": "ZenML Components"
+      },
+      {
+        "command": "zenml.refreshComponentView",
+        "title": "Refresh Component View",
+        "icon": "$(refresh)",
+        "category": "ZenML Components"
+      },
+      {
         "command": "zenml.copyStack",
         "title": "Copy Stack",
         "icon": "$(copy)",
@@ -345,6 +357,16 @@
           "when": "stackCommandsRegistered && view == zenmlStackView",
           "command": "zenml.refreshStackView",
           "group": "navigation@3"
+        },
+        {
+          "when": "componentCommandsRegistered && view == zenmlComponentView",
+          "command": "zenml.setComponentItemsPerPage",
+          "group": "navigation@1"
+        },
+        {
+          "when": "componentCommandsRegistered && view == zenmlComponentView",
+          "command": "zenml.refreshComponentView",
+          "group": "navigation@2"
         },
         {
           "when": "pipelineCommandsRegistered && view == zenmlPipelineView",
