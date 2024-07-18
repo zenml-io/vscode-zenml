@@ -292,6 +292,11 @@
           "icon": "$(layers)"
         },
         {
+          "id": "zenmlComponentView",
+          "name": "Stack Components",
+          "icon": "$(extensions)"
+        },
+        {
           "id": "zenmlPipelineView",
           "name": "Pipeline Runs",
           "icon": "$(beaker)"

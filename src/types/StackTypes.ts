@@ -44,4 +44,17 @@ interface StackComponent {
 
 export type StacksResponse = StacksData | ErrorMessageResponse | VersionMismatchError;
 
-export { Stack, Components, StackComponent, StacksData };
+interface ComponentsListData {
+  index: number;
+  max_size: number;
+  total_pages: number;
+  total: number;
+  items: Array<StackComponent>;
+}
+
+export type ComponentsListResponse =
+  | ComponentsListData
+  | ErrorMessageResponse
+  | VersionMismatchError;
+
+export { Stack, Components, StackComponent, StacksData, ComponentsListData };
