@@ -123,7 +123,7 @@ export function getDefaultPythonInterpreterPath(): string {
  */
 export async function toggleCommands(state: boolean): Promise<void> {
   await vscode.commands.executeCommand('setContext', 'stackCommandsRegistered', state);
-  await vscode.commands.executeCommand('setContext', 'stackCommandsRegistered', state);
+  await vscode.commands.executeCommand('setContext', 'componentCommandsRegistered', state);
   await vscode.commands.executeCommand('setContext', 'serverCommandsRegistered', state);
   await vscode.commands.executeCommand('setContext', 'pipelineCommandsRegistered', state);
   await vscode.commands.executeCommand('setContext', 'environmentCommandsRegistered', state);

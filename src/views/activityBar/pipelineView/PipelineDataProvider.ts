@@ -25,27 +25,20 @@ import { ErrorTreeItem, createErrorItem, createAuthErrorItem } from '../common/E
 import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
 import { PipelineRunTreeItem, PipelineTreeItem } from './PipelineTreeItems';
 import { CommandTreeItem } from '../common/PaginationTreeItems';
+import { PaginatedDataProvider } from '../common/PaginatedDataProvider';
 
 /**
  * Provides data for the pipeline run tree view, displaying detailed information about each pipeline run.
  */
-export class PipelineDataProvider implements TreeDataProvider<TreeItem> {
-  private _onDidChangeTreeData = new EventEmitter<TreeItem | undefined | null>();
-  readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
-
+export class PipelineDataProvider extends PaginatedDataProvider {
   private static instance: PipelineDataProvider | null = null;
   private eventBus = EventBus.getInstance();
   private zenmlClientReady = false;
-  private pipelineRuns: PipelineTreeItem[] | TreeItem[] = [LOADING_TREE_ITEMS.get('pipelineRuns')!];
-
-  private pagination = {
-    currentPage: 1,
-    itemsPerPage: 20,
-    totalItems: 0,
-    totalPages: 0,
-  };
 
   constructor() {
+    super();
+    this.items = [LOADING_TREE_ITEMS.get('pipelineRuns')!];
+    this.viewName = 'PipelineRuns';
     this.subscribeToEvents();
   }
 
@@ -57,7 +50,7 @@ export class PipelineDataProvider implements TreeDataProvider<TreeItem> {
       if (newState === State.Running) {
         this.refresh();
       } else {
-        this.pipelineRuns = [LOADING_TREE_ITEMS.get('lsClient')!];
+        this.items = [LOADING_TREE_ITEMS.get('lsClient')!];
         this._onDidChangeTreeData.fire(undefined);
       }
     });
@@ -66,7 +59,7 @@ export class PipelineDataProvider implements TreeDataProvider<TreeItem> {
       this.zenmlClientReady = isInitialized;
 
       if (!isInitialized) {
-        this.pipelineRuns = [LOADING_TREE_ITEMS.get('pipelineRuns')!];
+        this.items = [LOADING_TREE_ITEMS.get('pipelineRuns')!];
         this._onDidChangeTreeData.fire(undefined);
         return;
       }
@@ -83,10 +76,10 @@ export class PipelineDataProvider implements TreeDataProvider<TreeItem> {
    * @returns {PipelineDataProvider} The singleton instance.
    */
   public static getInstance(): PipelineDataProvider {
-    if (!this.instance) {
-      this.instance = new PipelineDataProvider();
+    if (!PipelineDataProvider.instance) {
+      PipelineDataProvider.instance = new PipelineDataProvider();
     }
-    return this.instance;
+    return PipelineDataProvider.instance;
   }
 
   /**
@@ -95,74 +88,21 @@ export class PipelineDataProvider implements TreeDataProvider<TreeItem> {
    * @returns A promise resolving to void.
    */
   public async refresh(): Promise<void> {
-    this.pipelineRuns = [LOADING_TREE_ITEMS.get('pipelineRuns')!];
+    this.items = [LOADING_TREE_ITEMS.get('pipelineRuns')!];
     this._onDidChangeTreeData.fire(undefined);
     const page = this.pagination.currentPage;
     const itemsPerPage = this.pagination.itemsPerPage;
 
     try {
       const newPipelineData = await this.fetchPipelineRuns(page, itemsPerPage);
-      this.pipelineRuns = newPipelineData;
+      this.items = newPipelineData;
     } catch (error: any) {
-      this.pipelineRuns = createErrorItem(error);
+      this.items = createErrorItem(error);
     }
 
     this._onDidChangeTreeData.fire(undefined);
   }
 
-  /**
-   * Retrieves the tree item for a given pipeline run.
-   *
-   * @param element The pipeline run item.
-   * @returns The corresponding VS Code tree item.
-   */
-  getTreeItem(element: TreeItem): TreeItem {
-    return element;
-  }
-
-  /**
-   * Retrieves the children for a given tree item.
-   *
-   * @param element The parent tree item. If undefined, root pipeline runs are fetched.
-   * @returns A promise resolving to an array of child tree items or undefined if there are no children.
-   */
-  async getChildren(element?: TreeItem): Promise<TreeItem[] | undefined> {
-    if (!element) {
-      if (Array.isArray(this.pipelineRuns) && this.pipelineRuns.length > 0) {
-        return this.pipelineRuns;
-      }
-
-      // Fetch pipeline runs for the current page and add pagination controls if necessary
-      const runs = await this.fetchPipelineRuns(
-        this.pagination.currentPage,
-        this.pagination.itemsPerPage
-      );
-      if (this.pagination.currentPage < this.pagination.totalPages) {
-        runs.push(
-          new CommandTreeItem(
-            'Next Page',
-            'zenml.nextPipelineRunsPage',
-            undefined,
-            'arrow-circle-right'
-          )
-        );
-      }
-      if (this.pagination.currentPage > 1) {
-        runs.unshift(
-          new CommandTreeItem(
-            'Previous Page',
-            'zenml.previousPipelineRunsPage',
-            undefined,
-            'arrow-circle-left'
-          )
-        );
-      }
-      return runs;
-    } else if (element instanceof PipelineTreeItem) {
-      return element.children;
-    }
-    return undefined;
-  }
   /**
    * Fetches pipeline runs from the server and maps them to tree items for display.
    *
@@ -232,31 +172,6 @@ export class PipelineDataProvider implements TreeDataProvider<TreeItem> {
           `Failed to fetch pipeline runs: ${error.message || error.toString()}`
         ),
       ];
-    }
-  }
-
-  public async goToNextPage() {
-    if (this.pagination.currentPage < this.pagination.totalPages) {
-      this.pagination.currentPage++;
-      await this.refresh();
-    }
-  }
-
-  public async goToPreviousPage() {
-    if (this.pagination.currentPage > 1) {
-      this.pagination.currentPage--;
-      await this.refresh();
-    }
-  }
-
-  public async updateItemsPerPage() {
-    const selected = await window.showQuickPick(ITEMS_PER_PAGE_OPTIONS, {
-      placeHolder: 'Choose the max number of pipeline runs to display per page',
-    });
-    if (selected) {
-      this.pagination.itemsPerPage = parseInt(selected, 10);
-      this.pagination.currentPage = 1;
-      await this.refresh();
     }
   }
 }
