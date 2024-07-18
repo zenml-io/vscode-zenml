@@ -64,7 +64,7 @@ export class ComponentDataProvider implements TreeDataProvider<TreeItem> {
       this.zenmlClientReady = isInitialized;
 
       if (!isInitialized) {
-        this.components = [LOADING_TREE_ITEMS.get('stacks')!];
+        this.components = [LOADING_TREE_ITEMS.get('components')!];
         this._onDidChangeTreeData.fire(undefined);
         return;
       }
