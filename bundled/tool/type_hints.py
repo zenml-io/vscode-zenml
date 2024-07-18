@@ -1,7 +1,6 @@
 from typing import Any, TypedDict, Dict, List, Union
 from uuid import UUID
 
-
 class StepArtifactBody(TypedDict):
     type: str
     artifact: Dict[str, str]
@@ -19,8 +18,6 @@ class GraphEdge(TypedDict):
     id: str
     source: str
     target: str
-
-
 
 class GraphResponse(TypedDict):
     nodes: List[GraphNode]
@@ -85,3 +82,16 @@ class ZenmlGlobalConfigResp(TypedDict):
     active_stack_id: str
     active_workspace_name: str
     store: ZenmlStoreConfig
+
+class ComponentResponse(TypedDict):
+    id: str
+    name: str
+    flavor: str
+    type: str
+
+class ListComponentsResponse(TypedDict):
+    index: int
+    max_size: int
+    total_pages: int
+    total: int
+    items: List[ComponentResponse]

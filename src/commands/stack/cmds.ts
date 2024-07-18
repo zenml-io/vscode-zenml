@@ -164,7 +164,7 @@ const createStack = async () => {
   const id = 'stack form';
   const label = 'Create Stack';
   Panels.getInstance().createPanel(id, label);
-  const obj = await LSClient.getInstance().sendLsClientRequest('listComponents', [1]);
+  const obj = await LSClient.getInstance().sendLsClientRequest('listComponents', [1, 10]);
   console.log(obj);
 };
 
