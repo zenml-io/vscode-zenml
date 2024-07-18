@@ -23,6 +23,7 @@ export class LoadingTreeItem extends TreeItem {
 export const LOADING_TREE_ITEMS = new Map<string, LoadingTreeItem>([
   ['server', new LoadingTreeItem('Refreshing Server View...')],
   ['stacks', new LoadingTreeItem('Refreshing Stacks View...')],
+  ['components', new LoadingTreeItem('Refreshing Components View...')],
   ['pipelineRuns', new LoadingTreeItem('Refreshing Pipeline Runs...')],
   ['environment', new LoadingTreeItem('Refreshing Environments...')],
   ['lsClient', new LoadingTreeItem('Waiting for Language Server to start...', '')],
