@@ -25,26 +25,18 @@ import { ErrorTreeItem, createErrorItem, createAuthErrorItem } from '../common/E
 import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
 import { StackComponentTreeItem, StackTreeItem } from './StackTreeItems';
 import { CommandTreeItem } from '../common/PaginationTreeItems';
+import { PaginatedDataProvider } from '../common/PaginatedDataProvider';
 
-export class StackDataProvider implements TreeDataProvider<TreeItem> {
-  private _onDidChangeTreeData = new EventEmitter<TreeItem | undefined | null>();
-  readonly onDidChangeTreeData: Event<TreeItem | undefined | null> =
-    this._onDidChangeTreeData.event;
-
+export class StackDataProvider extends PaginatedDataProvider {
   private static instance: StackDataProvider | null = null;
   private eventBus = EventBus.getInstance();
   private zenmlClientReady = false;
-  public stacks: StackTreeItem[] | TreeItem[] = [LOADING_TREE_ITEMS.get('stacks')!];
-
-  private pagination = {
-    currentPage: 1,
-    itemsPerPage: 20,
-    totalItems: 0,
-    totalPages: 0,
-  };
 
   constructor() {
+    super();
     this.subscribeToEvents();
+    this.items = [LOADING_TREE_ITEMS.get('stacks')!];
+    this.viewName = 'Stack';
   }
 
   /**
@@ -55,7 +47,7 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
       if (newState === State.Running) {
         this.refresh();
       } else {
-        this.stacks = [LOADING_TREE_ITEMS.get('lsClient')!];
+        this.items = [LOADING_TREE_ITEMS.get('lsClient')!];
         this._onDidChangeTreeData.fire(undefined);
       }
     });
@@ -64,7 +56,7 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
       this.zenmlClientReady = isInitialized;
 
       if (!isInitialized) {
-        this.stacks = [LOADING_TREE_ITEMS.get('stacks')!];
+        this.items = [LOADING_TREE_ITEMS.get('stacks')!];
         this._onDidChangeTreeData.fire(undefined);
         return;
       }
@@ -87,22 +79,12 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
   }
 
   /**
-   * Returns the provided tree item.
-   *
-   * @param {TreeItem} element The tree item to return.
-   * @returns The corresponding VS Code tree item.
-   */
-  getTreeItem(element: TreeItem): TreeItem {
-    return element;
-  }
-
-  /**
    * Refreshes the tree view data by refetching stacks and triggering the onDidChangeTreeData event.
    *
    * @returns {Promise<void>} A promise that resolves when the tree view data has been refreshed.
    */
   public async refresh(): Promise<void> {
-    this.stacks = [LOADING_TREE_ITEMS.get('stacks')!];
+    this.items = [LOADING_TREE_ITEMS.get('stacks')!];
     this._onDidChangeTreeData.fire(undefined);
 
     const page = this.pagination.currentPage;
@@ -110,9 +92,9 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
 
     try {
       const newStacksData = await this.fetchStacksWithComponents(page, itemsPerPage);
-      this.stacks = newStacksData;
+      this.items = newStacksData;
     } catch (error: any) {
-      this.stacks = createErrorItem(error);
+      this.items = createErrorItem(error);
     }
 
     this._onDidChangeTreeData.fire(undefined);
@@ -177,69 +159,6 @@ export class StackDataProvider implements TreeDataProvider<TreeItem> {
         new ErrorTreeItem('Error', `Failed to fetch stacks: ${error.message || error.toString()}`),
       ];
     }
-  }
-
-  public async goToNextPage() {
-    if (this.pagination.currentPage < this.pagination.totalPages) {
-      this.pagination.currentPage++;
-      await this.refresh();
-    }
-  }
-
-  public async goToPreviousPage() {
-    if (this.pagination.currentPage > 1) {
-      this.pagination.currentPage--;
-      await this.refresh();
-    }
-  }
-
-  public async updateItemsPerPage() {
-    const selected = await window.showQuickPick(ITEMS_PER_PAGE_OPTIONS, {
-      placeHolder: 'Choose the max number of stacks to display per page',
-    });
-    if (selected) {
-      this.pagination.itemsPerPage = parseInt(selected, 10);
-      this.pagination.currentPage = 1;
-      await this.refresh();
-    }
-  }
-
-  /**
-   * Retrieves the children of a given tree item.
-   *
-   * @param {TreeItem} element The tree item whose children to retrieve.
-   * @returns A promise resolving to an array of child tree items or undefined if there are no children.
-   */
-  async getChildren(element?: TreeItem): Promise<TreeItem[] | undefined> {
-    if (!element) {
-      if (Array.isArray(this.stacks) && this.stacks.length > 0) {
-        return this.stacks;
-      }
-
-      const stacks = await this.fetchStacksWithComponents(
-        this.pagination.currentPage,
-        this.pagination.itemsPerPage
-      );
-      if (this.pagination.currentPage < this.pagination.totalPages) {
-        stacks.push(
-          new CommandTreeItem('Next Page', 'zenml.nextStackPage', undefined, 'arrow-circle-right')
-        );
-      }
-      if (this.pagination.currentPage > 1) {
-        stacks.unshift(
-          new CommandTreeItem(
-            'Previous Page',
-            'zenml.previousStackPage',
-            undefined,
-            'arrow-circle-left'
-          )
-        );
-      }
-      return stacks;
-    } else if (element instanceof StackTreeItem) {
-      return element.children;
-    }
-    return undefined;
   }
 
   /**

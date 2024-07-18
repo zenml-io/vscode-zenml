@@ -33,6 +33,14 @@ export const registerComponentCommands = (context: ExtensionContext) => {
         'zenml.refreshComponentView',
         async () => await componentCommands.refreshComponentView()
       ),
+      registerCommand(
+        'zenml.nextComponentPage',
+        async () => await componentDataProvider.goToNextPage()
+      ),
+      registerCommand(
+        'zenml.previousComponentPage',
+        async () => await componentDataProvider.goToPreviousPage()
+      ),
     ];
 
     registeredCommands.forEach(cmd => {
