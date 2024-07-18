@@ -1,5 +1,6 @@
-from typing import Any, TypedDict, Dict, List, Union
+from typing import Any, TypedDict, Dict, List, Optional
 from uuid import UUID
+
 
 class StepArtifactBody(TypedDict):
     type: str
@@ -34,9 +35,9 @@ class RunStepResponse(TypedDict):
     id: str
     status: str
     author: Dict[str, str]
-    startTime: Union[str, None]
-    endTime: Union[str, None]
-    duration: Union[str, None]
+    startTime: Optional[str]
+    endTime: Optional[str]
+    duration: Optional[str]
     stackName: str
     orchestrator: Dict[str, str]
     pipeline: Dict[str, str]
@@ -68,7 +69,7 @@ class ZenmlStoreInfo(TypedDict):
 class ZenmlStoreConfig(TypedDict):
     type: str
     url: str
-    api_token: Union[str, None]
+    api_token: Optional[str]
 
 class ZenmlServerInfoResp(TypedDict):
     store_info: ZenmlStoreInfo
@@ -83,7 +84,7 @@ class ZenmlGlobalConfigResp(TypedDict):
     active_workspace_name: str
     store: ZenmlStoreConfig
 
-class ComponentResponse(TypedDict):
+class StackComponent(TypedDict):
     id: str
     name: str
     flavor: str
@@ -94,4 +95,19 @@ class ListComponentsResponse(TypedDict):
     max_size: int
     total_pages: int
     total: int
-    items: List[ComponentResponse]
+    items: List[StackComponent]
+
+class Flavor(TypedDict):
+    id: str
+    name: str
+    type: str
+    logo_url: str
+    description: str
+    config_schema: Dict[str, Any]
+
+class ListFlavorsResponse(TypedDict):
+    index: int
+    max_size: int
+    total_pages: int
+    total: int
+    items: List[StackComponent]

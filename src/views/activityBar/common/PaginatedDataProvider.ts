@@ -71,7 +71,11 @@ export class PaginatedDataProvider implements TreeDataProvider<TreeItem> {
 
   public async getChildren(element?: TreeItem): Promise<TreeItem[] | undefined> {
     if (!element) {
-      if (this.items[0] instanceof LoadingTreeItem || this.items[0] instanceof ErrorTreeItem) {
+      if (
+        this.items.length === 0 ||
+        this.items[0] instanceof LoadingTreeItem ||
+        this.items[0] instanceof ErrorTreeItem
+      ) {
         return this.items;
       }
       return this.addPaginationCommands(this.items.slice());

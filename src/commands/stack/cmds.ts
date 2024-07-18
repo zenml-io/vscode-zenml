@@ -161,10 +161,15 @@ const setActiveStack = async (node: StackTreeItem): Promise<void> => {
 
 const createStack = async () => {
   console.log('Creating a stack!');
-  const id = 'stack form';
+  const id = 'stack-form';
   const label = 'Create Stack';
-  Panels.getInstance().createPanel(id, label);
-  const obj = await LSClient.getInstance().sendLsClientRequest('listComponents', [1, 10]);
+  // Panels.getInstance().createPanel(id, label);
+  // const obj = await LSClient.getInstance().sendLsClientRequest('listComponents', [1, 10]);
+  const obj = await LSClient.getInstance().sendLsClientRequest('listFlavors', [
+    1,
+    10000,
+    'orchestrator',
+  ]);
   console.log(obj);
 };
 
