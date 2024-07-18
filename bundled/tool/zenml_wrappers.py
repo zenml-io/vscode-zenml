@@ -13,7 +13,7 @@
 """This module provides wrappers for ZenML configuration and operations."""
 
 import pathlib
-from typing import Any, Tuple, Union
+from typing import Any, Tuple, Union, List, Optional
 from zenml_grapher import Grapher
 from type_hints import (
     GraphResponse, 
@@ -23,6 +23,7 @@ from type_hints import (
     ZenmlServerInfoResp, 
     ZenmlGlobalConfigResp,
     ListComponentsResponse,
+    ListFlavorsResponse
 )
 
 
@@ -564,6 +565,11 @@ class StacksWrapper:
     def StackComponentValidationError(self):
         """Returns the ZenML StackComponentValidationError class."""
         return self.lazy_import("zenml.exceptions", "StackComponentValidationError")
+    
+    @property
+    def StackComponentType(self):
+        """Returns the ZenML StackComponentType enum."""
+        return self.lazy_import("zenml.enums", "StackComponentType")
 
     @property
     def ZenKeyError(self) -> Any:
@@ -752,7 +758,37 @@ class StacksWrapper:
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve list of stack components: {str(e)}"}
 
+    def get_component_types(self) -> List[str]:
+        return self.StackComponentType.values()
+    
+    def list_flavors(self, args: Tuple[int, int, Optional[str]]) -> Union[ListFlavorsResponse, ErrorResponse]:
+        if len(args) < 2:
+            return {"error": "Insufficient arguments provided."}
+        
+        page = args[0]
+        max_size = args[1]
+        filter = None
+        if len(args) >= 3:
+            filter = args[2]
 
-    # index, max_size, total_pages, total
-    # items []
-    # id, name, body.flavor, body.type
+        try:
+            flavors = self.client.list_flavors(page=page, size=max_size, type=filter, hydrate=True)
+
+            return {
+                "index": flavors.index,
+                "max_size": flavors.max_size,
+                "total_pages": flavors.total_pages,
+                "total": flavors.total,
+                "items": [
+                    {
+                        "id": str(flavor.id),
+                        "name": flavor.name,
+                        "type": flavor.body.type,
+                        "logo_url": flavor.body.logo_url,
+                        "config_schema": flavor.metadata.config_schema,
+                    } for flavor in flavors.items
+                ]
+            }
+
+        except self.ZenMLBaseException as e:
+            return {"error": f"Failed to retrieve list of flavors: {str(e)}"}
