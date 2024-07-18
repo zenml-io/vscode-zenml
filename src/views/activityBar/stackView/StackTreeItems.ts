@@ -44,13 +44,15 @@ export class StackTreeItem extends vscode.TreeItem {
 export class StackComponentTreeItem extends vscode.TreeItem {
   constructor(
     public component: StackComponent,
-    public stackId: string
+    public stackId?: string
   ) {
     super(component.name, vscode.TreeItemCollapsibleState.None);
 
-    this.tooltip = `Type: ${component.type}, Flavor: ${component.flavor}, ID: ${stackId}`;
+    this.tooltip = stackId
+      ? `Type: ${component.type}, Flavor: ${component.flavor}, ID: ${stackId}`
+      : `Type: ${component.type}, Flavor: ${component.flavor}`;
     this.description = `${component.type} (${component.flavor})`;
     this.contextValue = 'stackComponent';
-    this.id = `${stackId}-${component.id}`;
+    this.id = stackId ? `${stackId}-${component.id}` : `${component.id}`;
   }
 }

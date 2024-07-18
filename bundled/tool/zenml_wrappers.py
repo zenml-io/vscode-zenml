@@ -14,8 +14,16 @@
 
 import pathlib
 from typing import Any, Tuple, Union
-from type_hints import GraphResponse, ErrorResponse, RunStepResponse, RunArtifactResponse, ZenmlServerInfoResp, ZenmlGlobalConfigResp
 from zenml_grapher import Grapher
+from type_hints import (
+    GraphResponse, 
+    ErrorResponse, 
+    RunStepResponse, 
+    RunArtifactResponse, 
+    ZenmlServerInfoResp, 
+    ZenmlGlobalConfigResp,
+    ListComponentsResponse,
+)
 
 
 class GlobalConfigWrapper:
@@ -712,24 +720,38 @@ class StacksWrapper:
         ) as e:
             return {"error": str(e)}
 
-    def list_components(self, args) -> dict:
+    def list_components(self, args: Tuple[int, int, Union[str, None]]) -> Union[ListComponentsResponse,ErrorResponse]:
+        if len(args) < 2:
+            return {"error": "Insufficient arguments provided."}
+        
         page = args[0]
-        components = self.client.list_stack_components(page=page, hydrate=True)
-        return {
-            "index": components.index,
-            "max_size": components.max_size,
-            "total_pages": components.total_pages,
-            "total": components.total,
-            "items": [
-                {
-                    "id": str(item.id),
-                    "name": item.name,
-                    "flavor": item.body.flavor,
-                    "type": item.body.type,
-                }
-                for item in components.items
-            ],
-        }
+        max_size = args[1]
+        filter = None
+
+        if len(args) >= 3:
+            filter = args[2]
+
+        try:
+            components = self.client.list_stack_components(page=page, size=max_size, type=filter, hydrate=True)
+
+            return {
+                "index": components.index,
+                "max_size": components.max_size,
+                "total_pages": components.total_pages,
+                "total": components.total,
+                "items": [
+                    {
+                        "id": str(item.id),
+                        "name": item.name,
+                        "flavor": item.body.flavor,
+                        "type": item.body.type,
+                    }
+                    for item in components.items
+                ],
+            }
+        except self.ZenMLBaseException as e:
+            return {"error": f"Failed to retrieve list of stack components: {str(e)}"}
+
 
     # index, max_size, total_pages, total
     # items []
