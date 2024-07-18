@@ -42,6 +42,7 @@ import { LSClient } from './LSClient';
 import { toggleCommands } from '../utils/global';
 import { PanelDataProvider } from '../views/panel/panelView/PanelDataProvider';
 import { ComponentDataProvider } from '../views/activityBar/componentView/ComponentDataProvider';
+import { registerComponentCommands } from '../commands/components/registry';
 
 export interface IServerInfo {
   name: string;
@@ -70,6 +71,7 @@ export class ZenExtension {
   private static registries = [
     registerServerCommands,
     registerStackCommands,
+    registerComponentCommands,
     registerPipelineCommands,
   ];
 
