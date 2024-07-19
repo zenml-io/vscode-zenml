@@ -17,6 +17,9 @@ import { handlebars } from 'hbs';
 import Panels from '../../common/panels';
 import { getAllFlavors, getAllStackComponents } from '../../common/api';
 import { Flavor, StackComponent } from '../../types/StackTypes';
+import { LSClient } from '../../services/LSClient';
+import { StackDataProvider } from '../../views/activityBar';
+import { traceError, traceInfo } from '../../common/log/logging';
 
 type MixedComponent = { name: string; id: string; url: string };
 
@@ -61,12 +64,22 @@ export default class StackForm extends WebviewBase {
     this.template = handlebars.compile(this.produceTemplate());
   }
 
-  public async display() {
+  public async createForm() {
+    const panel = await this.display();
+    panel.webview.postMessage({ command: 'create' });
+  }
+
+  public async updateForm(id: string, name: string, components: { [type: string]: string }) {
+    const panel = await this.display();
+    panel.webview.postMessage({ command: 'update', data: { id, name, components } });
+  }
+
+  private async display(): Promise<vscode.WebviewPanel> {
     const panels = Panels.getInstance();
     const existingPanel = panels.getPanel('stack-form');
     if (existingPanel) {
       existingPanel.reveal();
-      return;
+      return existingPanel;
     }
 
     const panel = panels.createPanel('stack-form', 'Stack Form', {
@@ -76,6 +89,106 @@ export default class StackForm extends WebviewBase {
     });
 
     await this.renderForm(panel);
+    this.attachListener(panel);
+    return panel;
+  }
+
+  private attachListener(panel: vscode.WebviewPanel) {
+    panel.webview.onDidReceiveMessage(
+      async (message: { command: string; data: { [key: string]: string } }) => {
+        let success = false;
+        const data = message.data;
+        const name = data.name;
+        delete data.name;
+
+        switch (message.command) {
+          case 'create':
+            success = await this.createStack(name, data);
+            break;
+          case 'update':
+            const id = data.id;
+            delete data.id;
+            const updateData = Object.fromEntries(
+              Object.entries(data).map(([type, id]) => [type, [id]])
+            );
+            success = await this.updateStack(id, name, updateData);
+            break;
+        }
+
+        if (!success) {
+          panel.webview.postMessage({ command: 'fail' });
+          return;
+        }
+
+        panel.dispose();
+        StackDataProvider.getInstance().refresh();
+      }
+    );
+  }
+
+  private async createStack(
+    name: string,
+    components: { [type: string]: string }
+  ): Promise<boolean> {
+    const lsClient = LSClient.getInstance();
+    try {
+      const resp = await lsClient.sendLsClientRequest('createStack', [name, components]);
+
+      if ('error' in resp) {
+        vscode.window.showErrorMessage(`Unable to create stack: "${resp.error}"`);
+        console.error(resp.error);
+        traceError(resp.error);
+        return false;
+      }
+
+      traceInfo(resp.message);
+    } catch (e) {
+      vscode.window.showErrorMessage(`Unable to create stack: "${e}"`);
+      console.error(e);
+      traceError(e);
+      return false;
+    }
+
+    return true;
+  }
+
+  private async updateStack(
+    id: string,
+    name: string,
+    components: { [key: string]: string[] }
+  ): Promise<boolean> {
+    const lsClient = LSClient.getInstance();
+    try {
+      const types = await lsClient.sendLsClientRequest<string[]>('getComponentTypes');
+      if (!Array.isArray(types)) {
+        throw new Error('Could not get Component Types from LS Server');
+      }
+
+      // adding missing types to components object, in case we removed that type.
+      types.forEach(type => {
+        if (!components[type]) {
+          components[type] = [];
+        }
+      });
+
+      const resp = await lsClient.sendLsClientRequest('updateStack', [id, name, components]);
+
+      if ('error' in resp) {
+        vscode.window.showErrorMessage(`Unable to update stack: "${resp.error}"`);
+        console.error(resp.error);
+        traceError(resp.error);
+        return false;
+      }
+
+      traceInfo(resp.message);
+    } catch (e) {
+      vscode.window.showErrorMessage(`Unable to update stack: "${e}"`);
+      console.error(e);
+      traceError(e);
+      return false;
+    }
+
+    return true;
   }
 
   private async renderForm(panel: vscode.WebviewPanel) {
@@ -124,7 +237,7 @@ export default class StackForm extends WebviewBase {
   <body>
     <h2>Create Stack</h2>
     <form>
-      <label for="name"><strong>Stack Name:</strong></label> <input type="text" name="name" id="name">
+      <label for="name" required><strong>Stack Name:</strong></label> <input type="text" name="name" id="name">
       {{#each options}}
         <h3>{{capitalize @key}}</h3>
         <div class="options">
@@ -138,6 +251,7 @@ export default class StackForm extends WebviewBase {
       {{/each}}
       <div class="center"><input type="submit"></div>
     </form>
+    <div class="center"><span class="loader hidden"></span></div>
     <script src="{{js}}"></script>
   </body>
 </html>
