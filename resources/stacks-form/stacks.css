@@ -1,0 +1,79 @@
+h2 {
+  text-align: center;
+}
+
+input {
+  background-color: var(--vscode-editor-background);
+  color: var(--vscode-editor-foreground);
+}
+
+input[type='radio'] {
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background-clip: content-box;
+  border: 2px solid var(--vscode-editor-foreground);
+  background-color: var(--vscode-editor-background);
+}
+
+input[type='radio']:checked {
+  background-color: var(--vscode-editor-foreground);
+  padding: 2px;
+}
+
+p {
+  margin: 0;
+  padding: 0;
+}
+
+.options {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  align-items: center;
+  width: 100%;
+  border: 2px var(--vscode-editor-foreground) solid;
+  border-radius: 5px;
+  scrollbar-color: var(--vscode-editor-foreground) var(--vscode-editor-background);
+}
+
+.single-option {
+  display: flex;
+  flex-direction: row;
+  align-items: start;
+  justify-content: center;
+  padding: 5px;
+  margin: 10px;
+  flex-shrink: 0;
+}
+
+.single-option input {
+  margin-right: 5px;
+}
+
+.single-option label {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: #eee;
+  color: #111;
+  text-align: center;
+  padding: 5px;
+  border: 2px var(--vscode-editor-foreground) solid;
+  border-radius: 5px;
+}
+
+.single-option img {
+  width: 50px;
+  height: 50px;
+  flex-shrink: 0;
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 10px;
+}

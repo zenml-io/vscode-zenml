@@ -57,4 +57,23 @@ export type ComponentsListResponse =
   | ErrorMessageResponse
   | VersionMismatchError;
 
-export { Stack, Components, StackComponent, StacksData, ComponentsListData };
+interface Flavor {
+  id: string;
+  name: string;
+  type: string;
+  logo_url: string;
+  description: string;
+  config_schema: { [key: string]: any };
+}
+
+interface FlavorListData {
+  index: number;
+  max_size: number;
+  total_pages: number;
+  total: number;
+  items: Flavor[];
+}
+
+export type FlavorListResponse = FlavorListData | ErrorMessageResponse | VersionMismatchError;
+
+export { Stack, Components, StackComponent, StacksData, ComponentsListData, Flavor };
