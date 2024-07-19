@@ -431,6 +431,7 @@
   "devDependencies": {
     "@types/dagre": "^0.7.52",
     "@types/fs-extra": "^11.0.4",
+    "@types/hbs": "^4.0.4",
     "@types/mocha": "^10.0.6",
     "@types/node": "^18.19.18",
     "@types/sinon": "^17.0.3",
@@ -458,6 +459,7 @@
     "axios": "^1.6.7",
     "dagre": "^0.8.5",
     "fs-extra": "^11.2.0",
+    "hbs": "^4.2.0",
     "svg-pan-zoom": "github:bumbu/svg-pan-zoom",
     "svgdom": "^0.1.19",
     "vscode-languageclient": "^9.0.1"
