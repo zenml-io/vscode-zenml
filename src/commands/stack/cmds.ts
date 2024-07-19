@@ -18,6 +18,7 @@ import { LSClient } from '../../services/LSClient';
 import { showInformationMessage } from '../../utils/notifications';
 import Panels from '../../common/panels';
 import { randomUUID } from 'crypto';
+import StackForm from './StackForm';
 
 /**
  * Refreshes the stack view.
@@ -159,18 +160,8 @@ const setActiveStack = async (node: StackTreeItem): Promise<void> => {
   );
 };
 
-const createStack = async () => {
-  console.log('Creating a stack!');
-  const id = 'stack-form';
-  const label = 'Create Stack';
-  // Panels.getInstance().createPanel(id, label);
-  // const obj = await LSClient.getInstance().sendLsClientRequest('listComponents', [1, 10]);
-  const obj = await LSClient.getInstance().sendLsClientRequest('listFlavors', [
-    1,
-    10000,
-    'orchestrator',
-  ]);
-  console.log(obj);
+const createStack = () => {
+  StackForm.getInstance().display();
 };
 
 /**
