@@ -21,13 +21,14 @@ import { ServerStatus } from '../../types/ServerInfoTypes';
 import { JsonObject } from '../../views/panel/panelView/PanelTreeItem';
 import { PanelDataProvider } from '../../views/panel/panelView/PanelDataProvider';
 import Panels from '../../common/panels';
+import WebviewBase from '../../common/WebviewBase';
 
 const ROOT_PATH = ['resources', 'dag-view'];
 const CSS_FILE = 'dag.css';
 const JS_FILE = 'dag-packed.js';
 const ICONS_DIRECTORY = '/resources/dag-view/icons/';
 
-export default class DagRenderer {
+export default class DagRenderer extends WebviewBase {
   private static instance: DagRenderer | undefined;
   private createSVGWindow: Function = () => {};
   private iconSvgs: { [name: string]: string } = {};
@@ -35,14 +36,19 @@ export default class DagRenderer {
   private javaScript: vscode.Uri;
   private css: vscode.Uri;
 
-  constructor(context: vscode.ExtensionContext) {
-    DagRenderer.instance = this;
-    this.root = vscode.Uri.joinPath(context.extensionUri, ...ROOT_PATH);
+  constructor() {
+    super();
+
+    if (WebviewBase.context === null) {
+      throw new Error('Extension Context Not Propagated');
+    }
+
+    this.root = vscode.Uri.joinPath(WebviewBase.context.extensionUri, ...ROOT_PATH);
     this.javaScript = vscode.Uri.joinPath(this.root, JS_FILE);
     this.css = vscode.Uri.joinPath(this.root, CSS_FILE);
 
     this.loadSvgWindowLib();
-    this.loadIcons(context.extensionPath + ICONS_DIRECTORY);
+    this.loadIcons(WebviewBase.context.extensionPath + ICONS_DIRECTORY);
   }
 
   /**
@@ -50,7 +56,11 @@ export default class DagRenderer {
    *
    * @returns {DagRenderer | undefined} The singleton instance if it exists
    */
-  public static getInstance(): DagRenderer | undefined {
+  public static getInstance(): DagRenderer {
+    if (!DagRenderer.instance) {
+      DagRenderer.instance = new DagRenderer();
+    }
+
     return DagRenderer.instance;
   }
 
