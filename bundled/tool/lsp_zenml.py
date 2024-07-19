@@ -278,6 +278,18 @@ class ZenLanguageServer(LanguageServer):
             """Copies a specified ZenML stack to a new stack."""
             return wrapper_instance.copy_stack(args)
         
+        @self.command(f"{TOOL_MODULE_NAME}.createStack")
+        @self.zenml_command(wrapper_name="stacks_wrapper")
+        def create_stack(wrapper_instance, args):
+            """Copies a specified ZenML stack to a new stack."""
+            return wrapper_instance.create_stack(args)
+        
+        @self.command(f"{TOOL_MODULE_NAME}.updateStack")
+        @self.zenml_command(wrapper_name="stacks_wrapper")
+        def update_stack(wrapper_instance, args):
+            """Copies a specified ZenML stack to a new stack."""
+            return wrapper_instance.update_stack(args)
+        
         @self.command(f"{TOOL_MODULE_NAME}.listComponents")
         @self.zenml_command(wrapper_name="stacks_wrapper")
         def list_components(wrapper_instance, args):

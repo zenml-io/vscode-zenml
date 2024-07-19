@@ -11,7 +11,7 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
-import { StackDataProvider, StackTreeItem } from '../../views/activityBar';
+import { StackComponentTreeItem, StackDataProvider, StackTreeItem } from '../../views/activityBar';
 import ZenMLStatusBar from '../../views/statusBar';
 import { getStackDashboardUrl, switchActiveStack } from './utils';
 import { LSClient } from '../../services/LSClient';
@@ -160,10 +160,6 @@ const setActiveStack = async (node: StackTreeItem): Promise<void> => {
   );
 };
 
-const createStack = () => {
-  StackForm.getInstance().display();
-};
-
 /**
  * Opens the selected stack in the ZenML Dashboard in the browser
  *
@@ -185,6 +181,24 @@ const goToStackUrl = (node: StackTreeItem) => {
   }
 };
 
+const createStack = () => {
+  StackForm.getInstance().createForm();
+};
+
+const updateStack = async (node: StackTreeItem) => {
+  const { id, label: name } = node;
+  const components: { [type: string]: string } = {};
+
+  node.children?.forEach(child => {
+    if (child instanceof StackComponentTreeItem) {
+      const { type, id } = (child as StackComponentTreeItem).component;
+      components[type] = id;
+    }
+  });
+
+  StackForm.getInstance().updateForm(id, name, components);
+};
+
 export const stackCommands = {
   refreshStackView,
   refreshActiveStack,
@@ -193,4 +207,5 @@ export const stackCommands = {
   setActiveStack,
   goToStackUrl,
   createStack,
+  updateStack,
 };

@@ -13,7 +13,7 @@
 """This module provides wrappers for ZenML configuration and operations."""
 
 import pathlib
-from typing import Any, Tuple, Union, List, Optional
+from typing import Any, Tuple, Union, List, Optional, Dict
 from zenml_grapher import Grapher
 from type_hints import (
     GraphResponse, 
@@ -724,6 +724,29 @@ class StacksWrapper:
             self.ZenKeyError,
             self.StackComponentValidationError,
         ) as e:
+            return {"error": str(e)}
+    
+    def create_stack(self, args: Tuple[str, Dict[str, str]]) -> Dict[str, str]:
+        [name, components] = args
+
+        try:
+            self.client.create_stack(name, components)
+            return {"message": f"Stack {name} successfully created"}
+        except self.ZenMLBaseException as e:
+            return {"error": str(e)}
+        
+    def update_stack(self, args: Tuple[str, str, Dict[str, List[str]]]) -> Dict[str, str]:
+        [id, name, components] = args
+
+        try:
+            old = self.client.get_stack(id)
+            if old.name == name:
+                self.client.update_stack(name_id_or_prefix=id, component_updates=components)
+            else:
+                self.client.update_stack(name_id_or_prefix=id, name=name, component_updates=components)
+                
+            return {"message": f"Stack {name} successfully updated."}
+        except self.ZenMLBaseException as e:
             return {"error": str(e)}
 
     def list_components(self, args: Tuple[int, int, Union[str, None]]) -> Union[ListComponentsResponse,ErrorResponse]:

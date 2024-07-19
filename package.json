@@ -185,8 +185,8 @@
         "category": "ZenML Stacks"
       },
       {
-        "command": "zenml.renameStack",
-        "title": "Rename Stack",
+        "command": "zenml.updateStack",
+        "title": "Update Stack",
         "icon": "$(edit)",
         "category": "ZenML Stacks"
       },
@@ -392,7 +392,7 @@
         },
         {
           "when": "stackCommandsRegistered && view == zenmlStackView && viewItem == stack",
-          "command": "zenml.renameStack",
+          "command": "zenml.updateStack",
           "group": "inline@2"
         },
         {
