@@ -33,6 +33,11 @@ export const getAllFlavors = async (): Promise<Flavor[]> => {
   return flavors;
 };
 
+export const getFlavorsOfType = async (type: string): Promise<Flavor[]> => {
+  const flavors = await getAllFlavors();
+  return flavors.filter(flavor => flavor.type === type);
+};
+
 export const getAllStackComponents = async (): Promise<{
   [type: string]: StackComponent[];
 }> => {
