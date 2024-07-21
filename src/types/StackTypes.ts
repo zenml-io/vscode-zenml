@@ -62,8 +62,12 @@ interface Flavor {
   name: string;
   type: string;
   logo_url: string;
-  description: string;
   config_schema: { [key: string]: any };
+  docs_url: string | null;
+  sdk_docs_url: string | null;
+  connector_type: string | null;
+  connector_resource_type: string | null;
+  connector_resource_id_attr: string | null;
 }
 
 interface FlavorListData {
@@ -76,4 +80,16 @@ interface FlavorListData {
 
 export type FlavorListResponse = FlavorListData | ErrorMessageResponse | VersionMismatchError;
 
-export { Stack, Components, StackComponent, StacksData, ComponentsListData, Flavor };
+type ComponentTypes = string[];
+
+export type ComponentTypesResponse = ComponentTypes | VersionMismatchError | ErrorMessageResponse;
+
+export {
+  Stack,
+  Components,
+  StackComponent,
+  StacksData,
+  ComponentsListData,
+  Flavor,
+  ComponentTypes,
+};

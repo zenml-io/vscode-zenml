@@ -34,6 +34,10 @@ export const registerComponentCommands = (context: ExtensionContext) => {
         async () => await componentCommands.refreshComponentView()
       ),
       registerCommand(
+        'zenml.createComponent',
+        async () => await componentCommands.createComponent()
+      ),
+      registerCommand(
         'zenml.nextComponentPage',
         async () => await componentDataProvider.goToNextPage()
       ),

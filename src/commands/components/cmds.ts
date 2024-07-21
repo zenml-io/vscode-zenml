@@ -17,6 +17,9 @@ import { LSClient } from '../../services/LSClient';
 import { showInformationMessage } from '../../utils/notifications';
 import Panels from '../../common/panels';
 import { ComponentDataProvider } from '../../views/activityBar/componentView/ComponentDataProvider';
+import { ComponentTypesResponse, FlavorListResponse } from '../../types/StackTypes';
+import { getFlavorsOfType } from '../../common/api';
+import ComponentForm from './ComponentsForm';
 
 const refreshComponentView = async () => {
   vscode.window.withProgress(
@@ -31,6 +34,42 @@ const refreshComponentView = async () => {
   );
 };
 
+const createComponent = async () => {
+  const lsClient = LSClient.getInstance();
+  const types = await lsClient.sendLsClientRequest<ComponentTypesResponse>('getComponentTypes');
+
+  if ('error' in types) {
+    return; // todo: real error handling.
+  }
+
+  const type = await vscode.window.showQuickPick(types, {
+    title: 'What type of component to create?',
+  });
+  if (!type) {
+    return;
+  }
+
+  const flavors = await getFlavorsOfType(type);
+  if ('error' in flavors) {
+    return; // todo: real Error handling
+  }
+
+  const flavorNames = flavors.map(flavor => flavor.name);
+  const selectedFlavor = await vscode.window.showQuickPick(flavorNames, {
+    title: `What flavor of a ${type} component to create?`,
+  });
+  if (!selectedFlavor) {
+    return;
+  }
+
+  const flavor = flavors.find(flavor => selectedFlavor === flavor.name);
+  if (!flavor) {
+    return;
+  }
+  ComponentForm.getInstance().createForm(flavor);
+};
+
 export const componentCommands = {
   refreshComponentView,
+  createComponent,
 };

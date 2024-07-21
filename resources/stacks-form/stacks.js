@@ -4,7 +4,7 @@ document.querySelector('input[name="artifact_store"]').toggleAttribute('required
 const form = document.querySelector('form');
 const submit = document.querySelector('input[type="submit"]');
 const spinner = document.querySelector('.loader');
-const previousValues = {};
+let previousValues = {};
 let id = undefined;
 let mode = 'create';
 
@@ -64,6 +64,7 @@ window.addEventListener('message', evt => {
       mode = 'create';
       title.innerText = 'Create Stack';
       id = undefined;
+      previousValues = {};
       form.reset();
       break;
 
@@ -72,10 +73,10 @@ window.addEventListener('message', evt => {
       title.innerText = 'Update Stack';
       id = message.data.id;
       nameInput.value = message.data.name;
+      previousValues = message.data.components;
       Object.entries(message.data.components).forEach(([type, id]) => {
         const input = document.querySelector(`[name="${type}"][value="${id}"]`);
         input.checked = true;
-        previousValues[type] = id;
       });
       break;
 

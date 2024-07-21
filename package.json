@@ -209,6 +209,12 @@
         "category": "ZenML Components"
       },
       {
+        "command": "zenml.createComponent",
+        "title": "Create Component",
+        "icon": "$(add)",
+        "category": "ZenML Components"
+      },
+      {
         "command": "zenml.copyStack",
         "title": "Copy Stack",
         "icon": "$(copy)",
@@ -360,13 +366,18 @@
         },
         {
           "when": "componentCommandsRegistered && view == zenmlComponentView",
-          "command": "zenml.setComponentItemsPerPage",
+          "command": "zenml.createComponent",
           "group": "navigation@1"
         },
         {
           "when": "componentCommandsRegistered && view == zenmlComponentView",
-          "command": "zenml.refreshComponentView",
+          "command": "zenml.setComponentItemsPerPage",
           "group": "navigation@2"
+        },
+        {
+          "when": "componentCommandsRegistered && view == zenmlComponentView",
+          "command": "zenml.refreshComponentView",
+          "group": "navigation@3"
         },
         {
           "when": "pipelineCommandsRegistered && view == zenmlPipelineView",
