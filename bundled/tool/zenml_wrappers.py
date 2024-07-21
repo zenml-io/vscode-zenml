@@ -748,6 +748,16 @@ class StacksWrapper:
             return {"message": f"Stack {name} successfully updated."}
         except self.ZenMLBaseException as e:
             return {"error": str(e)}
+        
+    def create_component(self, args: Tuple[str, str, str, Dict[str, str]]) -> Dict[str, str]:
+        [component_type, flavor, name, configuration] = args
+        
+        try:
+            self.client.create_stack_components(name, flavor, component_type, configuration)
+
+            return {"message": f"Stack Component {name} successfully created"}
+        except self.ZenMLBaseException as e:
+            return {"error": str(e)}
 
     def list_components(self, args: Tuple[int, int, Union[str, None]]) -> Union[ListComponentsResponse,ErrorResponse]:
         if len(args) < 2:
@@ -781,8 +791,11 @@ class StacksWrapper:
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve list of stack components: {str(e)}"}
 
-    def get_component_types(self) -> List[str]:
-        return self.StackComponentType.values()
+    def get_component_types(self) -> Union[List[str], ErrorResponse]:
+        try:
+            return self.StackComponentType.values()
+        except self.ZenMLBaseException as e:
+            return {"error": f"Failed to retrieve list of component types: {str(e)}"}
     
     def list_flavors(self, args: Tuple[int, int, Optional[str]]) -> Union[ListFlavorsResponse, ErrorResponse]:
         if len(args) < 2:
@@ -809,6 +822,11 @@ class StacksWrapper:
                         "type": flavor.body.type,
                         "logo_url": flavor.body.logo_url,
                         "config_schema": flavor.metadata.config_schema,
+                        "docs_url": flavor.metadata.docs_url,
+                        "sdk_docs_url": flavor.metadata.sdk_docs_url,
+                        "connector_type": flavor.metadata.connector_type,
+                        "connector_resource_type": flavor.metadata.connector_resource_type,
+                        "connector_resource_id_attr": flavor.metadata.connector_resource_id_attr,
                     } for flavor in flavors.items
                 ]
             }
