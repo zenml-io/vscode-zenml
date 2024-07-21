@@ -290,6 +290,12 @@ class ZenLanguageServer(LanguageServer):
             """Copies a specified ZenML stack to a new stack."""
             return wrapper_instance.update_stack(args)
         
+        @self.command(f"{TOOL_MODULE_NAME}.createComponent")
+        @self.zenml_command(wrapper_name="stacks_wrapper")
+        def create_component(wrapper_instance, args):
+            """Get paginated stack components from ZenML"""
+            return wrapper_instance.create_component(args)
+        
         @self.command(f"{TOOL_MODULE_NAME}.listComponents")
         @self.zenml_command(wrapper_name="stacks_wrapper")
         def list_components(wrapper_instance, args):

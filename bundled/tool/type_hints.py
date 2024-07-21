@@ -102,12 +102,16 @@ class Flavor(TypedDict):
     name: str
     type: str
     logo_url: str
-    description: str
     config_schema: Dict[str, Any]
+    docs_url: Optional[str]
+    sdk_docs_url: Optional[str]
+    connector_type: Optional[str]
+    connector_resource_type: Optional[str]
+    connector_resource_id_attr: Optional[str]
 
 class ListFlavorsResponse(TypedDict):
     index: int
     max_size: int
     total_pages: int
     total: int
-    items: List[StackComponent]
+    items: List[Flavor]
