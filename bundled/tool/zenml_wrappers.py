@@ -753,7 +753,7 @@ class StacksWrapper:
         [component_type, flavor, name, configuration] = args
         
         try:
-            self.client.create_stack_components(name, flavor, component_type, configuration)
+            self.client.create_stack_component(name, flavor, component_type, configuration)
 
             return {"message": f"Stack Component {name} successfully created"}
         except self.ZenMLBaseException as e:
