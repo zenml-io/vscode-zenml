@@ -18,10 +18,24 @@ import Panels from '../../common/panels';
 import { Flavor } from '../../types/StackTypes';
 import { LSClient } from '../../services/LSClient';
 import { traceError, traceInfo } from '../../common/log/logging';
+import { ComponentDataProvider } from '../../views/activityBar/componentView/ComponentDataProvider';
 
 const ROOT_PATH = ['resources', 'components-form'];
 const CSS_FILE = 'components.css';
 const JS_FILE = 'components.js';
+
+interface ComponentField {
+  is_string?: boolean;
+  is_integer?: boolean;
+  is_boolean?: boolean;
+  is_string_object?: boolean;
+  is_json_object?: boolean;
+  is_optional?: boolean;
+  is_required?: boolean;
+  defaultValue: any;
+  title: string;
+  key: string;
+}
 
 export default class ComponentForm extends WebviewBase {
   private static instance: ComponentForm | null = null;
@@ -55,26 +69,31 @@ export default class ComponentForm extends WebviewBase {
 
   public async createForm(flavor: Flavor) {
     const panel = await this.getPanel();
+    const description = flavor.config_schema.description.replaceAll('\n', '<br>');
     panel.webview.html = this.template({
       type: flavor.type,
       flavor: flavor.name,
-      description: flavor.config_schema.description,
+      logo: flavor.logo_url,
+      description,
       docs_url: flavor.docs_url,
       sdk_docs_url: flavor.sdk_docs_url,
       js: panel.webview.asWebviewUri(this.javaScript),
       css: panel.webview.asWebviewUri(this.css),
+      fields: this.toFormFields(flavor.config_schema),
     });
+
+    panel.webview.postMessage({ command: 'create', type: flavor.type, flavor: flavor.name });
   }
 
   private async getPanel(): Promise<vscode.WebviewPanel> {
     const panels = Panels.getInstance();
-    const existingPanel = panels.getPanel('stack-form');
+    const existingPanel = panels.getPanel('component-form');
     if (existingPanel) {
       existingPanel.reveal();
       return existingPanel;
     }
 
-    const panel = panels.createPanel('stack-form', 'Stack Form', {
+    const panel = panels.createPanel('component-form', 'Component Form', {
       enableForms: true,
       enableScripts: true,
       retainContextWhenHidden: true,
@@ -84,7 +103,122 @@ export default class ComponentForm extends WebviewBase {
     return panel;
   }
 
-  private attachListener(panel: vscode.WebviewPanel) {}
+  private attachListener(panel: vscode.WebviewPanel) {
+    panel.webview.onDidReceiveMessage(
+      async (message: { command: string; data: { [key: string]: string } }) => {
+        let success = false;
+        const data = message.data;
+        const { name, flavor, type, id } = data;
+        delete data.name;
+        delete data.type;
+        delete data.flavor;
+        delete data.id;
+
+        switch (message.command) {
+          case 'create':
+            success = await this.createComponent(name, type, flavor, data);
+            break;
+          case 'update':
+            // TODO
+            break;
+        }
+
+        if (!success) {
+          panel.webview.postMessage({ command: 'fail' });
+          return;
+        }
+
+        panel.dispose();
+        ComponentDataProvider.getInstance().refresh();
+      }
+    );
+  }
+
+  private async createComponent(
+    name: string,
+    type: string,
+    flavor: string,
+    data: object
+  ): Promise<boolean> {
+    const lsClient = LSClient.getInstance();
+    try {
+      const resp = await lsClient.sendLsClientRequest('createComponent', [
+        type,
+        flavor,
+        name,
+        data,
+      ]);
+
+      if ('error' in resp) {
+        vscode.window.showErrorMessage(`Unable to create component: "${resp.error}"`);
+        console.error(resp.error);
+        traceError(resp.error);
+        return false;
+      }
+
+      traceInfo(resp.message);
+    } catch (e) {
+      vscode.window.showErrorMessage(`Unable to create component: "${e}"`);
+      console.error(e);
+      traceError(e);
+      return false;
+    }
+
+    return true;
+  }
+
+  private toFormFields(configSchema: { [key: string]: any }) {
+    const properties = configSchema.properties;
+    const required = configSchema.required ?? [];
+
+    const converted: Array<ComponentField> = [];
+    for (const key in properties) {
+      const current: ComponentField = {
+        key,
+        title: properties[key].title,
+        defaultValue: properties[key].default,
+      };
+      converted.push(current);
+
+      if ('anyOf' in properties[key]) {
+        if (properties[key].anyOf.find((obj: { type: string }) => obj.type === 'null')) {
+          current.is_optional = true;
+        }
+
+        if (
+          properties[key].anyOf.find(
+            (obj: { type: string }) => obj.type === 'object' || obj.type === 'array'
+          )
+        ) {
+          current.is_json_object = true;
+        } else if (properties[key].anyOf[0].type === 'string') {
+          current.is_string = true;
+        } else if (properties[key].anyOf[0].type === 'integer') {
+          current.is_integer = true;
+        } else if (properties[key].anyOf[0].type === 'boolean') {
+          current.is_boolean = true;
+        }
+      }
+
+      if (required.includes(key)) {
+        current.is_required = true;
+      }
+
+      if (!properties[key].type) {
+        continue;
+      }
+
+      current.is_boolean = properties[key].type === 'boolean';
+      current.is_string = properties[key].type === 'string';
+      current.is_integer = properties[key].type === 'integer';
+      if (properties[key].type === 'object' || properties[key].type === 'array') {
+        current.is_json_object = true;
+        current.defaultValue = JSON.stringify(properties[key].default);
+      }
+    }
+
+    return converted;
+  }
 
   private produceTemplate(): string {
     return `
@@ -98,28 +232,92 @@ export default class ComponentForm extends WebviewBase {
     <title>Stack Form</title>
   </head>
   <body>
-    <h2>Create {{type}} Stack Component ({{flavor}})</h2>
-    <div class="block">
-      <article class="description">{{description}}</article>
-      <div class="docs">
-        {{#if docs_url}}
-          <a class="button" href="{{docs_url}}">Documentation</a>
-        {{/if}}
-
-        {{#if sdk_docs_url}}
-          <a class="button" href="{{sdk_docs_url}}">SDK Documentation</a>
-        {{/if}}
-      </div>
-    </div>
-    <form>
-      <label for="name" required><strong>Component Name:</strong></label>
-      <input type="text" name="name" id="name">
-
-
+    <div class="container">
+      <h2>Create {{type}} Stack Component ({{flavor}})</h2>
       
-      <div class="center"><input type="submit"></div>
-    </form>
-    <div class="center"><span class="loader hidden"></span></div>
+      <div class="block">
+        <article class="description"><img class="logo" src="{{logo}}">{{{description}}}</article>
+        <div class="docs">
+          {{#if docs_url}}
+            <a class="button" href="{{docs_url}}">Documentation</a>
+          {{/if}}
+
+          {{#if sdk_docs_url}}
+            <a class="button" href="{{sdk_docs_url}}">SDK Documentation</a>
+          {{/if}}
+        </div>
+      </div>
+      <form>
+        <div class="field">
+          <div class="label">
+            <label for="name"><strong>Component Name:</strong></label>
+          </div>
+          <div class="value">
+            <input type="text" name="name" id="name" required>
+          </div>
+        </div>
+
+        {{#each fields}}
+          <div class="field">
+            <div class="label">
+              <label for="{{key}}">
+                <strong>{{title}} {{#if is_required}}*{{/if}}</strong>
+              </label>
+              {{#if is_optional}}
+                <button class="optional" data-id="{{key}}">+</button>
+              {{/if}}
+            </div>
+
+            <div class="value">
+              {{#if is_string}}
+                <input 
+                  type="text" 
+                  id="{{key}}" 
+                  name="{{key}}" 
+                  value="{{defaultValue}}"
+                  class="{{#if is_optional}}hidden{{/if}}"
+                  {{#if is_required}}required{{/if}} 
+                >
+              {{/if}}
+
+              {{#if is_boolean}}
+                <input
+                  type="checkbox"
+                  name="{{key}}"
+                  id="{{key}}"
+                  class="{{#if is_optional}}hidden{{/if}}"
+                  {{#if is_required}}required{{/if}}
+                  {{#if defaultValue}}checked{{/if}}
+                >
+              {{/if}}
+
+              {{#if is_integer}}
+                <input
+                  type="number"
+                  name="{{key}}"
+                  id="{{key}}"
+                  value="{{default_value}}"
+                  class="{{#if is_optional}}hidden{{/if}}"
+                  {{#if is_required}}required{{/if}}
+                >
+              {{/if}}
+
+              {{#if is_json_object}}
+                <textarea 
+                  id={{key}}
+                  name="key"
+                  class="{{#if is_optional}}hidden{{/if}}"
+                  {{#if is_required}}required{{/if}}
+                  placeholder="Please input proper JSON"
+                >{{defaultValue}}</textarea>
+              {{/if}}
+            </div>
+          </div>
+        {{/each}}
+        <div class="center"><input type="submit"></div>
+      </form>
+      <div class="center"><span class="loader hidden"></span></div>
+    </div>
     <script src="{{js}}"></script>
   </body>
 </html>

@@ -98,16 +98,15 @@ export default class StackForm extends WebviewBase {
       async (message: { command: string; data: { [key: string]: string } }) => {
         let success = false;
         const data = message.data;
-        const name = data.name;
+        const { name, id } = data;
         delete data.name;
+        delete data.id;
 
         switch (message.command) {
           case 'create':
             success = await this.createStack(name, data);
             break;
           case 'update':
-            const id = data.id;
-            delete data.id;
             const updateData = Object.fromEntries(
               Object.entries(data).map(([type, id]) => [type, [id]])
             );
