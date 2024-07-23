@@ -15,6 +15,7 @@ import { registerCommand } from '../../common/vscodeapi';
 import { ZenExtension } from '../../services/ZenExtension';
 import { ExtensionContext, commands } from 'vscode';
 import { ComponentDataProvider } from '../../views/activityBar/componentView/ComponentDataProvider';
+import { StackComponentTreeItem } from '../../views/activityBar';
 
 /**
  * Registers stack component-related commands for the extension.
@@ -36,6 +37,10 @@ export const registerComponentCommands = (context: ExtensionContext) => {
       registerCommand(
         'zenml.createComponent',
         async () => await componentCommands.createComponent()
+      ),
+      registerCommand(
+        'zenml.updateComponent',
+        async (node: StackComponentTreeItem) => await componentCommands.updateComponent(node)
       ),
       registerCommand(
         'zenml.nextComponentPage',

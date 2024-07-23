@@ -293,8 +293,14 @@ class ZenLanguageServer(LanguageServer):
         @self.command(f"{TOOL_MODULE_NAME}.createComponent")
         @self.zenml_command(wrapper_name="stacks_wrapper")
         def create_component(wrapper_instance, args):
-            """Get paginated stack components from ZenML"""
+            """Creates a Zenml stack component"""
             return wrapper_instance.create_component(args)
+        
+        @self.command(f"{TOOL_MODULE_NAME}.updateComponent")
+        @self.zenml_command(wrapper_name="stacks_wrapper")
+        def update_component(wrapper_instance, args):
+            """Updates a ZenML stack component"""
+            return wrapper_instance.update_component(args)
         
         @self.command(f"{TOOL_MODULE_NAME}.listComponents")
         @self.zenml_command(wrapper_name="stacks_wrapper")
@@ -305,13 +311,13 @@ class ZenLanguageServer(LanguageServer):
         @self.command(f"{TOOL_MODULE_NAME}.getComponentTypes")
         @self.zenml_command(wrapper_name="stacks_wrapper")
         def get_component_types(wrapper_instance, args):
-            """Get paginated stack components from ZenML"""
+            """Get list of component types from ZenML"""
             return wrapper_instance.get_component_types()
         
         @self.command(f"{TOOL_MODULE_NAME}.listFlavors")
         @self.zenml_command(wrapper_name="stacks_wrapper")
         def list_flavors(wrapper_instance, args):
-            """Get paginated stack components from ZenML"""
+            """Get list of component flavors from ZenML"""
             return wrapper_instance.list_flavors(args)
 
         @self.command(f"{TOOL_MODULE_NAME}.getPipelineRuns")

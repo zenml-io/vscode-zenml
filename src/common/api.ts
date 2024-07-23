@@ -38,6 +38,17 @@ export const getFlavorsOfType = async (type: string): Promise<Flavor[]> => {
   return flavors.filter(flavor => flavor.type === type);
 };
 
+export const getFlavor = async (name: string): Promise<Flavor> => {
+  const flavors = await getAllFlavors();
+  const flavor = flavors.find(flavor => flavor.name === name);
+
+  if (!flavor) {
+    throw Error(`Flavor ${name} not found`);
+  }
+
+  return flavor;
+};
+
 export const getAllStackComponents = async (): Promise<{
   [type: string]: StackComponent[];
 }> => {

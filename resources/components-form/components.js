@@ -8,7 +8,8 @@ let flavor = '';
 let id = '';
 
 const inputs = {};
-document.querySelectorAll('.field > input, textarea').forEach(element => {
+
+document.querySelectorAll('.input').forEach(element => {
   inputs[element.id] = element;
   if (element instanceof HTMLTextAreaElement) {
     element.addEventListener('input', evt => {
@@ -28,6 +29,35 @@ document.querySelectorAll('.field > input, textarea').forEach(element => {
     });
   }
 });
+
+const setValues = (name, config) => {
+  document.querySelector('[name="name"]').value = name;
+
+  console.log(config);
+  console.log(inputs);
+
+  for (const key in config) {
+    if (config[key] === null) {
+      continue;
+    }
+
+    if (typeof config[key] === 'boolean' && config[key]) {
+      inputs[config].checked = 'on';
+    }
+
+    if (typeof config[key] === 'object') {
+      inputs[key].value = JSON.stringify(config[key]);
+    } else {
+      inputs[key].value = String(config[key]);
+    }
+
+    if (inputs[key].classList.contains('hidden')) {
+      inputs[key].classList.toggle('hidden');
+      button = document.querySelector(`[data-id="${inputs[key].id}"]`);
+      button.textContent = '-';
+    }
+  }
+};
 
 form.addEventListener('click', evt => {
   const target = evt.target;
@@ -54,7 +84,7 @@ form.addEventListener('click', evt => {
 
     for (const id in inputs) {
       if (inputs[id].classList.contains('hidden')) {
-        delete data[id];
+        data[id] = null;
         continue;
       }
 
@@ -76,6 +106,11 @@ form.addEventListener('click', evt => {
 
     submit.disabled = true;
     spinner.classList.remove('hidden');
+
+    if (mode === 'update') {
+      data.id = id;
+    }
+
     vscode.postMessage({
       command: mode,
       data,
@@ -99,7 +134,7 @@ window.addEventListener('message', evt => {
       type = message.type;
       flavor = message.flavor;
       id = message.id;
-      // TODO: set fields to data values
+      setValues(message.name, message.config);
       break;
 
     case 'fail':

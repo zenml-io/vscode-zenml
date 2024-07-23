@@ -17,9 +17,11 @@ import { LSClient } from '../../services/LSClient';
 import { showInformationMessage } from '../../utils/notifications';
 import Panels from '../../common/panels';
 import { ComponentDataProvider } from '../../views/activityBar/componentView/ComponentDataProvider';
-import { ComponentTypesResponse, FlavorListResponse } from '../../types/StackTypes';
-import { getFlavorsOfType } from '../../common/api';
+import { ComponentTypesResponse, Flavor, FlavorListResponse } from '../../types/StackTypes';
+import { getFlavor, getFlavorsOfType } from '../../common/api';
 import ComponentForm from './ComponentsForm';
+import { StackComponentTreeItem } from '../../views/activityBar';
+import { traceError } from '../../common/log/logging';
 
 const refreshComponentView = async () => {
   vscode.window.withProgress(
@@ -36,40 +38,61 @@ const refreshComponentView = async () => {
 
 const createComponent = async () => {
   const lsClient = LSClient.getInstance();
-  const types = await lsClient.sendLsClientRequest<ComponentTypesResponse>('getComponentTypes');
+  try {
+    const types = await lsClient.sendLsClientRequest<ComponentTypesResponse>('getComponentTypes');
 
-  if ('error' in types) {
-    return; // todo: real error handling.
-  }
+    if ('error' in types) {
+      throw new Error(String(types.error));
+    }
 
-  const type = await vscode.window.showQuickPick(types, {
-    title: 'What type of component to create?',
-  });
-  if (!type) {
-    return;
-  }
+    const type = await vscode.window.showQuickPick(types, {
+      title: 'What type of component to create?',
+    });
+    if (!type) {
+      return;
+    }
 
-  const flavors = await getFlavorsOfType(type);
-  if ('error' in flavors) {
-    return; // todo: real Error handling
-  }
+    const flavors = await getFlavorsOfType(type);
+    if ('error' in flavors) {
+      throw new Error(String(flavors.error));
+    }
 
-  const flavorNames = flavors.map(flavor => flavor.name);
-  const selectedFlavor = await vscode.window.showQuickPick(flavorNames, {
-    title: `What flavor of a ${type} component to create?`,
-  });
-  if (!selectedFlavor) {
-    return;
-  }
+    const flavorNames = flavors.map(flavor => flavor.name);
+    const selectedFlavor = await vscode.window.showQuickPick(flavorNames, {
+      title: `What flavor of a ${type} component to create?`,
+    });
+    if (!selectedFlavor) {
+      return;
+    }
 
-  const flavor = flavors.find(flavor => selectedFlavor === flavor.name);
-  if (!flavor) {
-    return;
+    const flavor = flavors.find(flavor => selectedFlavor === flavor.name);
+    await ComponentForm.getInstance().createForm(flavor as Flavor);
+  } catch (e) {
+    vscode.window.showErrorMessage(`Unable to open component form: ${e}`);
+    traceError(e);
+    console.error(e);
   }
-  ComponentForm.getInstance().createForm(flavor);
+};
+
+const updateComponent = async (node: StackComponentTreeItem) => {
+  try {
+    const flavor = await getFlavor(node.component.flavor);
+
+    await ComponentForm.getInstance().updateForm(
+      flavor,
+      node.component.name,
+      node.component.id,
+      node.component.config
+    );
+  } catch (e) {
+    vscode.window.showErrorMessage(`Unable to open component form: ${e}`);
+    traceError(e);
+    console.error(e);
+  }
 };
 
 export const componentCommands = {
   refreshComponentView,
   createComponent,
+  updateComponent,
 };

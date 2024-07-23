@@ -185,6 +185,12 @@
         "category": "ZenML Stacks"
       },
       {
+        "command": "zenml.createStack",
+        "title": "Create Stack",
+        "icon": "$(add)",
+        "category": "ZenML Stacks"
+      },
+      {
         "command": "zenml.updateStack",
         "title": "Update Stack",
         "icon": "$(edit)",
@@ -194,6 +200,18 @@
         "command": "zenml.setActiveStack",
         "title": "Set Active Stack",
         "icon": "$(check)",
+        "category": "ZenML Stacks"
+      },
+      {
+        "command": "zenml.copyStack",
+        "title": "Copy Stack",
+        "icon": "$(copy)",
+        "category": "ZenML Stacks"
+      },
+      {
+        "command": "zenml.goToStackUrl",
+        "title": "Go to URL",
+        "icon": "$(globe)",
         "category": "ZenML Stacks"
       },
       {
@@ -215,16 +233,10 @@
         "category": "ZenML Components"
       },
       {
-        "command": "zenml.copyStack",
-        "title": "Copy Stack",
-        "icon": "$(copy)",
-        "category": "ZenML"
-      },
-      {
-        "command": "zenml.goToStackUrl",
-        "title": "Go to URL",
-        "icon": "$(globe)",
-        "category": "ZenML"
+        "command": "zenml.updateComponent",
+        "title": "Update Component",
+        "icon": "$(edit)",
+        "category": "ZenML Components"
       },
       {
         "command": "zenml.setPipelineRunsPerPage",
@@ -273,12 +285,6 @@
         "title": "Restart LSP Server",
         "icon": "$(debug-restart)",
         "category": "ZenML Environment"
-      },
-      {
-        "command": "zenml.createStack",
-        "title": "Create Stack",
-        "icon": "$(add)",
-        "category": "ZenML Stacks"
       }
     ],
     "viewsContainers": {
@@ -415,6 +421,11 @@
           "when": "stackCommandsRegistered && view == zenmlStackView && viewItem == stack",
           "command": "zenml.goToStackUrl",
           "group": "inline@4"
+        },
+        {
+          "when": "componentCommandsRegistered && view == zenmlComponentView && viewItem == stackComponent",
+          "command": "zenml.updateComponent",
+          "group": "inline"
         },
         {
           "when": "pipelineCommandsRegistered && view == zenmlPipelineView && viewItem == pipelineRun",
