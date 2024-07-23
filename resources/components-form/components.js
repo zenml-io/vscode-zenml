@@ -33,11 +33,8 @@ document.querySelectorAll('.input').forEach(element => {
 const setValues = (name, config) => {
   document.querySelector('[name="name"]').value = name;
 
-  console.log(config);
-  console.log(inputs);
-
   for (const key in config) {
-    if (config[key] === null) {
+    if (config[key] === null || (inputs[key].classList.contains('hidden') && !config[key])) {
       continue;
     }
 
