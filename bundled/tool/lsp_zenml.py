@@ -281,14 +281,20 @@ class ZenLanguageServer(LanguageServer):
         @self.command(f"{TOOL_MODULE_NAME}.createStack")
         @self.zenml_command(wrapper_name="stacks_wrapper")
         def create_stack(wrapper_instance, args):
-            """Copies a specified ZenML stack to a new stack."""
+            """Creates a new ZenML stack."""
             return wrapper_instance.create_stack(args)
         
         @self.command(f"{TOOL_MODULE_NAME}.updateStack")
         @self.zenml_command(wrapper_name="stacks_wrapper")
         def update_stack(wrapper_instance, args):
-            """Copies a specified ZenML stack to a new stack."""
+            """Updates a specified ZenML stack ."""
             return wrapper_instance.update_stack(args)
+        
+        @self.command(f"{TOOL_MODULE_NAME}.deleteStack")
+        @self.zenml_command(wrapper_name="stacks_wrapper")
+        def delete_stack(wrapper_instance, args):
+            """Deletes a specified ZenML stack ."""
+            return wrapper_instance.delete_stack(args)
         
         @self.command(f"{TOOL_MODULE_NAME}.createComponent")
         @self.zenml_command(wrapper_name="stacks_wrapper")
@@ -311,7 +317,7 @@ class ZenLanguageServer(LanguageServer):
         @self.command(f"{TOOL_MODULE_NAME}.listComponents")
         @self.zenml_command(wrapper_name="stacks_wrapper")
         def list_components(wrapper_instance, args):
-            """Get paginated stack components from ZenML"""
+            """Get paginated list of stack components from ZenML"""
             return wrapper_instance.list_components(args)
         
         @self.command(f"{TOOL_MODULE_NAME}.getComponentTypes")
@@ -323,7 +329,7 @@ class ZenLanguageServer(LanguageServer):
         @self.command(f"{TOOL_MODULE_NAME}.listFlavors")
         @self.zenml_command(wrapper_name="stacks_wrapper")
         def list_flavors(wrapper_instance, args):
-            """Get list of component flavors from ZenML"""
+            """Get paginated list of component flavors from ZenML"""
             return wrapper_instance.list_flavors(args)
 
         @self.command(f"{TOOL_MODULE_NAME}.getPipelineRuns")

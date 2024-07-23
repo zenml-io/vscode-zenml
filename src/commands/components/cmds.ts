@@ -21,7 +21,7 @@ import { ComponentTypesResponse, Flavor, FlavorListResponse } from '../../types/
 import { getFlavor, getFlavorsOfType } from '../../common/api';
 import ComponentForm from './ComponentsForm';
 import { StackComponentTreeItem } from '../../views/activityBar';
-import { traceError } from '../../common/log/logging';
+import { traceError, traceInfo } from '../../common/log/logging';
 
 const refreshComponentView = async () => {
   vscode.window.withProgress(
@@ -121,6 +121,7 @@ const deleteComponent = async (node: StackComponentTreeItem) => {
         }
 
         vscode.window.showInformationMessage(`${node.component.name} deleted`);
+        traceInfo(`${node.component.name} deleted`);
 
         ComponentDataProvider.getInstance().refresh();
       } catch (e) {

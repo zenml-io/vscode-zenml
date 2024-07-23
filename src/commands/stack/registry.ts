@@ -40,6 +40,10 @@ export const registerStackCommands = (context: ExtensionContext) => {
         stackCommands.updateStack(node)
       ),
       registerCommand(
+        'zenml.deleteStack',
+        async (node: StackTreeItem) => await stackCommands.deleteStack(node)
+      ),
+      registerCommand(
         'zenml.renameStack',
         async (node: StackTreeItem) => await stackCommands.renameStack(node)
       ),
