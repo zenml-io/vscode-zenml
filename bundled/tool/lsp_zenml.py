@@ -302,6 +302,12 @@ class ZenLanguageServer(LanguageServer):
             """Updates a ZenML stack component"""
             return wrapper_instance.update_component(args)
         
+        @self.command(f"{TOOL_MODULE_NAME}.deleteComponent")
+        @self.zenml_command(wrapper_name="stacks_wrapper")
+        def delete_component(wrapper_instance, args):
+            """Deletes a specified ZenML stack component"""
+            return wrapper_instance.delete_component(args)
+        
         @self.command(f"{TOOL_MODULE_NAME}.listComponents")
         @self.zenml_command(wrapper_name="stacks_wrapper")
         def list_components(wrapper_instance, args):

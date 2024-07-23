@@ -773,6 +773,16 @@ class StacksWrapper:
             return {"message": f"Stack Component {name} successfully updated"}
         except self.ZenMLBaseException as e:
             return {"error": str(e)}
+        
+    def delete_component(self, args: Tuple[str, str]) -> Dict[str, str]:
+        [id, component_type] = args
+
+        try:
+            self.client.delete_stack_component(id, component_type)
+
+            return {"mesage": f"Stack Component {id} successfully deleted"}
+        except self.ZenMLBaseException as e:
+            return {"error": str(e)}
     
     def list_components(self, args: Tuple[int, int, Union[str, None]]) -> Union[ListComponentsResponse,ErrorResponse]:
         if len(args) < 2:

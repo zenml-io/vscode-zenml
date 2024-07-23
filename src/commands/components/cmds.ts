@@ -54,7 +54,7 @@ const createComponent = async () => {
 
     const flavors = await getFlavorsOfType(type);
     if ('error' in flavors) {
-      throw new Error(String(flavors.error));
+      throw flavors.error;
     }
 
     const flavorNames = flavors.map(flavor => flavor.name);
@@ -91,8 +91,50 @@ const updateComponent = async (node: StackComponentTreeItem) => {
   }
 };
 
+const deleteComponent = async (node: StackComponentTreeItem) => {
+  const lsClient = LSClient.getInstance();
+
+  const answer = await vscode.window.showWarningMessage(
+    `Are you sure you want to delete ${node.component.name}? This cannot be undone.`,
+    { modal: true },
+    'Delete'
+  );
+
+  if (!answer) {
+    return;
+  }
+
+  await vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Window,
+      title: `Deleting stack component ${node.component.name}...`,
+    },
+    async () => {
+      try {
+        const resp = await lsClient.sendLsClientRequest('deleteComponent', [
+          node.component.id,
+          node.component.type,
+        ]);
+
+        if ('error' in resp) {
+          throw resp.error;
+        }
+
+        vscode.window.showInformationMessage(`${node.component.name} deleted`);
+
+        ComponentDataProvider.getInstance().refresh();
+      } catch (e) {
+        vscode.window.showErrorMessage(`Failed to delete component: ${e}`);
+        traceError(e);
+        console.error(e);
+      }
+    }
+  );
+};
+
 export const componentCommands = {
   refreshComponentView,
   createComponent,
   updateComponent,
+  deleteComponent,
 };

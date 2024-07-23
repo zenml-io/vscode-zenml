@@ -43,6 +43,10 @@ export const registerComponentCommands = (context: ExtensionContext) => {
         async (node: StackComponentTreeItem) => await componentCommands.updateComponent(node)
       ),
       registerCommand(
+        'zenml.deleteComponent',
+        async (node: StackComponentTreeItem) => await componentCommands.deleteComponent(node)
+      ),
+      registerCommand(
         'zenml.nextComponentPage',
         async () => await componentDataProvider.goToNextPage()
       ),

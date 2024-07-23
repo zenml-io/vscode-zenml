@@ -239,6 +239,12 @@
         "category": "ZenML Components"
       },
       {
+        "command": "zenml.deleteComponent",
+        "title": "Delete Component",
+        "icon": "$(trash)",
+        "category": "ZenML Components"
+      },
+      {
         "command": "zenml.setPipelineRunsPerPage",
         "title": "Set Runs Per Page",
         "icon": "$(layers)",
@@ -425,7 +431,12 @@
         {
           "when": "componentCommandsRegistered && view == zenmlComponentView && viewItem == stackComponent",
           "command": "zenml.updateComponent",
-          "group": "inline"
+          "group": "inline@1"
+        },
+        {
+          "when": "componentCommandsRegistered && view == zenmlComponentView && viewItem == stackComponent",
+          "command": "zenml.deleteComponent",
+          "group": "inline@2"
         },
         {
           "when": "pipelineCommandsRegistered && view == zenmlPipelineView && viewItem == pipelineRun",
