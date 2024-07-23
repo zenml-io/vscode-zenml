@@ -727,6 +727,13 @@ class StacksWrapper:
             return {"error": str(e)}
     
     def create_stack(self, args: Tuple[str, Dict[str, str]]) -> Dict[str, str]:
+        """Creates a new ZenML Stack.
+
+        Args:
+            args (list): List containing the name and chosen components for the stack.
+        Returns:
+            Dictionary containing a message relevant to whether the action succeeded or failed
+        """
         [name, components] = args
 
         try:
@@ -736,6 +743,13 @@ class StacksWrapper:
             return {"error": str(e)}
         
     def update_stack(self, args: Tuple[str, str, Dict[str, List[str]]]) -> Dict[str, str]:
+        """Updates a specified ZenML Stack.
+
+        Args:
+            args (list): List containing the id of the stack being updated, the new name, and the chosen components.
+        Returns:
+            Dictionary contianing a message relevant to whether the action succeeded or failed
+        """
         [id, name, components] = args
 
         try:
@@ -750,6 +764,13 @@ class StacksWrapper:
             return {"error": str(e)}
         
     def delete_stack(self, args: Tuple[str]) -> Dict[str, str]:
+        """Deletes a specified ZenML stack.
+
+        Args:
+            args (list): List contianing the id of the stack to delete.
+        Returns:
+            Dictionary contianing a message relevant to whether the action succeeded or failed
+        """
         [id] = args
 
         try:
@@ -760,6 +781,13 @@ class StacksWrapper:
             return {"error": str(e)}
         
     def create_component(self, args: Tuple[str, str, str, Dict[str, str]]) -> Dict[str, str]:
+        """Creates a new ZenML stack component.
+
+        Args:
+            args (list): List contianing the component type, flavor used, name, and configuration of the desired new component.
+        Returns:
+            Dictionary contianing a message relevant to whether the action succeeded or failed
+        """
         [component_type, flavor, name, configuration] = args
         
         try:
@@ -770,21 +798,34 @@ class StacksWrapper:
             return {"error": str(e)}
         
     def update_component(self, args: Tuple[str, str, str, Dict[str, str]]) -> Dict[str, str]:
+        """Updates a specified ZenML stack component.
+
+        Args:
+            args (list): List contianing the id, component type, new name, and desired configuration of the desired component.
+        Returns:
+            Dictionary contianing a message relevant to whether the action succeeded or failed
+        """
         [id, component_type, name, configuration] = args
         
         try:
             old = self.client.get_stack_component(component_type, id)
 
-            if old.name == name:
-                name = None
+            new_name = None if old.name == name else name
 
-            self.client.update_stack_component(id, component_type, name=name, configuration=configuration)
+            self.client.update_stack_component(id, component_type, name=new_name, configuration=configuration)
 
             return {"message": f"Stack Component {name} successfully updated"}
         except self.ZenMLBaseException as e:
             return {"error": str(e)}
         
     def delete_component(self, args: Tuple[str, str]) -> Dict[str, str]:
+        """Deletes a specified ZenML stack component.
+
+        Args:
+            args (list): List contianing the id and component type of the desired component.
+        Returns:
+            Dictionary contianing a message relevant to whether the action succeeded or failed
+        """
         [id, component_type] = args
 
         try:
@@ -795,6 +836,13 @@ class StacksWrapper:
             return {"error": str(e)}
     
     def list_components(self, args: Tuple[int, int, Union[str, None]]) -> Union[ListComponentsResponse,ErrorResponse]:
+        """Lists stack components in a paginated way.
+        
+        Args:
+            args (list): List containing the page, maximum items per page, and an optional type filter used to retrieve expected components.
+        Returns:
+            A Dictionary containing the paginated results or an error message specifying why the action failed.
+        """
         if len(args) < 2:
             return {"error": "Insufficient arguments provided."}
         
@@ -828,12 +876,24 @@ class StacksWrapper:
             return {"error": f"Failed to retrieve list of stack components: {str(e)}"}
 
     def get_component_types(self) -> Union[List[str], ErrorResponse]:
+        """Gets a list of all component types.
+
+        Returns:
+            A list of component types or a dictionary containing an error message specifying why the action failed.
+        """
         try:
             return self.StackComponentType.values()
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve list of component types: {str(e)}"}
     
     def list_flavors(self, args: Tuple[int, int, Optional[str]]) -> Union[ListFlavorsResponse, ErrorResponse]:
+        """Lists stack component flavors in a paginated way.
+        
+        Args:
+            args (list): List containing page, max items per page, and an optional component type filter used to retrieve expected component flavors.
+        Returns:
+            A Dictionary containing the paginated results or an error message specifying why the action failed.
+        """
         if len(args) < 2:
             return {"error": "Insufficient arguments provided."}
         
