@@ -40,8 +40,7 @@ button {
   padding-left: 20px;
 }
 
-.value > input,
-textarea {
+.input {
   width: 100%;
 }
 
