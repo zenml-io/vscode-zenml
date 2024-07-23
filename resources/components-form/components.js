@@ -13,7 +13,12 @@ document.querySelectorAll('.field > input, textarea').forEach(element => {
   if (element instanceof HTMLTextAreaElement) {
     element.addEventListener('input', evt => {
       try {
-        JSON.parse(evt.target.value);
+        const val = JSON.parse(evt.target.value);
+        if (evt.target.dataset.array && !Array.isArray(val)) {
+          element.setCustomValidity('Must be an array');
+          element.reportValidity();
+          return;
+        }
       } catch {
         element.setCustomValidity('Invalid JSON value');
         element.reportValidity();
@@ -54,7 +59,15 @@ form.addEventListener('click', evt => {
       }
 
       if (inputs[id] instanceof HTMLTextAreaElement) {
-        data[id] = inputs[id].textContent;
+        data[id] = JSON.parse(inputs[id].value);
+      }
+
+      if (inputs[id].type === 'checkbox') {
+        data[id] = !!inputs[id].checked;
+      }
+
+      if (inputs[id].type === 'number') {
+        data[id] = Number(inputs[id].value);
       }
     }
 
