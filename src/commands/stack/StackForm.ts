@@ -35,6 +35,10 @@ export default class StackForm extends WebviewBase {
   private css: vscode.Uri;
   private template: HandlebarsTemplateDelegate;
 
+  /**
+   * Retrieves a singleton instance of ComponentForm
+   * @returns {StackForm} The singleton instance
+   */
   public static getInstance(): StackForm {
     if (!StackForm.instance) {
       StackForm.instance = new StackForm();
@@ -64,11 +68,20 @@ export default class StackForm extends WebviewBase {
     this.template = handlebars.compile(this.produceTemplate());
   }
 
+  /**
+   * Opens a webview panel with a form to create a new stack
+   */
   public async createForm() {
     const panel = await this.display();
     panel.webview.postMessage({ command: 'create' });
   }
 
+  /**
+   * Opens a webview panel with a form to update a specified stack
+   * @param {string} id The id of the specified stack
+   * @param {string} name The current name of the specified stack
+   * @param {object} components The component settings of the sepcified stack
+   */
   public async updateForm(id: string, name: string, components: { [type: string]: string }) {
     const panel = await this.display();
     panel.webview.postMessage({ command: 'update', data: { id, name, components } });

@@ -182,10 +182,17 @@ const goToStackUrl = (node: StackTreeItem) => {
   }
 };
 
+/**
+ * Opens the stack form webview panel to a form specific to creating a stack.
+ */
 const createStack = () => {
   StackForm.getInstance().createForm();
 };
 
+/**
+ * Opens the stack form webview panel to a form specific to updating a specified stack.
+ * @param {StackTreeItem} node The specified stack to update.
+ */
 const updateStack = async (node: StackTreeItem) => {
   const { id, label: name } = node;
   const components: { [type: string]: string } = {};
@@ -200,6 +207,11 @@ const updateStack = async (node: StackTreeItem) => {
   StackForm.getInstance().updateForm(id, name, components);
 };
 
+/**
+ * Deletes a specified stack.
+ *
+ * @param {StackTreeItem} node The Stack to delete
+ */
 const deleteStack = async (node: StackTreeItem) => {
   const lsClient = LSClient.getInstance();
 

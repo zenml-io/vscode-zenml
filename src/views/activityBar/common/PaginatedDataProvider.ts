@@ -17,6 +17,10 @@ import { CommandTreeItem } from './PaginationTreeItems';
 import { LoadingTreeItem } from './LoadingTreeItem';
 import { ErrorTreeItem } from './ErrorTreeItem';
 
+/**
+ * Provides a base class to other DataProviders that provides all functionality
+ * for pagination in a tree view.
+ */
 export class PaginatedDataProvider implements TreeDataProvider<TreeItem> {
   protected _onDidChangeTreeData = new EventEmitter<TreeItem | undefined | null>();
   readonly onDidChangeTreeData: Event<TreeItem | undefined | null> =
@@ -30,6 +34,9 @@ export class PaginatedDataProvider implements TreeDataProvider<TreeItem> {
   public items: TreeItem[] = [];
   protected viewName: string = '';
 
+  /**
+   * Loads the next page.
+   */
   public async goToNextPage() {
     if (this.pagination.currentPage < this.pagination.totalPages) {
       this.pagination.currentPage++;
@@ -37,6 +44,9 @@ export class PaginatedDataProvider implements TreeDataProvider<TreeItem> {
     }
   }
 
+  /**
+   * Loads the previous page
+   */
   public async goToPreviousPage() {
     if (this.pagination.currentPage > 1) {
       this.pagination.currentPage--;
@@ -44,6 +54,9 @@ export class PaginatedDataProvider implements TreeDataProvider<TreeItem> {
     }
   }
 
+  /**
+   * Sets the item count per page
+   */
   public async updateItemsPerPage() {
     const selected = await window.showQuickPick(ITEMS_PER_PAGE_OPTIONS, {
       placeHolder: 'Choose the max number of items to display per page',
@@ -55,6 +68,9 @@ export class PaginatedDataProvider implements TreeDataProvider<TreeItem> {
     }
   }
 
+  /**
+   * Refreshes the view.
+   */
   public async refresh(): Promise<void> {
     this._onDidChangeTreeData.fire(undefined);
   }
@@ -69,6 +85,12 @@ export class PaginatedDataProvider implements TreeDataProvider<TreeItem> {
     return element;
   }
 
+  /**
+   * Gets the children of the selected element. This will insert
+   * PaginationTreeItems for navigation if there are other pages.
+   * @param {TreeItem} element The selected element
+   * @returns Children of the selected element
+   */
   public async getChildren(element?: TreeItem): Promise<TreeItem[] | undefined> {
     if (!element) {
       if (this.items[0] instanceof LoadingTreeItem || this.items[0] instanceof ErrorTreeItem) {

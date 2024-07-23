@@ -23,6 +23,9 @@ import ComponentForm from './ComponentsForm';
 import { StackComponentTreeItem } from '../../views/activityBar';
 import { traceError, traceInfo } from '../../common/log/logging';
 
+/**
+ * Refreshes the stack component view.
+ */
 const refreshComponentView = async () => {
   vscode.window.withProgress(
     {
@@ -36,6 +39,9 @@ const refreshComponentView = async () => {
   );
 };
 
+/**
+ * Allows one to choose a component type and flavor, then opens the component form webview panel to a form specific to creating a component of that type and flavor.
+ */
 const createComponent = async () => {
   const lsClient = LSClient.getInstance();
   try {
@@ -91,6 +97,10 @@ const updateComponent = async (node: StackComponentTreeItem) => {
   }
 };
 
+/**
+ * Deletes a specified Stack Component
+ * @param {StackComponentTreeItem} node The specified stack component to delete
+ */
 const deleteComponent = async (node: StackComponentTreeItem) => {
   const lsClient = LSClient.getInstance();
 
