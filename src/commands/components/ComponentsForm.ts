@@ -30,6 +30,7 @@ interface ComponentField {
   is_boolean?: boolean;
   is_string_object?: boolean;
   is_json_object?: boolean;
+  is_array?: boolean;
   is_optional?: boolean;
   is_required?: boolean;
   defaultValue: any;
@@ -215,6 +216,10 @@ export default class ComponentForm extends WebviewBase {
         current.is_json_object = true;
         current.defaultValue = JSON.stringify(properties[key].default);
       }
+
+      if (properties[key].type === 'array') {
+        current.is_array = true;
+      }
     }
 
     return converted;
@@ -250,7 +255,7 @@ export default class ComponentForm extends WebviewBase {
       <form>
         <div class="field">
           <div class="label">
-            <label for="name"><strong>Component Name:</strong></label>
+            <label for="name"><strong>Component Name*</strong></label>
           </div>
           <div class="value">
             <input type="text" name="name" id="name" required>
@@ -305,8 +310,9 @@ export default class ComponentForm extends WebviewBase {
               {{#if is_json_object}}
                 <textarea 
                   id={{key}}
-                  name="key"
+                  name="{{key}}"
                   class="{{#if is_optional}}hidden{{/if}}"
+                  {{#if is_array}}data-array="array"{{/if}}
                   {{#if is_required}}required{{/if}}
                   placeholder="Please input proper JSON"
                 >{{defaultValue}}</textarea>
