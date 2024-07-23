@@ -1,5 +1,8 @@
 import * as vscode from 'vscode';
 
+/**
+ * Handles creation and monitoring of webview panels.
+ */
 export default class Panels {
   private static instance: Panels | undefined;
   private openPanels: { [id: string]: vscode.WebviewPanel };
@@ -8,6 +11,10 @@ export default class Panels {
     this.openPanels = {};
   }
 
+  /**
+   * Retrieves a singleton instance of Panels
+   * @returns {Panels} The singleton instance
+   */
   public static getInstance(): Panels {
     if (Panels.instance === undefined) {
       Panels.instance = new Panels();
@@ -15,6 +22,14 @@ export default class Panels {
     return Panels.instance;
   }
 
+  /**
+   * Creates a webview panel
+   * @param {string} id ID of the webview panel to create
+   * @param {string} label Title of webview panel tab
+   * @param {vscode.WebviewPanelOptions & vscode.WebviewOptions} options
+   * Options applied to the webview panel
+   * @returns {vscode.WebviewPanel} The webview panel created
+   */
   public createPanel(
     id: string,
     label: string,
@@ -32,10 +47,13 @@ export default class Panels {
     return panel;
   }
 
-  private deregisterPanel(id: string) {
-    delete this.openPanels[id];
-  }
-
+  /**
+   * Gets existing webview panel
+   * @param {string} id ID of webview panel to retrieve.
+   * @param {boolean} forceSpinner Whether to change the html content or not
+   * @returns {vscode.WebviewPanel | undefined} The webview panel if it exists,
+   * else undefined
+   */
   public getPanel(id: string, forceSpinner: boolean = false): vscode.WebviewPanel | undefined {
     const panel = this.openPanels[id];
 
@@ -44,6 +62,10 @@ export default class Panels {
     }
 
     return panel;
+  }
+
+  private deregisterPanel(id: string) {
+    delete this.openPanels[id];
   }
 
   private getLoadingContent(): string {

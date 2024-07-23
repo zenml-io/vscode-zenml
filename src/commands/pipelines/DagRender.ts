@@ -54,7 +54,7 @@ export default class DagRenderer extends WebviewBase {
   /**
    * Retrieves a singleton instance of DagRenderer
    *
-   * @returns {DagRenderer | undefined} The singleton instance if it exists
+   * @returns {DagRenderer} The singleton instance
    */
   public static getInstance(): DagRenderer {
     if (!DagRenderer.instance) {

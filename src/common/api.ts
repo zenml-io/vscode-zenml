@@ -8,6 +8,10 @@ import {
 
 let flavors: Flavor[] = [];
 
+/**
+ * Gets all component flavors and caches them
+ * @returns {Flavor[]} List of flavors
+ */
 export const getAllFlavors = async (): Promise<Flavor[]> => {
   if (flavors.length > 0) {
     return flavors;
@@ -33,11 +37,21 @@ export const getAllFlavors = async (): Promise<Flavor[]> => {
   return flavors;
 };
 
+/**
+ * Gets all flavors of a specified component type
+ * @param {string} type Type of component to filter by
+ * @returns {Flavor[]} List of flavors that match the component type filter
+ */
 export const getFlavorsOfType = async (type: string): Promise<Flavor[]> => {
   const flavors = await getAllFlavors();
   return flavors.filter(flavor => flavor.type === type);
 };
 
+/**
+ * Gets a specific flavor
+ * @param {string} name The name of the flavor to get
+ * @returns {Flavor} The specified flavor.
+ */
 export const getFlavor = async (name: string): Promise<Flavor> => {
   const flavors = await getAllFlavors();
   const flavor = flavors.find(flavor => flavor.name === name);
@@ -49,6 +63,10 @@ export const getFlavor = async (name: string): Promise<Flavor> => {
   return flavor;
 };
 
+/**
+ * Gets all stack components
+ * @returns {object} Object containing all components keyed by each type.
+ */
 export const getAllStackComponents = async (): Promise<{
   [type: string]: StackComponent[];
 }> => {

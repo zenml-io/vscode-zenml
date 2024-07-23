@@ -77,6 +77,9 @@ export class ComponentDataProvider extends PaginatedDataProvider {
     return ComponentDataProvider.instance;
   }
 
+  /**
+   * Refreshes the view.
+   */
   public async refresh(): Promise<void> {
     this.items = [LOADING_TREE_ITEMS.get('components')!];
     this._onDidChangeTreeData.fire(undefined);

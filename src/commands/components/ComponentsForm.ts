@@ -46,6 +46,10 @@ export default class ComponentForm extends WebviewBase {
   private css: vscode.Uri;
   private template: HandlebarsTemplateDelegate;
 
+  /**
+   * Retrieves a singleton instance of ComponentForm
+   * @returns {ComponentForm} The singleton instance
+   */
   public static getInstance(): ComponentForm {
     if (!ComponentForm.instance) {
       ComponentForm.instance = new ComponentForm();
@@ -68,6 +72,11 @@ export default class ComponentForm extends WebviewBase {
     this.template = handlebars.compile(this.produceTemplate());
   }
 
+  /**
+   * Opens a webview panel based on the flavor config schema to create a new
+   * component
+   * @param {Flavor} flavor Flavor of component to create
+   */
   public async createForm(flavor: Flavor) {
     const panel = await this.getPanel();
     const description = flavor.config_schema.description.replaceAll('\n', '<br>');
@@ -86,6 +95,15 @@ export default class ComponentForm extends WebviewBase {
     panel.webview.postMessage({ command: 'create', type: flavor.type, flavor: flavor.name });
   }
 
+  /**
+   * Opens a webview panel based on the flavor config schema to update a
+   * specified component
+   * @param {Flavor} flavor Flavor of the selected component
+   * @param {string} name Name of the selected component
+   * @param {string} id ID of the selected component
+   * @param {object} config Current configuration settings of the selected
+   * component
+   */
   public async updateForm(
     flavor: Flavor,
     name: string,

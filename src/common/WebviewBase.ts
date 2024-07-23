@@ -12,9 +12,18 @@
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
 
+/**
+ * Provides functionality to share extension context among classes that inherit
+ * from it.
+ */
 export default class WebviewBase {
   protected static context: vscode.ExtensionContext | null = null;
 
+  /**
+   * Sets the extension context so that descendant classes can correctly
+   * path to their resources
+   * @param {vscode.ExtensionContext} context ExtensionContext
+   */
   public static setContext(context: vscode.ExtensionContext) {
     WebviewBase.context = context;
   }
