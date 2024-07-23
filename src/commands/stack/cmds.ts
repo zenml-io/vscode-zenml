@@ -19,6 +19,7 @@ import { showInformationMessage } from '../../utils/notifications';
 import Panels from '../../common/panels';
 import { randomUUID } from 'crypto';
 import StackForm from './StackForm';
+import { traceError, traceInfo } from '../../common/log/logging';
 
 /**
  * Refreshes the stack view.
@@ -199,6 +200,47 @@ const updateStack = async (node: StackTreeItem) => {
   StackForm.getInstance().updateForm(id, name, components);
 };
 
+const deleteStack = async (node: StackTreeItem) => {
+  const lsClient = LSClient.getInstance();
+
+  const answer = await vscode.window.showWarningMessage(
+    `Are you sure you want to delete ${node.label}? This cannot be undone.`,
+    { modal: true },
+    'Delete'
+  );
+
+  if (!answer) {
+    return;
+  }
+
+  await vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Window,
+      title: `Deleting stack ${node.label}...`,
+    },
+    async () => {
+      const { id } = node;
+
+      try {
+        const resp = await lsClient.sendLsClientRequest('deleteStack', [id]);
+
+        if ('error' in resp) {
+          throw resp.error;
+        }
+
+        vscode.window.showInformationMessage(`${node.label} deleted`);
+        traceInfo(`${node.label} deleted`);
+
+        StackDataProvider.getInstance().refresh();
+      } catch (e) {
+        vscode.window.showErrorMessage(`Failed to delete component: ${e}`);
+        traceError(e);
+        console.error(e);
+      }
+    }
+  );
+};
+
 export const stackCommands = {
   refreshStackView,
   refreshActiveStack,
@@ -208,4 +250,5 @@ export const stackCommands = {
   goToStackUrl,
   createStack,
   updateStack,
+  deleteStack,
 };

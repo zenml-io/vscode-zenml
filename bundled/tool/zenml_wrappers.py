@@ -749,6 +749,16 @@ class StacksWrapper:
         except self.ZenMLBaseException as e:
             return {"error": str(e)}
         
+    def delete_stack(self, args: Tuple[str]) -> Dict[str, str]:
+        [id] = args
+
+        try:
+            self.client.delete_stack(id)
+
+            return {"message": f"Stack {id} successfully deleted."}
+        except self.ZenMLBaseException as e:
+            return {"error": str(e)}
+        
     def create_component(self, args: Tuple[str, str, str, Dict[str, str]]) -> Dict[str, str]:
         [component_type, flavor, name, configuration] = args
         

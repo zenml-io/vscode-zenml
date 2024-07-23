@@ -215,6 +215,12 @@
         "category": "ZenML Stacks"
       },
       {
+        "command": "zenml.deleteStack",
+        "title": "Delete Stack",
+        "icon": "$(trash)",
+        "category": "ZenML Stacks"
+      },
+      {
         "command": "zenml.setComponentItemsPerPage",
         "title": "Set Components Per Page",
         "icon": "$(layers)",
@@ -427,6 +433,11 @@
           "when": "stackCommandsRegistered && view == zenmlStackView && viewItem == stack",
           "command": "zenml.goToStackUrl",
           "group": "inline@4"
+        },
+        {
+          "when": "stackCommandsRegistered && view == zenmlStackView && viewItem == stack",
+          "command": "zenml.deleteStack",
+          "group": "inline@5"
         },
         {
           "when": "componentCommandsRegistered && view == zenmlComponentView && viewItem == stackComponent",
