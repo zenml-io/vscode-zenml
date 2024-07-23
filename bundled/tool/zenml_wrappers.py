@@ -758,7 +758,22 @@ class StacksWrapper:
             return {"message": f"Stack Component {name} successfully created"}
         except self.ZenMLBaseException as e:
             return {"error": str(e)}
+        
+    def update_component(self, args: Tuple[str, str, str, Dict[str, str]]) -> Dict[str, str]:
+        [id, component_type, name, configuration] = args
+        
+        try:
+            old = self.client.get_stack_component(component_type, id)
 
+            if old.name == name:
+                name = None
+
+            self.client.update_stack_component(id, component_type, name=name, configuration=configuration)
+
+            return {"message": f"Stack Component {name} successfully updated"}
+        except self.ZenMLBaseException as e:
+            return {"error": str(e)}
+    
     def list_components(self, args: Tuple[int, int, Union[str, None]]) -> Union[ListComponentsResponse,ErrorResponse]:
         if len(args) < 2:
             return {"error": "Insufficient arguments provided."}
@@ -784,6 +799,7 @@ class StacksWrapper:
                         "name": item.name,
                         "flavor": item.body.flavor,
                         "type": item.body.type,
+                        "config": item.metadata.configuration,
                     }
                     for item in components.items
                 ],

@@ -89,6 +89,7 @@ class StackComponent(TypedDict):
     name: str
     flavor: str
     type: str
+    config: Dict[str, Any]
 
 class ListComponentsResponse(TypedDict):
     index: int

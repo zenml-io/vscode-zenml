@@ -86,9 +86,39 @@ export default class ComponentForm extends WebviewBase {
     panel.webview.postMessage({ command: 'create', type: flavor.type, flavor: flavor.name });
   }
 
+  public async updateForm(
+    flavor: Flavor,
+    name: string,
+    id: string,
+    config: { [key: string]: any }
+  ) {
+    const panel = await this.getPanel();
+    const description = flavor.config_schema.description.replaceAll('\n', '<br>');
+    panel.webview.html = this.template({
+      type: flavor.type,
+      flavor: flavor.name,
+      logo: flavor.logo_url,
+      description,
+      docs_url: flavor.docs_url,
+      sdk_docs_url: flavor.sdk_docs_url,
+      js: panel.webview.asWebviewUri(this.javaScript),
+      css: panel.webview.asWebviewUri(this.css),
+      fields: this.toFormFields(flavor.config_schema),
+    });
+
+    panel.webview.postMessage({
+      command: 'update',
+      type: flavor.type,
+      flavor: flavor.name,
+      name,
+      id,
+      config,
+    });
+  }
+
   private async getPanel(): Promise<vscode.WebviewPanel> {
     const panels = Panels.getInstance();
-    const existingPanel = panels.getPanel('component-form');
+    const existingPanel = panels.getPanel('component-form', true);
     if (existingPanel) {
       existingPanel.reveal();
       return existingPanel;
@@ -120,7 +150,7 @@ export default class ComponentForm extends WebviewBase {
             success = await this.createComponent(name, type, flavor, data);
             break;
           case 'update':
-            // TODO
+            success = await this.updateComponent(id, name, type, data);
             break;
         }
 
@@ -160,6 +190,34 @@ export default class ComponentForm extends WebviewBase {
       traceInfo(resp.message);
     } catch (e) {
       vscode.window.showErrorMessage(`Unable to create component: "${e}"`);
+      console.error(e);
+      traceError(e);
+      return false;
+    }
+
+    return true;
+  }
+
+  private async updateComponent(
+    id: string,
+    name: string,
+    type: string,
+    data: object
+  ): Promise<boolean> {
+    const lsClient = LSClient.getInstance();
+    try {
+      const resp = await lsClient.sendLsClientRequest('updateComponent', [id, type, name, data]);
+
+      if ('error' in resp) {
+        vscode.window.showErrorMessage(`Unable to update component: "${resp.error}"`);
+        console.error(resp.error);
+        traceError(resp.error);
+        return false;
+      }
+
+      traceInfo(resp.message);
+    } catch (e) {
+      vscode.window.showErrorMessage(`Unable to update component: "${e}"`);
       console.error(e);
       traceError(e);
       return false;
@@ -280,7 +338,7 @@ export default class ComponentForm extends WebviewBase {
                   id="{{key}}" 
                   name="{{key}}" 
                   value="{{defaultValue}}"
-                  class="{{#if is_optional}}hidden{{/if}}"
+                  class="input {{#if is_optional}}hidden{{/if}}"
                   {{#if is_required}}required{{/if}} 
                 >
               {{/if}}
@@ -290,7 +348,7 @@ export default class ComponentForm extends WebviewBase {
                   type="checkbox"
                   name="{{key}}"
                   id="{{key}}"
-                  class="{{#if is_optional}}hidden{{/if}}"
+                  class="input {{#if is_optional}}hidden{{/if}}"
                   {{#if is_required}}required{{/if}}
                   {{#if defaultValue}}checked{{/if}}
                 >
@@ -302,7 +360,7 @@ export default class ComponentForm extends WebviewBase {
                   name="{{key}}"
                   id="{{key}}"
                   value="{{default_value}}"
-                  class="{{#if is_optional}}hidden{{/if}}"
+                  class="input {{#if is_optional}}hidden{{/if}}"
                   {{#if is_required}}required{{/if}}
                 >
               {{/if}}
@@ -311,7 +369,7 @@ export default class ComponentForm extends WebviewBase {
                 <textarea 
                   id={{key}}
                   name="{{key}}"
-                  class="{{#if is_optional}}hidden{{/if}}"
+                  class="input {{#if is_optional}}hidden{{/if}}"
                   {{#if is_array}}data-array="array"{{/if}}
                   {{#if is_required}}required{{/if}}
                   placeholder="Please input proper JSON"

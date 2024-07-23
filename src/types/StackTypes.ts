@@ -40,6 +40,7 @@ interface StackComponent {
   name: string;
   flavor: string;
   type: string;
+  config: { [key: string]: any };
 }
 
 export type StacksResponse = StacksData | ErrorMessageResponse | VersionMismatchError;

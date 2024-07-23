@@ -36,8 +36,14 @@ export default class Panels {
     delete this.openPanels[id];
   }
 
-  public getPanel(id: string): vscode.WebviewPanel | undefined {
-    return this.openPanels[id];
+  public getPanel(id: string, forceSpinner: boolean = false): vscode.WebviewPanel | undefined {
+    const panel = this.openPanels[id];
+
+    if (panel && forceSpinner) {
+      panel.webview.html = this.getLoadingContent();
+    }
+
+    return panel;
   }
 
   private getLoadingContent(): string {
