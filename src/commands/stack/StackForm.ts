@@ -69,11 +69,11 @@ export default class StackForm extends WebviewBase {
   }
 
   /**
-   * Opens a webview panel with a form to create a new stack
+   * Opens a webview panel with a form to register a new stack
    */
-  public async createForm() {
+  public async registerForm() {
     const panel = await this.display();
-    panel.webview.postMessage({ command: 'create' });
+    panel.webview.postMessage({ command: 'register' });
   }
 
   /**
@@ -116,8 +116,8 @@ export default class StackForm extends WebviewBase {
         delete data.id;
 
         switch (message.command) {
-          case 'create':
-            success = await this.createStack(name, data);
+          case 'register':
+            success = await this.registerStack(name, data);
             break;
           case 'update': {
             const updateData = Object.fromEntries(
@@ -139,16 +139,16 @@ export default class StackForm extends WebviewBase {
     );
   }
 
-  private async createStack(
+  private async registerStack(
     name: string,
     components: { [type: string]: string }
   ): Promise<boolean> {
     const lsClient = LSClient.getInstance();
     try {
-      const resp = await lsClient.sendLsClientRequest('createStack', [name, components]);
+      const resp = await lsClient.sendLsClientRequest('registerStack', [name, components]);
 
       if ('error' in resp) {
-        vscode.window.showErrorMessage(`Unable to create stack: "${resp.error}"`);
+        vscode.window.showErrorMessage(`Unable to register stack: "${resp.error}"`);
         console.error(resp.error);
         traceError(resp.error);
         return false;
@@ -156,7 +156,7 @@ export default class StackForm extends WebviewBase {
 
       traceInfo(resp.message);
     } catch (e) {
-      vscode.window.showErrorMessage(`Unable to create stack: "${e}"`);
+      vscode.window.showErrorMessage(`Unable to register stack: "${e}"`);
       console.error(e);
       traceError(e);
       return false;
@@ -248,7 +248,7 @@ export default class StackForm extends WebviewBase {
     <title>Stack Form</title>
   </head>
   <body>
-    <h2>Create Stack</h2>
+    <h2>Register Stack</h2>
     <form>
       <label for="name" required><strong>Stack Name:</strong></label> <input type="text" name="name" id="name">
       {{#each options}}

@@ -13,8 +13,9 @@
 const form = document.querySelector('form');
 const submit = document.querySelector('input[type="submit"]');
 const spinner = document.querySelector('.loader');
+const title = document.querySelector('h2');
 
-let mode = 'create';
+let mode = 'register';
 let type = '';
 let flavor = '';
 let id = '';
@@ -135,8 +136,8 @@ window.addEventListener('message', evt => {
   const message = evt.data;
 
   switch (message.command) {
-    case 'create':
-      mode = 'create';
+    case 'register':
+      mode = 'register';
       type = message.type;
       flavor = message.flavor;
       id = '';
@@ -147,6 +148,7 @@ window.addEventListener('message', evt => {
       type = message.type;
       flavor = message.flavor;
       id = message.id;
+      title.innerText = title.innerText.replace('Register', 'Update');
       setValues(message.name, message.config);
       break;
 

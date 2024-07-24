@@ -726,8 +726,8 @@ class StacksWrapper:
         ) as e:
             return {"error": str(e)}
     
-    def create_stack(self, args: Tuple[str, Dict[str, str]]) -> Dict[str, str]:
-        """Creates a new ZenML Stack.
+    def register_stack(self, args: Tuple[str, Dict[str, str]]) -> Dict[str, str]:
+        """Registers a new ZenML Stack.
 
         Args:
             args (list): List containing the name and chosen components for the stack.
@@ -738,7 +738,7 @@ class StacksWrapper:
 
         try:
             self.client.create_stack(name, components)
-            return {"message": f"Stack {name} successfully created"}
+            return {"message": f"Stack {name} successfully registered"}
         except self.ZenMLBaseException as e:
             return {"error": str(e)}
         
@@ -780,8 +780,8 @@ class StacksWrapper:
         except self.ZenMLBaseException as e:
             return {"error": str(e)}
         
-    def create_component(self, args: Tuple[str, str, str, Dict[str, str]]) -> Dict[str, str]:
-        """Creates a new ZenML stack component.
+    def register_component(self, args: Tuple[str, str, str, Dict[str, str]]) -> Dict[str, str]:
+        """Registers a new ZenML stack component.
 
         Args:
             args (list): List containing the component type, flavor used, name, and configuration of the desired new component.
@@ -793,7 +793,7 @@ class StacksWrapper:
         try:
             self.client.create_stack_component(name, flavor, component_type, configuration)
 
-            return {"message": f"Stack Component {name} successfully created"}
+            return {"message": f"Stack Component {name} successfully registered"}
         except self.ZenMLBaseException as e:
             return {"error": str(e)}
         

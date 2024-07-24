@@ -278,11 +278,11 @@ class ZenLanguageServer(LanguageServer):
             """Copies a specified ZenML stack to a new stack."""
             return wrapper_instance.copy_stack(args)
         
-        @self.command(f"{TOOL_MODULE_NAME}.createStack")
+        @self.command(f"{TOOL_MODULE_NAME}.registerStack")
         @self.zenml_command(wrapper_name="stacks_wrapper")
-        def create_stack(wrapper_instance, args):
-            """Creates a new ZenML stack."""
-            return wrapper_instance.create_stack(args)
+        def register_stack(wrapper_instance, args):
+            """Registers a new ZenML stack."""
+            return wrapper_instance.register_stack(args)
         
         @self.command(f"{TOOL_MODULE_NAME}.updateStack")
         @self.zenml_command(wrapper_name="stacks_wrapper")
@@ -296,11 +296,11 @@ class ZenLanguageServer(LanguageServer):
             """Deletes a specified ZenML stack ."""
             return wrapper_instance.delete_stack(args)
         
-        @self.command(f"{TOOL_MODULE_NAME}.createComponent")
+        @self.command(f"{TOOL_MODULE_NAME}.registerComponent")
         @self.zenml_command(wrapper_name="stacks_wrapper")
-        def create_component(wrapper_instance, args):
-            """Creates a Zenml stack component"""
-            return wrapper_instance.create_component(args)
+        def register_component(wrapper_instance, args):
+            """Registers a Zenml stack component"""
+            return wrapper_instance.register_component(args)
         
         @self.command(f"{TOOL_MODULE_NAME}.updateComponent")
         @self.zenml_command(wrapper_name="stacks_wrapper")

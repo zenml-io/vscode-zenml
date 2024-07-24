@@ -183,10 +183,11 @@ const goToStackUrl = (node: StackTreeItem) => {
 };
 
 /**
- * Opens the stack form webview panel to a form specific to creating a stack.
+ * Opens the stack form webview panel to a form specific to registering a new
+ * stack.
  */
-const createStack = () => {
-  StackForm.getInstance().createForm();
+const registerStack = () => {
+  StackForm.getInstance().registerForm();
 };
 
 /**
@@ -260,7 +261,7 @@ export const stackCommands = {
   copyStack,
   setActiveStack,
   goToStackUrl,
-  createStack,
+  registerStack,
   updateStack,
   deleteStack,
 };

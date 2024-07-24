@@ -185,8 +185,8 @@
         "category": "ZenML Stacks"
       },
       {
-        "command": "zenml.createStack",
-        "title": "Create Stack",
+        "command": "zenml.registerStack",
+        "title": "Register New Stack",
         "icon": "$(add)",
         "category": "ZenML Stacks"
       },
@@ -233,8 +233,8 @@
         "category": "ZenML Components"
       },
       {
-        "command": "zenml.createComponent",
-        "title": "Create Component",
+        "command": "zenml.registerComponent",
+        "title": "Register New Component",
         "icon": "$(add)",
         "category": "ZenML Components"
       },
@@ -369,7 +369,7 @@
         },
         {
           "when": "stackCommandsRegistered && view == zenmlStackView",
-          "command": "zenml.createStack",
+          "command": "zenml.registerStack",
           "group": "navigation@1"
         },
         {
@@ -384,7 +384,7 @@
         },
         {
           "when": "componentCommandsRegistered && view == zenmlComponentView",
-          "command": "zenml.createComponent",
+          "command": "zenml.registerComponent",
           "group": "navigation@1"
         },
         {

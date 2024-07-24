@@ -35,8 +35,8 @@ export const registerComponentCommands = (context: ExtensionContext) => {
         async () => await componentCommands.refreshComponentView()
       ),
       registerCommand(
-        'zenml.createComponent',
-        async () => await componentCommands.createComponent()
+        'zenml.registerComponent',
+        async () => await componentCommands.registerComponent()
       ),
       registerCommand(
         'zenml.updateComponent',
