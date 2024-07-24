@@ -87,6 +87,7 @@ export default class ComponentForm extends WebviewBase {
       description,
       docs_url: flavor.docs_url,
       sdk_docs_url: flavor.sdk_docs_url,
+      cspSource: panel.webview.cspSource,
       js: panel.webview.asWebviewUri(this.javaScript),
       css: panel.webview.asWebviewUri(this.css),
       fields: this.toFormFields(flavor.config_schema),
@@ -119,6 +120,7 @@ export default class ComponentForm extends WebviewBase {
       description,
       docs_url: flavor.docs_url,
       sdk_docs_url: flavor.sdk_docs_url,
+      cspSource: panel.webview.cspSource,
       js: panel.webview.asWebviewUri(this.javaScript),
       css: panel.webview.asWebviewUri(this.css),
       fields: this.toFormFields(flavor.config_schema),
@@ -307,7 +309,7 @@ export default class ComponentForm extends WebviewBase {
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Secuirty-Policy" content="default-src 'none';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none';script-src {{cspSource}}; style-src {{cspSource}}; img-src * data:;">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{css}}">
     <title>Stack Form</title>
