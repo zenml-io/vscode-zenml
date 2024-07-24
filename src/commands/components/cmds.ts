@@ -27,16 +27,22 @@ import { traceError, traceInfo } from '../../common/log/logging';
  * Refreshes the stack component view.
  */
 const refreshComponentView = async () => {
-  vscode.window.withProgress(
-    {
-      location: vscode.ProgressLocation.Notification,
-      title: 'Refreshing Component View...',
-      cancellable: false,
-    },
-    async progress => {
-      await ComponentDataProvider.getInstance().refresh();
-    }
-  );
+  try {
+    await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: 'Refreshing Component View...',
+        cancellable: false,
+      },
+      async progress => {
+        await ComponentDataProvider.getInstance().refresh();
+      }
+    );
+  } catch (e) {
+    vscode.window.showErrorMessage(`Failed to refresh component view: ${e}`);
+    traceError(`Failed to refresh component view: ${e}`);
+    console.error(`Failed to refresh component view: ${e}`);
+  }
 };
 
 /**

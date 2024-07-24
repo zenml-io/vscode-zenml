@@ -10,15 +10,14 @@ let mode = 'create';
 
 form.addEventListener('click', evt => {
   const target = evt.target;
-
   let input = null;
+
   if (target instanceof HTMLLabelElement) {
     input = document.getElementById(target.htmlFor);
-  }
-
-  if (target instanceof HTMLInputElement && target.type === 'radio') {
+  } else if (target instanceof HTMLInputElement && target.type === 'radio') {
     input = target;
   }
+
   if (!input) {
     return;
   }
