@@ -748,7 +748,7 @@ class StacksWrapper:
         Args:
             args (list): List containing the id of the stack being updated, the new name, and the chosen components.
         Returns:
-            Dictionary contianing a message relevant to whether the action succeeded or failed
+            Dictionary containing a message relevant to whether the action succeeded or failed
         """
         [id, name, components] = args
 
@@ -767,9 +767,9 @@ class StacksWrapper:
         """Deletes a specified ZenML stack.
 
         Args:
-            args (list): List contianing the id of the stack to delete.
+            args (list): List containing the id of the stack to delete.
         Returns:
-            Dictionary contianing a message relevant to whether the action succeeded or failed
+            Dictionary containing a message relevant to whether the action succeeded or failed
         """
         [id] = args
 
@@ -784,9 +784,9 @@ class StacksWrapper:
         """Creates a new ZenML stack component.
 
         Args:
-            args (list): List contianing the component type, flavor used, name, and configuration of the desired new component.
+            args (list): List containing the component type, flavor used, name, and configuration of the desired new component.
         Returns:
-            Dictionary contianing a message relevant to whether the action succeeded or failed
+            Dictionary containing a message relevant to whether the action succeeded or failed
         """
         [component_type, flavor, name, configuration] = args
         
@@ -801,9 +801,9 @@ class StacksWrapper:
         """Updates a specified ZenML stack component.
 
         Args:
-            args (list): List contianing the id, component type, new name, and desired configuration of the desired component.
+            args (list): List containing the id, component type, new name, and desired configuration of the desired component.
         Returns:
-            Dictionary contianing a message relevant to whether the action succeeded or failed
+            Dictionary containing a message relevant to whether the action succeeded or failed
         """
         [id, component_type, name, configuration] = args
         
@@ -822,9 +822,9 @@ class StacksWrapper:
         """Deletes a specified ZenML stack component.
 
         Args:
-            args (list): List contianing the id and component type of the desired component.
+            args (list): List containing the id and component type of the desired component.
         Returns:
-            Dictionary contianing a message relevant to whether the action succeeded or failed
+            Dictionary containing a message relevant to whether the action succeeded or failed
         """
         [id, component_type] = args
 
