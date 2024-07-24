@@ -119,12 +119,13 @@ export default class StackForm extends WebviewBase {
           case 'create':
             success = await this.createStack(name, data);
             break;
-          case 'update':
+          case 'update': {
             const updateData = Object.fromEntries(
               Object.entries(data).map(([type, id]) => [type, [id]])
             );
             success = await this.updateStack(id, name, updateData);
             break;
+          }
         }
 
         if (!success) {

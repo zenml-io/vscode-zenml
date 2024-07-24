@@ -27,8 +27,8 @@ export const getAllFlavors = async (): Promise<Flavor[]> => {
     ]);
 
     if ('error' in resp) {
-      console.error(`Error retrieving flavors: ${resp.error.toString()}`);
-      throw new Error(resp.error);
+      console.error(`Error retrieving flavors: ${resp.error}`);
+      throw new Error(`Error retrieving flavors: ${resp.error}`);
     }
 
     maxPage = resp.total_pages;
@@ -57,7 +57,7 @@ export const getFlavor = async (name: string): Promise<Flavor> => {
   const flavor = flavors.find(flavor => flavor.name === name);
 
   if (!flavor) {
-    throw Error(`Flavor ${name} not found`);
+    throw Error(`getFlavor: Flavor ${name} not found`);
   }
 
   return flavor;
@@ -82,8 +82,8 @@ export const getAllStackComponents = async (): Promise<{
     ]);
 
     if ('error' in resp) {
-      console.error(`Error retrieving components: ${resp.error.toString()}`);
-      throw new Error(resp.error);
+      console.error(`Error retrieving components: ${resp.error}`);
+      throw new Error(`Error retrieving components: ${resp.error}`);
     }
 
     maxPage = resp.total_pages;

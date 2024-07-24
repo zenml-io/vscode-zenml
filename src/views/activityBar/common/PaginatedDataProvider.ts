@@ -25,7 +25,12 @@ export class PaginatedDataProvider implements TreeDataProvider<TreeItem> {
   protected _onDidChangeTreeData = new EventEmitter<TreeItem | undefined | null>();
   readonly onDidChangeTreeData: Event<TreeItem | undefined | null> =
     this._onDidChangeTreeData.event;
-  protected pagination = {
+  protected pagination: {
+    currentPage: number;
+    itemsPerPage: number;
+    totalItems: number;
+    totalPages: number;
+  } = {
     currentPage: 1,
     itemsPerPage: 10,
     totalItems: 0,
@@ -37,34 +42,46 @@ export class PaginatedDataProvider implements TreeDataProvider<TreeItem> {
   /**
    * Loads the next page.
    */
-  public async goToNextPage() {
-    if (this.pagination.currentPage < this.pagination.totalPages) {
-      this.pagination.currentPage++;
-      await this.refresh();
+  public async goToNextPage(): Promise<void> {
+    try {
+      if (this.pagination.currentPage < this.pagination.totalPages) {
+        this.pagination.currentPage++;
+        await this.refresh();
+      }
+    } catch (e) {
+      console.error(`Failed to go the next page: ${e}`);
     }
   }
 
   /**
    * Loads the previous page
    */
-  public async goToPreviousPage() {
-    if (this.pagination.currentPage > 1) {
-      this.pagination.currentPage--;
-      await this.refresh();
+  public async goToPreviousPage(): Promise<void> {
+    try {
+      if (this.pagination.currentPage > 1) {
+        this.pagination.currentPage--;
+        await this.refresh();
+      }
+    } catch (e) {
+      console.error(`Failed to go the previous page: ${e}`);
     }
   }
 
   /**
    * Sets the item count per page
    */
-  public async updateItemsPerPage() {
-    const selected = await window.showQuickPick(ITEMS_PER_PAGE_OPTIONS, {
-      placeHolder: 'Choose the max number of items to display per page',
-    });
-    if (selected) {
-      this.pagination.itemsPerPage = parseInt(selected, 10);
-      this.pagination.currentPage = 1;
-      await this.refresh();
+  public async updateItemsPerPage(): Promise<void> {
+    try {
+      const selected = await window.showQuickPick(ITEMS_PER_PAGE_OPTIONS, {
+        placeHolder: 'Choose the max number of items to display per page',
+      });
+      if (selected) {
+        this.pagination.itemsPerPage = parseInt(selected, 10);
+        this.pagination.currentPage = 1;
+        await this.refresh();
+      }
+    } catch (e) {
+      console.error(`Failed to update items per page: ${e}`);
     }
   }
 
@@ -107,26 +124,26 @@ export class PaginatedDataProvider implements TreeDataProvider<TreeItem> {
   }
 
   private addPaginationCommands(treeItems: TreeItem[]): TreeItem[] {
+    const NEXT_PAGE_LABEL = 'Next Page';
+    const PREVIOUS_PAGE_LABEL = 'Previous Page';
+    const NEXT_PAGE_COMMAND = `zenml.next${this.viewName}Page`;
+    const PREVIOUS_PAGE_COMMAND = `zenml.previous${this.viewName}Page`;
+
     if (treeItems.length === 0 && this.pagination.currentPage === 1) {
       return treeItems;
     }
 
     if (this.pagination.currentPage < this.pagination.totalPages) {
       treeItems.push(
-        new CommandTreeItem(
-          'Next Page',
-          `zenml.next${this.viewName}Page`,
-          undefined,
-          'arrow-circle-right'
-        )
+        new CommandTreeItem(NEXT_PAGE_LABEL, NEXT_PAGE_COMMAND, undefined, 'arrow-circle-right')
       );
     }
 
     if (this.pagination.currentPage > 1) {
       treeItems.unshift(
         new CommandTreeItem(
-          'Previous Page',
-          `zenml.previous${this.viewName}Page`,
+          PREVIOUS_PAGE_LABEL,
+          PREVIOUS_PAGE_COMMAND,
           undefined,
           'arrow-circle-left'
         )
