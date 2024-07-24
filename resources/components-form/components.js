@@ -46,7 +46,11 @@ const setValues = (name, config) => {
   document.querySelector('[name="name"]').value = name;
 
   for (const key in config) {
-    if (config[key] === null || (inputs[key].classList.contains('hidden') && !config[key])) {
+    if (
+      config[key] === null ||
+      !inputs[key] ||
+      (inputs[key].classList.contains('hidden') && !config[key])
+    ) {
       continue;
     }
 
