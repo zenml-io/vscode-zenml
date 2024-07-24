@@ -210,7 +210,14 @@ export default class DagRenderer extends WebviewBase {
     const title = `${dagData.name} - v${dagData.version}`;
 
     // And set its HTML content
-    panel.webview.html = this.getWebviewContent({ svg, cssUri, jsUri, updateButton, title });
+    panel.webview.html = this.getWebviewContent({
+      svg,
+      cssUri,
+      jsUri,
+      updateButton,
+      title,
+      cspSource: panel.webview.cspSource,
+    });
   }
 
   private async loadSvgWindowLib() {
@@ -339,19 +346,21 @@ export default class DagRenderer extends WebviewBase {
     jsUri,
     updateButton,
     title,
+    cspSource,
   }: {
     svg: string;
     cssUri: vscode.Uri;
     jsUri: vscode.Uri;
     updateButton: boolean;
     title: string;
+    cspSource: string;
   }): string {
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Secuirty-Policy" content="default-src 'none'; script-src ${jsUri}; style-src ${cssUri};">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src ${cspSource}; style-src ${cspSource};">
     <link rel="stylesheet" href="${cssUri}">
     <title>DAG</title>
 </head>

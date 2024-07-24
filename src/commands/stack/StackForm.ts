@@ -210,8 +210,9 @@ export default class StackForm extends WebviewBase {
     const options = this.convertComponents(flavors, components);
     const js = panel.webview.asWebviewUri(this.javaScript);
     const css = panel.webview.asWebviewUri(this.css);
+    const cspSource = panel.webview.cspSource;
 
-    panel.webview.html = this.template({ options, js, css });
+    panel.webview.html = this.template({ options, js, css, cspSource });
   }
 
   private convertComponents(
@@ -242,7 +243,7 @@ export default class StackForm extends WebviewBase {
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Secuirty-Policy" content="default-src 'none';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none';script-src {{cspSource}}; style-src {{cspSource}}; img-src * data:;">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{css}}">
     <title>Stack Form</title>
