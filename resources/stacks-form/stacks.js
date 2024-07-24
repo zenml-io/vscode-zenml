@@ -18,7 +18,7 @@ const submit = document.querySelector('input[type="submit"]');
 const spinner = document.querySelector('.loader');
 let previousValues = {};
 let id = undefined;
-let mode = 'create';
+let mode = 'register';
 
 form.addEventListener('click', evt => {
   const target = evt.target;
@@ -71,9 +71,9 @@ window.addEventListener('message', evt => {
   const message = evt.data;
 
   switch (message.command) {
-    case 'create':
-      mode = 'create';
-      title.innerText = 'Create Stack';
+    case 'register':
+      mode = 'register';
+      title.innerText = 'Register Stack';
       id = undefined;
       previousValues = {};
       form.reset();

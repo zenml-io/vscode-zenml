@@ -46,9 +46,11 @@ const refreshComponentView = async () => {
 };
 
 /**
- * Allows one to choose a component type and flavor, then opens the component form webview panel to a form specific to creating a component of that type and flavor.
+ * Allows one to choose a component type and flavor, then opens the component
+ * form webview panel to a form specific to register a new a component of that
+ * type and flavor.
  */
-const createComponent = async () => {
+const registerComponent = async () => {
   const lsClient = LSClient.getInstance();
   try {
     const types = await lsClient.sendLsClientRequest<ComponentTypesResponse>('getComponentTypes');
@@ -58,7 +60,7 @@ const createComponent = async () => {
     }
 
     const type = await vscode.window.showQuickPick(types, {
-      title: 'What type of component to create?',
+      title: 'What type of component to register?',
     });
     if (!type) {
       return;
@@ -71,14 +73,14 @@ const createComponent = async () => {
 
     const flavorNames = flavors.map(flavor => flavor.name);
     const selectedFlavor = await vscode.window.showQuickPick(flavorNames, {
-      title: `What flavor of a ${type} component to create?`,
+      title: `What flavor of a ${type} component to register?`,
     });
     if (!selectedFlavor) {
       return;
     }
 
     const flavor = flavors.find(flavor => selectedFlavor === flavor.name);
-    await ComponentForm.getInstance().createForm(flavor as Flavor);
+    await ComponentForm.getInstance().registerForm(flavor as Flavor);
   } catch (e) {
     vscode.window.showErrorMessage(`Unable to open component form: ${e}`);
     traceError(e);
@@ -151,7 +153,7 @@ const deleteComponent = async (node: StackComponentTreeItem) => {
 
 export const componentCommands = {
   refreshComponentView,
-  createComponent,
+  registerComponent,
   updateComponent,
   deleteComponent,
 };

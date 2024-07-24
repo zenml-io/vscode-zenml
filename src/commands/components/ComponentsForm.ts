@@ -73,11 +73,11 @@ export default class ComponentForm extends WebviewBase {
   }
 
   /**
-   * Opens a webview panel based on the flavor config schema to create a new
+   * Opens a webview panel based on the flavor config schema to register a new
    * component
-   * @param {Flavor} flavor Flavor of component to create
+   * @param {Flavor} flavor Flavor of component to register
    */
-  public async createForm(flavor: Flavor) {
+  public async registerForm(flavor: Flavor) {
     const panel = await this.getPanel();
     const description = flavor.config_schema.description.replaceAll('\n', '<br>');
     panel.webview.html = this.template({
@@ -92,7 +92,7 @@ export default class ComponentForm extends WebviewBase {
       fields: this.toFormFields(flavor.config_schema),
     });
 
-    panel.webview.postMessage({ command: 'create', type: flavor.type, flavor: flavor.name });
+    panel.webview.postMessage({ command: 'register', type: flavor.type, flavor: flavor.name });
   }
 
   /**
@@ -164,8 +164,8 @@ export default class ComponentForm extends WebviewBase {
         delete data.id;
 
         switch (message.command) {
-          case 'create':
-            success = await this.createComponent(name, type, flavor, data);
+          case 'register':
+            success = await this.registerComponent(name, type, flavor, data);
             break;
           case 'update':
             success = await this.updateComponent(id, name, type, data);
@@ -183,7 +183,7 @@ export default class ComponentForm extends WebviewBase {
     );
   }
 
-  private async createComponent(
+  private async registerComponent(
     name: string,
     type: string,
     flavor: string,
@@ -191,7 +191,7 @@ export default class ComponentForm extends WebviewBase {
   ): Promise<boolean> {
     const lsClient = LSClient.getInstance();
     try {
-      const resp = await lsClient.sendLsClientRequest('createComponent', [
+      const resp = await lsClient.sendLsClientRequest('registerComponent', [
         type,
         flavor,
         name,
@@ -199,7 +199,7 @@ export default class ComponentForm extends WebviewBase {
       ]);
 
       if ('error' in resp) {
-        vscode.window.showErrorMessage(`Unable to create component: "${resp.error}"`);
+        vscode.window.showErrorMessage(`Unable to register component: "${resp.error}"`);
         console.error(resp.error);
         traceError(resp.error);
         return false;
@@ -207,7 +207,7 @@ export default class ComponentForm extends WebviewBase {
 
       traceInfo(resp.message);
     } catch (e) {
-      vscode.window.showErrorMessage(`Unable to create component: "${e}"`);
+      vscode.window.showErrorMessage(`Unable to register component: "${e}"`);
       console.error(e);
       traceError(e);
       return false;
@@ -314,7 +314,7 @@ export default class ComponentForm extends WebviewBase {
   </head>
   <body>
     <div class="container">
-      <h2>Create {{type}} Stack Component ({{flavor}})</h2>
+      <h2>Register {{type}} Stack Component ({{flavor}})</h2>
       
       <div class="block">
         <article class="description"><img class="logo" src="{{logo}}">{{{description}}}</article>

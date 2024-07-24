@@ -35,7 +35,7 @@ export const registerStackCommands = (context: ExtensionContext) => {
         'zenml.refreshActiveStack',
         async () => await stackCommands.refreshActiveStack()
       ),
-      registerCommand('zenml.createStack', async () => stackCommands.createStack()),
+      registerCommand('zenml.registerStack', async () => stackCommands.registerStack()),
       registerCommand('zenml.updateStack', async (node: StackTreeItem) =>
         stackCommands.updateStack(node)
       ),
