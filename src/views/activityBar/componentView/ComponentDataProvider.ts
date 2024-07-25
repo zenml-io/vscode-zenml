@@ -10,36 +10,31 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import { EventEmitter, TreeDataProvider, TreeItem, window } from 'vscode';
 import { State } from 'vscode-languageclient';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
-import { PipelineRun, PipelineRunsResponse } from '../../../types/PipelineTypes';
 import {
-  ITEMS_PER_PAGE_OPTIONS,
   LSCLIENT_STATE_CHANGED,
   LSP_ZENML_CLIENT_INITIALIZED,
   LSP_ZENML_STACK_CHANGED,
 } from '../../../utils/constants';
 import { ErrorTreeItem, createErrorItem, createAuthErrorItem } from '../common/ErrorTreeItem';
 import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
-import { PipelineRunTreeItem, PipelineTreeItem } from './PipelineTreeItems';
 import { CommandTreeItem } from '../common/PaginationTreeItems';
+import { ComponentsListResponse, StackComponent } from '../../../types/StackTypes';
+import { StackComponentTreeItem } from '../stackView/StackTreeItems';
 import { PaginatedDataProvider } from '../common/PaginatedDataProvider';
 
-/**
- * Provides data for the pipeline run tree view, displaying detailed information about each pipeline run.
- */
-export class PipelineDataProvider extends PaginatedDataProvider {
-  private static instance: PipelineDataProvider | null = null;
+export class ComponentDataProvider extends PaginatedDataProvider {
+  private static instance: ComponentDataProvider | null = null;
   private eventBus = EventBus.getInstance();
   private zenmlClientReady = false;
 
   constructor() {
     super();
-    this.items = [LOADING_TREE_ITEMS.get('pipelineRuns')!];
-    this.viewName = 'PipelineRuns';
     this.subscribeToEvents();
+    this.items = [LOADING_TREE_ITEMS.get('components')!];
+    this.viewName = 'Component';
   }
 
   /**
@@ -59,11 +54,10 @@ export class PipelineDataProvider extends PaginatedDataProvider {
       this.zenmlClientReady = isInitialized;
 
       if (!isInitialized) {
-        this.items = [LOADING_TREE_ITEMS.get('pipelineRuns')!];
+        this.items = [LOADING_TREE_ITEMS.get('components')!];
         this._onDidChangeTreeData.fire(undefined);
         return;
       }
-
       this.refresh();
       this.eventBus.off(LSP_ZENML_STACK_CHANGED, () => this.refresh());
       this.eventBus.on(LSP_ZENML_STACK_CHANGED, () => this.refresh());
@@ -71,50 +65,46 @@ export class PipelineDataProvider extends PaginatedDataProvider {
   }
 
   /**
-   * Retrieves the singleton instance of ServerDataProvider.
+   * Retrieves the singleton instance of ComponentDataProvider
    *
-   * @returns {PipelineDataProvider} The singleton instance.
+   * @returns {ComponentDataProvider} The signleton instance.
    */
-  public static getInstance(): PipelineDataProvider {
-    if (!PipelineDataProvider.instance) {
-      PipelineDataProvider.instance = new PipelineDataProvider();
+  public static getInstance(): ComponentDataProvider {
+    if (!ComponentDataProvider.instance) {
+      ComponentDataProvider.instance = new ComponentDataProvider();
     }
-    return PipelineDataProvider.instance;
+
+    return ComponentDataProvider.instance;
   }
 
   /**
-   * Refreshes the "Pipeline Runs" view by fetching the latest pipeline run data and updating the view.
-   *
-   * @returns A promise resolving to void.
+   * Refreshes the view.
    */
   public async refresh(): Promise<void> {
-    this.items = [LOADING_TREE_ITEMS.get('pipelineRuns')!];
+    this.items = [LOADING_TREE_ITEMS.get('components')!];
     this._onDidChangeTreeData.fire(undefined);
+
     const page = this.pagination.currentPage;
     const itemsPerPage = this.pagination.itemsPerPage;
 
     try {
-      const newPipelineData = await this.fetchPipelineRuns(page, itemsPerPage);
-      this.items = newPipelineData;
-    } catch (error: any) {
-      this.items = createErrorItem(error);
+      const newComponentsData = await this.fetchComponents(page, itemsPerPage);
+      this.items = newComponentsData;
+    } catch (e) {
+      this.items = createErrorItem(e);
     }
 
     this._onDidChangeTreeData.fire(undefined);
   }
 
-  /**
-   * Fetches pipeline runs from the server and maps them to tree items for display.
-   *
-   * @returns A promise resolving to an array of PipelineTreeItems representing fetched pipeline runs.
-   */
-  async fetchPipelineRuns(page: number = 1, itemsPerPage: number = 20): Promise<TreeItem[]> {
+  private async fetchComponents(page: number = 1, itemsPerPage: number = 10) {
     if (!this.zenmlClientReady) {
       return [LOADING_TREE_ITEMS.get('zenmlClient')!];
     }
+
     try {
       const lsClient = LSClient.getInstance();
-      const result = await lsClient.sendLsClientRequest<PipelineRunsResponse>('getPipelineRuns', [
+      const result = await lsClient.sendLsClientRequest<ComponentsListResponse>('listComponents', [
         page,
         itemsPerPage,
       ]);
@@ -130,47 +120,32 @@ export class PipelineDataProvider extends PaginatedDataProvider {
         if ('clientVersion' in result && 'serverVersion' in result) {
           return createErrorItem(result);
         } else {
-          console.error(`Failed to fetch pipeline runs: ${result.error}`);
+          console.error(`Failed to fetch stack components: ${result.error}`);
           return [];
         }
       }
 
-      if ('runs' in result) {
-        const { runs, total, total_pages, current_page, items_per_page } = result;
-
+      if ('items' in result) {
+        const { items, total, total_pages, index, max_size } = result;
         this.pagination = {
-          currentPage: current_page,
-          itemsPerPage: items_per_page,
+          currentPage: index,
+          itemsPerPage: max_size,
           totalItems: total,
           totalPages: total_pages,
         };
 
-        return runs.map((run: PipelineRun) => {
-          const formattedStartTime = new Date(run.startTime).toLocaleString();
-          const formattedEndTime = run.endTime ? new Date(run.endTime).toLocaleString() : 'N/A';
-
-          const children = [
-            new PipelineRunTreeItem('run name', run.name),
-            new PipelineRunTreeItem('stack', run.stackName),
-            new PipelineRunTreeItem('start time', formattedStartTime),
-            new PipelineRunTreeItem('end time', formattedEndTime),
-            new PipelineRunTreeItem('os', `${run.os} ${run.osVersion}`),
-            new PipelineRunTreeItem('python version', run.pythonVersion),
-          ];
-
-          return new PipelineTreeItem(run, run.id, children);
-        });
+        const components = items.map(
+          (component: StackComponent) => new StackComponentTreeItem(component)
+        );
+        return components;
       } else {
-        console.error(`Unexpected response format:`, result);
+        console.error('Unexpected response format:', result);
         return [];
       }
-    } catch (error: any) {
-      console.error(`Failed to fetch stacks: ${error}`);
+    } catch (e: any) {
+      console.error(`Failed to fetch components: ${e}`);
       return [
-        new ErrorTreeItem(
-          'Error',
-          `Failed to fetch pipeline runs: ${error.message || error.toString()}`
-        ),
+        new ErrorTreeItem('Error', `Failed to fetch components: ${e.message || e.toString()}`),
       ];
     }
   }

@@ -20,38 +20,47 @@ import { LSClient } from '../../services/LSClient';
 import { ServerStatus } from '../../types/ServerInfoTypes';
 import { JsonObject } from '../../views/panel/panelView/PanelTreeItem';
 import { PanelDataProvider } from '../../views/panel/panelView/PanelDataProvider';
+import Panels from '../../common/panels';
+import WebviewBase from '../../common/WebviewBase';
 
 const ROOT_PATH = ['resources', 'dag-view'];
 const CSS_FILE = 'dag.css';
 const JS_FILE = 'dag-packed.js';
 const ICONS_DIRECTORY = '/resources/dag-view/icons/';
 
-export default class DagRenderer {
+export default class DagRenderer extends WebviewBase {
   private static instance: DagRenderer | undefined;
-  private openPanels: { [id: string]: vscode.WebviewPanel };
   private createSVGWindow: Function = () => {};
   private iconSvgs: { [name: string]: string } = {};
   private root: vscode.Uri;
   private javaScript: vscode.Uri;
   private css: vscode.Uri;
 
-  constructor(context: vscode.ExtensionContext) {
-    DagRenderer.instance = this;
-    this.openPanels = {};
-    this.root = vscode.Uri.joinPath(context.extensionUri, ...ROOT_PATH);
+  constructor() {
+    super();
+
+    if (WebviewBase.context === null) {
+      throw new Error('Extension Context Not Propagated');
+    }
+
+    this.root = vscode.Uri.joinPath(WebviewBase.context.extensionUri, ...ROOT_PATH);
     this.javaScript = vscode.Uri.joinPath(this.root, JS_FILE);
     this.css = vscode.Uri.joinPath(this.root, CSS_FILE);
 
     this.loadSvgWindowLib();
-    this.loadIcons(context.extensionPath + ICONS_DIRECTORY);
+    this.loadIcons(WebviewBase.context.extensionPath + ICONS_DIRECTORY);
   }
 
   /**
    * Retrieves a singleton instance of DagRenderer
    *
-   * @returns {DagRenderer | undefined} The singleton instance if it exists
+   * @returns {DagRenderer} The singleton instance
    */
-  public static getInstance(): DagRenderer | undefined {
+  public static getInstance(): DagRenderer {
+    if (!DagRenderer.instance) {
+      DagRenderer.instance = new DagRenderer();
+    }
+
     return DagRenderer.instance;
   }
 
@@ -60,7 +69,6 @@ export default class DagRenderer {
    */
   public deactivate(): void {
     DagRenderer.instance = undefined;
-    Object.values<vscode.WebviewPanel>(this.openPanels).forEach(panel => panel.dispose());
   }
 
   /**
@@ -69,30 +77,21 @@ export default class DagRenderer {
    * @returns
    */
   public async createView(node: PipelineTreeItem) {
-    const existingPanel = this.getDagPanel(node.id);
+    const p = Panels.getInstance();
+    const existingPanel = p.getPanel(node.id);
     if (existingPanel) {
       existingPanel.reveal();
       return;
     }
 
-    const panel = vscode.window.createWebviewPanel(
-      `DAG-${node.id}`,
-      node.label as string,
-      vscode.ViewColumn.One,
-      {
-        enableScripts: true,
-        localResourceRoots: [this.root],
-      }
-    );
-
-    panel.webview.html = this.getLoadingContent();
+    const panel = p.createPanel(node.id, node.label as string, {
+      enableScripts: true,
+      localResourceRoots: [this.root],
+    });
 
     panel.webview.onDidReceiveMessage(this.createMessageHandler(panel, node));
 
     this.renderDag(panel, node);
-
-    // To track which DAGs are currently open
-    this.registerDagPanel(node.id, panel);
   }
 
   private createMessageHandler(
@@ -211,7 +210,14 @@ export default class DagRenderer {
     const title = `${dagData.name} - v${dagData.version}`;
 
     // And set its HTML content
-    panel.webview.html = this.getWebviewContent({ svg, cssUri, jsUri, updateButton, title });
+    panel.webview.html = this.getWebviewContent({
+      svg,
+      cssUri,
+      jsUri,
+      updateButton,
+      title,
+      cspSource: panel.webview.cspSource,
+    });
   }
 
   private async loadSvgWindowLib() {
@@ -238,22 +244,6 @@ export default class DagRenderer {
         console.error(`Unable to load icon ${name}: ${e}`);
       }
     });
-  }
-
-  private deregisterDagPanel(runId: string) {
-    delete this.openPanels[runId];
-  }
-
-  private getDagPanel(runId: string): vscode.WebviewPanel | undefined {
-    return this.openPanels[runId];
-  }
-
-  private registerDagPanel(runId: string, panel: vscode.WebviewPanel) {
-    this.openPanels[runId] = panel;
-
-    panel.onDidDispose(() => {
-      this.deregisterDagPanel(runId);
-    }, null);
   }
 
   private layoutDag(dagData: PipelineRunDag): Dagre.graphlib.Graph {
@@ -350,56 +340,27 @@ export default class DagRenderer {
     return canvas.svg();
   }
 
-  private getLoadingContent(): string {
-    return `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="Content-Secuirty-Policy" content="default-src 'none';">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loading</title>
-    <style>
-        body { display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .spinner {
-            border: 8px solid #f3f3f3;
-            border-top: 8px solid #3498db;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            animation: spin 2s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
-</head>
-<body>
-    <div class="spinner"></div>
-</body>
-</html>`;
-  }
-
   private getWebviewContent({
     svg,
     cssUri,
     jsUri,
     updateButton,
     title,
+    cspSource,
   }: {
     svg: string;
     cssUri: vscode.Uri;
     jsUri: vscode.Uri;
     updateButton: boolean;
     title: string;
+    cspSource: string;
   }): string {
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Secuirty-Policy" content="default-src 'none'; script-src ${jsUri}; style-src ${cssUri};">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src ${cspSource}; style-src ${cspSource};">
     <link rel="stylesheet" href="${cssUri}">
     <title>DAG</title>
 </head>

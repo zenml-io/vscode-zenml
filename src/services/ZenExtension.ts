@@ -41,6 +41,8 @@ import ZenMLStatusBar from '../views/statusBar';
 import { LSClient } from './LSClient';
 import { toggleCommands } from '../utils/global';
 import { PanelDataProvider } from '../views/panel/panelView/PanelDataProvider';
+import { ComponentDataProvider } from '../views/activityBar/componentView/ComponentDataProvider';
+import { registerComponentCommands } from '../commands/components/registry';
 
 export interface IServerInfo {
   name: string;
@@ -61,6 +63,7 @@ export class ZenExtension {
   private static dataProviders = new Map<string, vscode.TreeDataProvider<vscode.TreeItem>>([
     ['zenmlServerView', ServerDataProvider.getInstance()],
     ['zenmlStackView', StackDataProvider.getInstance()],
+    ['zenmlComponentView', ComponentDataProvider.getInstance()],
     ['zenmlPipelineView', PipelineDataProvider.getInstance()],
     ['zenmlPanelView', PanelDataProvider.getInstance()],
   ]);
@@ -68,6 +71,7 @@ export class ZenExtension {
   private static registries = [
     registerServerCommands,
     registerStackCommands,
+    registerComponentCommands,
     registerPipelineCommands,
   ];
 

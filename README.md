@@ -27,7 +27,8 @@ this extension and your Python version needs to be 3.8 or greater.
 ## Using ZenML in VSCode
 
 - **Manage Server Connections**: Connect or disconnect from ZenML servers and refresh server status.
-- **Stack Operations**: View stack details, rename, copy, or set active stacks directly from VSCode.
+- **Stack Operations**: View stack details, register, update, delete, copy, or set active stacks directly from VSCode.
+- **Stack Component Operations**: View stack component details, register, update, or delete stack components directly from VSCode.
 - **Pipeline Runs**: Monitor and manage pipeline runs, including deleting runs from the system and rendering DAGs.
 - **Environment Information**: Get detailed snapshots of the development environment, aiding troubleshooting.
 
