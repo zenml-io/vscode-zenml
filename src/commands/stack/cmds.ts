@@ -11,11 +11,15 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
-import { StackDataProvider, StackTreeItem } from '../../views/activityBar';
+import { StackComponentTreeItem, StackDataProvider, StackTreeItem } from '../../views/activityBar';
 import ZenMLStatusBar from '../../views/statusBar';
 import { getStackDashboardUrl, switchActiveStack } from './utils';
 import { LSClient } from '../../services/LSClient';
 import { showInformationMessage } from '../../utils/notifications';
+import Panels from '../../common/panels';
+import { randomUUID } from 'crypto';
+import StackForm from './StackForm';
+import { traceError, traceInfo } from '../../common/log/logging';
 
 /**
  * Refreshes the stack view.
@@ -178,6 +182,78 @@ const goToStackUrl = (node: StackTreeItem) => {
   }
 };
 
+/**
+ * Opens the stack form webview panel to a form specific to registering a new
+ * stack.
+ */
+const registerStack = () => {
+  StackForm.getInstance().registerForm();
+};
+
+/**
+ * Opens the stack form webview panel to a form specific to updating a specified stack.
+ * @param {StackTreeItem} node The specified stack to update.
+ */
+const updateStack = async (node: StackTreeItem) => {
+  const { id, label: name } = node;
+  const components: { [type: string]: string } = {};
+
+  node.children?.forEach(child => {
+    if (child instanceof StackComponentTreeItem) {
+      const { type, id } = (child as StackComponentTreeItem).component;
+      components[type] = id;
+    }
+  });
+
+  StackForm.getInstance().updateForm(id, name, components);
+};
+
+/**
+ * Deletes a specified stack.
+ *
+ * @param {StackTreeItem} node The Stack to delete
+ */
+const deleteStack = async (node: StackTreeItem) => {
+  const lsClient = LSClient.getInstance();
+
+  const answer = await vscode.window.showWarningMessage(
+    `Are you sure you want to delete ${node.label}? This cannot be undone.`,
+    { modal: true },
+    'Delete'
+  );
+
+  if (!answer) {
+    return;
+  }
+
+  await vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Window,
+      title: `Deleting stack ${node.label}...`,
+    },
+    async () => {
+      const { id } = node;
+
+      try {
+        const resp = await lsClient.sendLsClientRequest('deleteStack', [id]);
+
+        if ('error' in resp) {
+          throw resp.error;
+        }
+
+        vscode.window.showInformationMessage(`${node.label} deleted`);
+        traceInfo(`${node.label} deleted`);
+
+        StackDataProvider.getInstance().refresh();
+      } catch (e) {
+        vscode.window.showErrorMessage(`Failed to delete component: ${e}`);
+        traceError(e);
+        console.error(e);
+      }
+    }
+  );
+};
+
 export const stackCommands = {
   refreshStackView,
   refreshActiveStack,
@@ -185,4 +261,7 @@ export const stackCommands = {
   copyStack,
   setActiveStack,
   goToStackUrl,
+  registerStack,
+  updateStack,
+  deleteStack,
 };

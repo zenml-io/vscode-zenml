@@ -185,8 +185,14 @@
         "category": "ZenML Stacks"
       },
       {
-        "command": "zenml.renameStack",
-        "title": "Rename Stack",
+        "command": "zenml.registerStack",
+        "title": "Register New Stack",
+        "icon": "$(add)",
+        "category": "ZenML Stacks"
+      },
+      {
+        "command": "zenml.updateStack",
+        "title": "Update Stack",
         "icon": "$(edit)",
         "category": "ZenML Stacks"
       },
@@ -200,13 +206,49 @@
         "command": "zenml.copyStack",
         "title": "Copy Stack",
         "icon": "$(copy)",
-        "category": "ZenML"
+        "category": "ZenML Stacks"
       },
       {
         "command": "zenml.goToStackUrl",
         "title": "Go to URL",
         "icon": "$(globe)",
-        "category": "ZenML"
+        "category": "ZenML Stacks"
+      },
+      {
+        "command": "zenml.deleteStack",
+        "title": "Delete Stack",
+        "icon": "$(trash)",
+        "category": "ZenML Stacks"
+      },
+      {
+        "command": "zenml.setComponentItemsPerPage",
+        "title": "Set Components Per Page",
+        "icon": "$(layers)",
+        "category": "ZenML Components"
+      },
+      {
+        "command": "zenml.refreshComponentView",
+        "title": "Refresh Component View",
+        "icon": "$(refresh)",
+        "category": "ZenML Components"
+      },
+      {
+        "command": "zenml.registerComponent",
+        "title": "Register New Component",
+        "icon": "$(add)",
+        "category": "ZenML Components"
+      },
+      {
+        "command": "zenml.updateComponent",
+        "title": "Update Component",
+        "icon": "$(edit)",
+        "category": "ZenML Components"
+      },
+      {
+        "command": "zenml.deleteComponent",
+        "title": "Delete Component",
+        "icon": "$(trash)",
+        "category": "ZenML Components"
       },
       {
         "command": "zenml.setPipelineRunsPerPage",
@@ -286,6 +328,11 @@
           "icon": "$(layers)"
         },
         {
+          "id": "zenmlComponentView",
+          "name": "Stack Components",
+          "icon": "$(extensions)"
+        },
+        {
           "id": "zenmlPipelineView",
           "name": "Pipeline Runs",
           "icon": "$(beaker)"
@@ -322,13 +369,33 @@
         },
         {
           "when": "stackCommandsRegistered && view == zenmlStackView",
-          "command": "zenml.setStackItemsPerPage",
+          "command": "zenml.registerStack",
           "group": "navigation@1"
         },
         {
           "when": "stackCommandsRegistered && view == zenmlStackView",
-          "command": "zenml.refreshStackView",
+          "command": "zenml.setStackItemsPerPage",
           "group": "navigation@2"
+        },
+        {
+          "when": "stackCommandsRegistered && view == zenmlStackView",
+          "command": "zenml.refreshStackView",
+          "group": "navigation@3"
+        },
+        {
+          "when": "componentCommandsRegistered && view == zenmlComponentView",
+          "command": "zenml.registerComponent",
+          "group": "navigation@1"
+        },
+        {
+          "when": "componentCommandsRegistered && view == zenmlComponentView",
+          "command": "zenml.setComponentItemsPerPage",
+          "group": "navigation@2"
+        },
+        {
+          "when": "componentCommandsRegistered && view == zenmlComponentView",
+          "command": "zenml.refreshComponentView",
+          "group": "navigation@3"
         },
         {
           "when": "pipelineCommandsRegistered && view == zenmlPipelineView",
@@ -354,7 +421,7 @@
         },
         {
           "when": "stackCommandsRegistered && view == zenmlStackView && viewItem == stack",
-          "command": "zenml.renameStack",
+          "command": "zenml.updateStack",
           "group": "inline@2"
         },
         {
@@ -366,6 +433,21 @@
           "when": "stackCommandsRegistered && view == zenmlStackView && viewItem == stack",
           "command": "zenml.goToStackUrl",
           "group": "inline@4"
+        },
+        {
+          "when": "stackCommandsRegistered && view == zenmlStackView && viewItem == stack",
+          "command": "zenml.deleteStack",
+          "group": "inline@5"
+        },
+        {
+          "when": "componentCommandsRegistered && view == zenmlComponentView && viewItem == stackComponent",
+          "command": "zenml.updateComponent",
+          "group": "inline@1"
+        },
+        {
+          "when": "componentCommandsRegistered && view == zenmlComponentView && viewItem == stackComponent",
+          "command": "zenml.deleteComponent",
+          "group": "inline@2"
         },
         {
           "when": "pipelineCommandsRegistered && view == zenmlPipelineView && viewItem == pipelineRun",
@@ -393,6 +475,7 @@
   "devDependencies": {
     "@types/dagre": "^0.7.52",
     "@types/fs-extra": "^11.0.4",
+    "@types/hbs": "^4.0.4",
     "@types/mocha": "^10.0.6",
     "@types/node": "^18.19.18",
     "@types/sinon": "^17.0.3",
@@ -420,6 +503,7 @@
     "axios": "^1.6.7",
     "dagre": "^0.8.5",
     "fs-extra": "^11.2.0",
+    "hbs": "^4.2.0",
     "svg-pan-zoom": "github:bumbu/svg-pan-zoom",
     "svgdom": "^0.1.19",
     "vscode-languageclient": "^9.0.1"

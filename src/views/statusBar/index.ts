@@ -116,17 +116,17 @@ export default class ZenMLStatusBar {
    */
   private async switchStack(): Promise<void> {
     const stackDataProvider = StackDataProvider.getInstance();
-    const { stacks } = stackDataProvider;
+    const { items } = stackDataProvider;
 
-    const containsErrors = stacks.some(stack => stack instanceof ErrorTreeItem);
+    const containsErrors = items.some(stack => stack instanceof ErrorTreeItem);
 
-    if (containsErrors || stacks.length === 0) {
+    if (containsErrors || items.length === 0) {
       window.showErrorMessage('No stacks available.');
       return;
     }
 
-    const activeStack = stacks.find(stack => stack.id === this.activeStackId);
-    const otherStacks = stacks.filter(stack => stack.id !== this.activeStackId);
+    const activeStack = items.find(stack => stack.id === this.activeStackId);
+    const otherStacks = items.filter(stack => stack.id !== this.activeStackId);
 
     const quickPickItems = [
       {

@@ -40,8 +40,57 @@ interface StackComponent {
   name: string;
   flavor: string;
   type: string;
+  config: { [key: string]: any };
 }
 
 export type StacksResponse = StacksData | ErrorMessageResponse | VersionMismatchError;
 
-export { Stack, Components, StackComponent, StacksData };
+interface ComponentsListData {
+  index: number;
+  max_size: number;
+  total_pages: number;
+  total: number;
+  items: Array<StackComponent>;
+}
+
+export type ComponentsListResponse =
+  | ComponentsListData
+  | ErrorMessageResponse
+  | VersionMismatchError;
+
+interface Flavor {
+  id: string;
+  name: string;
+  type: string;
+  logo_url: string;
+  config_schema: { [key: string]: any };
+  docs_url: string | null;
+  sdk_docs_url: string | null;
+  connector_type: string | null;
+  connector_resource_type: string | null;
+  connector_resource_id_attr: string | null;
+}
+
+interface FlavorListData {
+  index: number;
+  max_size: number;
+  total_pages: number;
+  total: number;
+  items: Flavor[];
+}
+
+export type FlavorListResponse = FlavorListData | ErrorMessageResponse | VersionMismatchError;
+
+type ComponentTypes = string[];
+
+export type ComponentTypesResponse = ComponentTypes | VersionMismatchError | ErrorMessageResponse;
+
+export {
+  Stack,
+  Components,
+  StackComponent,
+  StacksData,
+  ComponentsListData,
+  Flavor,
+  ComponentTypes,
+};

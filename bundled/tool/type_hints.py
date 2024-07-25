@@ -1,4 +1,16 @@
-from typing import Any, TypedDict, Dict, List, Union
+#  Copyright (c) ZenML GmbH 2024. All Rights Reserved.
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at:
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+#  or implied. See the License for the specific language governing
+#  permissions and limitations under the License.
+from typing import Any, TypedDict, Dict, List, Optional
 from uuid import UUID
 
 
@@ -20,8 +32,6 @@ class GraphEdge(TypedDict):
     source: str
     target: str
 
-
-
 class GraphResponse(TypedDict):
     nodes: List[GraphNode]
     edges: List[GraphEdge]
@@ -37,9 +47,9 @@ class RunStepResponse(TypedDict):
     id: str
     status: str
     author: Dict[str, str]
-    startTime: Union[str, None]
-    endTime: Union[str, None]
-    duration: Union[str, None]
+    startTime: Optional[str]
+    endTime: Optional[str]
+    duration: Optional[str]
     stackName: str
     orchestrator: Dict[str, str]
     pipeline: Dict[str, str]
@@ -71,7 +81,7 @@ class ZenmlStoreInfo(TypedDict):
 class ZenmlStoreConfig(TypedDict):
     type: str
     url: str
-    api_token: Union[str, None]
+    api_token: Optional[str]
 
 class ZenmlServerInfoResp(TypedDict):
     store_info: ZenmlStoreInfo
@@ -85,3 +95,36 @@ class ZenmlGlobalConfigResp(TypedDict):
     active_stack_id: str
     active_workspace_name: str
     store: ZenmlStoreConfig
+
+class StackComponent(TypedDict):
+    id: str
+    name: str
+    flavor: str
+    type: str
+    config: Dict[str, Any]
+
+class ListComponentsResponse(TypedDict):
+    index: int
+    max_size: int
+    total_pages: int
+    total: int
+    items: List[StackComponent]
+
+class Flavor(TypedDict):
+    id: str
+    name: str
+    type: str
+    logo_url: str
+    config_schema: Dict[str, Any]
+    docs_url: Optional[str]
+    sdk_docs_url: Optional[str]
+    connector_type: Optional[str]
+    connector_resource_type: Optional[str]
+    connector_resource_id_attr: Optional[str]
+
+class ListFlavorsResponse(TypedDict):
+    index: int
+    max_size: int
+    total_pages: int
+    total: int
+    items: List[Flavor]

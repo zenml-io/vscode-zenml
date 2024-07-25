@@ -20,6 +20,7 @@ import { registerEnvironmentCommands } from './commands/environment/registry';
 import { LSP_ZENML_CLIENT_INITIALIZED } from './utils/constants';
 import { toggleCommands } from './utils/global';
 import DagRenderer from './commands/pipelines/DagRender';
+import WebviewBase from './common/WebviewBase';
 
 export async function activate(context: vscode.ExtensionContext) {
   const eventBus = EventBus.getInstance();
@@ -48,7 +49,7 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  new DagRenderer(context);
+  WebviewBase.setContext(context);
 }
 
 /**
