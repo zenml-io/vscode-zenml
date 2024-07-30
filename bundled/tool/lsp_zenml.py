@@ -52,7 +52,7 @@ class ZenLanguageServer(LanguageServer):
             process = await asyncio.create_subprocess_exec(
                 self.python_interpreter,
                 "-c",
-                "import zenml",
+                "import zenml; print(zenml.__version__)",
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
