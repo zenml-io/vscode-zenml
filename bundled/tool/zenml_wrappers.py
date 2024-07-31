@@ -328,7 +328,6 @@ class PipelineRunsWrapper:
                     "id": str(run.id),
                     "name": run.body.pipeline.name,
                     "status": run.body.status,
-                    "version": run.body.pipeline.body.version,
                     "stackName": run.body.stack.name,
                     "startTime": (
                         run.metadata.start_time.isoformat()
@@ -396,7 +395,6 @@ class PipelineRunsWrapper:
                 "id": str(run.id),
                 "name": run.body.pipeline.name,
                 "status": run.body.status,
-                "version": run.body.pipeline.body.version,
                 "stackName": run.body.stack.name,
                 "startTime": (
                     run.metadata.start_time.isoformat()
@@ -434,7 +432,7 @@ class PipelineRunsWrapper:
         """
         try:
             run_id = args[0]
-            run = self.client.get_pipeline_run(run_id, hydrate=True)
+            run = self.client.get_pipeline_run(run_id)
             graph = Grapher(run)
             graph.build_nodes_from_steps()
             graph.build_edges_from_steps()
@@ -485,7 +483,6 @@ class PipelineRunsWrapper:
                 "pipeline": {
                     "name": run.body.pipeline.name,
                     "status": run.body.status,
-                    "version": run.body.pipeline.body.version,
                 },
                 "cacheKey": step.metadata.cache_key,
                 "sourceCode": step.metadata.source_code,
