@@ -96,5 +96,4 @@ class Grapher:
             "edges": self.edges,
             "status": self.run.body.status,
             "name": self.run.body.pipeline.name,
-            "version": self.run.body.pipeline.body.version,
         }

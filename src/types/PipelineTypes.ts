@@ -25,7 +25,6 @@ export interface PipelineRun {
   id: string;
   name: string;
   status: string;
-  version: string;
   stackName: string;
   startTime: string;
   endTime: string;
@@ -67,7 +66,6 @@ export interface PipelineRunDag {
   edges: Array<DagEdge>;
   status: string;
   name: string;
-  version: string;
 }
 
 export type PipelineRunsResponse = PipelineRunsData | ErrorMessageResponse | VersionMismatchError;

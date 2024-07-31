@@ -207,7 +207,7 @@ export default class DagRenderer extends WebviewBase {
     const graph = this.layoutDag(dagData);
     const svg = await this.drawDag(graph);
     const updateButton = dagData.status === 'running' || dagData.status === 'initializing';
-    const title = `${dagData.name} - v${dagData.version}`;
+    const title = `${dagData.name}`;
 
     // And set its HTML content
     panel.webview.html = this.getWebviewContent({
