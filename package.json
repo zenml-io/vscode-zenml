@@ -341,6 +341,10 @@
           "id": "zenmlEnvironmentView",
           "name": "Environment",
           "icon": "$(server-environment)"
+        },
+        {
+          "id": "zenmlChatbotView",
+          "name": "Chatbot"
         }
       ],
       "zenmlPanel": [
