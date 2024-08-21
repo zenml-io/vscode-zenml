@@ -142,6 +142,10 @@
     },
     "commands": [
       {
+        "command": "zenml.openChat",
+        "title": "Open ZenML Chat"
+      },
+      {
         "command": "zenml.promptForInterpreter",
         "title": "Select Python Interpreter",
         "category": "ZenML"
@@ -343,8 +347,9 @@
           "icon": "$(server-environment)"
         },
         {
-          "id": "zenmlChatbotView",
-          "name": "Chatbot"
+          "id": "zenmlChatView",
+          "name": "Chat",
+          "type": "webview"
         }
       ],
       "zenmlPanel": [
@@ -356,6 +361,11 @@
     },
     "menus": {
       "view/title": [
+        {
+          "command": "zenml.openChat",
+          "when": "view == zenmlChatView",
+          "group": "navigation"
+        },
         {
           "when": "serverCommandsRegistered && view == zenmlServerView",
           "command": "zenml.connectServer",

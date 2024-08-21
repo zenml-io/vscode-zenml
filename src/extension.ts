@@ -41,6 +41,12 @@ export async function activate(context: vscode.ExtensionContext) {
   });
   registerEnvironmentCommands(context);
 
+
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider('zenmlChatView', new ChatViewProvider(context))
+  );
+
+
   await ZenExtension.activate(context, lsClient);
 
   context.subscriptions.push(
@@ -65,4 +71,71 @@ export async function deactivate(): Promise<void> {
     EventBus.getInstance().emit('lsClientReady', false);
   }
   DagRenderer.getInstance()?.deactivate();
+}
+
+class ChatViewProvider implements vscode.WebviewViewProvider {
+  private _view?: vscode.WebviewView;
+  private messages: string[] = [];  // Array to store chat messages
+
+  constructor(private readonly context: vscode.ExtensionContext) {}
+
+  resolveWebviewView(
+      webviewView: vscode.WebviewView,
+      context: vscode.WebviewViewResolveContext,
+      _token: vscode.CancellationToken
+  ) {
+      this._view = webviewView;
+
+      webviewView.webview.options = {
+          enableScripts: true
+      };
+
+      webviewView.webview.html = this.getWebviewContent(webviewView.webview, this.context.extensionUri);
+    webviewView.webview.onDidReceiveMessage((message) => {
+      if (message.command === 'sendMessage') {
+        this.addMessage(message.text);
+      }
+    });
+  }
+
+  // Generate the Webview content
+  getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri): string {
+    const cssUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'chat.css'));
+    const chatLogHtml = this.messages.map(msg => `<p>${msg}</p>`).join('');
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZenML Chat</title>
+  <link href="${cssUri}" rel="stylesheet" />
+</head>
+<body>
+  <div id="chatLog">${chatLogHtml}</div>
+  <div id="inputContainer">
+      <input type="text" id="messageInput" placeholder="Type your message here" />
+      <button id="sendMessage">Send</button>
+  </div>
+  <script>
+      const vscode = acquireVsCodeApi();
+      
+      document.getElementById('sendMessage').addEventListener('click', () => {
+          const messageInput = document.getElementById('messageInput');
+          const message = messageInput.value;
+          if (message.trim()) {
+              vscode.postMessage({ command: 'sendMessage', text: message });
+              messageInput.value = ''; // Clear input after sending
+          }
+      });
+  </script>
+</body>
+</html>`;
+  }
+
+  // Add a new message to the chat log
+  addMessage(message: string) {
+      this.messages.push(message);  // Add the message to the log
+      this._view && (this._view.webview.html = this.getWebviewContent(this._view.webview, this.context.extensionUri)); // Re-render the Webview
+  }
 }
