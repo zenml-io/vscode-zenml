@@ -18,6 +18,7 @@ import {
   ConfigurationScope,
   Disposable,
   DocumentSelector,
+  ExtensionContext,
   languages,
   LanguageStatusItem,
   LogOutputChannel,
@@ -68,4 +69,15 @@ export function createLanguageStatusItem(
   selector: DocumentSelector
 ): LanguageStatusItem {
   return languages.createLanguageStatusItem(id, selector);
+}
+
+export async function getSecret(context: ExtensionContext, key: string) {
+  const secret = await context.secrets.get(key);
+
+  if (secret === undefined) {
+    console.error(`The requested secret with key '${key}' does not exist.`);
+    return;
+  }
+
+  return secret;
 }
