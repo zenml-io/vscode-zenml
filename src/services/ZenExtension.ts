@@ -42,7 +42,6 @@ import { LSClient } from './LSClient';
 import { toggleCommands } from '../utils/global';
 import { PanelDataProvider } from '../views/panel/panelView/PanelDataProvider';
 import { ComponentDataProvider } from '../views/activityBar/componentView/ComponentDataProvider';
-import { ChatbotDataProvider } from '../views/activityBar/chatbotView/chatbotDataProvider'
 import { registerComponentCommands } from '../commands/components/registry';
 
 export interface IServerInfo {
@@ -67,7 +66,6 @@ export class ZenExtension {
     ['zenmlComponentView', ComponentDataProvider.getInstance()],
     ['zenmlPipelineView', PipelineDataProvider.getInstance()],
     ['zenmlPanelView', PanelDataProvider.getInstance()],
-    // ['zenmlChatbotView', ChatbotDataProvider.getInstance()],
   ]);
 
   private static registries = [
