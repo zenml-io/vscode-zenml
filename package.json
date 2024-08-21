@@ -297,6 +297,18 @@
         "title": "Restart LSP Server",
         "icon": "$(debug-restart)",
         "category": "ZenML Environment"
+      },
+      {
+        "command": "zenml.registerOpenAIAPIKey",
+        "title": "Register OpenAI API Key",
+        "icon": "$(add)",
+        "category": "ZenML Secrets"
+      },
+      {
+        "command": "zenml.deleteOpenAIAPIKey",
+        "title": "Delete OpenAI API Key",
+        "icon": "$(trash)",
+        "category": "ZenML Secrets"
       }
     ],
     "viewsContainers": {
