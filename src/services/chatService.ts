@@ -1,3 +1,5 @@
+import { ServerDataProvider } from '../views/activityBar';
+
 export class ChatService {
     private static instance: ChatService;
     private tokenjs: any; // Update the type accordingly
@@ -23,7 +25,7 @@ export class ChatService {
             const { TokenJS } = await import('token.js');
 
             // TODO find another way to access the apiKey, instead of having it hardcoded
-            const apiKey = 'GEMINI_API_KEY_GOES_HERE';
+            const apiKey = '';
             if (!apiKey) {
                 throw new Error('GEMINI_API_KEY is not set');
             }
@@ -42,11 +44,28 @@ export class ChatService {
             if (!this.tokenjs) {
                 throw new Error('ChatService not initialized properly');
             }
+            
+            let contextMessages = [
+                { role: 'system', content: 'You are an AI assistant helping with ZenML tasks.' }
+            ];
+
+            if (message.includes('server')) {
+                let server = ServerDataProvider.getInstance();
+                let status = server.getCurrentStatus();
+                console.log("Server Information: ", server);
+                console.log("Server Status: ", JSON.stringify(status));
+                contextMessages.push({ role: 'system', content: "This the user's ZenML server information: " + JSON.stringify(status) });
+            }
+
+            const allMessages = [
+                ...contextMessages,
+                { role: 'user', content: message }
+            ];
 
             const completion = await this.tokenjs.chat.completions.create({
                 provider: 'gemini',
                 model: 'gemini-1.5-flash',
-                messages: [{ role: 'user', content: message }],
+                messages: allMessages,
             });
             return completion.choices[0]?.message?.content || 'No content';
         } catch (error) {
