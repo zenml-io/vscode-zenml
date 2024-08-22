@@ -31,10 +31,6 @@ export const registerSecretsCommands = (context: ExtensionContext) => {
         'zenml.registerOpenAIAPIKey',
         async () => await secretsCommands.registerOpenAIAPIKey(context)
       ),
-      registerCommand(
-        'zenml.deleteOpenAIAPIKey',
-        async () => await secretsCommands.deleteOpenAIAPIKey(context)
-      ),
     ];
 
     registeredCommands.forEach(cmd => {

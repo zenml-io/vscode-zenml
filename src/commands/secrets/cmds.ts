@@ -39,18 +39,6 @@ const registerOpenAIAPIKey = async (context: ExtensionContext) => {
   vscode.window.showInformationMessage('OpenAI API key stored successfully.');
 };
 
-const deleteOpenAIAPIKey = async (context: ExtensionContext) => {
-  const apiKey = await context.secrets.get('OPENAI_API_KEY');
-
-  if (apiKey === undefined) {
-    vscode.window.showInformationMessage('No OpenAI API key exists.');
-    return;
-  }
-  await context.secrets.delete('OPENAI_API_KEY');
-  vscode.window.showInformationMessage('OpenAI API key successfully removed.');
-};
-
 export const secretsCommands = {
   registerOpenAIAPIKey,
-  deleteOpenAIAPIKey,
 };
