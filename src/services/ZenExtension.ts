@@ -44,6 +44,7 @@ import { toggleCommands } from '../utils/global';
 import { PanelDataProvider } from '../views/panel/panelView/PanelDataProvider';
 import { ComponentDataProvider } from '../views/activityBar/componentView/ComponentDataProvider';
 import { registerComponentCommands } from '../commands/components/registry';
+import { registerAICommands } from '../commands/ai/registry';
 
 export interface IServerInfo {
   name: string;
@@ -75,6 +76,7 @@ export class ZenExtension {
     registerComponentCommands,
     registerPipelineCommands,
     registerSecretsCommands,
+    registerAICommands,
   ];
 
   /**
