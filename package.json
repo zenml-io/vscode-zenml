@@ -520,6 +520,7 @@
     "hbs": "^4.2.0",
     "svg-pan-zoom": "github:bumbu/svg-pan-zoom",
     "svgdom": "^0.1.19",
+    "token.js": "^0.4.3",
     "vscode-languageclient": "^9.0.1"
   }
 }
