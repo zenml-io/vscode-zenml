@@ -28,8 +28,8 @@ export const registerSecretsCommands = (context: ExtensionContext) => {
   try {
     const registeredCommands = [
       registerCommand(
-        'zenml.registerOpenAIAPIKey',
-        async () => await secretsCommands.registerOpenAIAPIKey(context)
+        'zenml.registerLLMAPIKey',
+        async () => await secretsCommands.registerLLMAPIKey(context)
       ),
     ];
 
