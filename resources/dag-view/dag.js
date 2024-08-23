@@ -90,14 +90,14 @@ import svgPanZoom from 'svg-pan-zoom';
     closeContextMenu();
     evt.preventDefault();
 
-    const stepId = evt.target.closest('[data-stepid]')?.dataset.stepid;
-    const artifactId = evt.target.closest('[data-artifactid]')?.dataset.artifactid;
+    const step = evt.target.closest('[data-stepid]');
+    const artifact = evt.target.closest('[data-artifactid]');
 
-    if (!stepId && !artifactId) {
+    if (!step && !artifact) {
       return;
     }
 
-    openContextMenu(stepId ? 'step' : 'artifact', stepId || artifactId, evt.pageX, evt.pageY);
+    openContextMenu(step ? 'step' : 'artifact', step || artifact, evt.pageX, evt.pageY);
   });
 
   window.addEventListener('message', evt => {
@@ -105,13 +105,19 @@ import svgPanZoom from 'svg-pan-zoom';
     if (evt.data === 'AI Query Complete') closeContextMenu();
   });
 
-  function openContextMenu(command, id, x, y) {
+  function openContextMenu(command, component, x, y) {
+    const id = component.dataset.id;
+
     const CONTEXT_MENU_HTML = `
       <div id="context-menu">
         <ul>
           <li id="inspect">Inspect</li>
           <li id="open-dashboard-url">Open Dashboard URL</li>
-          ${command === 'step' ? `<li id="suggest-fix">Suggest Fix</li>` : ''}
+          ${
+            command === 'step' && component.querySelector('svg.failed')
+              ? `<li id="suggest-fix">Suggest Fix</li>`
+              : ''
+          }
         </ul>
       </div>`;
 
