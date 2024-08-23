@@ -42,11 +42,9 @@ export async function activate(context: vscode.ExtensionContext) {
   });
   registerEnvironmentCommands(context);
 
-
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider('zenmlChatView', new ChatViewProvider(context))
   );
-
 
   await ZenExtension.activate(context, lsClient);
 
@@ -74,34 +72,35 @@ export async function deactivate(): Promise<void> {
   DagRenderer.getInstance()?.deactivate();
 }
 
-
-
 // TODO: ChatViewProvider should be moved into it's own folder/file in the src/views/activityBar folder
-// 
+//
 class ChatViewProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
-  private messages: string[] = [];  // Array to store chat messages
+  private messages: string[] = []; // Array to store chat messages
   private chatService: ChatService = ChatService.getInstance(); // ChatService instance
 
   constructor(private readonly context: vscode.ExtensionContext) {}
 
   resolveWebviewView(
-      webviewView: vscode.WebviewView,
-      context: vscode.WebviewViewResolveContext,
-      _token: vscode.CancellationToken
+    webviewView: vscode.WebviewView,
+    context: vscode.WebviewViewResolveContext,
+    _token: vscode.CancellationToken
   ) {
-      this._view = webviewView;
+    this._view = webviewView;
 
-      webviewView.webview.options = {
-          enableScripts: true
-      };
+    webviewView.webview.options = {
+      enableScripts: true,
+    };
 
-      webviewView.webview.html = this.getWebviewContent(webviewView.webview, this.context.extensionUri);
-      webviewView.webview.onDidReceiveMessage(async (message) => {
-        if (message.command === 'sendMessage') {
-          await this.addMessage(message.text);
-        }
-      });
+    webviewView.webview.html = this.getWebviewContent(
+      webviewView.webview,
+      this.context.extensionUri
+    );
+    webviewView.webview.onDidReceiveMessage(async message => {
+      if (message.command === 'sendMessage') {
+        await this.addMessage(message.text);
+      }
+    });
   }
 
   // Generate the Webview content
@@ -141,16 +140,21 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
 
   // Add a new message to the chat log and send to Gemini
   async addMessage(message: string) {
-      this.messages.push(`User: ${message}`);  // Add the message to the log
+    this.messages.push(`User: ${message}`); // Add the message to the log
 
-      // Get the bot's response and add it to the log
-      const botResponse = await this.chatService.getChatResponse(message);
-      this.messages.push(`Gemini: ${botResponse}`);
+    // Get the bot's response and add it to the log
+    const botResponse = await this.chatService.getChatResponse(message);
+    this.messages.push(`Gemini: ${botResponse}`);
 
-      // Re-render the Webview content
-      this._view && (this._view.webview.html = this.getWebviewContent(this._view.webview, this.context.extensionUri)); // Re-render the Webview
+    // Re-render the Webview content
+    this._view &&
+      (this._view.webview.html = this.getWebviewContent(
+        this._view.webview,
+        this.context.extensionUri
+      )); // Re-render the Webview
 
-      // Post the bot's response back to the webview
-      this._view && this._view.webview.postMessage({ command: 'receiveMessage', text: `Gemini: ${botResponse}` });
+    // Post the bot's response back to the webview
+    this._view &&
+      this._view.webview.postMessage({ command: 'receiveMessage', text: `Gemini: ${botResponse}` });
   }
 }
