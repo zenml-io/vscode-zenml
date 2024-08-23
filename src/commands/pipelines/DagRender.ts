@@ -22,6 +22,7 @@ import { JsonObject } from '../../views/panel/panelView/PanelTreeItem';
 import { PanelDataProvider } from '../../views/panel/panelView/PanelDataProvider';
 import Panels from '../../common/panels';
 import WebviewBase from '../../common/WebviewBase';
+import { aiCommands } from '../ai/cmds';
 
 const ROOT_PATH = ['resources', 'dag-view'];
 const CSS_FILE = 'dag.css';
@@ -134,10 +135,13 @@ export default class DagRenderer extends WebviewBase {
   }
 
   private async fixBrokenStep(id: string): Promise<void> {
+    if (!WebviewBase.context) return;
+
+    const response = await aiCommands.sendOpenAIRequest(WebviewBase.context);
     const myScheme = 'fix-my-pipeline';
     const myProvider = new (class implements vscode.TextDocumentContentProvider {
       provideTextDocumentContent(uri: vscode.Uri): string {
-        return id;
+        return response.choices[0].message.content || 'Something went wrong';
       }
     })();
 
