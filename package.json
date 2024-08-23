@@ -512,12 +512,14 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
+    "@langchain/google-genai": "^0.0.26",
     "@svgdotjs/svg.js": "^3.2.4",
     "@vscode/python-extension": "^1.0.5",
     "axios": "^1.6.7",
     "dagre": "^0.8.5",
     "fs-extra": "^11.2.0",
     "hbs": "^4.2.0",
+    "langchain": "^0.2.16",
     "svg-pan-zoom": "github:bumbu/svg-pan-zoom",
     "svgdom": "^0.1.19",
     "token.js": "^0.4.3",

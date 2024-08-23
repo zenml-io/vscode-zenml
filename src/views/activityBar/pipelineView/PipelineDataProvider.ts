@@ -34,6 +34,7 @@ export class PipelineDataProvider extends PaginatedDataProvider {
   private static instance: PipelineDataProvider | null = null;
   private eventBus = EventBus.getInstance();
   private zenmlClientReady = false;
+  private pipelineData: PipelineTreeItem[] = [];
 
   constructor() {
     super();
@@ -145,7 +146,7 @@ export class PipelineDataProvider extends PaginatedDataProvider {
           totalPages: total_pages,
         };
 
-        return runs.map((run: PipelineRun) => {
+        this.pipelineData = runs.map((run: PipelineRun) => {
           const formattedStartTime = new Date(run.startTime).toLocaleString();
           const formattedEndTime = run.endTime ? new Date(run.endTime).toLocaleString() : 'N/A';
 
@@ -160,6 +161,8 @@ export class PipelineDataProvider extends PaginatedDataProvider {
 
           return new PipelineTreeItem(run, run.id, children);
         });
+
+        return this.pipelineData
       } else {
         console.error(`Unexpected response format:`, result);
         return [];
@@ -174,4 +177,8 @@ export class PipelineDataProvider extends PaginatedDataProvider {
       ];
     }
   }
-}
+
+  public getPipelineData(): PipelineTreeItem[]{
+    return this.pipelineData
+  }
+} 
