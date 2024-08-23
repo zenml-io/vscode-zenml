@@ -139,7 +139,7 @@ export class EnvironmentDataProvider implements TreeDataProvider<TreeItem> {
   }
 
   public getEnvironmentData(): EnvironmentItem[] {
-    return this.items
+    return this.items;
   }
 
   /**

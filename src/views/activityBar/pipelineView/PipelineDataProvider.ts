@@ -162,7 +162,7 @@ export class PipelineDataProvider extends PaginatedDataProvider {
           return new PipelineTreeItem(run, run.id, children);
         });
 
-        return this.pipelineData
+        return this.pipelineData;
       } else {
         console.error(`Unexpected response format:`, result);
         return [];
@@ -178,7 +178,7 @@ export class PipelineDataProvider extends PaginatedDataProvider {
     }
   }
 
-  public getPipelineData(): PipelineTreeItem[]{
-    return this.pipelineData
+  public getPipelineData(): PipelineTreeItem[] {
+    return this.pipelineData;
   }
-} 
+}
