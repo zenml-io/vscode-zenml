@@ -125,8 +125,30 @@ export default class DagRenderer extends WebviewBase {
         case 'stepUrl':
           this.openStepUrl(runUrl);
           break;
+
+        case 'stepFix':
+          this.fixBrokenStep(message.id);
+          break;
       }
     };
+  }
+
+  private async fixBrokenStep(id: string): Promise<void> {
+    const myScheme = 'fix-my-pipeline';
+    const myProvider = new (class implements vscode.TextDocumentContentProvider {
+      provideTextDocumentContent(uri: vscode.Uri): string {
+        return id;
+      }
+    })();
+
+    vscode.workspace.registerTextDocumentContentProvider(myScheme, myProvider);
+
+    const uri = vscode.Uri.parse('fix-my-pipeline:' + id);
+    const doc = await vscode.workspace.openTextDocument(uri);
+    await vscode.window.showTextDocument(doc, {
+      preview: false,
+      viewColumn: vscode.ViewColumn.Beside,
+    });
   }
 
   private async loadStepDataIntoPanel(id: string, runUrl: string): Promise<void> {

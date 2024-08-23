@@ -14,6 +14,7 @@ import svgPanZoom from 'svg-pan-zoom';
 
 (() => {
   const dag = document.querySelector('#dag');
+  let contextMenu = null;
   const panZoom = svgPanZoom(dag);
   panZoom.enableControlIcons();
   panZoom.setMaxZoom(40);
@@ -52,6 +53,8 @@ import svgPanZoom from 'svg-pan-zoom';
   });
 
   dag.addEventListener('click', evt => {
+    closeContextMenu();
+
     const stepId = evt.target.closest('[data-stepid]')?.dataset.stepid;
     const artifactId = evt.target.closest('[data-artifactid]')?.dataset.artifactid;
 
@@ -82,6 +85,56 @@ import svgPanZoom from 'svg-pan-zoom';
       vscode.postMessage({ command: 'artifact', id: artifactId });
     }
   });
+
+  dag.addEventListener('contextmenu', evt => {
+    closeContextMenu();
+    evt.preventDefault();
+
+    const stepId = evt.target.closest('[data-stepid]')?.dataset.stepid;
+    const artifactId = evt.target.closest('[data-artifactid]')?.dataset.artifactid;
+
+    if (!stepId && !artifactId) {
+      return;
+    }
+
+    openContextMenu(stepId ? 'step' : 'artifact', stepId || artifactId, evt.pageX, evt.pageY);
+  });
+
+  function openContextMenu(command, id, x, y) {
+    const CONTEXT_MENU_HTML = `
+      <div id="context-menu">
+        <ul>
+          <li id="inspect">Inspect</li>
+          <li id="open-dashboard-url">Open Dashboard URL</li>
+          ${command === 'step' ? '<li id="suggest-fix">Suggest Fix</li>' : ''}
+        </ul>
+      </div>`;
+
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = CONTEXT_MENU_HTML.trim();
+    contextMenu = tempDiv.firstChild;
+
+    contextMenu.style.top = `${y}px`;
+    contextMenu.style.left = `${x}px`;
+
+    contextMenu.querySelector('#inspect').addEventListener('click', () => {
+      vscode.postMessage({ command, id });
+    });
+    contextMenu.querySelector('#open-dashboard-url').addEventListener('click', () => {
+      vscode.postMessage({ command: `${command}Url`, id });
+    });
+    contextMenu.querySelector('#suggest-fix')?.addEventListener('click', () => {
+      vscode.postMessage({ command: `stepFix`, id });
+    });
+    contextMenu.addEventListener('click', closeContextMenu);
+
+    document.body.insertBefore(contextMenu, document.body.firstChild);
+  }
+
+  function closeContextMenu() {
+    contextMenu?.remove();
+    contextMenu = null;
+  }
 
   const nodes = [...document.querySelectorAll('.node > div')];
 
