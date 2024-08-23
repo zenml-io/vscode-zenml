@@ -28,14 +28,13 @@ const registerLLMAPIKey = async (context: ExtensionContext) => {
 
   if (selectedOption === undefined) {
     vscode.window.showWarningMessage('API key input was canceled.');
-    return;
+    return undefined;
   }
 
   const model = selectedOption.label;
   const secretKey = `${model.toUpperCase()}_API_KEY`;
 
   let apiKey = await context.secrets.get(secretKey);
-  console.log(secretKey, apiKey);
 
   if (apiKey) {
     apiKey = await vscode.window.showInputBox({
