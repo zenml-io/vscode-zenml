@@ -1,0 +1,43 @@
+.DS_Store
+Thumbs.db
+.vscode-test/
+.idea/
+.eslintcache
+lib-cov
+*.log
+*.log*
+pids
+
+# Node
+.npm/
+node_modules/
+npm-debug.log
+
+# Build outputs
+dist/
+out/
+build/
+*.tsbuildinfo
+.history/
+dag-packed.js
+dag-packed.js.map
+
+# env
+.env
+.env*
+
+# Output of 'npm pack'
+*.tgz
+
+# mypy
+.mypy_cache/
+
+# From vscode-python-tools-extension-template
+*.vsix
+.venv/
+.vs/
+.nox/
+bundled/libs/
+**/__pycache__
+**/.pytest_cache
+**/.vs

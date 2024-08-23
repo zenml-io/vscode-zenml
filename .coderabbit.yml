@@ -1,0 +1,28 @@
+language: "en"
+early_access: false
+reviews:
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: true
+  review_status: true
+  collapse_walkthrough: false
+  path_filters:
+  - "!**/.xml"
+  path_instructions:
+  - path: "**/*.js"
+    instructions: "Review the JavaScript code for conformity with the Google JavaScript style guide, highlighting any deviations."
+  - path: "**/*.ts"
+    instructions: "Review the Typescript code for conformity with industry standards and best practices, highlighting any deviations."
+  - path: "**/*.py"
+    instructions: |
+      "Review the Python code for conformity with Python best practices and industry standards, highlighting any deviations."
+  auto_review:
+    enabled: true
+    ignore_title_keywords:
+    - "WIP"
+    - "DO NOT MERGE"
+    drafts: false
+    base_branches:
+    - "develop"
+chat:
+  auto_reply: true
