@@ -10,16 +10,18 @@ import {
 } from '../views/activityBar';
 import { ComponentDataProvider } from '../views/activityBar/componentView/ComponentDataProvider';
 import { EnvironmentDataProvider } from '../views/activityBar/environmentView/EnvironmentDataProvider';
+import { request } from 'axios';
 // import { PanelDataProvider } from '../views/panel/panelView/PanelDataProvider';
 
 export class ChatService {
   private static instance: ChatService;
   private initialized: Promise<void>;
   private tokenjs: any;
-  private allMessages: string[];
+  private allMessages: object[];
 
   private constructor() {
     this.initialized = this.initialize();
+    this.allMessages = [];
   }
 
   public static getInstance(): ChatService {
@@ -31,7 +33,7 @@ export class ChatService {
 
   private async initialize() {
     // TODO find another way to access the apiKey, instead of having it hardcoded
-    const apiKey = '';
+    const apiKey = '***';
     if (!apiKey) {
       throw new Error('GEMINI_API_KEY is not set');
     }
@@ -49,34 +51,17 @@ export class ChatService {
     //tests
     //Stack Data Provider and Panel Data Provider need to be implemented
     try {
-      let context = '';
+      this.addUserMessage(message);
       if (message.includes('environment')) {
-        context += this.getEnvironmentData();
+        this.addContext('environment');
       }
-      if (message.includes('pipeline')) {
-        context += this.getPipelineData();
-      }
-      if (message.includes('stack')) {
-        context += this.getStackComponentData();
-        context += this.getStackData();
-      }
-      if (message.includes('server')) {
-        context += this.getServerStatus();
-      }
-      //   if (message.includes('panel')) {
-      //     this.getPanelData();
-      //   }
 
       const completion = await this.tokenjs.chat.completions.create({
         provider: 'gemini',
         model: 'gemini-1.5-flash',
-        messages: [
-          {
-            role: 'user',
-            content: message + `Use this context to answer the question: ${context}`,
-          },
-        ],
+        messages: this.allMessages,
       });
+
       return completion.choices[0]?.message?.content || 'No content';
     } catch (error) {
       console.error('Error with Gemini API:', error);
@@ -84,21 +69,45 @@ export class ChatService {
     }
   }
 
-  // private getContext() {
 
-  // }
-
-  private addMessage(message: string): void {
-    this.allMessages.push(message);
+  private addContext(requestedContext: string): void {
+    let systemMessage = { role: 'system', content: "Use this context to answer the question. " };
+    if (requestedContext === 'server') {
+        systemMessage.content += this.getServerData();
+    }
+    if (requestedContext === 'environment') {
+        systemMessage.content += this.getEnvironmentData();
+    }
+    if (requestedContext === 'pipeline') {
+        systemMessage.content += this.getPipelineData();
+    }
+    if (requestedContext === 'stack_components') {
+        systemMessage.content += this.getStackComponentData();
+    }
+    if (requestedContext === 'stack') {
+        systemMessage.content += this.getStackData();
+    }
+    this.allMessages.push(systemMessage);
   }
 
-  private getMessages(): string[] {}
+//   private addSystemMessage(message: string): void {
+//     let systemMessage = { role: 'system', content: message };
+//     this.allMessages.push(systemMessage);
+//   }
+
+  private addUserMessage(message: string): void {
+    let userMessage = { role: 'user', content: message };
+    this.allMessages.push(userMessage);
+  }
+
+//   private getRecentMessages(): string[] {
+//   }
 
   /**
    *
    * @returns A parsed string containing the information of the server.
    */
-  private getServerStatus(): string {
+  private getServerData(): string {
     let serverData = ServerDataProvider.getInstance().getCurrentStatus();
     let contextString =
       `URL: ${serverData.url}\n` +
