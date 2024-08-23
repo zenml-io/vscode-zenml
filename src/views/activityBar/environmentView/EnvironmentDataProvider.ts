@@ -37,6 +37,7 @@ export class EnvironmentDataProvider implements TreeDataProvider<TreeItem> {
   private lsClientStatus: State = State.Stopped;
   private zenmlClientReady: boolean = false;
   private zenmlInstallationStatus: LSNotificationIsZenMLInstalled | null = null;
+  private items: EnvironmentItem[] = [];
 
   private eventBus = EventBus.getInstance();
 
@@ -133,7 +134,12 @@ export class EnvironmentDataProvider implements TreeDataProvider<TreeItem> {
       ...(await createInterpreterDetails()),
       ...(await createWorkspaceSettingsItems()),
     ];
+    this.items = items;
     return items;
+  }
+
+  public getEnvironmentData(): EnvironmentItem[] {
+    return this.items
   }
 
   /**

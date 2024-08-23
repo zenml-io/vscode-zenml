@@ -1,15 +1,24 @@
-import { ServerDataProvider } from '../views/activityBar';
+import { PipelineDataProvider, PipelineRunTreeItem, PipelineTreeItem, ServerDataProvider } from '../views/activityBar';
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { InMemoryChatMessageHistory } from "@langchain/core/chat_history";
+import { ChatPromptTemplate } from "@langchain/core/prompts";
+import { RunnableWithMessageHistory } from "@langchain/core/runnables";
+import { MessageContent } from '@langchain/core/messages';
+import { StackComponentTreeItem } from '../views/activityBar';
+import * as vscode from 'vscode';
+import { ComponentDataProvider } from '../views/activityBar/componentView/ComponentDataProvider';
+import { EnvironmentDataProvider } from '../views/activityBar/environmentView/EnvironmentDataProvider';
 
 export class ChatService {
     private static instance: ChatService;
-    private tokenjs: any; // Update the type accordingly
+    private messageHistories: Record<string, InMemoryChatMessageHistory> = {};
+    private sessionId: string = "abc42";
     private initialized: Promise<void>;
+    private model!: ChatGoogleGenerativeAI;
 
     private constructor() {
-        // handling initialization as promise
-        this.initialized = this.initialize();
-    }
-
+      this.initialized = this.initialize();
+  }
 
     public static getInstance(): ChatService {
         if (!ChatService.instance) {
@@ -19,58 +28,116 @@ export class ChatService {
     }
 
     private async initialize() {
-        console.log('starting to initialize chatservice');
-        try {
-            // Use dynamic import to load the ESM module
-            const { TokenJS } = await import('token.js');
-
-            // TODO find another way to access the apiKey, instead of having it hardcoded
-            const apiKey = '';
-            if (!apiKey) {
-                throw new Error('GEMINI_API_KEY is not set');
-            }
-            this.tokenjs = new TokenJS({ apiKey });
-        } catch (error) {
-            console.error('Error initializing TokenJS:', error);
-            this.tokenjs = null; // ensure tokenjs is null if initialization fails
-        }
+      this.model = new ChatGoogleGenerativeAI({
+        model: "gemini-1.5-flash",
+        apiKey: ""
+      });
     }
 
-    public async getChatResponse(message: string): Promise<string> {
+    public async getChatResponse(message: string): Promise<MessageContent> {
         try {
-            // wait for initialization to complete
-            await this.initialize();
+          let context = ''
+          if (message.includes('environment')) {
+            context += this.getEnvironmentData()
+          }
+          if (message.includes('pipeline')) {
+            context += this.getPipelineData()
+          }
+          if (message.includes('stack')) {
+            context += this.getStackComponentData()
+          }
+          if (message.includes('server')) {
+            context += this.getServerStatus()
+          }
 
-            if (!this.tokenjs) {
-                throw new Error('ChatService not initialized properly');
-            }
-            
-            let contextMessages = [
-                { role: 'system', content: 'You are an AI assistant helping with ZenML tasks.' }
-            ];
+          const prompt = ChatPromptTemplate.fromMessages([
+            [
+              "system",
+              `You are a helpful assistant who remembers all details the user shares with you.`,
+            ],
+            ["placeholder", "{chat_history}"],
+            ["human", "{input}"],
+          ]);
 
-            if (message.includes('server')) {
-                let server = ServerDataProvider.getInstance();
-                let status = server.getCurrentStatus();
-                console.log("Server Information: ", server);
-                console.log("Server Status: ", JSON.stringify(status));
-                contextMessages.push({ role: 'system', content: "This the user's ZenML server information: " + JSON.stringify(status) });
-            }
+          const chain = prompt.pipe(this.model);
 
-            const allMessages = [
-                ...contextMessages,
-                { role: 'user', content: message }
-            ];
+          const withMessageHistory = new RunnableWithMessageHistory({
+            runnable: chain,
+            getMessageHistory: async (sessionId) => {
+              if (this.messageHistories[sessionId] === undefined) {
+                this.messageHistories[sessionId] = new InMemoryChatMessageHistory();
+              }
+              return this.messageHistories[sessionId];
+            },
+            inputMessagesKey: "input",
+            historyMessagesKey: "chat_history",
+          });
 
-            const completion = await this.tokenjs.chat.completions.create({
-                provider: 'gemini',
-                model: 'gemini-1.5-flash',
-                messages: allMessages,
-            });
-            return completion.choices[0]?.message?.content || 'No content';
+          const config = {
+            configurable: {
+              sessionId: this.sessionId,
+            },
+          };
+          
+          const response = await withMessageHistory.invoke(
+            {
+              input: (message + `Here is contexual information for reference: ${context}`),
+            },
+            config
+          );
+
+          return response.content;
         } catch (error) {
             console.error('Error with Gemini API:', error);
             return 'Error: Unable to get a response from Gemini.';
         }
     }
+
+  // private getContext() {
+
+  // }
+
+  private getServerStatus(): string {
+    return (`Server Status Data:\n` + JSON.stringify(ServerDataProvider.getInstance().getCurrentStatus()) + '\n');
+  }
+
+  private getStackComponentData(): string {
+    let components = ComponentDataProvider.getInstance().items;
+    let componentData = components.map((item: vscode.TreeItem) => {
+      if (item instanceof StackComponentTreeItem) {
+        let { name, type, flavor, id } = item.component;
+        let stackId = item.stackId;
+        let idInfo = stackId ? ` - Stack ID: ${stackId}` : '';
+        let componentId = ` - Component ID: ${id}`;
+        return `Name: ${name}, Type: ${type}, Flavor: ${flavor}${componentId}${idInfo}`;
+      } else {
+        return `Label: ${item.label}, Description: ${item.description || 'N/A'}`;
+      }
+    }).join('\n');
+    return `Stack Component Data:\n${componentData}\n`;
+  }
+
+  private getEnvironmentData(): string {
+    let data = EnvironmentDataProvider.getInstance().getEnvironmentData()
+    let contextString = data.map((item) => `${item.label}: ${item.description || ''}`).join('\n');
+    return `Environment Data:\n${contextString}\n`;
+  }
+
+  private getPipelineData(): string {
+    let pipelineData = PipelineDataProvider.getInstance().getPipelineData()
+    let contextString = pipelineData.map((pipelineRun: PipelineTreeItem) => {
+      return (`Pipeline Run:\n` + pipelineRun.children?.map((item: PipelineRunTreeItem) => {
+        return `${item.tooltip}`
+      }).join('\n') + `\n${pipelineRun.description}`)
+    }).join('\n')
+    return `Pipeline Data:\n${contextString}\n`;
+  }
+
+  // private getStackData(): string {
+
+  // }
+
+  // private getPanelData(): {
+
+  // }
 }

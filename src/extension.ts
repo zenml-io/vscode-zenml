@@ -147,7 +147,6 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
       const botResponse = await this.chatService.getChatResponse(message);
       this.messages.push(`Gemini: ${botResponse}`);
 
-
       // Re-render the Webview content
       this._view && (this._view.webview.html = this.getWebviewContent(this._view.webview, this.context.extensionUri)); // Re-render the Webview
 
