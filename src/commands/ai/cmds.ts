@@ -34,8 +34,7 @@ const sendOpenAIRequest = async (context: ExtensionContext) => {
     ],
   });
 
-  const content = completion.choices[0].message.content;
-  console.log(content);
+  return completion;
 };
 
 export const aiCommands = {
