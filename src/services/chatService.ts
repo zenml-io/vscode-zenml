@@ -1,24 +1,18 @@
 import { PipelineDataProvider, PipelineRunTreeItem, PipelineTreeItem, ServerDataProvider } from '../views/activityBar';
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { InMemoryChatMessageHistory } from "@langchain/core/chat_history";
-import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { RunnableWithMessageHistory } from "@langchain/core/runnables";
-import { MessageContent } from '@langchain/core/messages';
 import { StackComponentTreeItem } from '../views/activityBar';
 import * as vscode from 'vscode';
 import { ComponentDataProvider } from '../views/activityBar/componentView/ComponentDataProvider';
 import { EnvironmentDataProvider } from '../views/activityBar/environmentView/EnvironmentDataProvider';
+import { TokenJS } from 'token.js'
 
 export class ChatService {
     private static instance: ChatService;
-    private messageHistories: Record<string, InMemoryChatMessageHistory> = {};
-    private sessionId: string = "abc42";
     private initialized: Promise<void>;
-    private model!: ChatGoogleGenerativeAI;
+    private tokenjs: any;
 
     private constructor() {
       this.initialized = this.initialize();
-  }
+    }
 
     public static getInstance(): ChatService {
         if (!ChatService.instance) {
@@ -28,13 +22,27 @@ export class ChatService {
     }
 
     private async initialize() {
-      this.model = new ChatGoogleGenerativeAI({
-        model: "gemini-1.5-flash",
-        apiKey: ""
-      });
+      // Use dynamic import to load the ESM module
+      // const { TokenJS } = await import('token.js');
+
+      // TODO find another way to access the apiKey, instead of having it hardcoded
+      const apiKey = '';
+      if (!apiKey) {
+          throw new Error('GEMINI_API_KEY is not set');
+      }
+      this.tokenjs = new TokenJS({ apiKey });
     }
 
-    public async getChatResponse(message: string): Promise<MessageContent> {
+    public async getChatResponse(message: string): Promise<String> {
+      //Recreate or copy from langchain
+      //minimize everything when you enter a question
+      //markdown editor
+      //tooltips for what the context does
+      //sample questions
+      //prompt engineering (system prompt)
+      //syntax like @stacks for context
+      //tests
+      //Stack Data Provider and Panel Data Provider need to be implemented
         try {
           let context = ''
           if (message.includes('environment')) {
@@ -50,43 +58,13 @@ export class ChatService {
             context += this.getServerStatus()
           }
 
-          const prompt = ChatPromptTemplate.fromMessages([
-            [
-              "system",
-              `You are a helpful assistant who remembers all details the user shares with you.`,
-            ],
-            ["placeholder", "{chat_history}"],
-            ["human", "{input}"],
-          ]);
-
-          const chain = prompt.pipe(this.model);
-
-          const withMessageHistory = new RunnableWithMessageHistory({
-            runnable: chain,
-            getMessageHistory: async (sessionId) => {
-              if (this.messageHistories[sessionId] === undefined) {
-                this.messageHistories[sessionId] = new InMemoryChatMessageHistory();
-              }
-              return this.messageHistories[sessionId];
-            },
-            inputMessagesKey: "input",
-            historyMessagesKey: "chat_history",
+          const completion = await this.tokenjs.chat.completions.create({
+            provider: 'gemini',
+            model: 'gemini-1.5-flash',
+            messages: [{ role: 'user', content: (message + `Use this context to answer the question: ${context}`) }],
           });
-
-          const config = {
-            configurable: {
-              sessionId: this.sessionId,
-            },
-          };
-          
-          const response = await withMessageHistory.invoke(
-            {
-              input: (message + `Here is contexual information for reference: ${context}`),
-            },
-            config
-          );
-
-          return response.content;
+          return completion.choices[0]?.message?.content || 'No content';
+    
         } catch (error) {
             console.error('Error with Gemini API:', error);
             return 'Error: Unable to get a response from Gemini.';
