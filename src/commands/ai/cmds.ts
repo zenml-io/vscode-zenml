@@ -18,20 +18,24 @@ import { getSecret } from '../../common/vscodeapi';
 
 const sendOpenAIRequest = async (context: ExtensionContext) => {
   const apiKey = await getSecret(context, 'OPENAI_API_KEY');
-  console.log('retrieved apiKey', apiKey);
   const openai = new OpenAI({ apiKey: apiKey });
 
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [
-      { role: 'system', content: 'You are a helpful assistant.' },
+      {
+        role: 'system',
+        content: 'You are a helpful programming assistant.',
+      },
       {
         role: 'user',
-        content: 'Write a haiku about recursion in programming.',
+        content: 'Hi! How is your day?',
       },
     ],
   });
-  console.log(completion);
+
+  const content = completion.choices[0].message.content;
+  console.log(content);
 };
 
 export const aiCommands = {
