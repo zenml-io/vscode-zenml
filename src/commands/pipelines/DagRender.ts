@@ -128,31 +128,39 @@ export default class DagRenderer extends WebviewBase {
           break;
 
         case 'stepFix':
-          this.fixBrokenStep(message.id);
+          this.fixBrokenStep(message.id, node);
           break;
       }
     };
   }
 
-  private async fixBrokenStep(id: string): Promise<void> {
+  private async fixBrokenStep(id: string, node: PipelineTreeItem): Promise<void> {
     if (!WebviewBase.context) return;
 
     const response = await aiCommands.sendOpenAIRequest(WebviewBase.context);
-    const myScheme = 'fix-my-pipeline';
-    const myProvider = new (class implements vscode.TextDocumentContentProvider {
+    const provider = new (class implements vscode.TextDocumentContentProvider {
       provideTextDocumentContent(uri: vscode.Uri): string {
         return response.choices[0].message.content || 'Something went wrong';
       }
     })();
 
-    vscode.workspace.registerTextDocumentContentProvider(myScheme, myProvider);
+    vscode.workspace.registerTextDocumentContentProvider('fix-my-pipeline', provider);
 
     const uri = vscode.Uri.parse('fix-my-pipeline:' + id);
     const doc = await vscode.workspace.openTextDocument(uri);
+
+    let { document } = vscode.window.activeTextEditor || { document: null };
     await vscode.window.showTextDocument(doc, {
       preview: false,
-      viewColumn: vscode.ViewColumn.Beside,
+      viewColumn:
+        document?.uri.scheme === 'fix-my-pipeline'
+          ? vscode.ViewColumn.Active
+          : vscode.ViewColumn.Beside,
     });
+
+    const p = Panels.getInstance();
+    const existingPanel = p.getPanel(node.id);
+    if (existingPanel) existingPanel.webview.postMessage('AI Query Complete');
   }
 
   private async loadStepDataIntoPanel(id: string, runUrl: string): Promise<void> {

@@ -179,3 +179,7 @@ g.svg-pan-zoom-control {
   color: grey;
   background: lightgrey;
 }
+
+#loading-ai {
+  opacity: 0%;
+}

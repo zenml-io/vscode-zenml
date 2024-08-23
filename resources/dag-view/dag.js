@@ -100,13 +100,18 @@ import svgPanZoom from 'svg-pan-zoom';
     openContextMenu(stepId ? 'step' : 'artifact', stepId || artifactId, evt.pageX, evt.pageY);
   });
 
+  window.addEventListener('message', evt => {
+    console.log(evt.data);
+    if (evt.data === 'AI Query Complete') closeContextMenu();
+  });
+
   function openContextMenu(command, id, x, y) {
     const CONTEXT_MENU_HTML = `
       <div id="context-menu">
         <ul>
           <li id="inspect">Inspect</li>
           <li id="open-dashboard-url">Open Dashboard URL</li>
-          ${command === 'step' ? '<li id="suggest-fix">Suggest Fix</li>' : ''}
+          ${command === 'step' ? `<li id="suggest-fix">Suggest Fix</li>` : ''}
         </ul>
       </div>`;
 
@@ -124,9 +129,12 @@ import svgPanZoom from 'svg-pan-zoom';
       vscode.postMessage({ command: `${command}Url`, id });
     });
     contextMenu.querySelector('#suggest-fix')?.addEventListener('click', () => {
+      contextMenu.querySelector('#suggest-fix').textContent = 'Loading...';
       vscode.postMessage({ command: `stepFix`, id });
     });
-    contextMenu.addEventListener('click', closeContextMenu);
+    contextMenu.addEventListener('click', evt => {
+      if (evt.target.id !== 'suggest-fix') closeContextMenu();
+    });
 
     document.body.insertBefore(contextMenu, document.body.firstChild);
   }
