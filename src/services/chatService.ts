@@ -40,16 +40,7 @@ export class ChatService {
     this.tokenjs = new TokenJS({ apiKey });
   }
 
-  public async getChatResponse(message: string): Promise<String> {
-    //Recreate or copy from langchain
-    //minimize everything when you enter a question
-    //markdown editor
-    //tooltips for what the context does
-    //sample questions
-    //prompt engineering (system prompt)
-    //syntax like @stacks for context
-    //tests
-    //Stack Data Provider and Panel Data Provider need to be implemented
+  public async getChatResponse(message: string): Promise<string> {
     try {
       this.addUserMessage(message);
       if (message.includes('environment')) {

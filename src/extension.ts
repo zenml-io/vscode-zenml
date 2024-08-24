@@ -22,6 +22,7 @@ import { toggleCommands } from './utils/global';
 import DagRenderer from './commands/pipelines/DagRender';
 import WebviewBase from './common/WebviewBase';
 import { ChatService } from './services/chatService';
+import { marked } from 'marked';
 
 export async function activate(context: vscode.ExtensionContext) {
   const eventBus = EventBus.getInstance();
@@ -106,45 +107,45 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
   // Generate the Webview content
   getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri): string {
     const cssUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'chat.css'));
-    const chatLogHtml = this.messages.map(msg => `<p>${msg}</p>`).join('');
+    const chatLogHtml = this.messages.join('');
 
     return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZenML Chat</title>
-  <link href="${cssUri}" rel="stylesheet" />
-</head>
-<body>
-  <div id="chatLog">${chatLogHtml}</div>
-  <div id="inputContainer">
-      <input type="text" id="messageInput" placeholder="Type your message here" />
-      <button id="sendMessage">Send</button>
-  </div>
-  <script>
-      const vscode = acquireVsCodeApi();
-      
-      document.getElementById('sendMessage').addEventListener('click', () => {
-          const messageInput = document.getElementById('messageInput');
-          const message = messageInput.value;
-          if (message.trim()) {
-              vscode.postMessage({ command: 'sendMessage', text: message });
-              messageInput.value = ''; // Clear input after sending
-          }
-      });
-  </script>
-</body>
-</html>`;
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>ZenML Chat</title>
+        <link href="${cssUri}" rel="stylesheet" />
+      </head>
+      <body>
+        <div id="chatLog">${chatLogHtml}</div>
+        <div id="inputContainer">
+            <input type="text" id="messageInput" placeholder="Type your message here" />
+            <button id="sendMessage">Send</button>
+        </div>
+        <script>
+            const vscode = acquireVsCodeApi();
+            
+            document.getElementById('sendMessage').addEventListener('click', () => {
+                const messageInput = document.getElementById('messageInput');
+                const message = messageInput.value;
+                if (message.trim()) {
+                    vscode.postMessage({ command: 'sendMessage', text: message });
+                    messageInput.value = ''; // Clear input after sending
+                }
+            });
+        </script>
+      </body>
+      </html>`;
   }
 
   // Add a new message to the chat log and send to Gemini
   async addMessage(message: string) {
-    this.messages.push(`User: ${message}`); // Add the message to the log
+    this.messages.push(`User: ${marked.parse(message)}`); // Add the message to the log
 
     // Get the bot's response and add it to the log
     const botResponse = await this.chatService.getChatResponse(message);
-    this.messages.push(`Gemini: ${botResponse}`);
+    this.messages.push(`Gemini: ${marked.parse(botResponse)}`);
 
     // Re-render the Webview content
     this._view &&
