@@ -1,35 +1,36 @@
 (function() {
     const vscode = acquireVsCodeApi();
   
-    // Event listener for the send button
-    document.getElementById('sendMessage').addEventListener('click', () => {
-      const input = document.getElementById('messageInput');
-      const message = input.value.trim();
+    // Function to send the message
+    function sendMessage() {
+        const input = document.getElementById('messageInput');
+        if (input.value.trim()) {
+            const message = input.value;
+            input.value = ''; // Clear input
   
-      // Ensure there's a message before sending
-      if (message) {
-        // Post the message to the VSCode extension
-        vscode.postMessage({
-          command: 'sendMessage',
-          text: message
-        });
+            // Post the message back to the extension
+            vscode.postMessage({
+                command: 'sendMessage',
+                text: message
+            });
   
-        // Clear the input field
-        input.value = '';
-      }
-    });
+            // Append the message to the chat log
+            const messagesDiv = document.getElementById('chatLog');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.textContent = message;
+            messagesDiv.appendChild(messageDiv);
+        }
+    }
   
-    // Handle receiving messages from the VSCode extension
-    window.addEventListener('message', event => {
-      const message = event.data;
-      
-      if (message.command === 'receiveMessage') {
-        const messagesDiv = document.getElementById('messages');
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'message gemini-message';
-        messageDiv.textContent = message.text;
-        messagesDiv.appendChild(messageDiv);
-      }
+    // Click event for the send button
+    document.getElementById('sendMessage').addEventListener('click', sendMessage);
+  
+    // Keydown event for the Enter key
+    document.getElementById('messageInput').addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault(); // Prevent default Enter key behavior (e.g., newline)
+            sendMessage();
+        }
     });
   })();
-  
