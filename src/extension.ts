@@ -11,6 +11,7 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 import { EventBus } from './services/EventBus';
 import { LSClient } from './services/LSClient';
 import { ZenExtension } from './services/ZenExtension';
@@ -22,7 +23,6 @@ import { toggleCommands } from './utils/global';
 import DagRenderer from './commands/pipelines/DagRender';
 import WebviewBase from './common/WebviewBase';
 import { ChatService } from './services/chatService';
-import { marked } from 'marked';
 
 export async function activate(context: vscode.ExtensionContext) {
   const eventBus = EventBus.getInstance();
@@ -73,8 +73,9 @@ export async function deactivate(): Promise<void> {
   DagRenderer.getInstance()?.deactivate();
 }
 
-// TODO: ChatViewProvider should be moved into it's own folder/file in the src/views/activityBar folder
-//
+/**
+ * TODO: ChatViewProvider should be moved into it's own folder/file in the src/views/activityBar folder
+ */
 class ChatViewProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
   private messages: string[] = []; // Array to store chat messages
@@ -82,80 +83,103 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
 
   constructor(private readonly context: vscode.ExtensionContext) {}
 
+  /**
+   * Called when the webview is resolved. Initializes the webview content and sets up the message handling.
+   */
   resolveWebviewView(
     webviewView: vscode.WebviewView,
     context: vscode.WebviewViewResolveContext,
     _token: vscode.CancellationToken
   ) {
     this._view = webviewView;
+    this.configureWebViewOptions(webviewView.webview);
+    this.updateWebviewContent();
 
-    webviewView.webview.options = {
-      enableScripts: true,
-    };
-
-    webviewView.webview.html = this.getWebviewContent(
-      webviewView.webview,
-      this.context.extensionUri
-    );
+    // Handle messages recieved from the webview
     webviewView.webview.onDidReceiveMessage(async message => {
-      if (message.command === 'sendMessage') {
-        await this.addMessage(message.text);
-      }
+      this.addMessage(message.text);
     });
   }
 
-  // Generate the Webview content
-  getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri): string {
+  /**
+   * Configure the webview to allow scripts to run
+   */
+  private configureWebViewOptions(webview: vscode.Webview) {
+    webview.options = {
+      enableScripts: true,
+    };
+  }
+
+  /**
+   * Handle incomming messages from the webview
+   */
+  private async handleWebViewMessages(message: any) {
+    if (message.command === 'sendMessage' && message.text?.trim()) {
+      await this.addMessage(message.text);
+    }
+  }
+
+  /**
+   * Generate the webview HTML content, including the chat log and the input elements
+   */
+  private getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri): string {
+    const htmlPath = vscode.Uri.joinPath(extensionUri, 'media', 'chat.html');
+    let html = fs.readFileSync(htmlPath.fsPath, 'utf8');
+
     const cssUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'chat.css'));
     const chatLogHtml = this.messages.join('');
 
-    return `<!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>ZenML Chat</title>
-        <link href="${cssUri}" rel="stylesheet" />
-      </head>
-      <body>
-        <div id="chatLog">${chatLogHtml}</div>
-        <div id="inputContainer">
-            <input type="text" id="messageInput" placeholder="Type your message here" />
-            <button id="sendMessage">Send</button>
-        </div>
-        <script>
-            const vscode = acquireVsCodeApi();
-            
-            document.getElementById('sendMessage').addEventListener('click', () => {
-                const messageInput = document.getElementById('messageInput');
-                const message = messageInput.value;
-                if (message.trim()) {
-                    vscode.postMessage({ command: 'sendMessage', text: message });
-                    messageInput.value = ''; // Clear input after sending
-                }
-            });
-        </script>
-      </body>
-      </html>`;
+    // Replace placeholders in HTML with actual values
+    html = html.replace('${cssUri}', cssUri.toString());
+    html = html.replace('${chatLogHtml}', chatLogHtml);
+
+    return html;
   }
 
-  // Add a new message to the chat log and send to Gemini
-  async addMessage(message: string) {
-    this.messages.push(`User: ${marked.parse(message)}`); // Add the message to the log
+  /**
+   * Render the chat log as HTML.
+   */
+  private renderChatLog(): string {
+    return this.messages.map(msg => `<p>${msg}</p>`).join('');
+  }
 
-    // Get the bot's response and add it to the log
-    const botResponse = await this.chatService.getChatResponse(message);
-    this.messages.push(`Gemini: ${marked.parse(botResponse)}`);
-
-    // Re-render the Webview content
-    this._view &&
-      (this._view.webview.html = this.getWebviewContent(
+  /**
+   * Update the webview with the latest content, including the chat message.
+   */
+  private updateWebviewContent() {
+    if (this._view) {
+      this._view.webview.html = this.getWebviewContent(
         this._view.webview,
         this.context.extensionUri
-      )); // Re-render the Webview
+      );
+    }
+  }
 
-    // Post the bot's response back to the webview
-    this._view &&
-      this._view.webview.postMessage({ command: 'receiveMessage', text: `Gemini: ${botResponse}` });
+  /**
+   * Add a new message to the chat log, get a response, and update the webview
+   */
+  async addMessage(message: string) {
+    // Add the message to the log
+    this.messages.push(`User: ${message}`);
+
+    // Get the bot's response and add it to the log
+    try {
+      const botResponse = await this.chatService.getChatResponse(message);
+      this.messages.push(`Gemini: ${(botResponse)}`);
+      this.updateWebviewContent();
+      this.sendMessageToWebview(`Gemini: ${botResponse}`);
+    } catch (error) {
+      console.error("Error getting Gemini's response:", error);
+      this.messages.push("Error: Unable to get response from Gemini");
+    }
+  }
+
+  /**
+   * Send a message from Gemini back to the webview
+   */
+  private sendMessageToWebview(message: string) {
+    if (this._view) {
+      this._view.webview.postMessage({ command: 'recieveMessage', text: message});
+    }
   }
 }
