@@ -13,6 +13,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as marked from 'marked';
 import { EventBus } from './services/EventBus';
 import { LSClient } from './services/LSClient';
 import { ZenExtension } from './services/ZenExtension';
@@ -115,8 +116,6 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
    * Handle incoming messages from the webview.
    */
   private async handleWebviewMessage(message: any) {
-    console.log("Received message from webview:", message);
-
     if (message.command === 'sendMessage' && message.text?.trim()) {
       console.log("Handling 'sendMessage' command with text:", message.text);
       await this.addMessage(message.text);
@@ -134,6 +133,7 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
     // Webview URIs for CSS and JS
     const cssUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'chat.css'));
     const jsUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'chat.js'));
+    const markedUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'marked.min.js'));
 
     // Chat log HTML
     const chatLogHtml = this.renderChatLog();
@@ -141,6 +141,7 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
     // Replace placeholders in the HTML with actual values
     html = html.replace('${cssUri}', cssUri.toString());
     html = html.replace('${jsUri}', jsUri.toString());
+    html = html.replace('${markedUri}', markedUri.toString());
     html = html.replace('${chatLogHtml}', chatLogHtml);
     
     return html;
@@ -153,7 +154,8 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
     return this.messages.map(msg =>  {
       const isUserMessage = msg.startsWith('User:');
       const className = isUserMessage ? 'user-message' : 'gemini-message';
-      return `<div class="message ${className}">${msg}</div>`;
+      const htmlMessage = marked.parse(msg.replace(/^(User:|Gemini:)\s*/, ''));
+      return `<div class="message ${className}">${htmlMessage}</div>`;
     }).join('');
   }
 
@@ -183,7 +185,6 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
       this.updateWebviewContent();
       this.sendMessageToWebview(`Gemini: ${botResponse}`);
     } catch (error) {
-      console.error("Error getting Gemini's response:", error);
       this.messages.push("Error: Unable to get response from Gemini");
       this.updateWebviewContent();
     }
@@ -194,7 +195,6 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
    */
   private sendMessageToWebview(message: string) {
     if (this._view) {
-      console.log("Sending message to webview:", message);
       this._view.webview.postMessage({ command: 'recieveMessage', text: message});
     }
   }
