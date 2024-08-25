@@ -15,10 +15,10 @@
             });
   
             // Append the message to the chat log
-            const messagesDiv = document.getElementById('chatLog');
+            const messagesDiv = document.getElementById('messages');
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message';
-            messageDiv.textContent = message;
+            messageDiv.innerHTML = marked(message);
             messagesDiv.appendChild(messageDiv);
         }
     }
