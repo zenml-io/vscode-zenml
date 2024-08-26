@@ -33,7 +33,7 @@ export class ChatService {
 
   private async initialize() {
     // TODO find another way to access the apiKey, instead of having it hardcoded
-    const apiKey = '***';
+    const apiKey = '';
     if (!apiKey) {
       throw new Error('GEMINI_API_KEY is not set');
     }
@@ -59,7 +59,7 @@ export class ChatService {
       const completion = await this.tokenjs.chat.completions.create({
         provider: 'gemini',
         model: 'gemini-1.5-flash',
-        messages: this.allMessages,
+        messages: this.getRecentMessages(),
       });
 
       return completion.choices[0]?.message?.content || 'No content';
@@ -100,8 +100,17 @@ export class ChatService {
     this.allMessages.push(userMessage);
   }
 
-//   private getRecentMessages(): string[] {
-//   }
+  private getRecentMessages(): object[] {
+    let recentMessages: object[];
+
+    if (this.allMessages.length > 10) {
+      recentMessages = this.allMessages.slice(-10);
+    } else {
+      recentMessages = this.allMessages;
+    }
+
+    return recentMessages;
+  }
 
   /**
    *
