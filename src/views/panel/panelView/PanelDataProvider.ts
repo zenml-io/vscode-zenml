@@ -100,8 +100,4 @@ export class PanelDataProvider implements TreeDataProvider<TreeItem> {
 
     return [new PanelTreeItem(this.dataType, this.data)];
   }
-
-  public getData(): TreeItem | JsonObject {
-    return this.data
-  }
 }
