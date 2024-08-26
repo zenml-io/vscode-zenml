@@ -106,7 +106,7 @@ import svgPanZoom from 'svg-pan-zoom';
   });
 
   function openContextMenu(command, component, x, y) {
-    const id = component.dataset.id;
+    const id = component.dataset.stepid || component.dataset.artifactid;
 
     const CONTEXT_MENU_HTML = `
       <div id="context-menu">
