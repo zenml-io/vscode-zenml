@@ -10,8 +10,9 @@ import {
 } from '../views/activityBar';
 import { ComponentDataProvider } from '../views/activityBar/componentView/ComponentDataProvider';
 import { EnvironmentDataProvider } from '../views/activityBar/environmentView/EnvironmentDataProvider';
-import { request } from 'axios';
-// import { PanelDataProvider } from '../views/panel/panelView/PanelDataProvider';
+import { LSClient } from './LSClient';
+import { DagArtifact, DagStep, PipelineRunDag } from '../types/PipelineTypes';
+import { JsonObject } from '../views/panel/panelView/PanelTreeItem';
 
 export class ChatService {
   private static instance: ChatService;
@@ -150,6 +151,7 @@ export class ChatService {
   }
 
   private getPipelineData(): string {
+    //Check if this.items works instead
     let pipelineData = PipelineDataProvider.getInstance().getPipelineData();
     let contextString = pipelineData
       .map((pipelineRun: PipelineTreeItem) => {
@@ -175,9 +177,26 @@ export class ChatService {
     return `Stack Data:\n${contextString}\n`;
   }
 
-  //   private getPanelData(): string {
-  //     let panelData = PanelDataProvider.getInstance();
-  //     console.log(panelData);
-  //     return ``;
-  //   }
+  private async getPanelData(): Promise<string> {
+    //Retrieve the run data through ls client requests
+    //TODO: 
+    //Separate artifact/step data
+    //Separate source code data
+    let pipelineData = PipelineDataProvider.getInstance().getPipelineData();
+    let lsClient = LSClient.getInstance();
+    let dagData = await Promise.all(pipelineData.map(async (node: PipelineTreeItem) => {
+      return await lsClient.sendLsClientRequest<PipelineRunDag>('getPipelineRunDag', [node.id]);
+    }));
+    console.log("DAG Data:", dagData);
+    let stepData = await Promise.all(dagData.map(async (dag: PipelineRunDag) => {
+      return Promise.all(dag.nodes.map(async (node: DagArtifact|DagStep) => {
+        if (node.type == "step") {
+          return await lsClient.sendLsClientRequest<JsonObject>('getPipelineRunStep', [node.id]);
+        } else {
+          return null;
+        }
+      }).filter(Boolean));
+    }));
+    return JSON.stringify(stepData);
+  }
 }
