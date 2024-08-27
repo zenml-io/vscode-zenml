@@ -110,18 +110,7 @@ export class ChatService {
    */
   private getServerData(): string {
     let serverData = ServerDataProvider.getInstance().getCurrentStatus();
-    let contextString =
-      `URL: ${serverData.url}\n` +
-      `Dashboard URL: ${serverData.dashboard_url}\n` +
-      `Version: ${serverData.version}\n` +
-      `Store Type: ${serverData.store_type}\n` +
-      `Deployment Type: ${serverData.deployment_type}\n` +
-      `Database Type: ${serverData.database_type}\n` +
-      `Secrets Store Type: ${serverData.secrets_store_type}\n` +
-      `ID: ${serverData.id}\n` +
-      `Debug: ${serverData.debug}\n` +
-      `Auth Scheme ${serverData.auth_scheme}`;
-    return `Server Status Data:\n${contextString}\n`;
+    return `Server Status Data:\n${JSON.stringify(serverData)}\n`;
   }
 
   private getStackComponentData(): string {
@@ -197,5 +186,10 @@ export class ChatService {
       }).filter(Boolean));
     }));
     return JSON.stringify(stepData);
+  }
+
+  private async getLogData() {
+    let lsClient = LSClient.getInstance();
+    return JSON.stringify(await lsClient.sendLsClientRequest('getGlobalConfig'))
   }
 }
