@@ -23,6 +23,7 @@ import { PanelDataProvider } from '../../views/panel/panelView/PanelDataProvider
 import Panels from '../../common/panels';
 import WebviewBase from '../../common/WebviewBase';
 import { aiCommands } from '../ai/cmds';
+import { fixMyPipelineRequest } from '../../services/aiService';
 
 const ROOT_PATH = ['resources', 'dag-view'];
 const CSS_FILE = 'dag.css';
@@ -134,10 +135,20 @@ export default class DagRenderer extends WebviewBase {
     };
   }
 
+  // TODO send this function PipelineStepData instead of PipelineTreeItem
   private async fixBrokenStep(id: string, node: PipelineTreeItem): Promise<void> {
     if (!WebviewBase.context) return;
 
-    const response = await aiCommands.sendOpenAIRequest(WebviewBase.context);
+    const client = LSClient.getInstance();
+    const stepData = await client.sendLsClientRequest<JsonObject>('getPipelineRunStep', [id]);
+
+    const log = await fs.readFile(String(stepData.logsUri), { encoding: 'utf-8' });
+
+    const response = await fixMyPipelineRequest(
+      WebviewBase.context,
+      log,
+      stepData.sourceCode as string
+    );
     const provider = new (class implements vscode.TextDocumentContentProvider {
       provideTextDocumentContent(uri: vscode.Uri): string {
         return response.choices[0].message.content || 'Something went wrong';
