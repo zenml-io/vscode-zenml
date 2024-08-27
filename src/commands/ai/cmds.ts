@@ -37,6 +37,52 @@ const sendOpenAIRequest = async (context: ExtensionContext) => {
   return completion;
 };
 
+const editStepFile = (filePath: string, newContent: string, originalContent: string) => {
+  const TOP_BORDER_DECORATION = vscode.window.createTextEditorDecorationType({
+    isWholeLine: true,
+    borderWidth: '1px 0 0 0',
+    borderColor: '#FF7B00',
+    borderStyle: 'solid',
+  });
+  const BOTTOM_BORDER_DECORATION = vscode.window.createTextEditorDecorationType({
+    isWholeLine: true,
+    borderWidth: '0 0 1px 0',
+    borderColor: '#FF7B00',
+    borderStyle: 'solid',
+  });
+  const HIGHLIGHT_DECORATION = vscode.window.createTextEditorDecorationType({
+    isWholeLine: true,
+    backgroundColor: 'rgba(255, 141, 33, 0.1)',
+  });
+
+  const firstLine = new vscode.Position(2, 0); // TODO update to dynamically find the correct line
+  const lastLine = new vscode.Position(firstLine.line + newContent.split('\n').length - 1, 0);
+  const range = new vscode.Range(firstLine, lastLine);
+  const openPath = vscode.Uri.file(filePath);
+
+  vscode.workspace.openTextDocument(openPath).then(doc => {
+    vscode.window.showTextDocument(doc);
+    const edit = new vscode.WorkspaceEdit();
+    edit.replace(openPath, range, newContent + '\n');
+
+    return vscode.workspace.applyEdit(edit).then(success => {
+      if (success) {
+        vscode.window.showTextDocument(doc);
+        vscode.window.activeTextEditor?.setDecorations(HIGHLIGHT_DECORATION, [range]);
+        vscode.window.activeTextEditor?.setDecorations(TOP_BORDER_DECORATION, [
+          new vscode.Range(firstLine, firstLine),
+        ]);
+        vscode.window.activeTextEditor?.setDecorations(BOTTOM_BORDER_DECORATION, [
+          new vscode.Range(lastLine, lastLine),
+        ]);
+      } else {
+        vscode.window.showInformationMessage('Error!');
+      }
+    });
+  });
+};
+
 export const aiCommands = {
   sendOpenAIRequest,
+  editStepFile,
 };
