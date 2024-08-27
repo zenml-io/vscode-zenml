@@ -23,7 +23,6 @@ import { toggleCommands } from './utils/global';
 import DagRenderer from './commands/pipelines/DagRender';
 import WebviewBase from './common/WebviewBase';
 
-
 export async function activate(context: vscode.ExtensionContext) {
   const eventBus = EventBus.getInstance();
   const lsClient = LSClient.getInstance();
