@@ -61,31 +61,33 @@ export class ChatService {
     }
   }
 
-
   private addContext(requestedContext: string[]): void {
-    let systemMessage = { role: 'system', content: "Use this context to answer the question. " };
+    let systemMessage = { role: 'system', content: 'Use this context to answer the question. ' };
     if (requestedContext.includes('serverContext')) {
       systemMessage.content += this.getServerData();
-  }
-  if (requestedContext.includes('environmentContext')) {
+    }
+    if (requestedContext.includes('environmentContext')) {
       systemMessage.content += this.getEnvironmentData();
-  }
-  if (requestedContext.includes('pipelineContext')) {
+    }
+    if (requestedContext.includes('pipelineContext')) {
       systemMessage.content += this.getPipelineData();
-  }
-  if (requestedContext.includes('stackContext')) {
-    systemMessage.content += this.getStackData();
-}
-  if (requestedContext.includes('stackComponentsContext')) {
+    }
+    if (requestedContext.includes('stackContext')) {
+      systemMessage.content += this.getStackData();
+    }
+    if (requestedContext.includes('stackComponentsContext')) {
       systemMessage.content += this.getStackComponentData();
-  }
+    }
+    if (requestedContext.includes('recentPipelineContext')) {
+      systemMessage.content += this.getRecentPipelineRun();
+    }
     this.allMessages.push(systemMessage);
   }
 
-//   private addSystemMessage(message: string): void {
-//     let systemMessage = { role: 'system', content: message };
-//     this.allMessages.push(systemMessage);
-//   }
+  //   private addSystemMessage(message: string): void {
+  //     let systemMessage = { role: 'system', content: message };
+  //     this.allMessages.push(systemMessage);
+  //   }
 
   private addUserMessage(message: string): void {
     let userMessage = { role: 'user', content: message };
@@ -168,28 +170,44 @@ export class ChatService {
 
   private async getPanelData(): Promise<string> {
     //Retrieve the run data through ls client requests
-    //TODO: 
+    //TODO:
     //Separate artifact/step data
     //Separate source code data
     let pipelineData = PipelineDataProvider.getInstance().getPipelineData();
     let lsClient = LSClient.getInstance();
-    let dagData = await Promise.all(pipelineData.map(async (node: PipelineTreeItem) => {
-      return await lsClient.sendLsClientRequest<PipelineRunDag>('getPipelineRunDag', [node.id]);
-    }));
-    let stepData = await Promise.all(dagData.map(async (dag: PipelineRunDag) => {
-      return Promise.all(dag.nodes.map(async (node: DagArtifact|DagStep) => {
-        if (node.type === "step") {
-          return await lsClient.sendLsClientRequest<JsonObject>('getPipelineRunStep', [node.id]);
-        } else {
-          return null;
-        }
-      }).filter(Boolean));
-    }));
+    let dagData = await Promise.all(
+      pipelineData.map(async (node: PipelineTreeItem) => {
+        return await lsClient.sendLsClientRequest<PipelineRunDag>('getPipelineRunDag', [node.id]);
+      })
+    );
+    let stepData = await Promise.all(
+      dagData.map(async (dag: PipelineRunDag) => {
+        return Promise.all(
+          dag.nodes
+            .map(async (node: DagArtifact | DagStep) => {
+              if (node.type === 'step') {
+                return await lsClient.sendLsClientRequest<JsonObject>('getPipelineRunStep', [
+                  node.id,
+                ]);
+              } else {
+                return null;
+              }
+            })
+            .filter(Boolean)
+        );
+      })
+    );
     return JSON.stringify(stepData);
   }
 
   private async getLogData() {
     let lsClient = LSClient.getInstance();
-    return JSON.stringify(await lsClient.sendLsClientRequest('getGlobalConfig'))
+    return JSON.stringify(await lsClient.sendLsClientRequest('getGlobalConfig'));
+  }
+
+  private getRecentPipelineRun() {
+    let pipelineData = PipelineDataProvider.getInstance().getPipelineData()[0];
+    let contextString = JSON.stringify(pipelineData);
+    return `Pipeline Data:\n${contextString}\n`;
   }
 }
