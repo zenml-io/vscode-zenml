@@ -86,7 +86,7 @@ export class ChatService {
       systemMessage.content += this.getStackComponentData();
     }
     if (requestedContext.includes('recentPipelineContext')) {
-      systemMessage.content += this.getRecentPipelineRun();
+      systemMessage.content += this.getRecentPipelineRunData();
     }
     this.allMessages.push(systemMessage);
   }
@@ -164,6 +164,12 @@ export class ChatService {
         );
       })
       .join('\n');
+    return `Pipeline Data:\n${contextString}\n`;
+  }
+
+  private getRecentPipelineRunData() {
+    let pipelineData = PipelineDataProvider.getInstance().getPipelineData()[0];
+    let contextString = JSON.stringify(pipelineData);
     return `Pipeline Data:\n${contextString}\n`;
   }
 
