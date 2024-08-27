@@ -11,6 +11,9 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 
+import * as vscode from 'vscode';
+import fs from 'fs/promises';
+import { findFirstLineNumber } from '../../common/utilities';
 import { ServerDataProvider } from '../../views/activityBar';
 import { isServerStatus } from '../server/utils';
 
@@ -32,8 +35,58 @@ export const getPipelineRunDashboardUrl = (id: string): string => {
   return `${currentServerUrl}/runs/${id}`;
 };
 
+const editStepFile = async (filePath: string, newContent: string, oldContent: string) => {
+  const TOP_BORDER_DECORATION = vscode.window.createTextEditorDecorationType({
+    isWholeLine: true,
+    borderWidth: '1px 0 0 0',
+    borderColor: '#FF7B00',
+    borderStyle: 'solid',
+  });
+  const BOTTOM_BORDER_DECORATION = vscode.window.createTextEditorDecorationType({
+    isWholeLine: true,
+    borderWidth: '0 0 1px 0',
+    borderColor: '#FF7B00',
+    borderStyle: 'solid',
+  });
+  const HIGHLIGHT_DECORATION = vscode.window.createTextEditorDecorationType({
+    isWholeLine: true,
+    backgroundColor: 'rgba(255, 141, 33, 0.1)',
+  });
+
+  const fileContents = await fs.readFile(filePath, { encoding: 'utf-8' });
+  // TODO update to throw error if oldContent is not found in fileContents
+  const firstLine = new vscode.Position(findFirstLineNumber(fileContents, oldContent) || 0, 0);
+  const lastLine = new vscode.Position(firstLine.line + oldContent.split('\n').length, 0);
+  const range = new vscode.Range(firstLine, lastLine);
+  const openPath = vscode.Uri.file(filePath);
+
+  vscode.workspace.openTextDocument(openPath).then(doc => {
+    vscode.window.showTextDocument(doc);
+    const edit = new vscode.WorkspaceEdit();
+    edit.replace(openPath, range, newContent + '\n');
+
+    return vscode.workspace.applyEdit(edit).then(success => {
+      if (success) {
+        const newLastLine = new vscode.Position(firstLine.line + newContent.split('\n').length, 0);
+
+        vscode.window.showTextDocument(doc);
+        vscode.window.activeTextEditor?.setDecorations(HIGHLIGHT_DECORATION, [range]);
+        vscode.window.activeTextEditor?.setDecorations(TOP_BORDER_DECORATION, [
+          new vscode.Range(firstLine, firstLine),
+        ]);
+        vscode.window.activeTextEditor?.setDecorations(BOTTOM_BORDER_DECORATION, [
+          new vscode.Range(newLastLine, newLastLine),
+        ]);
+      } else {
+        vscode.window.showInformationMessage('Error!');
+      }
+    });
+  });
+};
+
 const pipelineUtils = {
   getPipelineRunDashboardUrl,
+  editStepFile,
 };
 
 export default pipelineUtils;

@@ -42,10 +42,36 @@ Do not make any assumptions or invent details that are not supported by the code
       {
         role: 'user',
         content:
-          'Now, please expalin some possible causes of the error as well as at least one option for fixing the error. If there are any typos, present those first in the possible solutions. If there are any suggested code edits, please return the full source code provided with any suggested edits made at the end of the response.',
+          'Now, please expalin some possible causes of the error as well as at least one option for fixing the error. If there are any typos, present those first in the possible solutions.',
       },
     ],
   });
 
-  return completion;
+  const followUp = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [
+      {
+        role: 'system',
+        content: `You are an advanced AI programming assistant tasked with troubleshooting pipeline runs for ZenML into an explanation that is both easy to understand and meaningful. Construct an explanation that:
+- Places the emphasis on the 'why' of the error, explaining possible causes of the problem, beyond just detailing what the error is
+- Provides at least one way to modify the provided code that could resolve the error
+
+Do not make any assumptions or invent details that are not supported by the code or the user-provided context.`,
+      },
+      {
+        role: 'user',
+        content: `Here is the content of the error message: ${log}`,
+      },
+      { role: 'user', content: `Here is the code where the error occured: ${code}` },
+      {
+        role: 'user',
+        content:
+          'Now, please expalin some possible causes of the error as well as at least one option for fixing the error. If there are any typos, present those first in the possible solutions.',
+      },
+      { role: 'assistant', content: String(completion.choices[0].message) },
+      { role: 'user', content: 'Please give me just source code with the edits made.' },
+    ],
+  });
+
+  return [completion, followUp];
 };

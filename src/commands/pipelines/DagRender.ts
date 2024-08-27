@@ -24,6 +24,7 @@ import Panels from '../../common/panels';
 import WebviewBase from '../../common/WebviewBase';
 import { aiCommands } from '../ai/cmds';
 import { fixMyPipelineRequest } from '../../services/aiService';
+import pipelineUtils from './utils';
 
 const ROOT_PATH = ['resources', 'dag-view'];
 const CSS_FILE = 'dag.css';
@@ -147,13 +148,21 @@ export default class DagRenderer extends WebviewBase {
     const response = await fixMyPipelineRequest(
       WebviewBase.context,
       log,
-      stepData.sourceCode as string
+      String(stepData.sourceCode)
     );
+
+    const [chatCompletion, codeCompletion] = response;
     const provider = new (class implements vscode.TextDocumentContentProvider {
       provideTextDocumentContent(uri: vscode.Uri): string {
-        return response.choices[0].message.content || 'Something went wrong';
+        return chatCompletion.choices[0].message.content || 'Something went wrong';
       }
     })();
+
+    const codeSnippet =
+      codeCompletion.choices[0].message.content?.match(/(?<=```\S*\s)[\s\S]*(?=\s```)/)?.[0] || '';
+
+    const HARDCODED_PATH = '/home/memlin/zenml/zenml_tutorial/steps/inference_preprocessor.py';
+    pipelineUtils.editStepFile(HARDCODED_PATH, codeSnippet, String(stepData.sourceCode));
 
     vscode.workspace.registerTextDocumentContentProvider('fix-my-pipeline', provider);
 

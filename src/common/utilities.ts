@@ -87,3 +87,28 @@ export function getDocumentSelector(): DocumentSelector {
         { scheme: 'vscode-notebook-cell', language: 'python' },
       ];
 }
+
+export function findFirstLineNumber(str: string, substr: string): number | null {
+  const strLines = str.split('\n');
+  const substrLines = substr.split('\n');
+
+  let substrCounter = 0;
+  let firstLine = null;
+  for (let strCounter = 0; strCounter < strLines.length; strCounter++) {
+    if (strLines[strCounter] === substrLines[substrCounter]) {
+      if (substrCounter === 0) firstLine = strCounter;
+
+      substrCounter++;
+
+      if (substrCounter >= substrLines.length) {
+        firstLine = firstLine ? firstLine + 1 : 0;
+        break;
+      }
+    } else {
+      substrCounter = 0;
+      firstLine = null;
+    }
+  }
+
+  return firstLine;
+}
