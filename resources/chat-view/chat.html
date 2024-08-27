@@ -12,8 +12,32 @@
       ${chatLogHtml}
     </div>
     <div id="input-container">
-      <input type="text" id="messageInput" placeholder="Type your message here" />
-      <button id="sendMessage">Send</button>
+      <form id="chatForm">
+        <div id="contextOptions">
+          <label>
+            <input type="checkbox" id="serverContext" name="serverContext" value="serverContext">
+            Server
+          </label>
+          <label>
+            <input type="checkbox" id="environmentContext" name="environmentContext" value="environmentContext">
+            Environment
+          </label>
+          <label>
+            <input type="checkbox" id="pipelineContext" name="pipelineContext" value="pipelineContext">
+            Pipeline
+          </label>
+          <label>
+            <input type="checkbox" id="stackContext" name="stackContext" value="stackContext">
+            Stack
+          </label>
+          <label>
+            <input type="checkbox" id="stackComponentsContext" name="stackComponentsContext" value="stackComponentsContext">
+            Stack Components
+          </label>
+        </div>
+        <input type="text" id="messageInput" name="messageInput" placeholder="Type your message here" />
+        <button type="submit" id="sendMessage">Send</button>
+      </form>
     </div>
   </div>
   <script src="${jsUri}"></script>
