@@ -41,11 +41,11 @@ export class ChatService {
     this.tokenjs = new TokenJS({ apiKey });
   }
 
-  public async getChatResponse(message: string): Promise<string> {
+  public async getChatResponse(message: string, context?: string[]): Promise<string> {
     try {
       this.addUserMessage(message);
-      if (message.includes('environment')) {
-        this.addContext('environment');
+      if (context) {
+        this.addContext(context);
       }
 
       const completion = await this.tokenjs.chat.completions.create({
@@ -62,23 +62,23 @@ export class ChatService {
   }
 
 
-  private addContext(requestedContext: string): void {
+  private addContext(requestedContext: string[]): void {
     let systemMessage = { role: 'system', content: "Use this context to answer the question. " };
-    if (requestedContext === 'server') {
-        systemMessage.content += this.getServerData();
-    }
-    if (requestedContext === 'environment') {
-        systemMessage.content += this.getEnvironmentData();
-    }
-    if (requestedContext === 'pipeline') {
-        systemMessage.content += this.getPipelineData();
-    }
-    if (requestedContext === 'stack_components') {
-        systemMessage.content += this.getStackComponentData();
-    }
-    if (requestedContext === 'stack') {
-        systemMessage.content += this.getStackData();
-    }
+    if (requestedContext.includes('serverContext')) {
+      systemMessage.content += this.getServerData();
+  }
+  if (requestedContext.includes('environmentContext')) {
+      systemMessage.content += this.getEnvironmentData();
+  }
+  if (requestedContext.includes('pipelineContext')) {
+      systemMessage.content += this.getPipelineData();
+  }
+  if (requestedContext.includes('stackContext')) {
+    systemMessage.content += this.getStackData();
+}
+  if (requestedContext.includes('stackComponentsContext')) {
+      systemMessage.content += this.getStackComponentData();
+  }
     this.allMessages.push(systemMessage);
   }
 
@@ -187,10 +187,9 @@ export class ChatService {
     let dagData = await Promise.all(pipelineData.map(async (node: PipelineTreeItem) => {
       return await lsClient.sendLsClientRequest<PipelineRunDag>('getPipelineRunDag', [node.id]);
     }));
-    console.log("DAG Data:", dagData);
     let stepData = await Promise.all(dagData.map(async (dag: PipelineRunDag) => {
       return Promise.all(dag.nodes.map(async (node: DagArtifact|DagStep) => {
-        if (node.type == "step") {
+        if (node.type === "step") {
           return await lsClient.sendLsClientRequest<JsonObject>('getPipelineRunStep', [node.id]);
         } else {
           return null;

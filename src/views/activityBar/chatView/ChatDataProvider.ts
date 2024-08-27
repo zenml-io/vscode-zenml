@@ -43,7 +43,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
     private async handleWebviewMessage(message: any) {
       if (message.command === 'sendMessage' && message.text?.trim()) {
         console.log("Handling 'sendMessage' command with text:", message.text);
-        await this.addMessage(message.text);
+        await this.addMessage(message.text, message.context);
       }
     }
   
@@ -99,13 +99,13 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
     /**
      * Add a message to the chat log, get a response from Gemini, and update the webview.
      */
-    async addMessage(message: string) {
+    async addMessage(message: string, context?: string[]) {
       // Add the message to the log
       this.messages.push(`User: ${message}`);
   
       // Get Gemini's response
       try {
-        const botResponse = await this.chatService.getChatResponse(message);
+        const botResponse = await this.chatService.getChatResponse(message, context);
         this.messages.push(`Gemini: ${botResponse}`);
         this.updateWebviewContent();
         this.sendMessageToWebview(`Gemini: ${botResponse}`);
