@@ -57,20 +57,21 @@ const editStepFile = async (filePath: string, newContent: string, oldContent: st
   // TODO update to throw error if oldContent is not found in fileContents
   const firstLine = new vscode.Position(findFirstLineNumber(fileContents, oldContent) || 0, 0);
   const lastLine = new vscode.Position(firstLine.line + oldContent.split('\n').length, 0);
-  const range = new vscode.Range(firstLine, lastLine);
+  const oldRange = new vscode.Range(firstLine, lastLine);
   const openPath = vscode.Uri.file(filePath);
 
   vscode.workspace.openTextDocument(openPath).then(doc => {
     vscode.window.showTextDocument(doc);
     const edit = new vscode.WorkspaceEdit();
-    edit.replace(openPath, range, newContent + '\n');
+    edit.replace(openPath, oldRange, newContent);
 
     return vscode.workspace.applyEdit(edit).then(success => {
       if (success) {
         const newLastLine = new vscode.Position(firstLine.line + newContent.split('\n').length, 0);
+        const newRange = new vscode.Range(firstLine, newLastLine);
 
         vscode.window.showTextDocument(doc);
-        vscode.window.activeTextEditor?.setDecorations(HIGHLIGHT_DECORATION, [range]);
+        vscode.window.activeTextEditor?.setDecorations(HIGHLIGHT_DECORATION, [newRange]);
         vscode.window.activeTextEditor?.setDecorations(TOP_BORDER_DECORATION, [
           new vscode.Range(firstLine, firstLine),
         ]);

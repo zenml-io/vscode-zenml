@@ -100,10 +100,7 @@ export function findFirstLineNumber(str: string, substr: string): number | null 
 
       substrCounter++;
 
-      if (substrCounter >= substrLines.length) {
-        firstLine = firstLine ? firstLine + 1 : 0;
-        break;
-      }
+      if (substrCounter >= substrLines.length) break;
     } else {
       substrCounter = 0;
       firstLine = null;

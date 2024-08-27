@@ -178,6 +178,8 @@ export default class DagRenderer extends WebviewBase {
           : vscode.ViewColumn.Beside,
     });
 
+    vscode.commands.executeCommand('editor.action.toggleWordWrap');
+
     const p = Panels.getInstance();
     const existingPanel = p.getPanel(node.id);
     if (existingPanel) existingPanel.webview.postMessage('AI Query Complete');
