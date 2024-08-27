@@ -42,12 +42,10 @@ Do not make any assumptions or invent details that are not supported by the code
       {
         role: 'user',
         content:
-          'Now, please expalin some possible causes of the error as well as at least one option for fixing the error',
+          'Now, please expalin some possible causes of the error as well as at least one option for fixing the error. If there are any typos, present those first in the possible solutions. If there are any suggested code edits, please return the full source code provided with any suggested edits made at the end of the response.',
       },
     ],
   });
 
   return completion;
 };
-
-export const 
