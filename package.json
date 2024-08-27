@@ -519,6 +519,7 @@
     "dagre": "^0.8.5",
     "fs-extra": "^11.2.0",
     "hbs": "^4.2.0",
+    "ky": "^1.7.1",
     "langchain": "^0.2.16",
     "marked": "^14.0.0",
     "svg-pan-zoom": "github:bumbu/svg-pan-zoom",

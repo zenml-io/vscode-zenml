@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { TokenJS } from 'token.js';
+import axios from 'axios';
 import {
   PipelineDataProvider,
   PipelineRunTreeItem,
@@ -13,6 +14,10 @@ import { EnvironmentDataProvider } from '../views/activityBar/environmentView/En
 import { LSClient } from './LSClient';
 import { DagArtifact, DagStep, PipelineRunDag } from '../types/PipelineTypes';
 import { JsonObject } from '../views/panel/panelView/PanelTreeItem';
+import { ZenmlGlobalConfigResp } from 'type_hints'
+import { ZenmlStoreConfig } from '../types/LSClientResponseTypes';
+import { Z_SYNC_FLUSH } from 'zlib';
+import { setPriority } from 'os';
 
 export class ChatService {
   private static instance: ChatService;
@@ -166,6 +171,25 @@ export class ChatService {
     return `Stack Data:\n${contextString}\n`;
   }
 
+  private async getPipelineRunNodes(type: string) {
+    let pipelineData = PipelineDataProvider.getInstance().getPipelineData();
+    let lsClient = LSClient.getInstance();
+    let dagData = await Promise.all(pipelineData.map(async (node: PipelineTreeItem) => {
+      let dag = await lsClient.sendLsClientRequest<PipelineRunDag>('getPipelineRunDag', [node.id]);
+      return dag
+    }));
+    let stepData = await Promise.all(dagData.map(async (dag: PipelineRunDag) => {
+      let filteredNodes = await Promise.all(dag.nodes.map(async (node: DagArtifact|DagStep) => {
+        if (type === "all" || node.type === type) {
+          return await lsClient.sendLsClientRequest<JsonObject>('getPipelineRunStep', [node.id]);
+        }
+        return null;
+      }));
+      return filteredNodes.filter((value) => value !== null);
+    }));
+    return stepData
+  }
+
   private async getPanelData(): Promise<string> {
     //Retrieve the run data through ls client requests
     //TODO: 
@@ -190,6 +214,18 @@ export class ChatService {
 
   private async getLogData() {
     let lsClient = LSClient.getInstance();
-    return JSON.stringify(await lsClient.sendLsClientRequest('getGlobalConfig'))
+    let dashboardUrl: string = ServerDataProvider.getInstance().getCurrentStatus().dashboard_url;
+    let apiToken: string = (await lsClient.sendLsClientRequest<ZenmlGlobalConfigResp>('getGlobalConfig')).store.api_token
+    let pipelineRunSteps = await this.getPipelineRunNodes('step')
+    let logs = await Promise.all(pipelineRunSteps[0].map(async (step) => {
+      let response = await axios.get(`${dashboardUrl}/api/v1/steps/${step.id}/logs`, {
+        headers: {
+          Authorization: `Bearer ${apiToken}`,
+          'accept': 'application/json'
+        }
+      })
+      return response.data
+    }))
+    return logs
   }
 }
