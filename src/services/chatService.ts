@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { TokenJS } from 'token.js';
 import axios from 'axios';
 import {
   PipelineDataProvider,
@@ -14,10 +13,8 @@ import { EnvironmentDataProvider } from '../views/activityBar/environmentView/En
 import { LSClient } from './LSClient';
 import { DagArtifact, DagStep, PipelineRunDag } from '../types/PipelineTypes';
 import { JsonObject } from '../views/panel/panelView/PanelTreeItem';
-import { ZenmlGlobalConfigResp } from 'type_hints'
-import { ZenmlStoreConfig } from '../types/LSClientResponseTypes';
-import { Z_SYNC_FLUSH } from 'zlib';
-import { setPriority } from 'os';
+import { ZenmlGlobalConfigResp } from '../types/LSClientResponseTypes';
+import { TreeItem } from 'vscode';
 
 export class ChatService {
   private static instance: ChatService;
@@ -38,12 +35,17 @@ export class ChatService {
   }
 
   private async initialize() {
-    // TODO find another way to access the apiKey, instead of having it hardcoded
-    const apiKey = '';
-    if (!apiKey) {
-      throw new Error('GEMINI_API_KEY is not set');
+    try {
+      const module = await import('token.js');
+      const { TokenJS } = module;
+      const apiKey = ''; // TODO find another way to access the apiKey, instead of having it hardcoded
+      if (!apiKey) {
+        throw new Error('GEMINI_API_KEY is not set');
+      }
+      this.tokenjs = new TokenJS({ apiKey });
+    } catch (error) {
+      console.error('Error loading TokenJS:', error);
     }
-    this.tokenjs = new TokenJS({ apiKey });
   }
 
   public async getChatResponse(message: string, context?: string[]): Promise<string> {
@@ -166,7 +168,10 @@ export class ChatService {
   private getStackData(): string {
     let stackData = StackDataProvider.getInstance().items;
     let contextString = stackData
-      .map(item => `Name: ${item.label}\n` + `ID: ${item.id}\n` + `Active: ${item.isActive}`)
+      .map(item => {
+        let stackItem = item as TreeItem & { isActive: boolean; id: string };
+        return `Name: ${item.label}\n` + `ID: ${stackItem.id}\n` + `Active: ${stackItem.isActive}`;
+      })
       .join('\n');
     return `Stack Data:\n${contextString}\n`;
   }
@@ -176,7 +181,7 @@ export class ChatService {
     let lsClient = LSClient.getInstance();
     let dagData = await Promise.all(pipelineData.map(async (node: PipelineTreeItem) => {
       let dag = await lsClient.sendLsClientRequest<PipelineRunDag>('getPipelineRunDag', [node.id]);
-      return dag
+      return dag;
     }));
     let stepData = await Promise.all(dagData.map(async (dag: PipelineRunDag) => {
       let filteredNodes = await Promise.all(dag.nodes.map(async (node: DagArtifact|DagStep) => {
@@ -187,7 +192,7 @@ export class ChatService {
       }));
       return filteredNodes.filter((value) => value !== null);
     }));
-    return stepData
+    return stepData;
   }
 
   private async getPanelData(): Promise<string> {
@@ -214,18 +219,30 @@ export class ChatService {
 
   private async getLogData() {
     let lsClient = LSClient.getInstance();
-    let dashboardUrl: string = ServerDataProvider.getInstance().getCurrentStatus().dashboard_url;
-    let apiToken: string = (await lsClient.sendLsClientRequest<ZenmlGlobalConfigResp>('getGlobalConfig')).store.api_token
-    let pipelineRunSteps = await this.getPipelineRunNodes('step')
+    let currentStatus = ServerDataProvider.getInstance().getCurrentStatus();
+    
+    // Type guard to ensure we are working with ServerStatus
+    if (!('dashboard_url' in currentStatus)) {
+      throw new Error('Dashboard URL not available in current status.');
+    }
+    let dashboardUrl: string = currentStatus.dashboard_url;
+    let globalConfig = await lsClient.sendLsClientRequest<ZenmlGlobalConfigResp>('getGlobalConfig');
+    let apiToken = globalConfig.store.api_token;
+
+    if (!apiToken) {
+      throw new Error('API Token is not available in gloval configuration');
+    }
+
+    let pipelineRunSteps = await this.getPipelineRunNodes('step');
     let logs = await Promise.all(pipelineRunSteps[0].map(async (step) => {
       let response = await axios.get(`${dashboardUrl}/api/v1/steps/${step.id}/logs`, {
         headers: {
           Authorization: `Bearer ${apiToken}`,
           'accept': 'application/json'
         }
-      })
-      return response.data
-    }))
-    return logs
+      });
+      return response.data;
+    }));
+    return logs;
   }
 }
