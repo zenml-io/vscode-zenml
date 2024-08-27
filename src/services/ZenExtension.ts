@@ -17,6 +17,7 @@ import * as vscode from 'vscode';
 import { registerPipelineCommands } from '../commands/pipelines/registry';
 import { registerServerCommands } from '../commands/server/registry';
 import { registerStackCommands } from '../commands/stack/registry';
+import { registerSecretsCommands } from '../commands/secrets/registry';
 import { EXTENSION_ROOT_DIR } from '../common/constants';
 import { registerLogger, traceLog, traceVerbose } from '../common/log/logging';
 import {
@@ -73,6 +74,7 @@ export class ZenExtension {
     registerStackCommands,
     registerComponentCommands,
     registerPipelineCommands,
+    registerSecretsCommands,
   ];
 
   /**
