@@ -13,6 +13,7 @@
     context.push(formData.get('pipelineContext'));
     context.push(formData.get('stackContext'));
     context.push(formData.get('stackComponentsContext'));
+    context.push(formData.get('recentPipelineContext'));
 
     if (text) {
       vscode.postMessage({
