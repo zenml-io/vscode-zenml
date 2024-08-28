@@ -6,9 +6,11 @@ import { ChatService } from '../../../services/chatService';
 export class ChatDataProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
   private messages: string[] = []; // Array to store chat messages
-  private chatService: ChatService = ChatService.getInstance(); // ChatService instance
+  private chatService: ChatService;
 
-  constructor(private readonly context: vscode.ExtensionContext) {}
+  constructor(private readonly context: vscode.ExtensionContext) {
+    this.chatService = ChatService.getInstance(this.context);
+  }
 
   /**
    * Called when the webview is resolved. Initializes the webview content and sets up the message handling
