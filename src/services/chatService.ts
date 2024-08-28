@@ -15,18 +15,16 @@ import { DagArtifact, DagStep, PipelineRunDag } from '../types/PipelineTypes';
 import { JsonObject } from '../views/panel/panelView/PanelTreeItem';
 import { ZenmlGlobalConfigResp } from '../types/LSClientResponseTypes';
 import { TreeItem } from 'vscode';
+import { chatMessage } from '../views/activityBar/chatView/chatMessage';
 
 export class ChatService {
   private static instance: ChatService;
-  private initialized: Promise<void>;
   private tokenjs: any;
-  private allMessages: object[];
   private context: vscode.ExtensionContext;
 
   private constructor(context: vscode.ExtensionContext) {
     this.context = context;
-    this.initialized = this.initialize();
-    this.allMessages = [];
+    this.initialize();
   }
 
   public static getInstance(context: vscode.ExtensionContext): ChatService {
@@ -53,17 +51,16 @@ export class ChatService {
     }
   }
 
-  public async getChatResponse(message: string, context?: string[]): Promise<string> {
+  public async getChatResponse(messages: chatMessage[],  context?: string[] | undefined): Promise<string> {
     try {
-      this.addUserMessage(message);
       if (context) {
-        this.addContext(context);
+        messages = this.addContext(messages, context);
       }
-
+      
       const completion = await this.tokenjs.chat.completions.create({
         provider: 'gemini',
         model: 'gemini-1.5-flash',
-        messages: this.getRecentMessages(),
+        messages: messages,
       });
 
       return completion.choices[0]?.message?.content || 'No content';
@@ -73,8 +70,8 @@ export class ChatService {
     }
   }
 
-  private addContext(requestedContext: string[]): void {
-    let systemMessage = { role: 'system', content: 'Use this context to answer the question. ' };
+  private addContext(messages: chatMessage[], requestedContext: string[]): chatMessage[] {
+    let systemMessage: chatMessage = { role: 'system', content: 'Context:' };
     if (requestedContext.includes('serverContext')) {
       systemMessage.content += this.getServerData();
     }
@@ -93,29 +90,8 @@ export class ChatService {
     if (requestedContext.includes('recentPipelineContext')) {
       systemMessage.content += this.getRecentPipelineRunData();
     }
-    this.allMessages.push(systemMessage);
-  }
-
-  //   private addSystemMessage(message: string): void {
-  //     let systemMessage = { role: 'system', content: message };
-  //     this.allMessages.push(systemMessage);
-  //   }
-
-  private addUserMessage(message: string): void {
-    let userMessage = { role: 'user', content: message };
-    this.allMessages.push(userMessage);
-  }
-
-  private getRecentMessages(): object[] {
-    let recentMessages: object[];
-
-    if (this.allMessages.length > 10) {
-      recentMessages = this.allMessages.slice(-10);
-    } else {
-      recentMessages = this.allMessages;
-    }
-
-    return recentMessages;
+    messages.push(systemMessage);
+    return messages
   }
 
   /**
