@@ -160,7 +160,7 @@ export default class DagRenderer extends WebviewBase {
 
     vscode.workspace.registerTextDocumentContentProvider('fix-my-pipeline', provider);
 
-    const uri = vscode.Uri.parse('fix-my-pipeline:' + id);
+    const uri = vscode.Uri.parse('fix-my-pipeline:' + id +'.md');
     const doc = await vscode.workspace.openTextDocument(uri);
 
     const codeSnippet =
