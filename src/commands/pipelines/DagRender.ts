@@ -158,24 +158,21 @@ export default class DagRenderer extends WebviewBase {
       }
     })();
 
-    const codeSnippet =
-      codeCompletion.choices[0].message.content?.match(/(?<=```\S*\s)[\s\S]*(?=\s```)/)?.[0] || '';
-
-    const HARDCODED_PATH = '/home/memlin/zenml/zenml_tutorial/steps/inference_preprocessor.py';
-    pipelineUtils.editStepFile(HARDCODED_PATH, codeSnippet, String(stepData.sourceCode));
-
     vscode.workspace.registerTextDocumentContentProvider('fix-my-pipeline', provider);
 
     const uri = vscode.Uri.parse('fix-my-pipeline:' + id);
     const doc = await vscode.workspace.openTextDocument(uri);
 
-    let { document } = vscode.window.activeTextEditor || { document: null };
+    const codeSnippet =
+      codeCompletion.choices[0].message.content?.match(/(?<=```\S*\s)[\s\S]*(?=\s```)/)?.[0] || '';
+
+    const HARDCODED_PATH = '/home/memlin/zenml/zenml_tutorial/steps/inference_preprocessor.py';
+    await pipelineUtils.editStepFile(HARDCODED_PATH, codeSnippet, String(stepData.sourceCode));
+
+    // let { document } = vscode.window.activeTextEditor || { document: null };
     await vscode.window.showTextDocument(doc, {
       preview: false,
-      viewColumn:
-        document?.uri.scheme === 'fix-my-pipeline'
-          ? vscode.ViewColumn.Active
-          : vscode.ViewColumn.Beside,
+      viewColumn: vscode.ViewColumn.Beside,
     });
 
     vscode.commands.executeCommand('editor.action.toggleWordWrap');
