@@ -21,15 +21,17 @@ export class ChatService {
   private initialized: Promise<void>;
   private tokenjs: any;
   private allMessages: object[];
+  private context: vscode.ExtensionContext;
 
-  private constructor() {
+  private constructor(context: vscode.ExtensionContext) {
+    this.context = context;
     this.initialized = this.initialize();
     this.allMessages = [];
   }
 
-  public static getInstance(): ChatService {
+  public static getInstance(context: vscode.ExtensionContext): ChatService {
     if (!ChatService.instance) {
-      ChatService.instance = new ChatService();
+      ChatService.instance = new ChatService(context);
     }
     return ChatService.instance;
   }
@@ -38,9 +40,12 @@ export class ChatService {
     try {
       const module = await import('token.js');
       const { TokenJS } = module;
-      const apiKey = ''; // TODO find another way to access the apiKey, instead of having it hardcoded
+
+      // Use context to access secrets
+      const apiKey = await this.context.secrets.get('API_KEY');
       if (!apiKey) {
-        throw new Error('GEMINI_API_KEY is not set');
+        vscode.window.showErrorMessage('No Gemini API key found. Please register one');
+
       }
       this.tokenjs = new TokenJS({ apiKey });
     } catch (error) {
@@ -192,7 +197,7 @@ export class ChatService {
       let dag = await lsClient.sendLsClientRequest<PipelineRunDag>('getPipelineRunDag', [node.id]);
       return dag;
     }));
-    
+
     let stepData = await Promise.all(dagData.map(async (dag: PipelineRunDag) => {
       let filteredNodes = await Promise.all(dag.nodes.map(async (node: DagArtifact|DagStep) => {
         if (type === "all" || node.type === type) {
@@ -207,7 +212,7 @@ export class ChatService {
 
   private async getLogData() {
     let lsClient = LSClient.getInstance();
-
+ 
     let globalConfig = await lsClient.sendLsClientRequest<ZenmlGlobalConfigResp>('getGlobalConfig');
     let apiToken = globalConfig.store.api_token;
     let dashboardUrl = globalConfig.store.url
@@ -242,7 +247,7 @@ export class ChatService {
       })
     );
 
-    stepData = stepData.filter((value) => value !== null)
+    stepData = stepData.filter((value) => value !== null);
 
     let globalConfig = await lsClient.sendLsClientRequest<ZenmlGlobalConfigResp>('getGlobalConfig');
     let apiToken = globalConfig.store.api_token;
@@ -253,7 +258,8 @@ export class ChatService {
     }
 
     let logs = await Promise.all(stepData.map(async (step) => {
-      let response = await axios.get(`${dashboardUrl}/api/v1/steps/${step.id}/logs`, {
+      let validStep = step as JsonObject;  // Type assertion. If we're not sure if step is not null, should change this to a guard check.
+      let response = await axios.get(`${dashboardUrl}/api/v1/steps/${validStep.id}/logs`, {
         headers: {
           Authorization: `Bearer ${apiToken}`,
           'accept': 'application/json'

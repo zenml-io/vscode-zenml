@@ -50,7 +50,44 @@ const deleteOpenAIAPIKey = async (context: ExtensionContext) => {
   vscode.window.showInformationMessage('OpenAI API key successfully removed.');
 };
 
+const registerGeminiAPIKey = async (context: ExtensionContext) => {
+  let apiKey = await context.secrets.get('API_KEY');
+
+  if (apiKey) {
+    apiKey = await vscode.window.showInputBox({
+      prompt: 'Gemini API Key already exists, enter a new value to update.',
+      password: true,
+    });
+  } else {
+    apiKey = await vscode.window.showInputBox({
+      prompt: 'Please enter your Gemini API key',
+      password: true,
+    });
+  }
+
+  if (apiKey === undefined) {
+    return undefined;
+  }
+
+  await context.secrets.store('API_KEY', apiKey);
+  vscode.window.showInformationMessage('Gemini API key stored successfully.');
+};
+
+const deleteGeminiAPIKey = async (context: ExtensionContext) => {
+  const apiKey = await context.secrets.get('API_KEY');
+
+  if (apiKey === undefined) {
+    vscode.window.showInformationMessage('No Gemini API key exists.');
+    return;
+  }
+  await context.secrets.delete('API_KEY');
+  vscode.window.showInformationMessage('Gemini API key successfully removed.');
+};
+
+
 export const secretsCommands = {
   registerOpenAIAPIKey,
   deleteOpenAIAPIKey,
+  registerGeminiAPIKey,
+  deleteGeminiAPIKey,
 };
