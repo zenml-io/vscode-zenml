@@ -185,12 +185,14 @@ export class ChatService {
   }
 
   private async getPipelineRunNodes(type: string) {
+    //change back to just step or add artifact command
     let pipelineData = PipelineDataProvider.getInstance().getPipelineData();
     let lsClient = LSClient.getInstance();
     let dagData = await Promise.all(pipelineData.map(async (node: PipelineTreeItem) => {
       let dag = await lsClient.sendLsClientRequest<PipelineRunDag>('getPipelineRunDag', [node.id]);
       return dag;
     }));
+    
     let stepData = await Promise.all(dagData.map(async (dag: PipelineRunDag) => {
       let filteredNodes = await Promise.all(dag.nodes.map(async (node: DagArtifact|DagStep) => {
         if (type === "all" || node.type === type) {
@@ -203,49 +205,12 @@ export class ChatService {
     return stepData;
   }
 
-  private async getPanelData(): Promise<string> {
-    //Retrieve the run data through ls client requests
-    //TODO:
-    //Separate artifact/step data
-    //Separate source code data
-    let pipelineData = PipelineDataProvider.getInstance().getPipelineData();
-    let lsClient = LSClient.getInstance();
-    let dagData = await Promise.all(
-      pipelineData.map(async (node: PipelineTreeItem) => {
-        return await lsClient.sendLsClientRequest<PipelineRunDag>('getPipelineRunDag', [node.id]);
-      })
-    );
-    let stepData = await Promise.all(
-      dagData.map(async (dag: PipelineRunDag) => {
-        return Promise.all(
-          dag.nodes
-            .map(async (node: DagArtifact | DagStep) => {
-              if (node.type === 'step') {
-                return await lsClient.sendLsClientRequest<JsonObject>('getPipelineRunStep', [
-                  node.id,
-                ]);
-              } else {
-                return null;
-              }
-            })
-            .filter(Boolean)
-        );
-      })
-    );
-    return JSON.stringify(stepData);
-  }
-
   private async getLogData() {
     let lsClient = LSClient.getInstance();
-    let currentStatus = ServerDataProvider.getInstance().getCurrentStatus();
-    
-    // Type guard to ensure we are working with ServerStatus
-    if (!('dashboard_url' in currentStatus)) {
-      throw new Error('Dashboard URL not available in current status.');
-    }
-    let dashboardUrl: string = currentStatus.dashboard_url;
+
     let globalConfig = await lsClient.sendLsClientRequest<ZenmlGlobalConfigResp>('getGlobalConfig');
     let apiToken = globalConfig.store.api_token;
+    let dashboardUrl = globalConfig.store.url
 
     if (!apiToken) {
       throw new Error('API Token is not available in gloval configuration');
@@ -253,6 +218,41 @@ export class ChatService {
 
     let pipelineRunSteps = await this.getPipelineRunNodes('step');
     let logs = await Promise.all(pipelineRunSteps[0].map(async (step) => {
+      let response = await axios.get(`${dashboardUrl}/api/v1/steps/${step.id}/logs`, {
+        headers: {
+          Authorization: `Bearer ${apiToken}`,
+          'accept': 'application/json'
+        }
+      });
+      return response.data;
+    }));
+    return logs;
+  }
+
+  private async getPipelineRunLogs(id:string) {
+    let lsClient = LSClient.getInstance();
+
+    let dagData = await lsClient.sendLsClientRequest<PipelineRunDag>('getPipelineRunDag', [id]);
+
+    let stepData = await Promise.all(dagData.nodes.map(async (node: DagArtifact|DagStep) => {
+        if (node.type === "step") {
+          return await lsClient.sendLsClientRequest<JsonObject>('getPipelineRunStep', [node.id]);
+        }
+        return null;
+      })
+    );
+
+    stepData = stepData.filter((value) => value !== null)
+
+    let globalConfig = await lsClient.sendLsClientRequest<ZenmlGlobalConfigResp>('getGlobalConfig');
+    let apiToken = globalConfig.store.api_token;
+    let dashboardUrl = globalConfig.store.url
+
+    if (!apiToken) {
+      throw new Error('API Token is not available in gloval configuration');
+    }
+
+    let logs = await Promise.all(stepData.map(async (step) => {
       let response = await axios.get(`${dashboardUrl}/api/v1/steps/${step.id}/logs`, {
         headers: {
           Authorization: `Bearer ${apiToken}`,
