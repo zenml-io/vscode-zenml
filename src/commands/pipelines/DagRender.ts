@@ -142,7 +142,6 @@ export default class DagRenderer extends WebviewBase {
 
     const client = LSClient.getInstance();
     const stepData = await client.sendLsClientRequest<StepData>('getPipelineRunStep', [id]);
-    console.log(stepData);
     const log = await fs.readFile(String(stepData.logsUri), { encoding: 'utf-8' });
 
     const response = await fixMyPipelineRequest(
