@@ -15,7 +15,7 @@ import * as vscode from 'vscode';
 import * as Dagre from 'dagre';
 import { ArrayXY, SVG, registerWindow } from '@svgdotjs/svg.js';
 import { PipelineTreeItem, ServerDataProvider } from '../../views/activityBar';
-import { PipelineRunDag, DagNode } from '../../types/PipelineTypes';
+import { PipelineRunDag, DagNode, StepData } from '../../types/PipelineTypes';
 import { LSClient } from '../../services/LSClient';
 import { ServerStatus } from '../../types/ServerInfoTypes';
 import { JsonObject } from '../../views/panel/panelView/PanelTreeItem';
@@ -141,8 +141,8 @@ export default class DagRenderer extends WebviewBase {
     if (!WebviewBase.context) return;
 
     const client = LSClient.getInstance();
-    const stepData = await client.sendLsClientRequest<JsonObject>('getPipelineRunStep', [id]);
-
+    const stepData = await client.sendLsClientRequest<StepData>('getPipelineRunStep', [id]);
+    console.log(stepData);
     const log = await fs.readFile(String(stepData.logsUri), { encoding: 'utf-8' });
 
     const response = await fixMyPipelineRequest(
