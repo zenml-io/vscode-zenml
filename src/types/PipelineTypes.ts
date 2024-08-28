@@ -33,6 +33,25 @@ export interface PipelineRun {
   pythonVersion: string;
 }
 
+export interface StepData {
+  author: {
+    email: string;
+    fullName: string;
+  };
+  cacheKey: string;
+  duration: string;
+  endTime: string;
+  id: string;
+  logsUri: string;
+  name: string;
+  orchestrator: { runId: string };
+  pipeline: { name: string; status: string };
+  sourceCode: string;
+  stackName: string;
+  startTime: string;
+  status: string;
+}
+
 export interface DagStep {
   id: string;
   type: 'step';
