@@ -2,10 +2,11 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as marked from 'marked';
 import { ChatService } from '../../../services/chatService';
+import { chatMessage } from './chatMessage';
 
 export class ChatDataProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
-  private messages: string[] = []; // Array to store chat messages
+  private messages: chatMessage[] = []; // Array to store chat messages
   private chatService: ChatService;
 
   constructor(private readonly context: vscode.ExtensionContext) {
@@ -83,12 +84,10 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
    * Render the chat log as HTML.
    */
   private renderChatLog(): string {
-    return this.messages
-      .map(msg => {
-        const isUserMessage = msg.startsWith('User:');
-        const className = isUserMessage ? 'user-message' : 'gemini-message';
-        const htmlMessage = marked.parse(msg.replace(/^(User:|Gemini:)\s*/, ''));
-        return `<div class="message ${className}">${htmlMessage}</div>`;
+    console.log(this.messages)
+    return this.messages.filter(msg => msg['role'] != 'system')
+      .map((message) => {
+        return `<div class="message ${message['role']}">${message['content']}</div>`;
       })
       .join('');
   }
@@ -109,17 +108,15 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
    * Add a message to the chat log, get a response from Gemini, and update the webview.
    */
   async addMessage(message: string, context?: string[]) {
-    // Add the message to the log
-    this.messages.push(`User: ${message}`);
+    this.messages.push({role: 'user', content: `${message}`});
 
-    // Get Gemini's response
     try {
-      const botResponse = await this.chatService.getChatResponse(message, context);
-      this.messages.push(`Gemini: ${botResponse}`);
+      const botResponse = await this.chatService.getChatResponse(this.messages, context);
+      this.messages.push({role: 'assistant', content: `${botResponse}`});
       this.updateWebviewContent();
-      this.sendMessageToWebview(`Gemini: ${botResponse}`);
+      this.sendMessageToWebview(`${botResponse}`);
     } catch (error) {
-      this.messages.push('Error: Unable to get response from Gemini');
+      this.messages.push({role: 'system', content: 'Error: Unable to get response from Gemini'});
       this.updateWebviewContent();
     }
   }
