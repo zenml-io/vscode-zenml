@@ -13,38 +13,62 @@
     </div>
     <div id="input-container">
       <form id="chatForm">
-        <div id="contextOptions">
-          <label>
-            <input type="checkbox" id="serverContext" name="serverContext" value="serverContext">
-            Server
-          </label>
-          <label>
-            <input type="checkbox" id="environmentContext" name="environmentContext" value="environmentContext">
-            Environment
-          </label>
-          <label>
-            <input type="checkbox" id="pipelineContext" name="pipelineContext" value="pipelineContext">
-            Pipeline
-          </label>
-          <label>
-            <input type="checkbox" id="stackContext" name="stackContext" value="stackContext">
-            Stack
-          </label>
-          <label>
-            <input type="checkbox" id="stackComponentsContext" name="stackComponentsContext" value="stackComponentsContext">
-            Stack Components
-          </label>
-          <label>
-            <input type="checkbox" id="recentPipelineContext" name="recentPipelineContext" value="recentPipelineContext">
-            Recent Pipeline Run
-          </label>
-        </div>
-        <input type="text" id="messageInput" name="messageInput" placeholder="Type your message here" />
-        <button type="submit" id="sendMessage">Send</button>
+          <div class="dropup">
+              <button type="button" id="contextButton">Context ▼</button>
+              <div id="contextOptions" class="dropup-content">
+                  <label>
+                      <input type="checkbox" id="serverContext" name="serverContext" value="serverContext">
+                      Server
+                  </label>
+                  <label>
+                      <input type="checkbox" id="environmentContext" name="environmentContext" value="environmentContext">
+                      Environment
+                  </label>
+                  <label>
+                      <input type="checkbox" id="pipelineContext" name="pipelineContext" value="pipelineContext">
+                      Pipeline
+                  </label>
+                  <label>
+                      <input type="checkbox" id="stackContext" name="stackContext" value="stackContext">
+                      Stack
+                  </label>
+                  <label>
+                      <input type="checkbox" id="stackComponentsContext" name="stackComponentsContext" value="stackComponentsContext">
+                      Stack Components
+                  </label>
+              </div>
+          </div>
+          <input type="text" id="messageInput" name="messageInput" placeholder="Type your message here" />
+          <button type="submit" id="sendMessage">Send</button>
       </form>
     </div>
   </div>
   <script src="${jsUri}"></script>
   <script src="${markedUri}"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+            const contextButton = document.getElementById('contextButton');
+            const contextOptions = document.getElementById('contextOptions');
+            const dropup = document.querySelector('.dropup');
+
+            contextButton.addEventListener('click', function(event) {
+                event.stopPropagation();
+                contextOptions.classList.toggle('show');
+                // Change the arrow direction
+                this.textContent = this.textContent.includes('▲') ? 'Context ▼' : 'Context ▲';
+            });
+
+            contextOptions.addEventListener('click', function(event) {
+                event.stopPropagation();
+            });
+
+            window.addEventListener('click', function(event) {
+                if (!dropup.contains(event.target)) {
+                    contextOptions.classList.remove('show');
+                    contextButton.textContent = 'Context ▲';
+                }
+            });
+        });
+  </script>
 </body>
 </html>
