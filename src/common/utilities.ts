@@ -12,6 +12,7 @@
 // permissions and limitations under the License.
 import * as fs from 'fs-extra';
 import * as path from 'path';
+import * as vscode from 'vscode';
 import { DocumentSelector, LogLevel, Uri, WorkspaceFolder } from 'vscode';
 import { Trace } from 'vscode-jsonrpc/node';
 import { getWorkspaceFolders, isVirtualWorkspace } from './vscodeapi';
@@ -108,4 +109,22 @@ export function findFirstLineNumber(str: string, substr: string): number | null 
   }
 
   return firstLine;
+}
+
+export async function searchWorkspaceByFileContent(content: string) {
+  let targetFileUri: vscode.Uri | undefined;
+  const files = await vscode.workspace.findFiles('**/*');
+  const pythonFiles = files.filter(file => file.toString().endsWith('.py'));
+
+  await Promise.all(
+    pythonFiles.map(
+      async file =>
+        await vscode.workspace.openTextDocument(file).then(doc => {
+          if (doc.getText().includes(content)) {
+            targetFileUri = file;
+          }
+        })
+    )
+  );
+  return targetFileUri;
 }
