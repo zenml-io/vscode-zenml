@@ -54,7 +54,7 @@ export class ChatService {
   public async getChatResponse(messages: chatMessage[],  context?: string[] | undefined): Promise<string> {
     try {
       if (context) {
-        messages = this.addContext(messages, context);
+        messages = await this.addContext(messages, context);
       }
       
       const completion = await this.tokenjs.chat.completions.create({
@@ -70,7 +70,7 @@ export class ChatService {
     }
   }
 
-  private addContext(messages: chatMessage[], requestedContext: string[]): chatMessage[] {
+  private async addContext(messages: chatMessage[], requestedContext: string[]): Promise<chatMessage[]> {
     let systemMessage: chatMessage = { role: 'system', content: 'Context:' };
     if (requestedContext.includes('serverContext')) {
       systemMessage.content += this.getServerData();
