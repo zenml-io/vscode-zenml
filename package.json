@@ -142,16 +142,6 @@
     },
     "commands": [
       {
-        "command": "zenml.renderChat",
-        "title": "Render Chat",
-        "icon": "$(comment-discussion",
-        "category": "ZenML Chat"
-      },
-      {
-        "command": "zenml.openChatView",
-        "title": "Open Chat View"
-      },
-      {
         "command": "zenml.promptForInterpreter",
         "title": "Select Python Interpreter",
         "category": "ZenML"
@@ -291,6 +281,12 @@
         "category": "ZenML Pipeline Runs"
       },
       {
+        "command": "zenml.renderChat",
+        "title": "Render Chat",
+        "icon": "$(comment-discussion)",
+        "category": "ZenML Chat"
+      },
+      {
         "command": "zenml.refreshEnvironmentView",
         "title": "Refresh Environment View",
         "icon": "$(refresh)",
@@ -339,11 +335,6 @@
           "id": "zenml",
           "title": "ZenML",
           "icon": "resources/logo.png"
-        },
-        {
-          "id": "chatbotView",
-          "title": "Chatbot",
-          "icon": "resources/chat.png"
         }
       ],
       "panel": [
@@ -351,11 +342,6 @@
           "id": "zenmlPanel",
           "title": "ZenML",
           "icon": "resources/logo.png"
-        },
-        {
-          "id": "chatPanel",
-          "title": "ZenML Chat",
-          "icon": "resources/chat.png"
         }
       ]
     },
@@ -397,22 +383,10 @@
           "id": "zenmlPanelView",
           "name": "ZenML"
         }
-      ],
-      "chatPanel": [
-        {
-          "id": "chatPanelView",
-          "name": "Chat",
-          "type": "webview"
-        }
       ]
     },
     "menus": {
       "view/title": [
-        {
-          "command": "zenml.renderChat",
-          "when": "view == chatPanelView",
-          "group": "navigation"
-        },
         {
           "when": "serverCommandsRegistered && view == zenmlServerView",
           "command": "zenml.connectServer",
@@ -524,6 +498,11 @@
           "when": "pipelineCommandsRegistered && view == zenmlPipelineView && viewItem == pipelineRun",
           "command": "zenml.renderDag",
           "group": "inline@1"
+        },
+        {
+          "when": "view == chatPanelView",
+          "command": "zenml.renderChat",
+          "group": "navigation"
         },
         {
           "when": "environmentCommandsRegistered && view == zenmlEnvironmentView && viewItem == interpreter",
