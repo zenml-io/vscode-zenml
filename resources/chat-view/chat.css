@@ -111,8 +111,8 @@ body {
   margin-right: 8px;
   vertical-align: middle;
 }
-.show {
-  display: block;
+.hide {
+  display: none;
 }
 #contextButton {
   background-color: #f0f0f0;
@@ -123,4 +123,51 @@ body {
 }
 #contextButton:hover {
   background-color: #e0e0e0;
+}
+
+
+.tree-view {
+  background-color: #1e1e1e;
+  color: #ffffff;
+  width: 256px;
+  overflow: auto;
+}
+.tree-item {
+  display: flex;
+  align-items: center;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+.tree-item:hover {
+  background-color: #2a2d2e;
+}
+.tree-item-content {
+  display: flex;
+  align-items: center;
+}
+.tree-item-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.tree-item-checkbox {
+  margin-right: 8px;
+}
+.tree-item-name {
+  font-size: 14px;
+  color: #cccccc;
+  margin-left: 4px;
+}
+.tree-item-children {
+  display: none;
+  width: 100%;
+}
+.tree-item-children.open {
+  display: block;
+}
+.tree-item-wrapper {
+  display: flex;
+  flex-direction: column;
 }
