@@ -84,9 +84,10 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
    * Render the chat log as HTML.
    */
   private renderChatLog(): string {
-    return this.messages.filter(msg => msg['role'] != 'system')
+    return this.messages.filter(msg => msg['role'] !== 'system')
       .map((message) => {
-        return `<div class="message ${message['role']}">${message['content']}</div>`;
+        let content = marked.parse(message.content);
+        return `<div class="message ${message['role']}">${content}</div>`;
       })
       .join('');
   }
