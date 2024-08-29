@@ -160,7 +160,7 @@ export default class DagRenderer extends WebviewBase {
 
     vscode.workspace.registerTextDocumentContentProvider('fix-my-pipeline', provider);
 
-    const uri = vscode.Uri.parse('fix-my-pipeline:' + id +'.md');
+    const uri = vscode.Uri.parse('fix-my-pipeline:' + id + '.md');
     const doc = await vscode.workspace.openTextDocument(uri);
 
     const codeSnippet =
@@ -169,13 +169,7 @@ export default class DagRenderer extends WebviewBase {
     const HARDCODED_PATH = '/home/memlin/zenml/zenml_tutorial/steps/inference_preprocessor.py';
     await pipelineUtils.editStepFile(HARDCODED_PATH, codeSnippet, String(stepData.sourceCode));
 
-    // let { document } = vscode.window.activeTextEditor || { document: null };
-    await vscode.window.showTextDocument(doc, {
-      preview: false,
-      viewColumn: vscode.ViewColumn.Beside,
-    });
-
-    vscode.commands.executeCommand('editor.action.toggleWordWrap');
+    vscode.commands.executeCommand('markdown.showPreviewToSide', uri);
 
     const p = Panels.getInstance();
     const existingPanel = p.getPanel(node.id);

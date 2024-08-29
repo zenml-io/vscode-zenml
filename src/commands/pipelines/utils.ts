@@ -44,7 +44,6 @@ const editStepFile = async (filePath: string, newContent: string, oldContent: st
   const oldRange = new vscode.Range(firstLine, lastLine);
   const fileUri = vscode.Uri.file(filePath);
 
-  vscode.window.showTextDocument(fileUri);
   const edit = new vscode.WorkspaceEdit();
   edit.replace(fileUri, oldRange, newContent);
 
