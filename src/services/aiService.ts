@@ -14,8 +14,6 @@
 import type { ExtensionContext } from 'vscode';
 import * as vscode from 'vscode';
 import OpenAI from 'openai';
-import { getSecret } from '../common/vscodeapi';
-import WebviewBase from '../common/WebviewBase';
 
 export class AIService {
   private static instance: AIService;
@@ -26,7 +24,7 @@ export class AIService {
   }
 
   private async getApiKey() {
-    const apiKey = await this.context.secrets.get('OPENAI_API_KEY');
+    const apiKey = await this.context.secrets.get('zenml.openai.key');
     return apiKey;
   }
 
