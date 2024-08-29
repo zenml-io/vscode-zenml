@@ -15,6 +15,11 @@ import type { ExtensionContext } from 'vscode';
 import * as vscode from 'vscode';
 import OpenAI from 'openai';
 
+export interface FixMyPipelineResponse {
+  message: string;
+  code: string[];
+}
+
 export class AIService {
   private static instance: AIService;
   private context: ExtensionContext;
@@ -35,7 +40,10 @@ export class AIService {
     return AIService.instance;
   }
 
-  public async fixMyPipelineRequest(log: string, code: string) {
+  public async fixMyPipelineRequest(
+    log: string,
+    code: string
+  ): Promise<FixMyPipelineResponse | undefined> {
     const apiKey = await this.getApiKey();
 
     if (!apiKey) {
@@ -93,5 +101,10 @@ export class AIService {
         { role: 'user', content: 'Please give me just source code with the edits made.' },
       ],
     });
+
+    return {
+      message: 'everything is perfect no changes needed.',
+      code: ['perfect code example'],
+    };
   }
 }
