@@ -32,7 +32,7 @@ const registerLLMAPIKey = async (context: ExtensionContext) => {
   }
 
   const model = selectedOption.label;
-  const secretKey = `${model.toUpperCase()}_API_KEY`;
+  const secretKey = `zenml.${model.toLowerCase()}.key`;
 
   let apiKey = await context.secrets.get(secretKey);
 
