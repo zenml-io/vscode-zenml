@@ -14,29 +14,10 @@
     <div id="input-container">
       <form id="chatForm">
           <div class="dropup">
-              <button type="button" id="contextButton">Context ▼</button>
-              <div id="contextOptions" class="dropup-content">
-                  <label>
-                      <input type="checkbox" id="serverContext" name="serverContext" value="serverContext">
-                      Server
-                  </label>
-                  <label>
-                      <input type="checkbox" id="environmentContext" name="environmentContext" value="environmentContext">
-                      Environment
-                  </label>
-                  <label>
-                      <input type="checkbox" id="pipelineContext" name="pipelineContext" value="pipelineContext">
-                      Pipeline
-                  </label>
-                  <label>
-                      <input type="checkbox" id="stackContext" name="stackContext" value="stackContext">
-                      Stack
-                  </label>
-                  <label>
-                      <input type="checkbox" id="stackComponentsContext" name="stackComponentsContext" value="stackComponentsContext">
-                      Stack Components
-                  </label>
-              </div>
+              <button type="button" id="contextButton">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="##666"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/></svg>
+              </button>
+              <div id="tree-view" class="tree-view hide"></div>
           </div>
           <input type="text" id="messageInput" name="messageInput" placeholder="Type your message here" />
           <button type="submit" id="sendMessage">Send</button>
@@ -47,28 +28,116 @@
   <script src="${markedUri}"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-            const contextButton = document.getElementById('contextButton');
-            const contextOptions = document.getElementById('contextOptions');
-            const dropup = document.querySelector('.dropup');
+      const contextButton = document.getElementById('contextButton');
+      const contextOptions = document.getElementById('tree-view');
+      const dropup = document.querySelector('.dropup');
+      const plus = contextButton.querySelector('svg')
 
-            contextButton.addEventListener('click', function(event) {
-                event.stopPropagation();
-                contextOptions.classList.toggle('show');
-                // Change the arrow direction
-                this.textContent = this.textContent.includes('▲') ? 'Context ▼' : 'Context ▲';
-            });
+      contextButton.addEventListener('click', function(event) {
+        event.stopPropagation();
+        contextOptions.classList.toggle('hide');
+      });
 
-            contextOptions.addEventListener('click', function(event) {
-                event.stopPropagation();
-            });
+      contextOptions.addEventListener('click', function(event) {
+        event.stopPropagation();
+      });
+    });
+  </script>
+  <script>
+    const treeData = [
+      {name: 'Server'},
+      {name: 'Environment'},
+      {
+        name: 'Pipeline',
+        children : [
+          {
+            name: 'training',
+            children: [
+              {name: 'id: 85439137'},
+              {name: 'completed: success'}
+            ]
+          }
+        ]
+      },
+      {name: 'Stack'},
+      {name: 'Stack Components'}
+    ];
 
-            window.addEventListener('click', function(event) {
-                if (!dropup.contains(event.target)) {
-                    contextOptions.classList.remove('show');
-                    contextButton.textContent = 'Context ▲';
-                }
-            });
+    function createTreeView(items, parentEl, level = 0) {
+      items.forEach(item => {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'tree-item';
+        itemEl.style.paddingLeft = `${level * 12}px`;
+
+        const wrapperEl = document.createElement('div');
+        wrapperEl.className = 'tree-item-wrapper';
+
+        const contentEl = document.createElement('div');
+        contentEl.className = 'tree-item-content';
+
+        const checkboxEl = document.createElement('input');
+        checkboxEl.type = 'checkbox';
+        checkboxEl.className = 'tree-item-checkbox';
+
+        const chevronEl = document.createElement('span');
+        chevronEl.className = 'tree-item-icon';
+        
+        const isFolder = item.children && item.children.length > 0;
+        
+        chevronEl.innerHTML = isFolder
+          ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>'
+          : '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0h24v24H0z" fill="none" stroke="none"/></svg>';
+
+        const nameEl = document.createElement('span');
+        nameEl.className = 'tree-item-name';
+        nameEl.textContent = item.name;
+
+        if (level < 2) {
+          contentEl.appendChild(checkboxEl);
+        }
+        contentEl.appendChild(chevronEl);
+        contentEl.appendChild(nameEl);
+        wrapperEl.appendChild(contentEl);
+
+        if (isFolder) {
+          const childrenEl = document.createElement('div');
+          childrenEl.className = 'tree-item-children';
+          createTreeView(item.children, childrenEl, level + 1);
+
+          contentEl.addEventListener('click', (e) => {
+            if (e.target !== checkboxEl && !childrenEl.contains(e.target)) {
+              e.stopPropagation();
+              childrenEl.classList.toggle('open');
+              if (childrenEl.classList.contains('open')) {
+                  chevronEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+              } else {
+                  chevronEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>';
+              }
+            }
+          });
+
+          wrapperEl.appendChild(childrenEl);
+        }
+
+        checkboxEl.addEventListener('click', (e) => {
+          e.stopPropagation();
         });
+
+        checkboxEl.addEventListener('change', (e) => {
+          if (e.target.checked) {
+            itemEl.style.backgroundColor = '#2a2d2e';
+          } else {
+            itemEl.style.backgroundColor = '';
+          }
+        });
+
+        itemEl.appendChild(wrapperEl);
+        parentEl.appendChild(itemEl);
+      });
+    }
+
+    const treeViewEl = document.getElementById('tree-view');
+    createTreeView(treeData, treeViewEl);
   </script>
 </body>
 </html>
