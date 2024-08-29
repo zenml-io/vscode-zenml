@@ -125,9 +125,6 @@ import svgPanZoom from 'svg-pan-zoom';
     tempDiv.innerHTML = CONTEXT_MENU_HTML.trim();
     contextMenu = tempDiv.firstChild;
 
-    contextMenu.style.top = `${y}px`;
-    contextMenu.style.left = `${x}px`;
-
     contextMenu.querySelector('#inspect').addEventListener('click', () => {
       vscode.postMessage({ command, id });
     });
@@ -143,6 +140,23 @@ import svgPanZoom from 'svg-pan-zoom';
     });
 
     document.body.insertBefore(contextMenu, document.body.firstChild);
+
+    const style = getComputedStyle(contextMenu);
+    const menuHeight = parseInt(style.height.match(/\d+/)[0], 10);
+    const menuWidth = parseInt(style.width.match(/\d+/)[0], 10);
+
+    console.log(menuHeight + y, document.documentElement.clientHeight);
+    console.log(menuWidth + x, document.documentElement.clientWidth);
+
+    contextMenu.style.top =
+      menuHeight + y <= document.documentElement.clientHeight
+        ? (contextMenu.style.top = `${y}px`)
+        : (contextMenu.style.top = `${y - menuHeight}px`);
+
+    contextMenu.style.left =
+      menuWidth + x <= document.documentElement.clientWidth
+        ? (contextMenu.style.left = `${x}px`)
+        : (contextMenu.style.left = `${x - menuWidth}px`);
   }
 
   function closeContextMenu() {
