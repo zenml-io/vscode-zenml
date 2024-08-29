@@ -52,6 +52,31 @@ export interface StepData {
   status: string;
 }
 
+export type ArtifactData = {
+  name: string;
+  version: string;
+  id: string;
+  type: string;
+  author: {
+    fullName: string;
+    email: string;
+  };
+  data: {
+    uri: string;
+    dataType: string;
+  };
+  metadata: {
+    dtype: Record<string, string>;
+    max: Record<string, number>;
+    mean: Record<string, number>;
+    min: Record<string, number>;
+    std: Record<string, number>;
+    shape: [number, number];
+    storage_size: number;
+  };
+  updated: string;
+};
+
 export interface DagStep {
   id: string;
   type: 'step';

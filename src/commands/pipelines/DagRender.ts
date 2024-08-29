@@ -15,14 +15,12 @@ import * as vscode from 'vscode';
 import * as Dagre from 'dagre';
 import { ArrayXY, SVG, registerWindow } from '@svgdotjs/svg.js';
 import { PipelineTreeItem, ServerDataProvider } from '../../views/activityBar';
-import { PipelineRunDag, DagNode, StepData } from '../../types/PipelineTypes';
+import { PipelineRunDag, DagNode, StepData, ArtifactData } from '../../types/PipelineTypes';
 import { LSClient } from '../../services/LSClient';
 import { ServerStatus } from '../../types/ServerInfoTypes';
-import { JsonObject } from '../../views/panel/panelView/PanelTreeItem';
 import { PanelDataProvider } from '../../views/panel/panelView/PanelDataProvider';
 import Panels from '../../common/panels';
 import WebviewBase from '../../common/WebviewBase';
-import { aiCommands } from '../ai/cmds';
 import { fixMyPipelineRequest } from '../../services/aiService';
 import pipelineUtils from './utils';
 
@@ -190,7 +188,7 @@ export default class DagRenderer extends WebviewBase {
 
     const client = LSClient.getInstance();
     try {
-      const stepData = await client.sendLsClientRequest<JsonObject>('getPipelineRunStep', [id]);
+      const stepData = await client.sendLsClientRequest<StepData>('getPipelineRunStep', [id]);
 
       dataPanel.setData({ runUrl, ...stepData }, 'Pipeline Run Step Data');
       vscode.commands.executeCommand('zenmlPanelView.focus');
@@ -211,9 +209,11 @@ export default class DagRenderer extends WebviewBase {
 
     const client = LSClient.getInstance();
     try {
-      const artifactData = await client.sendLsClientRequest<JsonObject>('getPipelineRunArtifact', [
-        id,
-      ]);
+      const artifactData = await client.sendLsClientRequest<ArtifactData>(
+        'getPipelineRunArtifact',
+        [id]
+      );
+      console.log('artifact data', artifactData);
 
       if (deploymentType === 'cloud') {
         const artifactUrl = `${dashboardUrl}/artifact-versions/${id}?tab=overview`;
