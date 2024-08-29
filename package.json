@@ -142,8 +142,14 @@
     },
     "commands": [
       {
-        "command": "zenml.openChat",
-        "title": "Open ZenML Chat"
+        "command": "zenml.renderChat",
+        "title": "Render Chat",
+        "icon": "$(comment-discussion",
+        "category": "ZenML Chat"
+      },
+      {
+        "command": "zenml.openChatView",
+        "title": "Open Chat View"
       },
       {
         "command": "zenml.promptForInterpreter",
@@ -333,6 +339,11 @@
           "id": "zenml",
           "title": "ZenML",
           "icon": "resources/logo.png"
+        },
+        {
+          "id": "chatbotView",
+          "title": "Chatbot",
+          "icon": "resources/chat.png"
         }
       ],
       "panel": [
@@ -340,6 +351,11 @@
           "id": "zenmlPanel",
           "title": "ZenML",
           "icon": "resources/logo.png"
+        },
+        {
+          "id": "chatPanel",
+          "title": "ZenML Chat",
+          "icon": "resources/chat.png"
         }
       ]
     },
@@ -381,13 +397,20 @@
           "id": "zenmlPanelView",
           "name": "ZenML"
         }
+      ],
+      "chatPanel": [
+        {
+          "id": "chatPanelView",
+          "name": "Chat",
+          "type": "webview"
+        }
       ]
     },
     "menus": {
       "view/title": [
         {
-          "command": "zenml.openChat",
-          "when": "view == zenmlChatView",
+          "command": "zenml.renderChat",
+          "when": "view == chatPanelView",
           "group": "navigation"
         },
         {
