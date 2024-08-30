@@ -14,11 +14,23 @@
 import type { ExtensionContext } from 'vscode';
 import * as vscode from 'vscode';
 import OpenAI from 'openai';
+import { z } from 'zod';
+import { zodResponseFormat } from 'openai/helpers/zod';
 
 export interface FixMyPipelineResponse {
   message: string;
   code: string[];
 }
+
+const CodeSnippet = z.object({
+  language: z.string(),
+  code: z.string(),
+});
+
+const FixMyPipeline = z.object({
+  error_message_explanation: z.string(),
+  corrected_code_options: z.array(CodeSnippet),
+});
 
 export class AIService {
   private static instance: AIService;
@@ -49,7 +61,7 @@ export class AIService {
     }
     const openai = new OpenAI({ apiKey });
 
-    const completion = await openai.chat.completions.create({
+    const completion = await openai.beta.chat.completions.parse({
       model: 'gpt-4o-mini',
       messages: [
         {
@@ -71,12 +83,13 @@ export class AIService {
             'Now, please expalin some possible causes of the error as well as at least one option for fixing the error. If there are any typos, present those first in the possible solutions.',
         },
       ],
+      response_format: zodResponseFormat(FixMyPipeline, 'fix_my_pipeline'),
     });
 
-    const message = completion.choices[0].message.content;
+    console.log('\n\n\n', completion, '\n\n\n');
 
     return {
-      message: message || '',
+      message: '', // TODO
       code: [],
     };
   }
