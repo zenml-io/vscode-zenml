@@ -31,6 +31,9 @@ export const registerAICommands = (context: ExtensionContext) => {
         'zenml.sendOpenAIMessage',
         async () => await aiCommands.sendOpenAIRequest(context)
       ),
+      registerCommand('zenml.displayNextCodeRecommendation', () =>
+        aiCommands.displayNextCodeRecommendation()
+      ),
     ];
 
     registeredCommands.forEach(cmd => {

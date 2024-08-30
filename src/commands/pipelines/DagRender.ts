@@ -224,15 +224,12 @@ def inference_preprocessor(
     const HARDCODED_PATH = '/home/memlin/zenml/zenml_tutorial/steps/inference_preprocessor.py';
 
     AIStepFixer.createCodeRecommendation(
+      id,
       HARDCODED_PATH,
       HARDCODED_RESPONSE.code,
       String(stepData.sourceCode)
     );
     AIStepFixer.createVirtualDocument(id, HARDCODED_RESPONSE.response);
-
-    setTimeout(() => {
-      AIStepFixer.updateCodeRecommendation(HARDCODED_PATH);
-    }, 5000);
 
     const p = Panels.getInstance();
     const existingPanel = p.getPanel(node.id);

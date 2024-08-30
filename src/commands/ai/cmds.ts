@@ -11,9 +11,11 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 
+import * as vscode from 'vscode';
 import type { ExtensionContext } from 'vscode';
 import OpenAI from 'openai';
 import { getSecret } from '../../common/vscodeapi';
+import AIStepFixer from '../pipelines/AIStepFixer';
 
 const sendOpenAIRequest = async (context: ExtensionContext) => {
   const apiKey = await getSecret(context, 'OPENAI_API_KEY');
@@ -35,6 +37,16 @@ const sendOpenAIRequest = async (context: ExtensionContext) => {
 
   return completion;
 };
+
+const displayNextCodeRecommendation = () => {
+  let id =
+    vscode.window.tabGroups.activeTabGroup.activeTab?.label.match(/(?<=Preview ).+(?=\.md)/)?.[0];
+  if (!id) return;
+
+  AIStepFixer.updateCodeRecommendation(id);
+};
+
 export const aiCommands = {
   sendOpenAIRequest,
+  displayNextCodeRecommendation,
 };

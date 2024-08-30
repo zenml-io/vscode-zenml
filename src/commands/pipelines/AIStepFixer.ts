@@ -5,8 +5,10 @@ import fs from 'fs/promises';
 import { JsonObject } from '../../views/panel/panelView/PanelTreeItem';
 import { integer } from 'vscode-languageclient';
 
+// TODO remove codeRecommendations from AIStepFixer when they're closed / not found
 export default new (class AIStepFixer {
   private codeRecommendations: {
+    id: string;
     filePath: string;
     code: string[];
     sourceCode: string;
@@ -25,21 +27,24 @@ export default new (class AIStepFixer {
     await vscode.workspace.openTextDocument(uri);
 
     vscode.commands.executeCommand('markdown.showPreviewToSide', uri);
-
-    return uri;
   }
 
-  public createCodeRecommendation(filePath: string, code: string[], sourceCode: string) {
-    this.codeRecommendations.push({ filePath, code, sourceCode, currentCodeIndex: 0 });
+  public createCodeRecommendation(
+    id: string,
+    filePath: string,
+    code: string[],
+    sourceCode: string
+  ) {
+    this.codeRecommendations.push({ id, filePath, code, sourceCode, currentCodeIndex: 0 });
     this.editStepFile(filePath, code[0], sourceCode);
   }
 
-  public async updateCodeRecommendation(filePath: string) {
-    const rec = this.codeRecommendations.find(rec => rec.filePath === filePath);
+  public async updateCodeRecommendation(id: string) {
+    const rec = this.codeRecommendations.find(rec => rec.id === id);
     if (!rec) return;
 
     this.editStepFile(
-      filePath,
+      rec.filePath,
       rec.code[rec.currentCodeIndex + 1 < rec.code.length ? rec.currentCodeIndex + 1 : 0],
       rec.sourceCode,
       false
@@ -50,7 +55,7 @@ export default new (class AIStepFixer {
     filePath: string,
     newContent: string,
     oldContent: string,
-    open = true
+    openFile = true
   ) {
     const fileContents = await fs.readFile(filePath, { encoding: 'utf-8' });
     // TODO update to throw error if oldContent is not found in fileContents
@@ -63,7 +68,7 @@ export default new (class AIStepFixer {
     edit.replace(fileUri, oldRange, newContent);
 
     return vscode.workspace.applyEdit(edit).then(async success => {
-      if (success && open) {
+      if (success && openFile) {
         vscode.commands.executeCommand('workbench.files.action.compareWithSaved', fileUri);
       } else if (!success) {
         // TODO proper error handling
