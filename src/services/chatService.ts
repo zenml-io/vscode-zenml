@@ -1,3 +1,15 @@
+// Copyright(c) ZenML GmbH 2024. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0(the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at:
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+// or implied.See the License for the specific language governing
+// permissions and limitations under the License.
 import * as vscode from 'vscode';
 import axios from 'axios';
 import {
@@ -15,7 +27,7 @@ import { DagArtifact, DagStep, PipelineRunDag } from '../types/PipelineTypes';
 import { JsonObject } from '../views/panel/panelView/PanelTreeItem';
 import { ZenmlGlobalConfigResp } from '../types/LSClientResponseTypes';
 import { TreeItem } from 'vscode';
-import { chatMessage } from '../views/activityBar/chatView/chatMessage';
+import { ChatMessage } from '../types/ChatTypes';
 
 export class ChatService {
   private static instance: ChatService;
@@ -51,7 +63,7 @@ export class ChatService {
     }
   }
 
-  public async getChatResponse(messages: chatMessage[],  context?: string[] | undefined): Promise<string> {
+  public async getChatResponse(messages: ChatMessage[],  context?: string[] | undefined): Promise<string> {
     try {
       if (context) {
         messages = await this.addContext(messages, context);
@@ -70,8 +82,8 @@ export class ChatService {
     }
   }
 
-  private async addContext(messages: chatMessage[], requestedContext: string[]): Promise<chatMessage[]> {
-    let systemMessage: chatMessage = { role: 'system', content: 'Context:' };
+  private async addContext(messages: ChatMessage[], requestedContext: string[]): Promise<ChatMessage[]> {
+    let systemMessage: ChatMessage = { role: 'system', content: 'Context:' };
     if (requestedContext.includes('serverContext')) {
       systemMessage.content += this.getServerData();
     }
@@ -91,7 +103,7 @@ export class ChatService {
       systemMessage.content += this.getRecentPipelineRunData();
     }
     messages.push(systemMessage);
-    return messages
+    return messages;
   }
 
   /**
@@ -191,21 +203,31 @@ export class ChatService {
  
     let globalConfig = await lsClient.sendLsClientRequest<ZenmlGlobalConfigResp>('getGlobalConfig');
     let apiToken = globalConfig.store.api_token;
-    let dashboardUrl = globalConfig.store.url
+    let dashboardUrl = globalConfig.store.url;
 
     if (!apiToken) {
       throw new Error('API Token is not available in gloval configuration');
     }
 
     let pipelineRunSteps = await this.getPipelineRunNodes('step');
+
     let logs = await Promise.all(pipelineRunSteps[0].map(async (step) => {
-      let response = await axios.get(`${dashboardUrl}/api/v1/steps/${step.id}/logs`, {
-        headers: {
-          Authorization: `Bearer ${apiToken}`,
-          'accept': 'application/json'
+      if (step && step.id) {
+        try {
+          let response = await axios.get(`${dashboardUrl}/api/v1/steps/${step.id}/logs`, {
+            headers: {
+              Authorization: `Bearer ${apiToken}`,
+              'accept': 'application/json'
+            }
+          });
+          return response.data;
+        } catch (error) {
+          console.error(`Failed to get logs for step with id ${step.id}`, error);
         }
-      });
-      return response.data;
+      } else {
+        console.warn('Encountered a null or invalid step.');
+      }
+      
     }));
     return logs;
   }
@@ -227,22 +249,26 @@ export class ChatService {
 
     let globalConfig = await lsClient.sendLsClientRequest<ZenmlGlobalConfigResp>('getGlobalConfig');
     let apiToken = globalConfig.store.api_token;
-    let dashboardUrl = globalConfig.store.url
+    let dashboardUrl = globalConfig.store.url;
 
     if (!apiToken) {
       throw new Error('API Token is not available in gloval configuration');
     }
 
     let logs = await Promise.all(stepData.map(async (step) => {
-      let validStep = step as JsonObject;  // Type assertion. If we're not sure if step is not null, should change this to a guard check.
-      let response = await axios.get(`${dashboardUrl}/api/v1/steps/${validStep.id}/logs`, {
-        headers: {
-          Authorization: `Bearer ${apiToken}`,
-          'accept': 'application/json'
-        }
-      });
-      return response.data;
+      if (step && typeof step === 'object' && 'id' in step) {
+        let validStep = step as JsonObject;
+        let response = await axios.get(`${dashboardUrl}/api/v1/steps/${validStep.id}/logs`, {
+          headers: {
+            Authorization: `Bearer ${apiToken}`,
+            'accept': 'application/json'
+          }
+        });
+        return response.data; 
+      }
+      return null; // returns null if step is invalid
     }));
+    logs = logs.filter(log => log !== null); // Filters out possible null logs.
     return logs;
   }
 }
