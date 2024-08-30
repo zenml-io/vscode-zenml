@@ -33,58 +33,93 @@
       form {
         display: contents;
       }
+      .tree-view {
+            background-color: white;
+            color: #333;
+            width: 256px;
+            max-height: 300px;
+            overflow: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .tree-item {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .tree-item:hover {
+            background-color: #f3f4f6;
+        }
+        .tree-item-content {
+            display: flex;
+            align-items: center;
+            flex-grow: 1;
+            padding: 2px 8px;
+        }
+        .tree-item-icon {
+            width: 16px;
+            height: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center; 
+        }
+        .tree-item-name {
+            font-size: 14px;
+            color: #4b5563;
+            margin-left: 4px;
+            flex-grow: 1;
+        }
+        .tree-item-children {
+            display: none;
+            width: 100%;
+        }
+        .tree-item-children.open {
+            display: block;
+        }
+        .tree-item-wrapper {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+        .tree-item-checkbox {
+            width: 16px;
+            height: 16px;
+            margin-left: 8px;
+        }
    </style>
 </head>
 <body class="bg-white font-plus-jakarta">
   <div class="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 class="text-3xl font-bold text-center text-zenml mb-8">ZenML Chat</h1>
-      
-      <div class="flex mb-6">
-          <div class="w-1/4 pr-4">
-              <div class="bg-white shadow-md rounded-lg p-4">
-                  <h2 class="text-lg font-semibold mb-4 text-zenml">Options</h2>
-                  <ul class="space-y-2">
-                      <li><a href="#" class="text-gray-700 hover:text-zenml">Stack</a></li>
-                      <li><a href="#" class="text-gray-700 hover:text-zenml">Component</a></li>
-                      <li><a href="#" class="text-gray-700 hover:text-zenml">Pipeline</a></li>
-                      <li><a href="#" class="text-gray-700 hover:text-zenml">Server</a></li>
-                      <li><a href="#" class="text-gray-700 hover:text-zenml">Environment</a></li>
-                  </ul>
+    <h1 class="text-3xl font-bold text-center text-zenml mb-8">ZenML Chat</h1>
+    
+    <div class="mb-6">
+      <div class="relative">
+          <form id="chatForm" class="flex items-center bg-white border border-gray-300 rounded-full shadow-sm">
+              <div class="relative">
+                  <button type="button" id="optionsToggle" class="p-2 text-gray-400 hover:text-zenml focus:outline-none">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                  </button>
+                  <div id="optionsDropdown" class="absolute right-8 top-0 mt-2 hidden">
+                      <div id="tree-view" class="tree-view"></div>
+                  </div>
               </div>
-          </div>
-          <div class="w-3/4">
-            <div class="flex items-center mb-4">
-              <form id="chatForm">
-                <input type="text" id="messageInput" name="messageInput" class="flex-grow mr-2 p-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-zenml focus:border-transparent" placeholder="Type your message...">
-                <button id="sendMessage" class="bg-zenml text-white px-6 py-3 rounded-full hover:bg-purple-700 transition duration-300">Send</button>
-              </form>
-            </div>
-            
-            <div id="chatMessages" class="space-y-4">
-              ${chatLogHtml}
-            </div>
-          </div>
+              <input type="text" id="messageInput" name="messageInput" class="flex-grow p-3 focus:outline-none" placeholder="Type your message...">
+              <button type="submit" id="sendMessage" class="p-2 text-zenml hover:text-purple-700 focus:outline-none">
+                  <svg aria-label="send" role="img" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" class="fill-current">
+                      <path d="M120-160v-240l320-80-320-80v-240l760 320-760 320Z"></path>
+                  </svg>
+              </button>
+          </form>
       </div>
+      <div id="chatMessages" class="space-y-4 mb-4 mt-4">${chatLogHtml}</div>
+    </div>
   </div>
+  <script src="${markedUri}"></script>
   <script src="${jsUri}"></script>
-  <!-- <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const contextButton = document.getElementById('contextButton');
-      const contextOptions = document.getElementById('tree-view');
-      const dropup = document.querySelector('.dropup');
-      const plus = contextButton.querySelector('svg')
-
-      contextButton.addEventListener('click', function(event) {
-        event.stopPropagation();
-        contextOptions.classList.toggle('hide');
-      });
-
-      contextOptions.addEventListener('click', function(event) {
-        event.stopPropagation();
-      });
-    });
-  </script> -->
-  <!-- <script>
+  <script>
     const treeData = [
       {name: 'Server'},
       {name: 'Environment'},
@@ -108,17 +143,13 @@
       items.forEach(item => {
         const itemEl = document.createElement('div');
         itemEl.className = 'tree-item';
-        itemEl.style.paddingLeft = `${level * 12}px`;
 
         const wrapperEl = document.createElement('div');
         wrapperEl.className = 'tree-item-wrapper';
 
         const contentEl = document.createElement('div');
         contentEl.className = 'tree-item-content';
-
-        const checkboxEl = document.createElement('input');
-        checkboxEl.type = 'checkbox';
-        checkboxEl.className = 'tree-item-checkbox';
+        contentEl.style.paddingLeft = `${level * 16}px`;
 
         const chevronEl = document.createElement('span');
         chevronEl.className = 'tree-item-icon';
@@ -126,18 +157,22 @@
         const isFolder = item.children && item.children.length > 0;
         
         chevronEl.innerHTML = isFolder
-          ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>'
-          : '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0h24v24H0z" fill="none" stroke="none"/></svg>';
+            ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>'
+            : '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0h24v24H0z" fill="none" stroke="none"/></svg>';
 
         const nameEl = document.createElement('span');
         nameEl.className = 'tree-item-name';
         nameEl.textContent = item.name;
 
+        const checkboxEl = document.createElement('input');
+        checkboxEl.type = 'checkbox';
+        checkboxEl.className = 'tree-item-checkbox';
+
+        contentEl.appendChild(chevronEl);
+        contentEl.appendChild(nameEl);
         if (level < 2) {
           contentEl.appendChild(checkboxEl);
         }
-        contentEl.appendChild(chevronEl);
-        contentEl.appendChild(nameEl);
         wrapperEl.appendChild(contentEl);
 
         if (isFolder) {
@@ -146,39 +181,40 @@
           createTreeView(item.children, childrenEl, level + 1);
 
           contentEl.addEventListener('click', (e) => {
-            if (e.target !== checkboxEl && !childrenEl.contains(e.target)) {
+            if (e.target !== checkboxEl) {
               e.stopPropagation();
               childrenEl.classList.toggle('open');
               if (childrenEl.classList.contains('open')) {
-                  chevronEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+                chevronEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
               } else {
-                  chevronEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>';
+                chevronEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>';
               }
             }
           });
-
           wrapperEl.appendChild(childrenEl);
         }
-
-        checkboxEl.addEventListener('click', (e) => {
-          e.stopPropagation();
-        });
-
-        checkboxEl.addEventListener('change', (e) => {
-          if (e.target.checked) {
-            itemEl.style.backgroundColor = '#2a2d2e';
-          } else {
-            itemEl.style.backgroundColor = '';
-          }
-        });
-
         itemEl.appendChild(wrapperEl);
         parentEl.appendChild(itemEl);
       });
     }
 
-    const treeViewEl = document.getElementById('tree-view');
-    createTreeView(treeData, treeViewEl);
-  </script> -->
+    document.addEventListener('DOMContentLoaded', (event) => {
+      const treeViewEl = document.getElementById('tree-view');
+      createTreeView(treeData, treeViewEl);
+
+      const optionsToggle = document.getElementById('optionsToggle');
+      const optionsDropdown = document.getElementById('optionsDropdown');
+
+      optionsToggle.addEventListener('click', () => {
+        optionsDropdown.classList.toggle('hidden');
+      });
+
+      document.addEventListener('click', (event) => {
+        if (!optionsToggle.contains(event.target) && !optionsDropdown.contains(event.target)) {
+          optionsDropdown.classList.add('hidden');
+        }
+      });
+    });
+  </script>
 </body>
 </html>

@@ -27,7 +27,7 @@
       const messagesDiv = document.getElementById('messages');
       const messageDiv = document.createElement('div');
       messageDiv.className = 'message';
-      messageDiv.innerHTML = marked(message);
+      messageDiv.innerHTML = `<p>${text}<p>`;
       messagesDiv.appendChild(messageDiv);
     }
   }
