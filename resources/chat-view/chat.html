@@ -1,32 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat</title>
-  <link href="${cssUri}" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZenML Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        zenml: '#7a3ef8',
+                    },
+                    fontFamily: {
+                        'plus-jakarta': ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+      p {
+        color: black;
+      }
+      #messageInput {
+        color: black;
+      }
+      form {
+        display: contents;
+      }
+   </style>
 </head>
-<body>
-  <div id="chat-container">
-    <div id="messages">
-      ${chatLogHtml}
-    </div>
-    <div id="input-container">
-      <form id="chatForm">
-          <div class="dropup">
-              <button type="button" id="contextButton">
-                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="##666"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/></svg>
-              </button>
-              <div id="tree-view" class="tree-view hide"></div>
+<body class="bg-white font-plus-jakarta">
+  <div class="container mx-auto px-4 py-8 max-w-4xl">
+      <h1 class="text-3xl font-bold text-center text-zenml mb-8">ZenML Chat</h1>
+      
+      <div class="flex mb-6">
+          <div class="w-1/4 pr-4">
+              <div class="bg-white shadow-md rounded-lg p-4">
+                  <h2 class="text-lg font-semibold mb-4 text-zenml">Options</h2>
+                  <ul class="space-y-2">
+                      <li><a href="#" class="text-gray-700 hover:text-zenml">Stack</a></li>
+                      <li><a href="#" class="text-gray-700 hover:text-zenml">Component</a></li>
+                      <li><a href="#" class="text-gray-700 hover:text-zenml">Pipeline</a></li>
+                      <li><a href="#" class="text-gray-700 hover:text-zenml">Server</a></li>
+                      <li><a href="#" class="text-gray-700 hover:text-zenml">Environment</a></li>
+                  </ul>
+              </div>
           </div>
-          <input type="text" id="messageInput" name="messageInput" placeholder="Type your message here" />
-          <button type="submit" id="sendMessage">Send</button>
-      </form>
-    </div>
+          <div class="w-3/4">
+            <div class="flex items-center mb-4">
+              <form id="chatForm">
+                <input type="text" id="messageInput" name="messageInput" class="flex-grow mr-2 p-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-zenml focus:border-transparent" placeholder="Type your message...">
+                <button id="sendMessage" class="bg-zenml text-white px-6 py-3 rounded-full hover:bg-purple-700 transition duration-300">Send</button>
+              </form>
+            </div>
+            
+            <div id="chatMessages" class="space-y-4">
+              ${chatLogHtml}
+            </div>
+          </div>
+      </div>
   </div>
   <script src="${jsUri}"></script>
-  <script src="${markedUri}"></script>
-  <script>
+  <!-- <script>
     document.addEventListener('DOMContentLoaded', function() {
       const contextButton = document.getElementById('contextButton');
       const contextOptions = document.getElementById('tree-view');
@@ -42,8 +80,8 @@
         event.stopPropagation();
       });
     });
-  </script>
-  <script>
+  </script> -->
+  <!-- <script>
     const treeData = [
       {name: 'Server'},
       {name: 'Environment'},
@@ -138,6 +176,6 @@
 
     const treeViewEl = document.getElementById('tree-view');
     createTreeView(treeData, treeViewEl);
-  </script>
+  </script> -->
 </body>
 </html>
