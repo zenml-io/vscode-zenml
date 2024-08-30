@@ -25,6 +25,7 @@ import WebviewBase from '../../common/WebviewBase';
 import { aiCommands } from '../ai/cmds';
 import { fixMyPipelineRequest } from '../../services/aiService';
 import pipelineUtils from './utils';
+import AIStepFixer from './AIStepFixer';
 
 const ROOT_PATH = ['resources', 'dag-view'];
 const CSS_FILE = 'dag.css';
@@ -137,39 +138,101 @@ export default class DagRenderer extends WebviewBase {
   }
 
   // TODO send this function PipelineStepData instead of PipelineTreeItem
+  // TODO sending the OpenAI API request should also be moved to AIStepFixer
   private async fixBrokenStep(id: string, node: PipelineTreeItem): Promise<void> {
     if (!WebviewBase.context) return;
 
     const client = LSClient.getInstance();
     const stepData = await client.sendLsClientRequest<JsonObject>('getPipelineRunStep', [id]);
-
     const log = await fs.readFile(String(stepData.logsUri), { encoding: 'utf-8' });
 
-    const response = await fixMyPipelineRequest(
-      WebviewBase.context,
-      log,
-      String(stepData.sourceCode)
-    );
+    // const response = await fixMyPipelineRequest(
+    //   WebviewBase.context,
+    //   log,
+    //   String(stepData.sourceCode)
+    // );
 
-    const [chatCompletion, codeCompletion] = response;
-    const provider = new (class implements vscode.TextDocumentContentProvider {
-      provideTextDocumentContent(uri: vscode.Uri): string {
-        return chatCompletion.choices[0].message.content || 'Something went wrong';
-      }
-    })();
+    // const [chatCompletion, codeCompletion] = response;
 
-    vscode.workspace.registerTextDocumentContentProvider('fix-my-pipeline', provider);
+    const HARDCODED_RESPONSE = {
+      response: '# This is a test response.',
+      code: [
+        `@step
+def inference_preprocessor(
+    dataset_inf: pd.DataFrame,
+    preprocess_pipeline: Pipeline,
+    target: str,
+) -> Annotated[pd.DataFrame, "inference_dataset"]:
+    """Data preprocessor step.
 
-    const uri = vscode.Uri.parse('fix-my-pipeline:' + id + '.md');
-    const doc = await vscode.workspace.openTextDocument(uri);
+    This is an example of a data processor step that prepares the data so that
+    it is suitable for model inference. It takes in a dataset as an input step
+    artifact and performs any necessary preprocessing steps based on pretrained
+    preprocessing pipeline.
 
-    const codeSnippet =
-      codeCompletion.choices[0].message.content?.match(/(?<=```\S*\s)[\s\S]*(?=\s```)/)?.[0] || '';
+    Args:
+        dataset_inf: The inference dataset.
+        preprocess_pipeline: Pretrained \`Pipeline\` to process dataset.
+        target: Name of target columns in dataset.
+
+    Returns:
+        The processed dataframe: dataset_inf.
+    """
+    # artificially adding \`target\` column to avoid Pipeline issues
+    dataset_inf[target] = pd.Series([1] * dataset_inf.shape[0])
+    dataset_inf = preprocess_pipeline.transform(dataset_inf)
+    dataset_inf.drop(columns=[target], inplace=True)
+
+    # This is code snippet 1
+
+    return dataset_inf`,
+        `@step
+def inference_preprocessor(
+    dataset_inf: pd.DataFrame,
+    preprocess_pipeline: Pipeline,
+    target: str,
+) -> Annotated[pd.DataFrame, "inference_dataset"]:
+    """Data preprocessor step.
+
+    This is an example of a data processor step that prepares the data so that
+    it is suitable for model inference. It takes in a dataset as an input step
+    artifact and performs any necessary preprocessing steps based on pretrained
+    preprocessing pipeline.
+
+    Args:
+        dataset_inf: The inference dataset.
+        preprocess_pipeline: Pretrained \`Pipeline\` to process dataset.
+        target: Name of target columns in dataset.
+
+    Returns:
+        The processed dataframe: dataset_inf.
+    """
+    # artificially adding \`target\` column to avoid Pipeline issues
+    dataset_inf[target] = pd.Series([1] * dataset_inf.shape[0])
+    dataset_inf = preprocess_pipeline.transform(dataset_inf)
+    dataset_inf.drop(columns=[target], inplace=True)
+
+    # This is code snippet 2!!
+
+    return dataset_inf`,
+      ],
+    };
+
+    // const codeSnippet =
+    //   codeCompletion.choices[0].message.content?.match(/(?<=```\S*\s)[\s\S]*(?=\s```)/)?.[0] || '';
 
     const HARDCODED_PATH = '/home/memlin/zenml/zenml_tutorial/steps/inference_preprocessor.py';
-    await pipelineUtils.editStepFile(HARDCODED_PATH, codeSnippet, String(stepData.sourceCode));
 
-    vscode.commands.executeCommand('markdown.showPreviewToSide', uri);
+    AIStepFixer.createCodeRecommendation(
+      HARDCODED_PATH,
+      HARDCODED_RESPONSE.code,
+      String(stepData.sourceCode)
+    );
+    AIStepFixer.createVirtualDocument(id, HARDCODED_RESPONSE.response);
+
+    setTimeout(() => {
+      AIStepFixer.updateCodeRecommendation(HARDCODED_PATH);
+    }, 5000);
 
     const p = Panels.getInstance();
     const existingPanel = p.getPanel(node.id);
