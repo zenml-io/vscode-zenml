@@ -76,7 +76,7 @@ export async function getSecret(context: ExtensionContext, key: string) {
 
   if (secret === undefined) {
     console.error(`The requested secret with key '${key}' does not exist.`);
-    return;
+    return undefined;
   }
 
   return secret;

@@ -120,7 +120,6 @@ export async function searchWorkspaceByFileContent(content: string) {
   const pythonFiles = files.filter(file => file.toString().endsWith('.py'));
 
   const matches: vscode.Uri[] = [];
-
   await Promise.all(
     pythonFiles.map(
       async file =>
@@ -131,7 +130,5 @@ export async function searchWorkspaceByFileContent(content: string) {
         })
     )
   );
-
-  console.log(matches);
   return matches;
 }
