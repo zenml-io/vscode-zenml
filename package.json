@@ -281,7 +281,7 @@
         "category": "ZenML Pipeline Runs"
       },
       {
-        "command": "zenml.renderChat",
+        "command": "zenml.openChat",
         "title": "Render Chat",
         "icon": "$(comment-discussion)",
         "category": "ZenML Chat"
@@ -446,6 +446,11 @@
           "when": "environmentCommandsRegistered && view == zenmlEnvironmentView",
           "command": "zenml.restartLspServer",
           "group": "navigation"
+        },
+        {
+          "when": "view == zenmlChatView",
+          "command": "zenml.openChat",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
@@ -501,7 +506,7 @@
         },
         {
           "when": "view == chatPanelView",
-          "command": "zenml.renderChat",
+          "command": "zenml.openChat",
           "group": "navigation"
         },
         {

@@ -49,9 +49,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
 
   /**
-   * Register's the renderChat command **********************************************************************************************
+   * Register's the openChat command **********************************************************************************************
    */
-  let renderChatCommand = vscode.commands.registerCommand('zenml.renderChat', () => {
+  let renderChatCommand = vscode.commands.registerCommand('zenml.openChat', () => {
     // chatDataProvider.resolveWebviewView(fakeWebviewView, panel);
     const panel = vscode.window.createWebviewPanel(
       'zenmlChat', // Identifies the type of the webview. Used internally

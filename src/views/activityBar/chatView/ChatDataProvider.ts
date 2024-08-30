@@ -90,12 +90,12 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
         if (message.role == 'assistant') {
           return `<div class="bg-gray-100 p-4 rounded-lg">
               <p class="font-semibold text-zenml">User</p>
-              <p>${content}</p>
+              ${content}
           </div>`
         } else {
           return `<div class="bg-purple-50 p-4 rounded-lg">
             <p class="font-semibold text-zenml">ZenML Assistant</p>
-            <p>${content}</p>
+            ${content}
           </div>`
         }
       })
