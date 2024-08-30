@@ -16,7 +16,6 @@ import fs from 'fs/promises';
 import { findFirstLineNumber } from '../../common/utilities';
 import { ServerDataProvider } from '../../views/activityBar';
 import { isServerStatus } from '../server/utils';
-import path from 'path';
 
 /**
  * Gets the Dashboard URL for the corresponding ZenML pipeline run
@@ -36,13 +35,12 @@ export const getPipelineRunDashboardUrl = (id: string): string => {
   return `${currentServerUrl}/runs/${id}`;
 };
 
-const editStepFile = async (filePath: string, newContent: string, oldContent: string) => {
-  const fileContents = await fs.readFile(filePath, { encoding: 'utf-8' });
+const editStepFile = async (fileUri: vscode.Uri, newContent: string, oldContent: string) => {
+  const fileContents = await fs.readFile(fileUri.path, { encoding: 'utf-8' });
   // TODO update to throw error if oldContent is not found in fileContents
   const firstLine = new vscode.Position(findFirstLineNumber(fileContents, oldContent) || 0, 0);
   const lastLine = new vscode.Position(firstLine.line + oldContent.split('\n').length, 0);
   const oldRange = new vscode.Range(firstLine, lastLine);
-  const fileUri = vscode.Uri.file(filePath);
 
   vscode.window.showTextDocument(fileUri);
   const edit = new vscode.WorkspaceEdit();
