@@ -1,12 +1,24 @@
+// Copyright(c) ZenML GmbH 2024. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0(the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at:
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+// or implied.See the License for the specific language governing
+// permissions and limitations under the License.
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as marked from 'marked';
-import { ChatService } from '../../../services/chatService';
-import { chatMessage } from './chatMessage';
+import { ChatService } from '../../services/chatService';
+import { ChatMessage } from '../../types/ChatTypes';
 
 export class ChatDataProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
-  private messages: chatMessage[] = []; // Array to store chat messages
+  private messages: ChatMessage[] = []; // Array to store chat messages
   private chatService: ChatService;
 
   constructor(private readonly context: vscode.ExtensionContext) {
@@ -87,16 +99,16 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
     return this.messages.filter(msg => msg['role'] !== 'system')
       .map((message) => {
         let content = marked.parse(message.content);
-        if (message.role == 'assistant') {
+        if (message.role === 'assistant') {
           return `<div class="bg-gray-100 p-4 rounded-lg">
               <p class="font-semibold text-zenml">User</p>
               ${content}
-          </div>`
+          </div>`;
         } else {
           return `<div class="bg-purple-50 p-4 rounded-lg">
             <p class="font-semibold text-zenml">ZenML Assistant</p>
             ${content}
-          </div>`
+          </div>`;
         }
       })
       .join('');

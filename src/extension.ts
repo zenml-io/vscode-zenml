@@ -16,7 +16,7 @@ import { LSClient } from './services/LSClient';
 import { ZenExtension } from './services/ZenExtension';
 import { refreshUIComponents } from './utils/refresh';
 import { EnvironmentDataProvider } from './views/activityBar/environmentView/EnvironmentDataProvider';
-import { ChatDataProvider } from './views/activityBar/chatView/ChatDataProvider';
+import { ChatDataProvider } from './views/chatView/ChatDataProvider';
 import { APIWebviewViewProvider } from './views/activityBar/APIView/APIWebviewViewProvider';
 import { registerEnvironmentCommands } from './commands/environment/registry';
 import { LSP_ZENML_CLIENT_INITIALIZED } from './utils/constants';
