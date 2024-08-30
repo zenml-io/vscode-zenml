@@ -169,7 +169,7 @@ export default class DagRenderer extends WebviewBase {
     if (sourceCodeFileMatches.length === 1) {
       await pipelineUtils.editStepFile(
         sourceCodeFileMatches[0],
-        response.code[0],
+        response.code[0].content,
         String(stepData.sourceCode)
       );
     }

@@ -19,12 +19,12 @@ import { zodResponseFormat } from 'openai/helpers/zod';
 
 export interface FixMyPipelineResponse {
   message: string;
-  code: string[];
+  code: { language: string; content: string }[];
 }
 
 const CodeSnippet = z.object({
   language: z.string(),
-  code: z.string(),
+  content: z.string(),
 });
 
 const FixMyPipeline = z.object({
@@ -52,7 +52,10 @@ export class AIService {
     return AIService.instance;
   }
 
-  public async fixMyPipelineRequest(log: string, code: string): Promise<FixMyPipelineResponse> {
+  public async fixMyPipelineRequest(
+    log: string,
+    code: string
+  ): Promise<FixMyPipelineResponse | undefined> {
     const apiKey = await this.getApiKey();
 
     if (!apiKey) {
@@ -67,30 +70,35 @@ export class AIService {
         {
           role: 'system',
           content: `You are an advanced AI programming assistant tasked with troubleshooting pipeline runs for ZenML into an explanation that is both easy to understand and meaningful. Construct an explanation that:
-    - Places the emphasis on the 'why' of the error, explaining possible causes of the problem, beyond just detailing what the error is
-    - Provides at least one way to modify the provided code that could resolve the error
-    
-    Do not make any assumptions or invent details that are not supported by the code or the user-provided context.`,
+    - Places the emphasis on the 'why' of the error, explaining possible causes of the problem, beyond just detailing what the error is.
+    -Do not make any assumptions or invent details that are not supported by the code or the user-provided context.
+    -For the code snippets, please provide the entire content of the source code with any required edits made`,
         },
         {
           role: 'user',
           content: `Here is the content of the error message: ${log}`,
         },
-        { role: 'user', content: `Here is the code where the error occured: ${code}` },
+        { role: 'user', content: `Here is the source code where the error occured: ${code}` },
         {
           role: 'user',
           content:
-            'Now, please expalin some possible causes of the error as well as at least one option for fixing the error. If there are any typos, present those first in the possible solutions.',
+            'Now, please explain some possible causes of the error. If you identify any code errors that could resolve the issue, please also provide the full content of the source code with the proposed changes made.',
         },
       ],
       response_format: zodResponseFormat(FixMyPipeline, 'fix_my_pipeline'),
     });
 
-    console.log('\n\n\n', completion, '\n\n\n');
+    const response = completion.choices[0].message.parsed;
+
+    console.log('\n\n\n', completion.choices[0].message.parsed, '\n\n\n');
+
+    if (response === null) {
+      return undefined;
+    }
 
     return {
-      message: '', // TODO
-      code: [],
+      message: response.error_message_explanation,
+      code: response.corrected_code_options,
     };
   }
 }
