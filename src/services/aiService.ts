@@ -12,66 +12,93 @@
 // permissions and limitations under the License.
 
 import type { ExtensionContext } from 'vscode';
+import * as vscode from 'vscode';
 import OpenAI from 'openai';
-import { getSecret } from '../common/vscodeapi';
+import { z } from 'zod';
+import { zodResponseFormat } from 'openai/helpers/zod';
 
-export const fixMyPipelineRequest = async (
-  context: ExtensionContext,
-  log: string,
-  code: string
-) => {
-  const apiKey = await getSecret(context, 'OPENAI_API_KEY');
-  const openai = new OpenAI({ apiKey: apiKey });
+export interface FixMyPipelineResponse {
+  message: string;
+  code: { language: string; content: string }[];
+}
 
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
-      {
-        role: 'system',
-        content: `You are an advanced AI programming assistant tasked with troubleshooting pipeline runs for ZenML into an explanation that is both easy to understand and meaningful. Construct an explanation that:
-- Places the emphasis on the 'why' of the error, explaining possible causes of the problem, beyond just detailing what the error is
-- Provides at least one way to modify the provided code that could resolve the error
+const CodeSnippet = z.object({
+  language: z.string(),
+  content: z.string(),
+});
 
-Do not make any assumptions or invent details that are not supported by the code or the user-provided context.`,
-      },
-      {
-        role: 'user',
-        content: `Here is the content of the error message: ${log}`,
-      },
-      { role: 'user', content: `Here is the code where the error occured: ${code}` },
-      {
-        role: 'user',
-        content:
-          'Now, please expalin some possible causes of the error as well as at least one option for fixing the error. If there are any typos, present those first in the possible solutions.',
-      },
-    ],
-  });
+const FixMyPipeline = z.object({
+  error_message_explanation: z.string(),
+  corrected_code_options: z.array(CodeSnippet),
+});
 
-  const followUp = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
-      {
-        role: 'system',
-        content: `You are an advanced AI programming assistant tasked with troubleshooting pipeline runs for ZenML into an explanation that is both easy to understand and meaningful. Construct an explanation that:
-- Places the emphasis on the 'why' of the error, explaining possible causes of the problem, beyond just detailing what the error is
-- Provides at least one way to modify the provided code that could resolve the error
+export class AIService {
+  private static instance: AIService;
+  private context: ExtensionContext;
 
-Do not make any assumptions or invent details that are not supported by the code or the user-provided context.`,
-      },
-      {
-        role: 'user',
-        content: `Here is the content of the error message: ${log}`,
-      },
-      { role: 'user', content: `Here is the code where the error occured: ${code}` },
-      {
-        role: 'user',
-        content:
-          'Now, please expalin some possible causes of the error as well as at least one option for fixing the error. If there are any typos, present those first in the possible solutions.',
-      },
-      { role: 'assistant', content: String(completion.choices[0].message) },
-      { role: 'user', content: 'Please give me just source code with the edits made.' },
-    ],
-  });
+  private constructor(context: ExtensionContext) {
+    this.context = context;
+  }
 
-  return [completion, followUp];
-};
+  private async getApiKey() {
+    const apiKey = await this.context.secrets.get('zenml.openai.key');
+    return apiKey;
+  }
+
+  public static getInstance(context: ExtensionContext) {
+    if (!AIService.instance) {
+      AIService.instance = new AIService(context);
+    }
+    return AIService.instance;
+  }
+
+  public async fixMyPipelineRequest(
+    log: string,
+    code: string
+  ): Promise<FixMyPipelineResponse | undefined> {
+    const apiKey = await this.getApiKey();
+
+    if (!apiKey) {
+      vscode.window.showErrorMessage('No OpenAI API Key available. Please register your key.');
+      throw new Error('No OpenAI API Key available.');
+    }
+    const openai = new OpenAI({ apiKey });
+
+    const completion = await openai.beta.chat.completions.parse({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: `You are an advanced AI programming assistant tasked with troubleshooting pipeline runs for ZenML into an explanation that is both easy to understand and meaningful. Construct an explanation that:
+    - Places the emphasis on the 'why' of the error, explaining possible causes of the problem, beyond just detailing what the error is.
+    -Do not make any assumptions or invent details that are not supported by the code or the user-provided context.
+    -For the code snippets, please provide the entire content of the source code with any required edits made`,
+        },
+        {
+          role: 'user',
+          content: `Here is the content of the error message: ${log}`,
+        },
+        { role: 'user', content: `Here is the source code where the error occured: ${code}` },
+        {
+          role: 'user',
+          content:
+            'Now, please explain some possible causes of the error. If you identify any code errors that could resolve the issue, please also provide the full content of the source code with the proposed changes made.',
+        },
+      ],
+      response_format: zodResponseFormat(FixMyPipeline, 'fix_my_pipeline'),
+    });
+
+    const response = completion.choices[0].message.parsed;
+
+    console.log('\n\n\n', completion.choices[0].message.parsed, '\n\n\n');
+
+    if (response === null) {
+      return undefined;
+    }
+
+    return {
+      message: response.error_message_explanation,
+      code: response.corrected_code_options,
+    };
+  }
+}

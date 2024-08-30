@@ -97,11 +97,15 @@ export function findFirstLineNumber(str: string, substr: string): number | null 
   let firstLine = null;
   for (let strCounter = 0; strCounter < strLines.length; strCounter++) {
     if (strLines[strCounter] === substrLines[substrCounter]) {
-      if (substrCounter === 0) firstLine = strCounter;
+      if (substrCounter === 0) {
+        firstLine = strCounter;
+      }
 
       substrCounter++;
 
-      if (substrCounter >= substrLines.length) break;
+      if (substrCounter >= substrLines.length) {
+        break;
+      }
     } else {
       substrCounter = 0;
       firstLine = null;
@@ -112,7 +116,6 @@ export function findFirstLineNumber(str: string, substr: string): number | null 
 }
 
 export async function searchWorkspaceByFileContent(content: string) {
-  let targetFileUri: vscode.Uri | undefined;
   const files = await vscode.workspace.findFiles('**/*');
   const pythonFiles = files.filter(file => file.toString().endsWith('.py'));
 
