@@ -21,8 +21,9 @@ import { ServerStatus } from '../../types/ServerInfoTypes';
 import { PanelDataProvider } from '../../views/panel/panelView/PanelDataProvider';
 import Panels from '../../common/panels';
 import WebviewBase from '../../common/WebviewBase';
-import { fixMyPipelineRequest } from '../../services/aiService';
+import { AIService } from '../../services/aiService';
 import pipelineUtils from './utils';
+import { searchWorkspaceByFileContent } from '../../common/utilities';
 
 const ROOT_PATH = ['resources', 'dag-view'];
 const CSS_FILE = 'dag.css';
@@ -136,35 +137,42 @@ export default class DagRenderer extends WebviewBase {
 
   // TODO send this function PipelineStepData instead of PipelineTreeItem
   private async fixBrokenStep(id: string, node: PipelineTreeItem): Promise<void> {
-    if (!WebviewBase.context) return;
+    if (!WebviewBase.context) {
+      return;
+    }
 
     const client = LSClient.getInstance();
+    const ai = AIService.getInstance(WebviewBase.context);
+
     const stepData = await client.sendLsClientRequest<StepData>('getPipelineRunStep', [id]);
     const log = await fs.readFile(String(stepData.logsUri), { encoding: 'utf-8' });
 
-    const response = await fixMyPipelineRequest(
-      WebviewBase.context,
-      log,
-      String(stepData.sourceCode)
-    );
+    const response = await ai.fixMyPipelineRequest(log, stepData.sourceCode);
 
-    const [chatCompletion, codeCompletion] = response;
+    if (!response) {
+      return;
+    }
+
     const provider = new (class implements vscode.TextDocumentContentProvider {
       provideTextDocumentContent(uri: vscode.Uri): string {
-        return chatCompletion.choices[0].message.content || 'Something went wrong';
+        return response?.message || 'Something went wrong';
       }
     })();
 
     vscode.workspace.registerTextDocumentContentProvider('fix-my-pipeline', provider);
 
-    const uri = vscode.Uri.parse('fix-my-pipeline:' + id +'.md');
+    const uri = vscode.Uri.parse('fix-my-pipeline:' + id + '.md');
     const doc = await vscode.workspace.openTextDocument(uri);
 
-    const codeSnippet =
-      codeCompletion.choices[0].message.content?.match(/(?<=```\S*\s)[\s\S]*(?=\s```)/)?.[0] || '';
+    const sourceCodeFileMatches = await searchWorkspaceByFileContent(stepData.sourceCode);
 
-    const HARDCODED_PATH = '/home/memlin/zenml/zenml_tutorial/steps/inference_preprocessor.py';
-    await pipelineUtils.editStepFile(HARDCODED_PATH, codeSnippet, String(stepData.sourceCode));
+    if (sourceCodeFileMatches.length === 1) {
+      await pipelineUtils.editStepFile(
+        sourceCodeFileMatches[0],
+        response.code[0],
+        String(stepData.sourceCode)
+      );
+    }
 
     // let { document } = vscode.window.activeTextEditor || { document: null };
     await vscode.window.showTextDocument(doc, {
@@ -176,7 +184,9 @@ export default class DagRenderer extends WebviewBase {
 
     const p = Panels.getInstance();
     const existingPanel = p.getPanel(node.id);
-    if (existingPanel) existingPanel.webview.postMessage('AI Query Complete');
+    if (existingPanel) {
+      existingPanel.webview.postMessage('AI Query Complete');
+    }
   }
 
   private async loadStepDataIntoPanel(id: string, runUrl: string): Promise<void> {
