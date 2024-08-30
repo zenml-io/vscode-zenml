@@ -4,7 +4,6 @@ import { findFirstLineNumber } from '../../common/utilities';
 import fs from 'fs/promises';
 import { JsonObject } from '../../views/panel/panelView/PanelTreeItem';
 import { integer } from 'vscode-languageclient';
-// import { StepData } from '../../types/PipelineTypes';
 
 export default new (class AIStepFixer {
   private codeRecommendations: {
@@ -13,14 +12,11 @@ export default new (class AIStepFixer {
     sourceCode: string;
     currentCodeIndex: integer;
   }[] = [];
-  /**
-   * name
-   */
+
   public async createVirtualDocument(id: string, content: string) {
     const provider = new (class implements vscode.TextDocumentContentProvider {
       provideTextDocumentContent(uri: vscode.Uri): string {
-        return Array.isArray(content) ? content[0] : content;
-        // return chatCompletion.choices[0].message.content || 'Something went wrong';
+        return content;
       }
     })();
 
