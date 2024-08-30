@@ -1,14 +1,11 @@
 import * as vscode from 'vscode';
-import { LSClient } from '../../services/LSClient';
 import { findFirstLineNumber } from '../../common/utilities';
 import fs from 'fs/promises';
-import { JsonObject } from '../../views/panel/panelView/PanelTreeItem';
 import { integer } from 'vscode-languageclient';
 
 // TODO remove codeRecommendations from AIStepFixer when they're closed / not found
 export default new (class AIStepFixer {
   private codeRecommendations: {
-    id: string;
     filePath: string;
     code: string[];
     sourceCode: string;
@@ -29,26 +26,29 @@ export default new (class AIStepFixer {
     vscode.commands.executeCommand('markdown.showPreviewToSide', uri);
   }
 
-  public createCodeRecommendation(
-    id: string,
-    filePath: string,
-    code: string[],
-    sourceCode: string
-  ) {
-    this.codeRecommendations.push({ id, filePath, code, sourceCode, currentCodeIndex: 0 });
+  public createCodeRecommendation(filePath: string, code: string[], sourceCode: string) {
+    const rec = this.codeRecommendations.find(rec => rec.filePath === filePath);
+
+    if (rec) {
+      this.codeRecommendations.push({ filePath, code, sourceCode, currentCodeIndex: 0 });
+      vscode.commands.executeCommand(
+        'setContext',
+        'zenml.aiCodeRecommendations',
+        this.codeRecommendations.map(rec => rec.filePath)
+      );
+    }
+
     this.editStepFile(filePath, code[0], sourceCode);
   }
 
-  public async updateCodeRecommendation(id: string) {
-    const rec = this.codeRecommendations.find(rec => rec.id === id);
+  public async updateCodeRecommendation(filePath: string) {
+    const rec = this.codeRecommendations.find(rec => rec.filePath === filePath);
     if (!rec) return;
 
-    this.editStepFile(
-      rec.filePath,
-      rec.code[rec.currentCodeIndex + 1 < rec.code.length ? rec.currentCodeIndex + 1 : 0],
-      rec.sourceCode,
-      false
-    );
+    rec.currentCodeIndex =
+      rec.currentCodeIndex + 1 < rec.code.length ? rec.currentCodeIndex + 1 : 0;
+
+    this.editStepFile(rec.filePath, rec.code[rec.currentCodeIndex], rec.sourceCode, false);
   }
 
   private async editStepFile(

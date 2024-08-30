@@ -39,11 +39,10 @@ const sendOpenAIRequest = async (context: ExtensionContext) => {
 };
 
 const displayNextCodeRecommendation = () => {
-  let id =
-    vscode.window.tabGroups.activeTabGroup.activeTab?.label.match(/(?<=Preview ).+(?=\.md)/)?.[0];
-  if (!id) return;
+  let filePath = vscode.window.activeTextEditor?.document.fileName;
+  if (!filePath) return;
 
-  AIStepFixer.updateCodeRecommendation(id);
+  AIStepFixer.updateCodeRecommendation(filePath);
 };
 
 export const aiCommands = {

@@ -311,8 +311,9 @@
       },
       {
         "command": "zenml.displayNextCodeRecommendation",
-        "title": "Display Next Code Recommendation",
-        "category": "ZenML GenAI"
+        "title": "Next Recommendation",
+        "category": "ZenML GenAI",
+        "when": "resourcePath in zenml.aiCodeRecommendations"
       }
     ],
     "viewsContainers": {
@@ -488,8 +489,9 @@
       ],
       "editor/title": [
         {
-          "command": "zenml.displayNextCodeRecommendation1",
-          "group": "navigation"
+          "command": "zenml.displayNextCodeRecommendation",
+          "group": "navigation",
+          "when": "resourcePath in zenml.aiCodeRecommendations"
         }
       ]
     }
