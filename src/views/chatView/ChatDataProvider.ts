@@ -99,7 +99,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
     return this.messages.filter(msg => msg['role'] !== 'system')
       .map((message) => {
         let content = marked.parse(message.content);
-        if (message.role === 'assistant') {
+        if (message.role === 'user') {
           return `<div class="bg-gray-100 p-4 rounded-lg">
               <p class="font-semibold text-zenml">User</p>
               ${content}
