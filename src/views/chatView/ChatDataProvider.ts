@@ -14,7 +14,8 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as marked from 'marked';
 import { ChatService } from '../../services/chatService';
-import { ChatMessage } from '../../types/ChatTypes';
+import { ChatMessage, TreeItem } from '../../types/ChatTypes';
+import { PipelineDataProvider } from '../activityBar';
 
 export class ChatDataProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
@@ -82,11 +83,13 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
 
     // Chat log HTML
     const chatLogHtml = this.renderChatLog();
+    let treeItemHtml = this.getTreeHtml()
 
     // Replace placeholders in the HTML with actual values
     html = html.replace('${cssUri}', cssUri.toString());
     html = html.replace('${jsUri}', jsUri.toString());
     html = html.replace('${markedUri}', markedUri.toString());
+    html = html.replace('${treeItemHtml}', treeItemHtml)
     html = html.replace('${chatLogHtml}', chatLogHtml);
 
     return html;
@@ -112,6 +115,76 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
         }
       })
       .join('');
+  }
+
+  private getPipelineData(): TreeItem[] {
+    let pipelineRuns = PipelineDataProvider.getInstance().pipelineRuns
+    let pipelineTreeItems = pipelineRuns.map((run) => {
+      let formattedStartTime = new Date(run.startTime).toLocaleString();
+      let formattedEndTime = run.endTime ? new Date(run.endTime).toLocaleString() : 'N/A';
+      return {
+        name: run.name,
+        value: run.id,
+        children: [
+          { name: run.status },
+          { name: run.stackName },
+          { name: formattedStartTime },
+          { name: formattedEndTime },
+          { name: `${run.os} ${run.osVersion}` },
+          { name: run.pythonVersion },
+        ]
+      }
+    })
+    return pipelineTreeItems
+  }
+
+  private getTreeData() {
+    let pipelineData = this.getPipelineData()
+    let treeData: TreeItem[] = [
+      {name: 'Server', value: 'serverContext'},
+      {name: 'Environment', value: 'environmentContext'},
+      {
+        name: 'Pipeline Runs',
+        value: 'pipelineContext',
+        children : pipelineData
+      },
+      {name: 'Stack', value: 'stackContext'},
+      {name: 'Stack Components', value: 'stackComponentsContext'}
+    ];
+    return treeData
+  }
+
+  private convertTreeDataToHtml(treeData: TreeItem[], level = 0) {
+    let convertedTreeData = treeData.map((item) => {
+      let iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0h24v24H0z" fill="none" stroke="none"/></svg>';
+      let childrenEl = '';
+
+      if (item.children) {
+        iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>'
+        childrenEl = `<div class="tree-item-children">${this.convertTreeDataToHtml(item.children, level + 1)}</div>`
+      }
+
+      let checkboxEl = level < 2 ? `<input type="checkbox" class="tree-item-checkbox" value=${item.value}>` : ''
+
+      return `<div class="tree-item">
+        <div class="tree-item-wrapper">
+            <div class="tree-item-content" style="padding-left: ${level * 16}px;">
+              <span class="tree-item-icon">
+                  ${iconSvg}
+              </span>
+              <span class="tree-item-name">${item.name}</span>
+              ${checkboxEl}
+            </div>
+            ${childrenEl}
+        </div>
+      </div>`
+    })
+    return convertedTreeData.join('\n')
+  }
+
+  private getTreeHtml(): string {
+    let treeData = this.getTreeData()
+    return this.convertTreeDataToHtml(treeData)
   }
 
   /**

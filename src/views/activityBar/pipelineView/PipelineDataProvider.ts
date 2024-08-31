@@ -35,6 +35,7 @@ export class PipelineDataProvider extends PaginatedDataProvider {
   private eventBus = EventBus.getInstance();
   private zenmlClientReady = false;
   private pipelineData: PipelineTreeItem[] = [];
+  public pipelineRuns: PipelineRun[] = [];
 
   constructor() {
     super();
@@ -138,6 +139,7 @@ export class PipelineDataProvider extends PaginatedDataProvider {
 
       if ('runs' in result) {
         const { runs, total, total_pages, current_page, items_per_page } = result;
+        this.pipelineRuns = runs
 
         this.pagination = {
           currentPage: current_page,
