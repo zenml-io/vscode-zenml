@@ -129,12 +129,11 @@ permissions and limitations under the License. -->
       <div id="chatMessages" class="space-y-4 mb-4 mt-4">${chatLogHtml}</div>
     </div>
   </div>
-  <script src="${markedUri}"></script>
   <script src="${jsUri}"></script>
   <script>
     const treeData = [
-      {name: 'Server'},
-      {name: 'Environment'},
+      {name: 'Server', value: 'serverContext'},
+      {name: 'Environment', value: 'environmentContext'},
       {
         name: 'Pipeline',
         children : [
@@ -147,8 +146,8 @@ permissions and limitations under the License. -->
           }
         ]
       },
-      {name: 'Stack'},
-      {name: 'Stack Components'}
+      {name: 'Stack', value: 'stackContext'},
+      {name: 'Stack Components', value: 'stackComponentsContext'}
     ];
 
     function createTreeView(items, parentEl, level = 0) {
@@ -179,6 +178,7 @@ permissions and limitations under the License. -->
         const checkboxEl = document.createElement('input');
         checkboxEl.type = 'checkbox';
         checkboxEl.className = 'tree-item-checkbox';
+        checkboxEl.name = item.value
 
         contentEl.appendChild(chevronEl);
         contentEl.appendChild(nameEl);
