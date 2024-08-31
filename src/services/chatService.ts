@@ -88,7 +88,7 @@ export class ChatService {
       systemMessage.content += this.getServerData();
     }
     if (requestedContext.includes('environmentContext')) {
-      systemMessage.content += this.getEnvironmentData();
+      systemMessage.content += await this.getEnvironmentData();
     }
     if (requestedContext.includes('pipelineContext')) {
       systemMessage.content += this.getPipelineData();
@@ -133,8 +133,8 @@ export class ChatService {
     return `Stack Component Data:\n${componentData}\n`;
   }
 
-  private getEnvironmentData(): string {
-    let environmentData = EnvironmentDataProvider.getInstance().getEnvironmentData();
+  private async getEnvironmentData(): Promise<string> {
+    let environmentData = await EnvironmentDataProvider.getInstance().getChildren();
     let contextString = environmentData
       .map(item => `${item.label}: ${item.description || ''}`)
       .join('\n');
