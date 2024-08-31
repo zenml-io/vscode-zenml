@@ -15,3 +15,9 @@ export interface ChatMessage {
   role: string,
   content: string,
 }
+
+export interface TreeItem {
+  name: string,
+  value?: string,
+  children?: TreeItem[] 
+}

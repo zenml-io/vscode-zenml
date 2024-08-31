@@ -115,7 +115,7 @@ permissions and limitations under the License. -->
                       </svg>
                   </button>
                   <div id="optionsDropdown" class="absolute right-8 top-0 mt-2 hidden">
-                      <div id="tree-view" class="tree-view"></div>
+                      <div id="tree-view" class="tree-view">${treeItemHtml}</div>
                   </div>
               </div>
               <input type="text" id="messageInput" name="messageInput" class="flex-grow p-3 focus:outline-none" placeholder="Type your message...">
@@ -131,89 +131,86 @@ permissions and limitations under the License. -->
   </div>
   <script src="${jsUri}"></script>
   <script>
-    const treeData = [
-      {name: 'Server', value: 'serverContext'},
-      {name: 'Environment', value: 'environmentContext'},
-      {
-        name: 'Pipeline',
-        children : [
-          {
-            name: 'training',
-            children: [
-              {name: 'id: 85439137'},
-              {name: 'completed: success'}
-            ]
-          }
-        ]
-      },
-      {name: 'Stack', value: 'stackContext'},
-      {name: 'Stack Components', value: 'stackComponentsContext'}
-    ];
+    // const treeData = [
+    //   {name: 'Server', value: 'serverContext'},
+    //   {name: 'Environment', value: 'environmentContext'},
+    //   {
+    //     name: 'Pipeline Runs',
+    //     children : [
+    //       {
+    //         name: 'training',
+    //         children: [
+    //           {name: 'id: 85439137'},
+    //           {name: 'completed: success'}
+    //         ]
+    //       }
+    //     ]
+    //   },
+    //   {name: 'Stack', value: 'stackContext'},
+    //   {name: 'Stack Components', value: 'stackComponentsContext'}
+    // ];
 
-    function createTreeView(items, parentEl, level = 0) {
-      items.forEach(item => {
-        const itemEl = document.createElement('div');
-        itemEl.className = 'tree-item';
+    // function createTreeView(items, parentEl, level = 0) {
+    //   items.forEach(item => {
+    //     const itemEl = document.createElement('div');
+    //     itemEl.className = 'tree-item';
 
-        const wrapperEl = document.createElement('div');
-        wrapperEl.className = 'tree-item-wrapper';
+    //     const wrapperEl = document.createElement('div');
+    //     wrapperEl.className = 'tree-item-wrapper';
 
-        const contentEl = document.createElement('div');
-        contentEl.className = 'tree-item-content';
-        contentEl.style.paddingLeft = `${level * 16}px`;
+    //     const contentEl = document.createElement('div');
+    //     contentEl.className = 'tree-item-content';
+    //     contentEl.style.paddingLeft = `${level * 16}px`;
 
-        const chevronEl = document.createElement('span');
-        chevronEl.className = 'tree-item-icon';
+    //     const chevronEl = document.createElement('span');
+    //     chevronEl.className = 'tree-item-icon';
         
-        const isFolder = item.children && item.children.length > 0;
+    //     const isFolder = item.children && item.children.length > 0;
         
-        chevronEl.innerHTML = isFolder
-            ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>'
-            : '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0h24v24H0z" fill="none" stroke="none"/></svg>';
+    //     chevronEl.innerHTML = isFolder
+    //         ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>'
+    //         : '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0h24v24H0z" fill="none" stroke="none"/></svg>';
 
-        const nameEl = document.createElement('span');
-        nameEl.className = 'tree-item-name';
-        nameEl.textContent = item.name;
+    //     const nameEl = document.createElement('span');
+    //     nameEl.className = 'tree-item-name';
+    //     nameEl.textContent = item.name;
 
-        const checkboxEl = document.createElement('input');
-        checkboxEl.type = 'checkbox';
-        checkboxEl.className = 'tree-item-checkbox';
-        checkboxEl.name = item.value
+    //     const checkboxEl = document.createElement('input');
+    //     checkboxEl.type = 'checkbox';
+    //     checkboxEl.className = 'tree-item-checkbox';
+    //     checkboxEl.name = item.value
 
-        contentEl.appendChild(chevronEl);
-        contentEl.appendChild(nameEl);
-        if (level < 2) {
-          contentEl.appendChild(checkboxEl);
-        }
-        wrapperEl.appendChild(contentEl);
+    //     contentEl.appendChild(chevronEl);
+    //     contentEl.appendChild(nameEl);
+    //     if (level < 2) {
+    //       contentEl.appendChild(checkboxEl);
+    //     }
+    //     wrapperEl.appendChild(contentEl);
 
-        if (isFolder) {
-          const childrenEl = document.createElement('div');
-          childrenEl.className = 'tree-item-children';
-          createTreeView(item.children, childrenEl, level + 1);
+    //     if (isFolder) {
+    //       const childrenEl = document.createElement('div');
+    //       childrenEl.className = 'tree-item-children';
+    //       createTreeView(item.children, childrenEl, level + 1);
 
-          contentEl.addEventListener('click', (e) => {
-            if (e.target !== checkboxEl) {
-              e.stopPropagation();
-              childrenEl.classList.toggle('open');
-              if (childrenEl.classList.contains('open')) {
-                chevronEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
-              } else {
-                chevronEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>';
-              }
-            }
-          });
-          wrapperEl.appendChild(childrenEl);
-        }
-        itemEl.appendChild(wrapperEl);
-        parentEl.appendChild(itemEl);
-      });
-    }
+    //       contentEl.addEventListener('click', (e) => {
+    //         if (e.target !== checkboxEl) {
+    //           e.stopPropagation();
+    //           childrenEl.classList.toggle('open');
+    //           if (childrenEl.classList.contains('open')) {
+    //             chevronEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+    //           } else {
+    //             chevronEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>';
+    //           }
+    //         }
+    //       });
+    //       wrapperEl.appendChild(childrenEl);
+    //     }
+    //     itemEl.appendChild(wrapperEl);
+    //     parentEl.appendChild(itemEl);
+    //   });
+    // }
 
     document.addEventListener('DOMContentLoaded', (event) => {
-      const treeViewEl = document.getElementById('tree-view');
-      createTreeView(treeData, treeViewEl);
-
       const optionsToggle = document.getElementById('optionsToggle');
       const optionsDropdown = document.getElementById('optionsDropdown');
 
@@ -225,6 +222,29 @@ permissions and limitations under the License. -->
         if (!optionsToggle.contains(event.target) && !optionsDropdown.contains(event.target)) {
           optionsDropdown.classList.add('hidden');
         }
+      });
+
+      const treeItemsWithChildren = Array.from(document.querySelectorAll('div.tree-item-wrapper'))
+      .filter(treeItemsWithChildren => treeItemsWithChildren.querySelector('div.tree-item-children') !== null);
+
+      treeItemsWithChildren.forEach(wrapper => {
+        wrapper.querySelector('div.tree-item-content').addEventListener('click', function(event) {
+          const checkboxEl = this.querySelector('input[type="checkbox"]');
+          const childrenEl = this.parentNode.querySelector('div.tree-item-children');
+          const chevronEl = this.querySelector('span.tree-item-icon');
+
+          if (event.target !== checkboxEl) {
+            event.stopPropagation();
+            childrenEl.classList.toggle('open');
+
+
+            if (childrenEl.classList.contains('open')) {
+              chevronEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+            } else {
+              chevronEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>';
+            }
+          }
+        });
       });
     });
   </script>
