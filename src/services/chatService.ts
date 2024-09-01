@@ -28,6 +28,8 @@ import { JsonObject } from '../views/panel/panelView/PanelTreeItem';
 import { ZenmlGlobalConfigResp } from '../types/LSClientResponseTypes';
 import { TreeItem } from 'vscode';
 import { ChatMessage } from '../types/ChatTypes';
+import { PipelineRun } from '../types/PipelineTypes';
+import { node } from 'webpack';
 
 export class ChatService {
   private static instance: ChatService;
@@ -83,24 +85,35 @@ export class ChatService {
   }
 
   private async addContext(messages: ChatMessage[], requestedContext: string[]): Promise<ChatMessage[]> {
-    let systemMessage: ChatMessage = { role: 'system', content: 'Context:' };
-    if (requestedContext.includes('serverContext')) {
-      systemMessage.content += this.getServerData();
-    }
-    if (requestedContext.includes('environmentContext')) {
-      systemMessage.content += await this.getEnvironmentData();
-    }
-    if (requestedContext.includes('pipelineContext')) {
-      systemMessage.content += this.getPipelineData();
-    }
-    if (requestedContext.includes('stackContext')) {
-      systemMessage.content += this.getStackData();
-    }
-    if (requestedContext.includes('stackComponentsContext')) {
-      systemMessage.content += this.getStackComponentData();
-    }
-    if (requestedContext.includes('recentPipelineContext')) {
-      systemMessage.content += this.getRecentPipelineRunData();
+    let systemMessage: ChatMessage = { role: 'system', content: 'Context: ' };
+    for (let context of requestedContext) {
+      switch (context) {
+        case 'serverContext':
+          systemMessage.content += this.getServerData();
+          break;
+        case 'environmentContext':
+          systemMessage.content += await this.getEnvironmentData();
+          break;
+        case 'pipelineContext':
+          systemMessage.content += this.getPipelineData();
+          break;
+        case 'stackContext':
+          systemMessage.content += this.getStackData();
+          break;
+        case 'stackComponentsContext':
+          systemMessage.content += this.getStackComponentData();
+          break;
+        default:
+          if (context.includes('Pipeline run:')) {
+            systemMessage.content += context
+            context = JSON.parse(context.replace('Pipeline run:', ''))
+            let logs = await this.getPipelineRunLogs(context.id)
+            let nodeData = await this.getPipelineRunNodes('step')
+            systemMessage.content += `Step Data: ${JSON.stringify(nodeData)}`
+            systemMessage.content += `Logs: ${logs}`
+          }
+          break;
+      }
     }
     messages.push(systemMessage);
     return messages;

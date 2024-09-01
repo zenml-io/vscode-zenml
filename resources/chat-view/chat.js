@@ -19,7 +19,10 @@
     const formData = new FormData(event.target);
     const text = formData.get('messageInput').trim();
     const checkedBoxes = document.querySelectorAll('#tree-view input[type="checkbox"]:checked');
-    const checkedValues = Array.from(checkedBoxes).map(checkbox => checkbox.name);
+    console.log(checkedBoxes)
+    const checkedValues = Array.from(checkedBoxes).map(checkbox => checkbox.value);
+
+    console.log(checkedValues)
 
     if (text) {
       vscode.postMessage({

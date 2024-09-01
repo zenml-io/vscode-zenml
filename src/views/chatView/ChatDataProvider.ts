@@ -122,9 +122,10 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
     let pipelineTreeItems = pipelineRuns.map((run) => {
       let formattedStartTime = new Date(run.startTime).toLocaleString();
       let formattedEndTime = run.endTime ? new Date(run.endTime).toLocaleString() : 'N/A';
+      let stringValue = `Pipeline run:${JSON.stringify(run)}`
       return {
         name: run.name,
-        value: run.id,
+        value: stringValue,
         children: [
           { name: run.status },
           { name: run.stackName },
@@ -164,7 +165,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
         childrenEl = `<div class="tree-item-children">${this.convertTreeDataToHtml(item.children, level + 1)}</div>`
       }
 
-      let checkboxEl = level < 2 ? `<input type="checkbox" class="tree-item-checkbox" value=${item.value}>` : ''
+      let checkboxEl = level < 2 ? `<input type="checkbox" class="tree-item-checkbox" value='${item.value}'>` : ''
 
       return `<div class="tree-item">
         <div class="tree-item-wrapper">
