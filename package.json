@@ -282,7 +282,7 @@
       },
       {
         "command": "zenml.openChat",
-        "title": "Render Chat",
+        "title": "Open Chat",
         "icon": "$(comment-discussion)",
         "category": "ZenML Chat"
       },

@@ -19,10 +19,8 @@
     const formData = new FormData(event.target);
     const text = formData.get('messageInput').trim();
     const checkedBoxes = document.querySelectorAll('#tree-view input[type="checkbox"]:checked');
-    console.log(checkedBoxes)
     const checkedValues = Array.from(checkedBoxes).map(checkbox => checkbox.value);
-
-    console.log(checkedValues)
+    // const sampleQuestions = document.querySelector('#sampleQuestions')
 
     if (text) {
       vscode.postMessage({
@@ -32,6 +30,8 @@
       });
 
       event.target.reset();
+      // sampleQuestions.classList.remove('flex')
+      // sampleQuestions.classList.add('hide')
     }
   }
 
