@@ -23,7 +23,9 @@ permissions and limitations under the License. -->
             theme: {
                 extend: {
                     colors: {
-                        zenml: '#7a3ef8',
+                      zenml: '#7a3ef8',
+                      gray: '#e7e5e4',
+                      mutedText: '#707070'
                     },
                     fontFamily: {
                         'plus-jakarta': ['"Plus Jakarta Sans"', 'sans-serif'],
@@ -33,7 +35,7 @@ permissions and limitations under the License. -->
         }
     </script>
     <style>
-      p {
+      #chatMessages {
         color: black;
       }
       #messageInput {
@@ -44,6 +46,9 @@ permissions and limitations under the License. -->
       }
       form {
         display: contents;
+      }
+      .hide {
+        display: none;
       }
       .tree-view {
             background-color: white;
@@ -127,6 +132,39 @@ permissions and limitations under the License. -->
           </form>
       </div>
       <div id="chatMessages" class="space-y-4 mb-4 mt-4">${chatLogHtml}</div>
+      <div id="sampleQuestions" class="flex flex-col mt-auto md:mt-0">
+        <div class="md:col-span-4 md:col-start-2 md:flex md:justify-center">
+          <div class="w-full z-10 px-6 md:grid md:grid-cols-3 space-y-2 md:space-y-0">
+            <div class="flex flex-row items-center">
+              <div class="rounded-lg bg-card text-card-foreground md:h-auto grow text-sm overflow-hidden dark:bg-transparent dark:hover:bg-shallow hover:cursor-pointer border md:border-none shadow-sm md:shadow-none">
+                <div class="px-4 md:text-center text-mutedText">
+                  <p>What can this chat do?</p>
+                </div>
+              </div>
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" class="hidden md:block size-6 text-gray">
+                <path d="M7.5 2C7.77614 2 8 2.22386 8 2.5L8 12.5C8 12.7761 7.77614 13 7.5 13C7.22386 13 7 12.7761 7 12.5L7 2.5C7 2.22386 7.22386 2 7.5 2Z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"></path>
+              </svg>
+            </div>
+            <div class="flex flex-row items-center">
+              <div class="rounded-lg bg-card text-card-foreground md:h-auto grow text-sm overflow-hidden dark:bg-transparent dark:hover:bg-shallow hover:cursor-pointer border md:border-none shadow-sm md:shadow-none">
+                <div class="px-4 md:text-center text-mutedText">
+                  <p>Help me improve my stack</p>
+                </div>
+              </div>
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" class="hidden md:block size-6 text-gray">
+                <path d="M7.5 2C7.77614 2 8 2.22386 8 2.5L8 12.5C8 12.7761 7.77614 13 7.5 13C7.22386 13 7 12.7761 7 12.5L7 2.5C7 2.22386 7.22386 2 7.5 2Z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"></path>
+              </svg>
+            </div>
+            <div class="flex flex-row items-center">
+              <div class="rounded-lg bg-card text-card-foreground md:h-auto grow text-sm overflow-hidden dark:bg-transparent dark:hover:bg-shallow hover:cursor-pointer border md:border-none shadow-sm md:shadow-none">
+                <div class="px-4 md:text-center text-mutedText">
+                  <p>Generate a summary of my stats</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   <script src="${jsUri}"></script>
