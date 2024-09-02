@@ -297,6 +297,12 @@
         "title": "Restart LSP Server",
         "icon": "$(debug-restart)",
         "category": "ZenML Environment"
+      },
+      {
+        "command": "zenml.registerLLMAPIKey",
+        "title": "Register LLM API Key",
+        "icon": "$(add)",
+        "category": "ZenML Secrets"
       }
     ],
     "viewsContainers": {
