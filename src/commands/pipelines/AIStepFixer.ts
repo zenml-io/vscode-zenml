@@ -29,7 +29,7 @@ export default new (class AIStepFixer {
   public createCodeRecommendation(filePath: string, code: string[], sourceCode: string) {
     const rec = this.codeRecommendations.find(rec => rec.filePath === filePath);
 
-    if (rec) {
+    if (!rec) {
       this.codeRecommendations.push({ filePath, code, sourceCode, currentCodeIndex: 0 });
       vscode.commands.executeCommand(
         'setContext',
