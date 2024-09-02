@@ -3,7 +3,6 @@ import { findFirstLineNumber } from '../../common/utilities';
 import fs from 'fs/promises';
 import { integer } from 'vscode-languageclient';
 
-// TODO remove codeRecommendations from AIStepFixer when they're closed / not found
 export default new (class AIStepFixer {
   private codeRecommendations: {
     filePath: string;
@@ -30,11 +29,24 @@ export default new (class AIStepFixer {
 
     if (!rec) {
       this.codeRecommendations.push({ filePath, code, sourceCode, currentCodeIndex: 0 });
-      vscode.commands.executeCommand(
-        'setContext',
-        'zenml.aiCodeRecommendations',
-        this.codeRecommendations.map(rec => rec.filePath)
-      );
+      this.updateRecommendationsContext();
+
+      vscode.window.tabGroups.onDidChangeTabs(evt => {
+        const input = evt.closed[0]?.input;
+        if (typeof input !== 'object' || input === null || !('modified' in input)) return;
+        const uri = input.modified;
+        if (typeof uri !== 'object' || uri === null || !('path' in uri)) return;
+        const recIndex = this.codeRecommendations.findIndex(ele => ele.filePath === uri.path);
+        if (recIndex === -1) return;
+
+        setTimeout(() => {
+          const editors = vscode.window.visibleTextEditors;
+          if (editors.some(editor => editor.document.fileName === uri.path)) return;
+
+          this.codeRecommendations.splice(recIndex, 1);
+          this.updateRecommendationsContext();
+        }, 1000);
+      });
     }
 
     this.editStepFile(filePath, code[0], sourceCode);
@@ -50,6 +62,8 @@ export default new (class AIStepFixer {
     this.editStepFile(rec.filePath, rec.code[rec.currentCodeIndex], rec.sourceCode, false);
   }
 
+  // TODO store the original fileContents in codeRecommendations, so that code recommendations can be made even after
+  // TODO the user has made changes to the file
   private async editStepFile(
     filePath: string,
     newContent: string,
@@ -74,5 +88,13 @@ export default new (class AIStepFixer {
         vscode.window.showInformationMessage('Error!');
       }
     });
+  }
+
+  private updateRecommendationsContext() {
+    vscode.commands.executeCommand(
+      'setContext',
+      'zenml.aiCodeRecommendations',
+      this.codeRecommendations.map(rec => rec.filePath)
+    );
   }
 })();
