@@ -37,7 +37,7 @@ export default new (class AIStepFixer {
   ) {
     const rec = this.codeRecommendations.find(rec => rec.filePath === filePath);
 
-    if (!rec) {
+    if (!rec && code.length > 1) {
       this.codeRecommendations.push({ filePath, code, sourceCode, currentCodeIndex: 0 });
       this.updateRecommendationsContext();
 

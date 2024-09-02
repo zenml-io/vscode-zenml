@@ -227,7 +227,7 @@ def inference_preprocessor(
 
     AIStepFixer.createCodeRecommendation(
       HARDCODED_PATH,
-      HARDCODED_RESPONSE.code,
+      [HARDCODED_RESPONSE.code[0]],
       String(stepData.sourceCode),
       existingPanel
     );
