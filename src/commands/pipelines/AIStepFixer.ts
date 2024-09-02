@@ -11,7 +11,11 @@ export default new (class AIStepFixer {
     currentCodeIndex: integer;
   }[] = [];
 
-  public async createVirtualDocument(id: string, content: string) {
+  public async createVirtualDocument(
+    id: string,
+    content: string,
+    existingPanel?: vscode.WebviewPanel
+  ) {
     const provider = new (class implements vscode.TextDocumentContentProvider {
       provideTextDocumentContent(uri: vscode.Uri): string {
         return content;
@@ -21,10 +25,16 @@ export default new (class AIStepFixer {
     vscode.workspace.registerTextDocumentContentProvider('fix-my-pipeline', provider);
     const uri = vscode.Uri.parse('fix-my-pipeline:' + id + '.md');
 
-    await vscode.commands.executeCommand('markdown.showPreviewToSide', uri);
+    if (existingPanel) existingPanel.reveal(existingPanel.viewColumn, false);
+    vscode.commands.executeCommand('markdown.showPreviewToSide', uri);
   }
 
-  public createCodeRecommendation(filePath: string, code: string[], sourceCode: string) {
+  public createCodeRecommendation(
+    filePath: string,
+    code: string[],
+    sourceCode: string,
+    existingPanel?: vscode.WebviewPanel
+  ) {
     const rec = this.codeRecommendations.find(rec => rec.filePath === filePath);
 
     if (!rec) {
@@ -49,7 +59,7 @@ export default new (class AIStepFixer {
       });
     }
 
-    this.editStepFile(filePath, code[0], sourceCode);
+    this.editStepFile(filePath, code[0], sourceCode, true, existingPanel);
   }
 
   public async updateCodeRecommendation(filePath: string) {
@@ -68,7 +78,8 @@ export default new (class AIStepFixer {
     filePath: string,
     newContent: string,
     oldContent: string,
-    openFile = true
+    openFile = true,
+    existingPanel?: vscode.WebviewPanel
   ) {
     const fileContents = await fs.readFile(filePath, { encoding: 'utf-8' });
     // TODO update to throw error if oldContent is not found in fileContents
@@ -80,14 +91,14 @@ export default new (class AIStepFixer {
     const edit = new vscode.WorkspaceEdit();
     edit.replace(fileUri, oldRange, newContent);
 
-    return vscode.workspace.applyEdit(edit).then(async success => {
-      if (success && openFile) {
-        vscode.commands.executeCommand('workbench.files.action.compareWithSaved', fileUri);
-      } else if (!success) {
-        // TODO proper error handling
-        vscode.window.showInformationMessage('Error!');
-      }
-    });
+    const success = await vscode.workspace.applyEdit(edit);
+    if (success && openFile) {
+      if (existingPanel) existingPanel.reveal(existingPanel.viewColumn, false);
+      vscode.commands.executeCommand('workbench.files.action.compareWithSaved', fileUri);
+    } else if (!success) {
+      // TODO proper error handling
+      vscode.window.showInformationMessage('Error!');
+    }
   }
 
   private updateRecommendationsContext() {

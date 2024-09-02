@@ -145,6 +145,8 @@ export default class DagRenderer extends WebviewBase {
     const client = LSClient.getInstance();
     const stepData = await client.sendLsClientRequest<JsonObject>('getPipelineRunStep', [id]);
     const log = await fs.readFile(String(stepData.logsUri), { encoding: 'utf-8' });
+    const p = Panels.getInstance();
+    const existingPanel = p.getPanel(node.id);
 
     // const response = await fixMyPipelineRequest(
     //   WebviewBase.context,
@@ -223,15 +225,14 @@ def inference_preprocessor(
 
     const HARDCODED_PATH = '/home/memlin/zenml/zenml_tutorial/steps/inference_preprocessor.py';
 
-    await AIStepFixer.createCodeRecommendation(
+    AIStepFixer.createCodeRecommendation(
       HARDCODED_PATH,
       HARDCODED_RESPONSE.code,
-      String(stepData.sourceCode)
+      String(stepData.sourceCode),
+      existingPanel
     );
-    AIStepFixer.createVirtualDocument(id, HARDCODED_RESPONSE.response);
+    AIStepFixer.createVirtualDocument(id, HARDCODED_RESPONSE.response, existingPanel);
 
-    const p = Panels.getInstance();
-    const existingPanel = p.getPanel(node.id);
     if (existingPanel) existingPanel.webview.postMessage('AI Query Complete');
   }
 
