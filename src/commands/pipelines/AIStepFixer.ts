@@ -21,9 +21,8 @@ export default new (class AIStepFixer {
 
     vscode.workspace.registerTextDocumentContentProvider('fix-my-pipeline', provider);
     const uri = vscode.Uri.parse('fix-my-pipeline:' + id + '.md');
-    await vscode.workspace.openTextDocument(uri);
 
-    vscode.commands.executeCommand('markdown.showPreviewToSide', uri);
+    await vscode.commands.executeCommand('markdown.showPreviewToSide', uri);
   }
 
   public createCodeRecommendation(filePath: string, code: string[], sourceCode: string) {
