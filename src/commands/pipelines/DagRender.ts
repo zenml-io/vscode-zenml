@@ -21,9 +21,7 @@ import { ServerStatus } from '../../types/ServerInfoTypes';
 import { PanelDataProvider } from '../../views/panel/panelView/PanelDataProvider';
 import Panels from '../../common/panels';
 import WebviewBase from '../../common/WebviewBase';
-import { AIService } from '../../services/aiService';
-import pipelineUtils from './utils';
-import { searchWorkspaceByFileContent } from '../../common/utilities';
+import AIStepFixer from './AIStepFixer';
 
 const ROOT_PATH = ['resources', 'dag-view'];
 const CSS_FILE = 'dag.css';
@@ -129,64 +127,12 @@ export default class DagRenderer extends WebviewBase {
           break;
 
         case 'stepFix':
-          this.fixBrokenStep(message.id, node);
+          // TODO Proper error handling
+          if (!WebviewBase.context) return;
+          AIStepFixer.suggestFixForStep(message.id, node, WebviewBase.context);
           break;
       }
     };
-  }
-
-  // TODO send this function PipelineStepData instead of PipelineTreeItem
-  private async fixBrokenStep(id: string, node: PipelineTreeItem): Promise<void> {
-    if (!WebviewBase.context) {
-      return;
-    }
-
-    const client = LSClient.getInstance();
-    const ai = AIService.getInstance(WebviewBase.context);
-
-    const stepData = await client.sendLsClientRequest<StepData>('getPipelineRunStep', [id]);
-    const log = await fs.readFile(String(stepData.logsUri), { encoding: 'utf-8' });
-
-    const response = await ai.fixMyPipelineRequest(log, stepData.sourceCode);
-
-    if (!response) {
-      return;
-    }
-
-    const provider = new (class implements vscode.TextDocumentContentProvider {
-      provideTextDocumentContent(uri: vscode.Uri): string {
-        return response?.message || 'Something went wrong';
-      }
-    })();
-
-    vscode.workspace.registerTextDocumentContentProvider('fix-my-pipeline', provider);
-
-    const uri = vscode.Uri.parse('fix-my-pipeline:' + id + '.md');
-    const doc = await vscode.workspace.openTextDocument(uri);
-
-    const sourceCodeFileMatches = await searchWorkspaceByFileContent(stepData.sourceCode);
-
-    if (sourceCodeFileMatches.length === 1) {
-      await pipelineUtils.editStepFile(
-        sourceCodeFileMatches[0],
-        response.code[0].content,
-        String(stepData.sourceCode)
-      );
-    }
-
-    // let { document } = vscode.window.activeTextEditor || { document: null };
-    await vscode.window.showTextDocument(doc, {
-      preview: false,
-      viewColumn: vscode.ViewColumn.Beside,
-    });
-
-    vscode.commands.executeCommand('editor.action.toggleWordWrap');
-
-    const p = Panels.getInstance();
-    const existingPanel = p.getPanel(node.id);
-    if (existingPanel) {
-      existingPanel.webview.postMessage('AI Query Complete');
-    }
   }
 
   private async loadStepDataIntoPanel(id: string, runUrl: string): Promise<void> {

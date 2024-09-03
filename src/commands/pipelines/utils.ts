@@ -11,9 +11,6 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 
-import * as vscode from 'vscode';
-import fs from 'fs/promises';
-import { findFirstLineNumber } from '../../common/utilities';
 import { ServerDataProvider } from '../../views/activityBar';
 import { isServerStatus } from '../server/utils';
 
@@ -35,30 +32,8 @@ export const getPipelineRunDashboardUrl = (id: string): string => {
   return `${currentServerUrl}/runs/${id}`;
 };
 
-const editStepFile = async (fileUri: vscode.Uri, newContent: string, oldContent: string) => {
-  const fileContents = await fs.readFile(fileUri.path, { encoding: 'utf-8' });
-  // TODO update to throw error if oldContent is not found in fileContents
-  const firstLine = new vscode.Position(findFirstLineNumber(fileContents, oldContent) || 0, 0);
-  const lastLine = new vscode.Position(firstLine.line + oldContent.split('\n').length, 0);
-  const oldRange = new vscode.Range(firstLine, lastLine);
-
-  vscode.window.showTextDocument(fileUri);
-  const edit = new vscode.WorkspaceEdit();
-  edit.replace(fileUri, oldRange, newContent);
-
-  return vscode.workspace.applyEdit(edit).then(async success => {
-    if (success) {
-      vscode.commands.executeCommand('workbench.files.action.compareWithSaved', fileUri);
-    } else {
-      // TODO proper error handling
-      vscode.window.showInformationMessage('Error!');
-    }
-  });
-};
-
 const pipelineUtils = {
   getPipelineRunDashboardUrl,
-  editStepFile,
 };
 
 export default pipelineUtils;

@@ -308,6 +308,12 @@
         "command": "zenml.sendOpenAIMessage",
         "title": "Send OpenAI API Message",
         "category": "ZenML GenAI"
+      },
+      {
+        "command": "zenml.displayNextCodeRecommendation",
+        "title": "Next Recommendation",
+        "category": "ZenML GenAI",
+        "when": "resourcePath in zenml.aiCodeRecommendations"
       }
     ],
     "viewsContainers": {
@@ -479,6 +485,13 @@
           "when": "environmentCommandsRegistered && view == zenmlEnvironmentView && viewItem == interpreter",
           "command": "zenml.setPythonInterpreter",
           "group": "inline"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "zenml.displayNextCodeRecommendation",
+          "group": "navigation",
+          "when": "resourcePath in zenml.aiCodeRecommendations"
         }
       ]
     }

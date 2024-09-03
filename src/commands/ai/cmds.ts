@@ -72,7 +72,9 @@ def data_splitter(
     return dataset_trn, dataset_tst`;
 
 import type { ExtensionContext } from 'vscode';
-import { AIService } from '../../services/aiService';
+import OpenAI from 'openai';
+import { getSecret } from '../../common/vscodeapi';
+import AIStepFixer from '../pipelines/AIStepFixer';
 
 const sendOpenAIRequest = async (context: ExtensionContext) => {
   const ai = AIService.getInstance(context);
@@ -82,6 +84,14 @@ const sendOpenAIRequest = async (context: ExtensionContext) => {
   console.log(response);
 };
 
+const displayNextCodeRecommendation = () => {
+  let filePath = vscode.window.activeTextEditor?.document.fileName;
+  if (!filePath) return;
+
+  AIStepFixer.updateCodeRecommendation(filePath);
+};
+
 export const aiCommands = {
   sendOpenAIRequest,
+  displayNextCodeRecommendation,
 };
