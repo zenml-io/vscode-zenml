@@ -28,14 +28,6 @@ export const registerSecretsCommands = (context: ExtensionContext) => {
         'zenml.registerLLMAPIKey',
         async () => await secretsCommands.registerLLMAPIKey(context)
       ),
-      registerCommand(
-        'zenml.registerGeminiAPIKey',
-        async () => await secretsCommands.registerGeminiAPIKey(context)
-      ),
-      registerCommand(
-        'zenml.deleteGeminiAPIKey',
-        async () => await secretsCommands.deleteGeminiAPIKey(context)
-      )
     ];
 
     registeredCommands.forEach(cmd => {
