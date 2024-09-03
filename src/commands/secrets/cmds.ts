@@ -14,80 +14,49 @@
 import * as vscode from 'vscode';
 import type { ExtensionContext } from 'vscode';
 
-// TODO I don't think retrieval of an api key will live in here
+const registerLLMAPIKey = async (context: ExtensionContext) => {
+  const options: vscode.QuickPickItem[] = [
+    { label: 'Anthropic' },
+    { label: 'Gemini' },
+    { label: 'OpenAI' },
+  ];
 
-const registerOpenAIAPIKey = async (context: ExtensionContext) => {
-  let apiKey = await context.secrets.get('OPENAI_API_KEY');
+  const selectedOption = await vscode.window.showQuickPick(options, {
+    placeHolder: 'Please select an LLM.',
+    canPickMany: false,
+  });
+
+  if (selectedOption === undefined) {
+    vscode.window.showWarningMessage('API key input was canceled.');
+    return undefined;
+  }
+
+  const model = selectedOption.label;
+  const secretKey = `zenml.${model.toLowerCase()}.key`;
+
+  let apiKey = await context.secrets.get(secretKey);
 
   if (apiKey) {
     apiKey = await vscode.window.showInputBox({
-      prompt: 'OpenAI API Key already exists, enter a new value to update.',
+      prompt: `${model} API Key already exists, enter a new value to update.`,
       password: true,
     });
   } else {
     apiKey = await vscode.window.showInputBox({
-      prompt: 'Please enter your OpenAI API key',
+      prompt: `Please enter your ${model} API key`,
       password: true,
     });
   }
 
   if (apiKey === undefined) {
-    return undefined;
-  }
-
-  await context.secrets.store('OPENAI_API_KEY', apiKey);
-  vscode.window.showInformationMessage('OpenAI API key stored successfully.');
-};
-
-const deleteOpenAIAPIKey = async (context: ExtensionContext) => {
-  const apiKey = await context.secrets.get('OPENAI_API_KEY');
-
-  if (apiKey === undefined) {
-    vscode.window.showInformationMessage('No OpenAI API key exists.');
+    vscode.window.showWarningMessage('API key input was canceled.');
     return;
   }
-  await context.secrets.delete('OPENAI_API_KEY');
-  vscode.window.showInformationMessage('OpenAI API key successfully removed.');
+
+  await context.secrets.store(secretKey, apiKey);
+  vscode.window.showInformationMessage(`${model} API key stored successfully.`);
 };
-
-const registerGeminiAPIKey = async (context: ExtensionContext) => {
-  let apiKey = await context.secrets.get('API_KEY');
-
-  if (apiKey) {
-    apiKey = await vscode.window.showInputBox({
-      prompt: 'Gemini API Key already exists, enter a new value to update.',
-      password: true,
-    });
-  } else {
-    apiKey = await vscode.window.showInputBox({
-      prompt: 'Please enter your Gemini API key',
-      password: true,
-    });
-  }
-
-  if (apiKey === undefined) {
-    return undefined;
-  }
-
-  await context.secrets.store('API_KEY', apiKey);
-  vscode.window.showInformationMessage('Gemini API key stored successfully.');
-};
-
-const deleteGeminiAPIKey = async (context: ExtensionContext) => {
-  const apiKey = await context.secrets.get('API_KEY');
-
-  if (apiKey === undefined) {
-    vscode.window.showInformationMessage('No Gemini API key exists.');
-    return;
-  }
-  await context.secrets.delete('API_KEY');
-  vscode.window.showInformationMessage('Gemini API key successfully removed.');
-};
-
 
 export const secretsCommands = {
-  registerOpenAIAPIKey,
-  deleteOpenAIAPIKey,
-  registerGeminiAPIKey,
-  deleteGeminiAPIKey,
+  registerLLMAPIKey,
 };
