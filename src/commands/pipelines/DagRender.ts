@@ -131,52 +131,12 @@ export default class DagRenderer extends WebviewBase {
           break;
 
         case 'stepFix':
-          this.fixBrokenStep(message.id, node);
+          // TODO Proper error handling
+          if (!WebviewBase.context) return;
+          AIStepFixer.suggestFixForStep(message.id, node, WebviewBase.context);
           break;
       }
     };
-  }
-
-  // TODO send this function PipelineStepData instead of PipelineTreeItem
-  // TODO sending the OpenAI API request should also be moved to AIStepFixer
-  private async fixBrokenStep(id: string, node: PipelineTreeItem): Promise<void> {
-    if (!WebviewBase.context) return;
-
-    const client = LSClient.getInstance();
-    const stepData = await client.sendLsClientRequest<JsonObject>('getPipelineRunStep', [id]);
-    const log = await fs.readFile(String(stepData.logsUri), { encoding: 'utf-8' });
-    const p = Panels.getInstance();
-    const existingPanel = p.getPanel(node.id);
-
-    const response = await fixMyPipelineRequest(
-      WebviewBase.context,
-      log,
-      String(stepData.sourceCode)
-    );
-
-    const [chatCompletion, codeCompletion] = response;
-
-    const codeChoices = codeCompletion.choices
-      .map(choice => {
-        return choice.message.content?.match(/(?<=```\S*\s)[\s\S]*(?=\s```)/)?.[0] || '';
-      })
-      .filter(content => content);
-
-    const HARDCODED_PATH = '/home/memlin/zenml/zenml_tutorial/steps/inference_preprocessor.py';
-
-    AIStepFixer.createCodeRecommendation(
-      HARDCODED_PATH,
-      codeChoices,
-      String(stepData.sourceCode),
-      existingPanel
-    );
-    AIStepFixer.createVirtualDocument(
-      id,
-      chatCompletion.choices[0].message.content || 'Something went wrong',
-      existingPanel
-    );
-
-    if (existingPanel) existingPanel.webview.postMessage('AI Query Complete');
   }
 
   private async loadStepDataIntoPanel(id: string, runUrl: string): Promise<void> {

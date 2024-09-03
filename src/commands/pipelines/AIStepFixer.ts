@@ -2,6 +2,12 @@ import * as vscode from 'vscode';
 import { findFirstLineNumber } from '../../common/utilities';
 import fs from 'fs/promises';
 import { integer } from 'vscode-languageclient';
+import { LSClient } from '../../services/LSClient';
+import Panels from '../../common/panels';
+import WebviewBase from '../../common/WebviewBase';
+import { fixMyPipelineRequest } from '../../services/aiService';
+import { PipelineTreeItem } from '../../views/activityBar';
+import { JsonObject } from '../../views/panel/panelView/PanelTreeItem';
 
 export default new (class AIStepFixer {
   private codeRecommendations: {
@@ -11,7 +17,55 @@ export default new (class AIStepFixer {
     currentCodeIndex: integer;
   }[] = [];
 
-  public async createVirtualDocument(
+  public async suggestFixForStep(
+    id: string,
+    node: PipelineTreeItem,
+    context: vscode.ExtensionContext
+  ): Promise<void> {
+    const client = LSClient.getInstance();
+    const stepData = await client.sendLsClientRequest<JsonObject>('getPipelineRunStep', [id]);
+    const log = await fs.readFile(String(stepData.logsUri), { encoding: 'utf-8' });
+    const p = Panels.getInstance();
+    const existingPanel = p.getPanel(node.id);
+
+    const response = await fixMyPipelineRequest(context, log, String(stepData.sourceCode));
+
+    const [chatCompletion, codeCompletion] = response;
+
+    const codeChoices = codeCompletion.choices
+      .map(choice => {
+        return choice.message.content?.match(/(?<=```\S*\s)[\s\S]*(?=\s```)/)?.[0] || '';
+      })
+      .filter(content => content);
+
+    const HARDCODED_PATH = '/home/memlin/zenml/zenml_tutorial/steps/inference_preprocessor.py';
+
+    this.createCodeRecommendation(
+      HARDCODED_PATH,
+      codeChoices,
+      String(stepData.sourceCode),
+      existingPanel
+    );
+    this.createVirtualDocument(
+      id,
+      chatCompletion.choices[0].message.content || 'Something went wrong',
+      existingPanel
+    );
+
+    if (existingPanel) existingPanel.webview.postMessage('AI Query Complete');
+  }
+
+  public async updateCodeRecommendation(filePath: string) {
+    const rec = this.codeRecommendations.find(rec => rec.filePath === filePath);
+    if (!rec) return;
+
+    rec.currentCodeIndex =
+      rec.currentCodeIndex + 1 < rec.code.length ? rec.currentCodeIndex + 1 : 0;
+
+    this.editStepFile(rec.filePath, rec.code[rec.currentCodeIndex], rec.sourceCode, false);
+  }
+
+  private async createVirtualDocument(
     id: string,
     content: string,
     existingPanel?: vscode.WebviewPanel
@@ -29,7 +83,7 @@ export default new (class AIStepFixer {
     vscode.commands.executeCommand('markdown.showPreviewToSide', uri);
   }
 
-  public createCodeRecommendation(
+  private createCodeRecommendation(
     filePath: string,
     code: string[],
     sourceCode: string,
@@ -60,16 +114,6 @@ export default new (class AIStepFixer {
     }
 
     this.editStepFile(filePath, code[0], sourceCode, true, existingPanel);
-  }
-
-  public async updateCodeRecommendation(filePath: string) {
-    const rec = this.codeRecommendations.find(rec => rec.filePath === filePath);
-    if (!rec) return;
-
-    rec.currentCodeIndex =
-      rec.currentCodeIndex + 1 < rec.code.length ? rec.currentCodeIndex + 1 : 0;
-
-    this.editStepFile(rec.filePath, rec.code[rec.currentCodeIndex], rec.sourceCode, false);
   }
 
   // TODO store the original fileContents in codeRecommendations, so that code recommendations can be made even after
