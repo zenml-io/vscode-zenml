@@ -305,29 +305,11 @@
         "category": "ZenML Environment"
       },
       {
-        "command": "zenml.registerOpenAIAPIKey",
-        "title": "Register OpenAI API Key",
+        "command": "zenml.registerLLMAPIKey",
+        "title": "Register LLM API Key",
         "icon": "$(add)",
         "category": "ZenML Secrets"
       },
-      {
-        "command": "zenml.deleteOpenAIAPIKey",
-        "title": "Delete OpenAI API Key",
-        "icon": "$(trash)",
-        "category": "ZenML Secrets"
-      },
-      {
-        "command": "zenml.registerGeminiAPIKey",
-        "title": "Register Gemini API Key",
-        "icon": "$(add)",
-        "category": "ZenML Secrets"
-      },
-      {
-        "command": "zenml.deleteGeminiAPIKey",
-        "title": "Delete Gemini API Key",
-        "icon": "$(trash)",
-        "category": "ZenML Secrets"
-      }
     ],
     "viewsContainers": {
       "activitybar": [
