@@ -71,9 +71,9 @@ def data_splitter(
     dataset_tst = pd.DataFrame(dataset_tst, columns=dataset.columns)
     return dataset_trn, dataset_tst`;
 
+import * as vscode from 'vscode';
 import type { ExtensionContext } from 'vscode';
-import OpenAI from 'openai';
-import { getSecret } from '../../common/vscodeapi';
+import { AIService } from '../../services/aiService';
 import AIStepFixer from '../pipelines/AIStepFixer';
 
 const sendOpenAIRequest = async (context: ExtensionContext) => {

@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
-import { findFirstLineNumber } from '../../common/utilities';
+import { findFirstLineNumber, searchWorkspaceByFileContent } from '../../common/utilities';
 import fs from 'fs/promises';
 import { integer } from 'vscode-languageclient';
 import { LSClient } from '../../services/LSClient';
 import Panels from '../../common/panels';
-import { fixMyPipelineRequest } from '../../services/aiService';
+import { AIService } from '../../services/aiService';
 import { PipelineTreeItem } from '../../views/activityBar';
 import { JsonObject } from '../../views/panel/panelView/PanelTreeItem';
 
@@ -26,30 +26,33 @@ export default new (class AIStepFixer {
     const log = await fs.readFile(String(stepData.logsUri), { encoding: 'utf-8' });
     const p = Panels.getInstance();
     const existingPanel = p.getPanel(node.id);
+    const ai = AIService.getInstance(context);
 
-    const response = await fixMyPipelineRequest(context, log, String(stepData.sourceCode));
+    const response = await ai.fixMyPipelineRequest(log, String(stepData.sourceCode));
 
-    const [chatCompletion, codeCompletion] = response;
+    if (!response) return;
+    const { message, code } = response;
 
-    const codeChoices = codeCompletion.choices
-      .map(choice => {
-        return choice.message.content?.match(/(?<=```\S*\s)[\s\S]*(?=\s```)/)?.[0] || '';
+    const codeChoices = code
+      .map(c => {
+        // return choice.message.content?.match(/(?<=```\S*\s)[\s\S]*(?=\s```)/)?.[0] || '';
+        return c.content;
       })
       .filter(content => content);
 
-    const HARDCODED_PATH = '/home/memlin/zenml/zenml_tutorial/steps/inference_preprocessor.py';
+    const sourceCodeFileMatches = await searchWorkspaceByFileContent(
+      String(stepData.sourceCode).trim()
+    );
 
+    // TODO manage the possibility of multiple files containing the source code
+    // TODO manage the possibility of no files containing the source code
     this.createCodeRecommendation(
-      HARDCODED_PATH,
+      sourceCodeFileMatches[0].fsPath,
       codeChoices,
-      String(stepData.sourceCode),
+      String(stepData.sourceCode).trim(),
       existingPanel
     );
-    this.createVirtualDocument(
-      id,
-      chatCompletion.choices[0].message.content || 'Something went wrong',
-      existingPanel
-    );
+    this.createVirtualDocument(id, message || 'Something went wrong', existingPanel);
 
     if (existingPanel) existingPanel.webview.postMessage('AI Query Complete');
   }

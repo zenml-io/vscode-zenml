@@ -118,7 +118,6 @@ export function findFirstLineNumber(str: string, substr: string): number | null 
 export async function searchWorkspaceByFileContent(content: string) {
   const files = await vscode.workspace.findFiles('**/*');
   const pythonFiles = files.filter(file => file.toString().endsWith('.py'));
-
   const matches: vscode.Uri[] = [];
   await Promise.all(
     pythonFiles.map(
@@ -130,5 +129,6 @@ export async function searchWorkspaceByFileContent(content: string) {
         })
     )
   );
+
   return matches;
 }
