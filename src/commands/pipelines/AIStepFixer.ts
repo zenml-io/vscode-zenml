@@ -4,7 +4,6 @@ import fs from 'fs/promises';
 import { integer } from 'vscode-languageclient';
 import { LSClient } from '../../services/LSClient';
 import Panels from '../../common/panels';
-import WebviewBase from '../../common/WebviewBase';
 import { fixMyPipelineRequest } from '../../services/aiService';
 import { PipelineTreeItem } from '../../views/activityBar';
 import { JsonObject } from '../../views/panel/panelView/PanelTreeItem';

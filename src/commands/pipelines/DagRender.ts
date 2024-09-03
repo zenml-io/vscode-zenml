@@ -22,9 +22,6 @@ import { JsonObject } from '../../views/panel/panelView/PanelTreeItem';
 import { PanelDataProvider } from '../../views/panel/panelView/PanelDataProvider';
 import Panels from '../../common/panels';
 import WebviewBase from '../../common/WebviewBase';
-import { aiCommands } from '../ai/cmds';
-import { fixMyPipelineRequest } from '../../services/aiService';
-import pipelineUtils from './utils';
 import AIStepFixer from './AIStepFixer';
 
 const ROOT_PATH = ['resources', 'dag-view'];
