@@ -148,90 +148,33 @@ export default class DagRenderer extends WebviewBase {
     const p = Panels.getInstance();
     const existingPanel = p.getPanel(node.id);
 
-    // const response = await fixMyPipelineRequest(
-    //   WebviewBase.context,
-    //   log,
-    //   String(stepData.sourceCode)
-    // );
+    const response = await fixMyPipelineRequest(
+      WebviewBase.context,
+      log,
+      String(stepData.sourceCode)
+    );
 
-    // const [chatCompletion, codeCompletion] = response;
+    const [chatCompletion, codeCompletion] = response;
 
-    const HARDCODED_RESPONSE = {
-      response: '# This is a test response.',
-      code: [
-        `@step
-def inference_preprocessor(
-    dataset_inf: pd.DataFrame,
-    preprocess_pipeline: Pipeline,
-    target: str,
-) -> Annotated[pd.DataFrame, "inference_dataset"]:
-    """Data preprocessor step.
-
-    This is an example of a data processor step that prepares the data so that
-    it is suitable for model inference. It takes in a dataset as an input step
-    artifact and performs any necessary preprocessing steps based on pretrained
-    preprocessing pipeline.
-
-    Args:
-        dataset_inf: The inference dataset.
-        preprocess_pipeline: Pretrained \`Pipeline\` to process dataset.
-        target: Name of target columns in dataset.
-
-    Returns:
-        The processed dataframe: dataset_inf.
-    """
-    # artificially adding \`target\` column to avoid Pipeline issues
-    dataset_inf[target] = pd.Series([1] * dataset_inf.shape[0])
-    dataset_inf = preprocess_pipeline.transform(dataset_inf)
-    dataset_inf.drop(columns=[target], inplace=True)
-
-    # This is code snippet 1
-
-    return dataset_inf`,
-        `@step
-def inference_preprocessor(
-    dataset_inf: pd.DataFrame,
-    preprocess_pipeline: Pipeline,
-    target: str,
-) -> Annotated[pd.DataFrame, "inference_dataset"]:
-    """Data preprocessor step.
-
-    This is an example of a data processor step that prepares the data so that
-    it is suitable for model inference. It takes in a dataset as an input step
-    artifact and performs any necessary preprocessing steps based on pretrained
-    preprocessing pipeline.
-
-    Args:
-        dataset_inf: The inference dataset.
-        preprocess_pipeline: Pretrained \`Pipeline\` to process dataset.
-        target: Name of target columns in dataset.
-
-    Returns:
-        The processed dataframe: dataset_inf.
-    """
-    # artificially adding \`target\` column to avoid Pipeline issues
-    dataset_inf[target] = pd.Series([1] * dataset_inf.shape[0])
-    dataset_inf = preprocess_pipeline.transform(dataset_inf)
-    dataset_inf.drop(columns=[target], inplace=True)
-
-    # This is code snippet 2!!
-
-    return dataset_inf`,
-      ],
-    };
-
-    // const codeSnippet =
-    //   codeCompletion.choices[0].message.content?.match(/(?<=```\S*\s)[\s\S]*(?=\s```)/)?.[0] || '';
+    const codeChoices = codeCompletion.choices
+      .map(choice => {
+        return choice.message.content?.match(/(?<=```\S*\s)[\s\S]*(?=\s```)/)?.[0] || '';
+      })
+      .filter(content => content);
 
     const HARDCODED_PATH = '/home/memlin/zenml/zenml_tutorial/steps/inference_preprocessor.py';
 
     AIStepFixer.createCodeRecommendation(
       HARDCODED_PATH,
-      [HARDCODED_RESPONSE.code[0]],
+      codeChoices,
       String(stepData.sourceCode),
       existingPanel
     );
-    AIStepFixer.createVirtualDocument(id, HARDCODED_RESPONSE.response, existingPanel);
+    AIStepFixer.createVirtualDocument(
+      id,
+      chatCompletion.choices[0].message.content || 'Something went wrong',
+      existingPanel
+    );
 
     if (existingPanel) existingPanel.webview.postMessage('AI Query Complete');
   }
