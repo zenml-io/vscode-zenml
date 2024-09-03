@@ -309,7 +309,7 @@
         "title": "Register LLM API Key",
         "icon": "$(add)",
         "category": "ZenML Secrets"
-      },
+      }
     ],
     "viewsContainers": {
       "activitybar": [

@@ -84,9 +84,10 @@ export class ChatService {
     }
   }
 
-  private async addContext(messages: ChatMessage[], requestedContext: string[]): Promise<ChatMessage[]> {
+  private async addContext(messages: ChatMessage[], requestedContext: any[]): Promise<ChatMessage[]> {
     let systemMessage: ChatMessage = { role: 'system', content: 'Context: ' };
     for (let context of requestedContext) {
+      // TODO possibly create interface for context, change requestContext type (currently any[])
       switch (context) {
         case 'serverContext':
           systemMessage.content += this.getServerData();
@@ -105,12 +106,12 @@ export class ChatService {
           break;
         default:
           if (context.includes('Pipeline run:')) {
-            systemMessage.content += context
-            context = JSON.parse(context.replace('Pipeline run:', ''))
-            let logs = await this.getPipelineRunLogs(context.id)
-            let nodeData = await this.getPipelineRunNodes('step')
-            systemMessage.content += `Step Data: ${JSON.stringify(nodeData)}`
-            systemMessage.content += `Logs: ${logs}`
+            systemMessage.content += context;
+            context = JSON.parse(context.replace('Pipeline run:', ''));
+            let logs = await this.getPipelineRunLogs(context.id);
+            let nodeData = await this.getPipelineRunNodes('step');
+            systemMessage.content += `Step Data: ${JSON.stringify(nodeData)}`;
+            systemMessage.content += `Logs: ${logs}`;
           }
           break;
       }
