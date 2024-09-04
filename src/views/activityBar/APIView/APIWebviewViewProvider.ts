@@ -116,8 +116,7 @@ export class APIWebviewViewProvider implements vscode.WebviewViewProvider {
         </style>
       </head>
       <body>
-        <h1>Register AI API Key</h1>
-        <button id="register-api-key-button">Register API Key</button>
+        <button id="register-api-key-button">Register LLM API Key</button>
         <script nonce="${nonce}">
           const vscode = acquireVsCodeApi();
           const button = document.getElementById('register-api-key-button');
