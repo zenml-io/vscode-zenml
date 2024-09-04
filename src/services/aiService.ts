@@ -54,8 +54,6 @@ export class AIService {
 
     process.env['OPENAI_API_KEY'] = apiKey;
 
-    // const { TokenJS } = await import('token.js');
-
     const tokenjs = new TokenJS();
 
     const completion = await tokenjs.chat.completions.create({
