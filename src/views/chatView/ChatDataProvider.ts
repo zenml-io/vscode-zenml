@@ -60,6 +60,10 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
     if (message.command === 'sendMessage' && message.text?.trim()) {
       await this.addMessage(message.text, message.context);
     }
+
+    if (message.command === 'clearChat') {
+      await this.clearChatLog();
+    }
   }
 
   /**
@@ -115,6 +119,11 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
         }
       })
       .join('');
+  }
+
+  private clearChatLog(): void {
+    this.messages.length = 0;
+    this.updateWebviewContent();
   }
 
   private getPipelineData(): TreeItem[] {
