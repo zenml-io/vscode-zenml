@@ -13,7 +13,8 @@
 
 import type { ExtensionContext } from 'vscode';
 import * as vscode from 'vscode';
-// @ts-ignore
+// typescript incorrectly identifies the .js as a file extension, not the name of the module
+// @ts-expect-error
 import { TokenJS } from 'token.js';
 
 export interface FixMyPipelineResponse {
