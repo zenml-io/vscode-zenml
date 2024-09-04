@@ -53,7 +53,9 @@ export class AIService {
       throw new Error('No OpenAI API Key available.');
     }
 
-    process.env['OPENAI_API_KEY'] = apiKey;
+    if (process.env['OPENAI_API_KEY'] === undefined) {
+      process.env['OPENAI_API_KEY'] = apiKey;
+    }
 
     const tokenjs = new TokenJS();
 
