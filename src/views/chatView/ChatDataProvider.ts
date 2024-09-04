@@ -13,7 +13,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as marked from 'marked';
-import { ChatService } from '../../services/chatService';
+import { ChatService } from './chatService';
 import { ChatMessage, TreeItem } from '../../types/ChatTypes';
 import { PipelineDataProvider } from '../activityBar';
 

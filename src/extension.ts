@@ -43,8 +43,9 @@ export async function activate(context: vscode.ExtensionContext) {
   });
   registerEnvironmentCommands(context);
 
+  const apiWebviewProvider = new APIWebviewViewProvider(context);
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider('zenmlChatView', new APIWebviewViewProvider(context))
+    vscode.window.registerWebviewViewProvider('zenmlAPIView', apiWebviewProvider)
   );
 
 
