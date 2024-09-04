@@ -58,13 +58,10 @@ permissions and limitations under the License. -->
       }
       .rounded-lg {
         background-color: var(--vscode-button-background);
-        color: var(--vscode-button-foreground);
+        color: var(--vscode-editor-foreground);
       }
       .rounded-lg:hover {
         background-color: var(--vscode-button-hoverBackground);
-      }
-      .text-mutedText {
-        color: var(--vscode-descriptionForeground);
       }
       .hide {
         display: none;
@@ -138,7 +135,7 @@ permissions and limitations under the License. -->
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                       </svg>
                   </button>
-                  <div id="optionsDropdown" class="absolute right-8 top-0 mt-2 hidden">
+                  <div id="optionsDropdown" class="absolute left-8 top-0 mt-2 hidden z-10">
                       <div id="tree-view" class="tree-view">${treeItemHtml}</div>
                   </div>
               </div>
@@ -156,10 +153,10 @@ permissions and limitations under the License. -->
       <div id="chatMessages" class="space-y-4 mb-4 mt-4">${chatLogHtml}</div>
       <div id="sampleQuestions" class="flex flex-col mt-auto md:mt-0">
         <div class="md:col-span-4 md:col-start-2 md:flex md:justify-center">
-          <div class="w-full z-10 px-6 md:grid md:grid-cols-3 space-y-2 md:space-y-0">
+          <div class="w-full px-6 md:grid md:grid-cols-3 space-y-2 md:space-y-0">
             <div class="flex flex-row items-center">
               <div class="rounded-lg bg-card text-card-foreground md:h-auto grow text-sm overflow-hidden dark:bg-transparent dark:hover:bg-shallow hover:cursor-pointer border md:border-none shadow-sm md:shadow-none">
-                <div class="px-4 md:text-center text-mutedText">
+                <div class="px-4 md:text-center">
                   <p>What can this chat do?</p>
                 </div>
               </div>
@@ -169,7 +166,7 @@ permissions and limitations under the License. -->
             </div>
             <div class="flex flex-row items-center">
               <div class="rounded-lg bg-card text-card-foreground md:h-auto grow text-sm overflow-hidden dark:bg-transparent dark:hover:bg-shallow hover:cursor-pointer border md:border-none shadow-sm md:shadow-none">
-                <div class="px-4 md:text-center text-mutedText">
+                <div class="px-4 md:text-center">
                   <p>Help me improve my stack</p>
                 </div>
               </div>
@@ -179,7 +176,7 @@ permissions and limitations under the License. -->
             </div>
             <div class="flex flex-row items-center">
               <div class="rounded-lg bg-card text-card-foreground md:h-auto grow text-sm overflow-hidden dark:bg-transparent dark:hover:bg-shallow hover:cursor-pointer border md:border-none shadow-sm md:shadow-none">
-                <div class="px-4 md:text-center text-mutedText">
+                <div class="px-4 md:text-center">
                   <p>Generate a summary of my stats</p>
                 </div>
               </div>

@@ -22,7 +22,7 @@ const registerLLMAPIKey = async (context: ExtensionContext) => {
   ];
 
   const selectedOption = await vscode.window.showQuickPick(options, {
-    placeHolder: 'Please select an LLM.',
+    placeHolder: 'Please select a provider.',
     canPickMany: false,
   });
 
