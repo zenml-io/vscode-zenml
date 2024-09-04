@@ -36,6 +36,14 @@ export class AIService {
     return apiKey;
   }
 
+  // TODO make private after its working
+  private extractPythonSnippets(response: string): string[] {
+    return response
+      .split('```')
+      .filter(ele => ele.startsWith('python'))
+      .map(snippet => snippet.slice(7));
+  }
+
   public static getInstance(context: ExtensionContext) {
     if (!AIService.instance) {
       AIService.instance = new AIService(context);
@@ -49,13 +57,13 @@ export class AIService {
   ): Promise<FixMyPipelineResponse | undefined> {
     const apiKey = await this.getApiKey();
 
+    if (process.env['OPENAI_API_KEY'] === undefined && apiKey) {
+      process.env['OPENAI_API_KEY'] = apiKey;
+    }
+
     if (!apiKey) {
       vscode.window.showErrorMessage('No OpenAI API Key available. Please register your key.');
       throw new Error('No OpenAI API Key available.');
-    }
-
-    if (process.env['OPENAI_API_KEY'] === undefined) {
-      process.env['OPENAI_API_KEY'] = apiKey;
     }
 
     const tokenjs = new TokenJS();
