@@ -134,13 +134,26 @@ export default new (class AIStepFixer {
     const oldRange = new vscode.Range(firstLine, lastLine);
     const fileUri = vscode.Uri.file(filePath);
 
+    const provider = new (class implements vscode.TextDocumentContentProvider {
+      provideTextDocumentContent(uri: vscode.Uri): string {
+        return fileContents;
+      }
+    })();
+
+    const recName = 'Recommendations for ' + fileUri.fsPath.split(/\/\\/).reverse()[0];
+    vscode.workspace.registerTextDocumentContentProvider('code-recommendations', provider);
+    const recUri = vscode.Uri.parse('code-recommendations:' + recName);
+    await vscode.workspace.openTextDocument(recUri);
+
     const edit = new vscode.WorkspaceEdit();
-    edit.replace(fileUri, oldRange, newContent);
+    edit.replace(recUri, oldRange, newContent);
 
     const success = await vscode.workspace.applyEdit(edit);
     if (success && openFile) {
       if (existingPanel) existingPanel.reveal(existingPanel.viewColumn, false);
-      vscode.commands.executeCommand('workbench.files.action.compareWithSaved', fileUri);
+      vscode.commands.executeCommand('vscode.diff', fileUri, recUri, recName);
+
+      // vscode.commands.executeCommand('workbench.files.action.compareWithSaved', fileUri);
     } else if (!success) {
       // TODO proper error handling
       vscode.window.showInformationMessage('Error!');
