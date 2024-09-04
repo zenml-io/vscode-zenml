@@ -13,24 +13,13 @@
 
 import type { ExtensionContext } from 'vscode';
 import * as vscode from 'vscode';
-import OpenAI from 'openai';
-import { z } from 'zod';
-import { zodResponseFormat } from 'openai/helpers/zod';
+// @ts-ignore
+import { TokenJS } from 'token.js';
 
 export interface FixMyPipelineResponse {
   message: string;
   code: { language: string; content: string }[];
 }
-
-const CodeSnippet = z.object({
-  language: z.string(),
-  content: z.string(),
-});
-
-const FixMyPipeline = z.object({
-  error_message_explanation: z.string(),
-  corrected_code_options: z.array(CodeSnippet),
-});
 
 export class AIService {
   private static instance: AIService;
@@ -62,9 +51,15 @@ export class AIService {
       vscode.window.showErrorMessage('No OpenAI API Key available. Please register your key.');
       throw new Error('No OpenAI API Key available.');
     }
-    const openai = new OpenAI({ apiKey });
 
-    const completion = await openai.beta.chat.completions.parse({
+    process.env['OPENAI_API_KEY'] = apiKey;
+
+    // const { TokenJS } = await import('token.js');
+
+    const tokenjs = new TokenJS();
+
+    const completion = await tokenjs.chat.completions.create({
+      provider: 'openai',
       model: 'gpt-4o-mini',
       messages: [
         {
@@ -85,20 +80,19 @@ export class AIService {
             'Now, please explain some possible causes of the error. If you identify any code errors that could resolve the issue, please also provide the full content of the source code with the proposed changes made.',
         },
       ],
-      response_format: zodResponseFormat(FixMyPipeline, 'fix_my_pipeline'),
     });
 
-    const response = completion.choices[0].message.parsed;
+    const response = completion.choices[0].message.content;
 
-    console.log('\n\n\n', completion.choices[0].message.parsed, '\n\n\n');
+    console.log('\n\n\n', completion.choices[0].message.content, '\n\n\n');
 
     if (response === null) {
       return undefined;
     }
 
     return {
-      message: response.error_message_explanation,
-      code: response.corrected_code_options,
+      message: response,
+      code: [{ language: 'l33t', content: 'aeey oh' }],
     };
   }
 }

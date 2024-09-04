@@ -528,10 +528,9 @@
     "dagre": "^0.8.5",
     "fs-extra": "^11.2.0",
     "hbs": "^4.2.0",
-    "openai": "^4.56.0",
     "svg-pan-zoom": "github:bumbu/svg-pan-zoom",
     "svgdom": "^0.1.19",
-    "vscode-languageclient": "^9.0.1",
-    "zod": "^3.23.8"
+    "token.js": "^0.4.4",
+    "vscode-languageclient": "^9.0.1"
   }
 }
