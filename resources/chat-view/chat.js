@@ -36,4 +36,13 @@
   }
 
   document.getElementById('chatForm').addEventListener('submit', sendMessage);
+
+  // Clears Chat Log
+  function clearChatLog() {
+    vscode.postMessage({
+      command: 'clearChat',
+    });
+  }
+
+  document.getElementById('clearChat').addEventListener('click', clearChatLog);
 })();
