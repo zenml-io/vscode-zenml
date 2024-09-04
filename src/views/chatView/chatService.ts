@@ -19,17 +19,15 @@ import {
   ServerDataProvider,
   StackDataProvider,
   StackComponentTreeItem,
-} from '../views/activityBar';
-import { ComponentDataProvider } from '../views/activityBar/componentView/ComponentDataProvider';
-import { EnvironmentDataProvider } from '../views/activityBar/environmentView/EnvironmentDataProvider';
-import { LSClient } from './LSClient';
-import { DagArtifact, DagStep, PipelineRunDag } from '../types/PipelineTypes';
-import { JsonObject } from '../views/panel/panelView/PanelTreeItem';
-import { ZenmlGlobalConfigResp } from '../types/LSClientResponseTypes';
+} from '../activityBar';
+import { ComponentDataProvider } from '../activityBar/componentView/ComponentDataProvider';
+import { EnvironmentDataProvider } from '../activityBar/environmentView/EnvironmentDataProvider';
+import { LSClient } from '../../services/LSClient';
+import { DagArtifact, DagStep, PipelineRunDag } from '../../types/PipelineTypes';
+import { JsonObject } from '../panel/panelView/PanelTreeItem';
+import { ZenmlGlobalConfigResp } from '../../types/LSClientResponseTypes';
 import { TreeItem } from 'vscode';
-import { ChatMessage } from '../types/ChatTypes';
-import { PipelineRun } from '../types/PipelineTypes';
-import { node } from 'webpack';
+import { ChatMessage } from '../../types/ChatTypes';
 
 export class ChatService {
   private static instance: ChatService;
@@ -52,16 +50,15 @@ export class ChatService {
     try {
       const module = await import('token.js');
       const { TokenJS } = module;
-
-      // Use context to access secrets
-      const apiKey = await this.context.secrets.get('API_KEY');
+      let provider = 'Gemini'; // this is the only provider available at the moment
+      const apiKey = await this.context.secrets.get(`zenml.${provider.toLowerCase()}.key`);
       if (!apiKey) {
         vscode.window.showErrorMessage('No Gemini API key found. Please register one');
-
       }
       this.tokenjs = new TokenJS({ apiKey });
     } catch (error) {
       console.error('Error loading TokenJS:', error);
+      vscode.window.showErrorMessage(`Failed to initialize ChatService: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -80,7 +77,11 @@ export class ChatService {
       return completion.choices[0]?.message?.content || 'No content';
     } catch (error) {
       console.error('Error with Gemini API:', error);
-      return 'Error: Unable to get a response from Gemini.';
+      if (error instanceof Error) {
+        return `Error: ${error.message}. Please check your API key and network connection.`;
+      } else {
+        return 'Error: An unexpected error occurred while getting a response from Gemini.';
+      }
     }
   }
 

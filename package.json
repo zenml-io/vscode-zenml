@@ -355,8 +355,8 @@
           "icon": "$(server-environment)"
         },
         {
-          "id": "zenmlChatView",
-          "name": "Chat",
+          "id": "zenmlAPIView",
+          "name": "Chatbot",
           "type": "webview"
         }
       ],
@@ -430,7 +430,7 @@
           "group": "navigation"
         },
         {
-          "when": "view == zenmlChatView",
+          "when": "view == zenmlAPIView",
           "command": "zenml.openChat",
           "group": "navigation"
         }
