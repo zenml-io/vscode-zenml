@@ -35,11 +35,9 @@ permissions and limitations under the License. -->
         }
     </script>
     <style>
-      #chatMessages {
-        color: black;
-      }
-      #messageInput {
-        color: black;
+      body {
+        background-color: var(--vscode-editor-background);
+        color: var(--vscode-editor-foreground);
       }
       ul {
         color:black !important;
@@ -47,16 +45,37 @@ permissions and limitations under the License. -->
       form {
         display: contents;
       }
+      #chatForm {
+        background: var(--vscode-input-background);
+        border: 1px solid var(--vscode-input-border);
+      }
+      #chatMessages {
+        color: var(--vscode-editor-foreground);
+      }
+      #messageInput {
+        color: var(--vscode-input-foreground);
+        background-color: var(--vscode-input-background);
+      }
+      .rounded-lg {
+        background-color: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+      }
+      .rounded-lg:hover {
+        background-color: var(--vscode-button-hoverBackground);
+      }
+      .text-mutedText {
+        color: var(--vscode-descriptionForeground);
+      }
       .hide {
         display: none;
       }
       .tree-view {
-            background-color: white;
-            color: #333;
+            background-color: var(--vscode-editor-background);
+            color: var(--vscode-editor-foreground);
             width: 256px;
             max-height: 300px;
             overflow: auto;
-            border: 1px solid #e2e8f0;
+            border: 2px var(--vscode-editor-foreground) solid;
             border-radius: 0.375rem;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
@@ -66,7 +85,7 @@ permissions and limitations under the License. -->
             cursor: pointer;
         }
         .tree-item:hover {
-            background-color: #f3f4f6;
+          background-color: var(--vscode-list-background);
         }
         .tree-item-content {
             display: flex;
@@ -83,7 +102,7 @@ permissions and limitations under the License. -->
         }
         .tree-item-name {
             font-size: 14px;
-            color: #4b5563;
+            color: var(--vscode-editor-foreground);
             margin-left: 4px;
             flex-grow: 1;
         }
@@ -106,13 +125,13 @@ permissions and limitations under the License. -->
         }
    </style>
 </head>
-<body class="bg-white font-plus-jakarta">
+<body class="font-plus-jakarta">
   <div class="container mx-auto px-4 py-8 max-w-4xl">
     <h1 class="text-3xl font-bold text-center text-zenml mb-8">ZenML Chat</h1>
     
     <div class="mb-6">
       <div class="relative">
-          <form id="chatForm" class="flex items-center bg-white border border-gray-300 rounded-full shadow-sm">
+          <form id="chatForm" class="flex items-center rounded-full shadow-sm">
               <div class="relative">
                   <button type="button" id="optionsToggle" class="p-2 text-gray-400 hover:text-zenml focus:outline-none">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

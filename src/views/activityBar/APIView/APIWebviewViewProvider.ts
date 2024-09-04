@@ -53,58 +53,83 @@ export class APIWebviewViewProvider implements vscode.WebviewViewProvider {
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https:; script-src ${webview.cspSource} https: 'unsafe-inline'; style-src ${webview.cspSource} https: 'unsafe-inline'; font-src https:;">
+          <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https:; script-src ${webview.cspSource}; style-src ${webview.cspSource};">
           <title>Chat with your ZenML pipelines and data</title>
-          <link rel="preconnect" href="https://fonts.googleapis.com">
-          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-          <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet">
-          <script src="https://cdn.tailwindcss.com"></script>
-          <script>
-            tailwind.config = {
-              theme: {
-                extend: {
-                  colors: {
-                    zenml: '#7a3ef8',
-                  },
-                  fontFamily: {
-                    'plus-jakarta': ['"Plus Jakarta Sans"', 'sans-serif'],
-                  },
-                },
-              },
-            }
-          </script>
           <style>
             body {
-              font-family: "Plus Jakarta Sans", sans-serif;
-              font-optical-sizing: auto;
-              font-weight: 400;
-              font-style: normal;
+              font-family: var(--vscode-font-family);
+              font-size: var(--vscode-font-size);
+              color: var(--vscode-foreground);
+              background-color: var(--vscode-editor-background);
+              padding: 20px;
+            }
+            .container {
+              max-width: 600px;
+              margin: 0 auto;
+              background-color: var(--vscode-editor-background);
+              border: 1px solid var(--vscode-panel-border);
+              border-radius: 6px;
+              overflow: hidden;
+            }
+            .header {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              padding: 20px;
+            }
+            h1 {
+              font-size: 24px;
+              font-weight: bold;
+              color: var(--vscode-foreground);
+              text-align: center;
+              margin: 0;
+            }
+            .content {
+              padding: 20px;
+            }
+            select, button {
+              width: 100%;
+              padding: 8px 12px;
+              margin-bottom: 16px;
+              border: 1px solid var(--vscode-input-border);
+              background-color: var(--vscode-input-background);
+              color: var(--vscode-input-foreground);
+              border-radius: 4px;
+            }
+            button {
+              background-color: var(--vscode-button-background);
+              color: var(--vscode-button-foreground);
+              border: none;
+              cursor: pointer;
+              font-weight: bold;
+            }
+            button:hover {
+              background-color: var(--vscode-button-hoverBackground);
+            }
+            #error-message {
+              color: var(--vscode-errorForeground);
+              font-size: 14px;
+              margin-top: 8px;
+              display: none;
             }
           </style>
         </head>
-        <body class="bg-gray-100 text-gray-900 font-plus-jakarta p-6">
-          <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl">
-            <div class="p-8">
-              <div class="flex flex-col items-center mb-6">
-                <img src="${logoUri}" alt="ZenML Logo" class="h-12 mb-4">
-                <h1 class="text-2xl font-bold text-zenml text-center">Chat with your ZenML pipelines and data</h1>
-              </div>
-              <div class="space-y-4">
-                <div>
-                  <select id="provider-select" class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-zenml focus:border-zenml">
-                    <option value="" disabled selected>Select Provider</option>
-                    <option value="OpenAI">OpenAI</option>
-                    <option value="Claude">Claude</option>
-                    <option value="Gemini">Gemini</option>
-                  </select>
-                </div>
-                <div>
-                  <button id="register-api-key-button" class="w-full bg-zenml hover:bg-zenml/80 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out">
-                    Register API Key
-                  </button>
-                  <p id="error-message" class="mt-2 text-red-600 text-sm hidden">Please select a provider</p>
-                </div>
-              </div>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Chat with your ZenML pipelines and data</h1>
+            </div>
+            <div class="content">
+              <select id="provider-select">
+                <option value="" disabled selected>Select Provider</option>
+                <option value="OpenAI">OpenAI</option>
+                <option value="Claude">Claude</option>
+                <option value="Gemini">Gemini</option>
+              </select>
+              <button id="register-api-key-button">
+                Register API Key
+              </button>
+              <p id="error-message">Please select a provider</p>
             </div>
           </div>
 

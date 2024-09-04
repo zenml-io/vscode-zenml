@@ -11,10 +11,11 @@
    or implied.See the License for the specific language governing
    permissions and limitations under the License. */
 body {
-    font-family: Arial, sans-serif;
+    font-family: var(--vscode-font-family);
     margin: 0;
     padding: 0;
-    background-color: #2e2e2e;
+    background-color: var(--vscode-editor-background);
+    color: var(--vscode-editor-foreground);
 }
 
 #chat-container {
@@ -27,35 +28,29 @@ body {
     flex: 1;
     overflow-y: auto;
     padding: 10px;
-    background-color: #3c3c3c;
-    border-bottom: 1px solid #1a1a1a;
+    background: var(--vscode-editor-background);
+    border-bottom: 1px solid var(--vscode-panel-border);
 }
 
 #messageInput {
     flex: 1;
     padding: 10px;
     font-size: 14px;
-    border: 1px solid #555;
+    border: 1px solid var(--vscode-input-border);
     border-radius: 5px;
-    background-color: #2c2c2c;
-    color: white;
+    background: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
 }
 
-.user {
-    background-color: #d1ffd1;
-    align-self: flex-end;
-}
-
-.assistant {
-    background-color: #e0e0ff;
-    align-self: flex-start;
+.user, .assistant {
+    background: var(--vscode-editor-background);
 }
 
 #input-container {
     display: flex;
     padding: 10px;
-    background-color: #333;
-    border-top: 1px solid #1a1a1a;
+    background: var(--vscode-editor-background);
+    border-top: 1px solid var(--vscode-panel-border);
 }
 
 #input {
@@ -69,117 +64,128 @@ body {
     padding: 5px 10px;
     font-size: 14px;
     cursor: pointer;
+    background-color: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    border: none;
+    border-radius: 4px;
 }
 
+#send:hover {
+    background-color: var(--vscode-button-hoverBackground);
+}
 
 .message {
     padding: 10px;
     margin: 5px 0;
-    background-color: #4a4a4a;
+    background: var(--vscode-editor-background);
     border-radius: 10px;
-    color: white;
+    color: var(--vscode-editor-foreground);
 }
 
 #sendMessage {
     margin-left: 10px;
     padding: 10px;
-    background-color: #007acc;
-    color: #fff;
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
     border: none;
     border-radius: 4px;
     cursor: pointer;
 }
 
-#chatForm {
-  display: flex;
-  gap: 10px;
+#sendMessage:hover {
+    background-color: var(--vscode-button-hoverBackground);
 }
+
+#chatForm {
+    display: flex;
+    gap: 10px;
+}
+
 .dropup {
-  position: relative;
-  display: inline-block;
+    position: relative;
+    display: inline-block;
 }
 .dropup-content {
-  display: none;
-  position: absolute;
-  background-color: #ffffff;
-  min-width: 160px;
-  box-shadow: 0px -8px 16px 0px rgba(0,0,0,0.2);
-  bottom: 100%;
-  left: 0;
-  z-index: 1;
-  border-radius: 4px;
-  margin-bottom: 5px;
+    display: none;
+    position: absolute;
+    background: var(--vscode-dropdown-background);
+    min-width: 160px;
+    box-shadow: 0px -8px 16px 0px var(--vscode-widget-shadow);
+    bottom: 100%;
+    left: 0;
+    z-index: 1;
+    border-radius: 4px;
+    margin-bottom: 5px;
 }
 .dropup-content label {
-  display: block;
-  padding: 12px 16px;
-  color: black;
-  font-family: Arial, sans-serif;
+    display: block;
+    padding: 12px 16px;
+    color: var(--vscode-dropdown-foreground);
 }
 .dropup-content label:hover {
-  background-color: #f1f1f1;
+    background: var(--vscode-list-hoverBackground);
 }
 .dropup-content input[type="checkbox"] {
-  margin-right: 8px;
-  vertical-align: middle;
+    margin-right: 8px;
+    vertical-align: middle;
 }
 .hide {
-  display: none;
+    display: none;
 }
 #contextButton {
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-  padding: 5px 10px;
-  cursor: pointer;
-  border-radius: 4px;
+    background: var(--vscode-button-secondaryBackground);
+    border: 1px solid var(--vscode-button-border);
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    color: var(--vscode-button-secondaryForeground);
 }
 #contextButton:hover {
-  background-color: #e0e0e0;
+    background: var(--vscode-button-secondaryHoverBackground);
 }
-
 
 .tree-view {
-  background-color: #1e1e1e;
-  color: #ffffff;
-  width: 256px;
-  overflow: auto;
+    background: var(--vscode-sideBar-background);
+    color: var(--vscode-sideBar-foreground);
+    width: 256px;
+    overflow: auto;
 }
 .tree-item {
-  display: flex;
-  align-items: center;
-  padding: 2px 8px;
-  cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 2px 8px;
+    cursor: pointer;
 }
 .tree-item:hover {
-  background-color: #2a2d2e;
+    background: var(--vscode-list-hoverBackground);
 }
 .tree-item-content {
-  display: flex;
-  align-items: center;
+    display: flex;
+    align-items: center;
 }
 .tree-item-icon {
-  width: 16px;
-  height: 16px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 .tree-item-checkbox {
-  margin-right: 8px;
+    margin-right: 8px;
 }
 .tree-item-name {
-  font-size: 14px;
-  color: #cccccc;
-  margin-left: 4px;
+    font-size: 14px;
+    color: var(--vscode-sideBarSectionHeader-foreground);
+    margin-left: 4px;
 }
 .tree-item-children {
-  display: none;
-  width: 100%;
+    display: none;
+    width: 100%;
 }
 .tree-item-children.open {
-  display: block;
+    display: block;
 }
 .tree-item-wrapper {
-  display: flex;
-  flex-direction: column;
+    display: flex;
+    flex-direction: column;
 }
