@@ -1,3 +1,14 @@
+// --------------------------------------------------------------------------------------------------------------------------------------------------------
+// ########################################################################################################################################################
+// --------------------------------------------------------------------------------------------------------------------------------------------------------
+// TODO
+// TODO Update AIStepFixer.codeRecommendations to store reference to the file URI and the in-memory virtual file URI, rather than file path. This is needed
+// TODO for updateCodeRecommendations to work correctly.
+// TODO
+// --------------------------------------------------------------------------------------------------------------------------------------------------------
+// ########################################################################################################################################################
+// --------------------------------------------------------------------------------------------------------------------------------------------------------
+
 import * as vscode from 'vscode';
 import { findFirstLineNumber, searchWorkspaceByFileContent } from '../../common/utilities';
 import fs from 'fs/promises';
@@ -29,7 +40,8 @@ export default class AIStepFixer {
   }
 
   private codeRecommendations: {
-    filePath: string;
+    sourceUri: vscode.Uri;
+    recUri: vscode.Uri | undefined;
     code: string[];
     sourceCode: string;
     currentCodeIndex: integer;
@@ -64,7 +76,7 @@ export default class AIStepFixer {
 
     // TODO manage the possibility of zero or multiple files containing the source code
     this.createCodeRecommendation(
-      sourceCodeFileMatches[0].fsPath,
+      sourceCodeFileMatches[0],
       codeChoices,
       String(stepData.sourceCode).trim(),
       existingPanel
@@ -74,14 +86,14 @@ export default class AIStepFixer {
     if (existingPanel) existingPanel.webview.postMessage('AI Query Complete');
   }
 
-  public async updateCodeRecommendation(filePath: string) {
-    const rec = this.codeRecommendations.find(rec => rec.filePath === filePath);
+  public async updateCodeRecommendation(recUri: vscode.Uri) {
+    const rec = this.codeRecommendations.find(rec => rec.recUri?.toString === recUri.toString);
     if (!rec) return;
 
     rec.currentCodeIndex =
       rec.currentCodeIndex + 1 < rec.code.length ? rec.currentCodeIndex + 1 : 0;
 
-    this.editStepFile(rec.filePath, rec.code[rec.currentCodeIndex], rec.sourceCode, false);
+    this.editStepFile(rec.sourceUri, rec.code[rec.currentCodeIndex], rec.sourceCode, false);
   }
 
   private async createVirtualDocument(
@@ -103,15 +115,21 @@ export default class AIStepFixer {
   }
 
   private createCodeRecommendation(
-    filePath: string,
+    sourceUri: vscode.Uri,
     code: string[],
     sourceCode: string,
     existingPanel?: vscode.WebviewPanel
   ) {
-    const rec = this.codeRecommendations.find(rec => rec.filePath === filePath);
+    const rec = this.codeRecommendations.find(rec => rec.sourceUri === sourceUri);
 
     if (!rec && code.length > 1) {
-      this.codeRecommendations.push({ filePath, code, sourceCode, currentCodeIndex: 0 });
+      this.codeRecommendations.push({
+        sourceUri,
+        recUri: undefined,
+        code,
+        sourceCode,
+        currentCodeIndex: 0,
+      });
       this.updateRecommendationsContext();
 
       vscode.window.tabGroups.onDidChangeTabs(evt => {
@@ -119,12 +137,12 @@ export default class AIStepFixer {
         if (typeof input !== 'object' || input === null || !('modified' in input)) return;
         const uri = input.modified;
         if (typeof uri !== 'object' || uri === null || !('path' in uri)) return;
-        const recIndex = this.codeRecommendations.findIndex(ele => ele.filePath === uri.path);
+        const recIndex = this.codeRecommendations.findIndex(ele => ele.recUri === uri);
         if (recIndex === -1) return;
 
         setTimeout(() => {
           const editors = vscode.window.visibleTextEditors;
-          if (editors.some(editor => editor.document.fileName === uri.path)) return;
+          if (editors.some(editor => editor.document.uri === uri)) return;
 
           this.codeRecommendations.splice(recIndex, 1);
           this.updateRecommendationsContext();
@@ -132,21 +150,20 @@ export default class AIStepFixer {
       });
     }
 
-    this.editStepFile(filePath, code[0], sourceCode, true, existingPanel);
+    this.editStepFile(sourceUri, code[0], sourceCode, true, existingPanel);
   }
 
   // TODO store the original fileContents in codeRecommendations, so that code recommendations can be made even after
   // TODO the user has made changes to the file
   private async editStepFile(
-    filePath: string,
+    sourceUri: vscode.Uri,
     newContent: string,
     oldContent: string,
     openFile = true,
     existingPanel?: vscode.WebviewPanel
   ) {
-    const fileContents = await fs.readFile(filePath, { encoding: 'utf-8' });
-    const fileUri = vscode.Uri.file(filePath);
-    const fileName = path.posix.basename(fileUri.path);
+    const fileContents = await fs.readFile(sourceUri.fsPath, { encoding: 'utf-8' });
+    const fileName = path.posix.basename(sourceUri.path);
     const firstLine = new vscode.Position(findFirstLineNumber(fileContents, oldContent) || 0, 0);
     const lastLine = new vscode.Position(firstLine.line + oldContent.split('\n').length, 0);
     const oldRange = new vscode.Range(firstLine, lastLine);
@@ -161,11 +178,23 @@ export default class AIStepFixer {
         overwrite: true,
       }
     );
-    const recUri = vscode.Uri.parse(`zenml-minfs:/${fileName}`);
-    vscode.workspace.onWillSaveTextDocument(e => {
-      if (e.document.uri.scheme !== 'zenml-minfs' || e.document.fileName !== `/${fileName}`) return;
 
-      fs.writeFile(fileUri.fsPath, e.document.getText());
+    const recUri = vscode.Uri.parse(`zenml-minfs:/${fileName}`);
+    const rec = this.codeRecommendations.find(ele => ele.sourceUri === sourceUri);
+    if (rec) {
+      rec.recUri = recUri;
+      this.updateRecommendationsContext();
+    }
+
+    vscode.workspace.onWillSaveTextDocument(e => {
+      if (
+        e.document.uri.scheme !== 'zenml-minfs' ||
+        e.document.fileName !== `/${fileName}` ||
+        e.reason !== vscode.TextDocumentSaveReason.Manual
+      )
+        return;
+
+      fs.writeFile(sourceUri.fsPath, e.document.getText());
     });
 
     const edit = new vscode.WorkspaceEdit();
@@ -174,7 +203,7 @@ export default class AIStepFixer {
     const success = await vscode.workspace.applyEdit(edit);
     if (success && openFile) {
       if (existingPanel) existingPanel.reveal(existingPanel.viewColumn, false);
-      vscode.commands.executeCommand('vscode.diff', fileUri, recUri, recName);
+      vscode.commands.executeCommand('vscode.diff', sourceUri, recUri, recName);
     }
   }
 
@@ -182,7 +211,9 @@ export default class AIStepFixer {
     vscode.commands.executeCommand(
       'setContext',
       'zenml.aiCodeRecommendations',
-      this.codeRecommendations.map(rec => path.posix.basename(rec.filePath))
+      this.codeRecommendations
+        .filter(rec => rec.recUri)
+        .map(rec => path.posix.basename(rec.recUri?.fsPath || ''))
     );
   }
 }

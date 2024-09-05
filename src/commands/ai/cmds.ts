@@ -85,11 +85,11 @@ const sendOpenAIRequest = async (context: ExtensionContext) => {
 };
 
 const displayNextCodeRecommendation = () => {
-  let filePath = vscode.window.activeTextEditor?.document.fileName;
-  if (!filePath) return;
+  let uri = vscode.window.activeTextEditor?.document.uri;
+  if (!uri) return;
 
   const stepFixer = AIStepFixer.getInstance();
-  stepFixer.updateCodeRecommendation(filePath);
+  stepFixer.updateCodeRecommendation(uri);
 };
 
 export const aiCommands = {
