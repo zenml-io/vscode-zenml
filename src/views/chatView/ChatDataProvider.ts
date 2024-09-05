@@ -102,7 +102,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
 
   private getPipelineData(): TreeItem[] {
     let pipelineRuns = PipelineDataProvider.getInstance().pipelineRuns;
-    let pipelineTreeItems = pipelineRuns.map((run) => {
+    let pipelineTreeItems: TreeItem[] = pipelineRuns.map((run, index) => {
       let formattedStartTime = new Date(run.startTime).toLocaleString();
       let formattedEndTime = run.endTime ? new Date(run.endTime).toLocaleString() : 'N/A';
       let stringValue = `Pipeline run:${JSON.stringify(run)}`;
@@ -110,6 +110,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
         name: run.name,
         value: stringValue,
         title: "Includes all code, logs, and metadata for a specific pipeline run with message",
+        hidden: index > 9,
         children: [
           { name: run.status },
           { name: run.stackName },
@@ -120,6 +121,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
         ]
       };
     });
+    if (pipelineTreeItems.length > 9) { pipelineTreeItems.push({ name: 'Expand' })}
     return pipelineTreeItems;
   }
 
@@ -143,21 +145,24 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
   private convertTreeDataToHtml(treeData: TreeItem[], level = 0) {
     let convertedTreeData = treeData.map((item) => {
       let iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0h24v24H0z" fill="none" stroke="none"/></svg>';
-      let childrenEl = '';
-      let title = '';
+      let childrenEl= '', title = '', hidden = '';
 
       if (item.children) {
         iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>';
         childrenEl = `<div class="tree-item-children">${this.convertTreeDataToHtml(item.children, level + 1)}</div>`;
       }
 
-      if (item.title) {
-        title = item.title;
-      }
+      if (item.title) { title = item.title }
+      if (item.hidden) { hidden = " hidden" }
 
       let checkboxEl = level < 2 ? `<input type="checkbox" class="tree-item-checkbox" value='${item.value}'>` : '';
 
-      return `<div class="tree-item">
+      if (item.name == 'Expand') { 
+        hidden += ' expand';
+        checkboxEl = ''
+      }
+
+      return `<div class="tree-item${hidden}">
         <div class="tree-item-wrapper">
             <div class="tree-item-content" style="padding-left: ${level * 16}px;">
               <span class="tree-item-icon">
