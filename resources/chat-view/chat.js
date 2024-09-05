@@ -43,6 +43,8 @@
   // Function to send the message
   function sendMessage(event) {
     event.preventDefault();
+    if (isInputDisabled) { return; }
+    
     const formData = new FormData(event.target);
     const text = formData.get('messageInput');
     const checkedBoxes = document.querySelectorAll('#tree-view input[type="checkbox"]:checked');
@@ -112,11 +114,29 @@
     }
   }
 
+  let isInputDisabled = false;
+
+  function disableInput() {
+    isInputDisabled = true;
+    document.getElementById('sendMessage').disabled = true;
+  }
+
+  function enableInput() {
+    isInputDisabled = false;
+    document.getElementById('sendMessage').disabled = false;
+  }
+
   window.addEventListener('message', event => {
     const message = event.data;
     console.log('Received message:', message);
     if (message.command === 'receiveMessage') {
-      appendToChat(message.text, 'assistant');
+      if (message.text === 'disableInput') {
+        disableInput();
+      } else if (message.text === 'enableInput') {
+        enableInput();
+      } else {
+        appendToChat(message.text, 'assistant');
+      }
     }
   });
 

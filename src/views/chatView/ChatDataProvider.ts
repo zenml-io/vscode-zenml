@@ -213,11 +213,13 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
       const responseGenerator = this.chatService.getChatResponse(this.messages, context || []);
       this.streamingMessage = {role: 'assistant', content: ''};
 
+      // Send message to disable input
+      this.sendMessageToWebview('disableInput');
+
       for await (const partialResponse of responseGenerator) {
         for (const letter of partialResponse) {
           this.streamingMessage.content += letter;
           this.sendMessageToWebview(letter);
-          // Add a tiny delay between characters to simulate typing
           await new Promise(resolve => setTimeout(resolve, 1)); // Adjust delay as needed
         }
       }
@@ -225,9 +227,11 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
       this.messages.push(this.streamingMessage);
       this.streamingMessage = null;
       this.updateWebviewContent();
+      this.sendMessageToWebview('enableInput');
     } catch (error) {
       console.error('Error in addMessage:', error);
       this.sendMessageToWebview('Error: Unable to get response from Gemini');
+      this.sendMessageToWebview('enableInput');
     }
   }
   
