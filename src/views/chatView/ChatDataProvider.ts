@@ -197,7 +197,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
     this.updateWebviewContent();
 
     try {
-      const responseGenerator = this.chatService.getChatResponse(this.messages, context);
+      const responseGenerator = this.chatService.getChatResponse(this.messages, context || []);
       this.streamingMessage = {role: 'assistant', content: ''};
 
       for await (const partialResponse of responseGenerator) {

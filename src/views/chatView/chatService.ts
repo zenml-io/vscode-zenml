@@ -69,25 +69,29 @@ export class ChatService {
     }
   }
 
-  public async *getChatResponse(messages: ChatMessage[], context?: string[] | undefined): AsyncGenerator<string, void, unknown> {
+  public async *getChatResponse(messages: ChatMessage[], context: string[]): AsyncGenerator<string, void, unknown> {
     try {
-      if (context && context.length > 0) {
+      if (context) {
         messages = await this.addContext(messages, context);
-      
+      }
       
       const completion = await this.tokenjs.chat.completions.create({
         streaming: true,
-        provider: this.providers[context[0]],
-        model: context[0],
+        provider: this.providers[context[0]] ?? '',
+        model: context[0] ?? '',
         messages: messages,
       });
-  
-      for await (const part of completion) {
-        yield part.choices[0]?.delta?.content || '';
+
+      if (Symbol.asyncIterator in completion) {
+        for await (const part of completion) {
+          yield part.choices[0]?.delta?.content || '';
+        }
+      } else if (completion.choices && completion.choices.length > 0) {
+        yield completion.choices[0].message.content || '';
+      } else {
+        throw new Error('Unexpected response from API');
       }
-    } else {
-      throw new Error("Context is either undefined or empty.");
-    }
+
     } catch (error) {
       console.error('Error with Gemini API:', error);
       if (error instanceof Error) {
