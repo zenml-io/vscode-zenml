@@ -128,14 +128,18 @@
 
   window.addEventListener('message', event => {
     const message = event.data;
-    console.log('Received message:', message);
-    if (message.command === 'receiveMessage') {
-      if (message.text === 'disableInput') {
-        disableInput();
-      } else if (message.text === 'enableInput') {
-        enableInput();
-      } else {
-        appendToChat(message.text, 'assistant');
+    switch (message.command) {
+      case 'updateChatLog':
+        document.getElementById('chatMessages').innerHTML = message.chatLogHtml;
+        break;
+      case 'receiveMessage': {
+        if (message.text === 'disableInput') {
+          disableInput();
+        } else if (message.text === 'enableInput') {
+          enableInput();
+        } else {
+          appendToChat(message.text, 'assistant');
+        }
       }
     }
   });
@@ -148,4 +152,18 @@
 
   // Restore state when page loads
   document.addEventListener('DOMContentLoaded', restoreState);
+
+  const expandElement = document.querySelector('.expand')
+
+  function expandList(event) {
+    event.preventDefault()
+    event.stopPropagation()
+    const hiddenElements = expandElement.parentElement.querySelectorAll('.hidden')
+    hiddenElements.forEach(element => {
+      element.classList.remove('hidden')
+    })
+    expandElement.remove()
+  }
+
+  expandElement.addEventListener('click', expandList)
 })();

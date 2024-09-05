@@ -20,5 +20,6 @@ export interface TreeItem {
   name: string,
   value?: string,
   children?: TreeItem[],
-  title?: string
+  title?: string,
+  hidden?: boolean
 }
