@@ -482,7 +482,7 @@
     "@types/svgdom": "^0.1.2",
     "@types/vscode": "^1.92.0",
     "@types/webpack": "^5.28.5",
-    "@typescript-eslint/eslint-plugin": "^6.19.1",
+    "@typescript-eslint/eslint-plugin": "^8.4.0",
     "@typescript-eslint/parser": "^8.4.0",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
