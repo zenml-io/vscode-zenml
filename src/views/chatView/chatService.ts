@@ -69,25 +69,31 @@ export class ChatService {
     }
   }
 
-  public async getChatResponse(messages: ChatMessage[],  context?: string[] | undefined): Promise<string> {
+  public async *getChatResponse(messages: ChatMessage[], context?: string[] | undefined): AsyncGenerator<string, void, unknown> {
     try {
-      if (context) {
+      if (context && context.length > 0) {
         messages = await this.addContext(messages, context);
-      }
+      
       
       const completion = await this.tokenjs.chat.completions.create({
+        streaming: true,
         provider: this.providers[context[0]],
         model: context[0],
         messages: messages,
       });
-
-      return completion.choices[0]?.message?.content || 'No content';
+  
+      for await (const part of completion) {
+        yield part.choices[0]?.delta?.content || '';
+      }
+    } else {
+      throw new Error("Context is either undefined or empty.");
+    }
     } catch (error) {
       console.error('Error with Gemini API:', error);
       if (error instanceof Error) {
-        return `Error: ${error.message}. Please check your API key and network connection.`;
+        yield `Error: ${error.message}. Please check your API key and network connection.`;
       } else {
-        return 'Error: An unexpected error occurred while getting a response from Gemini.';
+        yield 'Error: An unexpected error occurred while getting a response from Gemini.';
       }
     }
   }

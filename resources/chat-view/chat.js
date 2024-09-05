@@ -19,9 +19,9 @@
     const formData = new FormData(event.target);
     const text = formData.get('messageInput').trim();
     const checkedBoxes = document.querySelectorAll('#tree-view input[type="checkbox"]:checked');
-    const model = document.querySelector('.model-dropdown')
+    const model = document.querySelector('.model-dropdown');
     let checkedValues = Array.from(checkedBoxes).map(checkbox => checkbox.value);
-    checkedValues.unshift(model.value)
+    checkedValues.unshift(model.value);
     // const sampleQuestions = document.querySelector('#sampleQuestions')
 
     if (text) {
@@ -32,6 +32,7 @@
       });
 
       event.target.reset();
+      appendToChat(text, 'user');
       // sampleQuestions.classList.remove('flex')
       // sampleQuestions.classList.add('hide')
     }
@@ -47,4 +48,38 @@
   }
 
   document.getElementById('clearChat').addEventListener('click', clearChatLog);
+  function appendToChat(text, role) {
+    const chatMessages = document.getElementById('chatMessages');
+    let messageDiv;
+
+    if (role === 'assistant') {
+      messageDiv = chatMessages.querySelector('div[data-role="assistant"]:last-child') || 
+                   chatMessages.lastElementChild;
+      
+      if (!messageDiv || messageDiv.getAttribute('data-role') !== 'assistant') {
+        messageDiv = document.createElement('div');
+        messageDiv.className = 'p-4 rounded-lg mb-2';
+        messageDiv.setAttribute('data-role', 'assistant');
+        messageDiv.innerHTML = `<p class="font-semibold text-zenml">ZenML Assistant</p><div class="message-content"></div>`;
+        chatMessages.appendChild(messageDiv);
+        currentAssistantMessage = '';
+      }
+      
+      currentAssistantMessage += text;
+      const contentDiv = messageDiv.querySelector('.message-content');
+      
+      requestAnimationFrame(() => {
+        contentDiv.innerHTML = marked.parse(currentAssistantMessage);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      });
+    }
+  }
+
+  window.addEventListener('message', event => {
+    const message = event.data;
+    console.log('Received message:', message);
+    if (message.command === 'receiveMessage') {
+      appendToChat(message.text, 'assistant');
+    }
+  });
 })();
