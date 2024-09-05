@@ -90,14 +90,15 @@
 
     if (role === 'assistant') {
       messageDiv = chatMessages.querySelector('div[data-role="assistant"]:last-child') || 
-                   chatMessages.lastElementChild;
+                   chatMessages.firstElementChild;
       
       if (!messageDiv || messageDiv.getAttribute('data-role') !== 'assistant') {
         messageDiv = document.createElement('div');
         messageDiv.className = 'p-4 assistant';
         messageDiv.setAttribute('data-role', 'assistant');
         messageDiv.innerHTML = `<p class="font-semibold text-zenml">ZenML Assistant</p><div class="message-content"></div>`;
-        chatMessages.appendChild(messageDiv);
+
+        chatMessages.insertBefore(messageDiv, chatMessages.firstChild);
         currentAssistantMessage = '';
       }
       
@@ -106,7 +107,7 @@
       
       requestAnimationFrame(() => {
         contentDiv.innerHTML = marked.parse(currentAssistantMessage);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        chatMessages.scrollTop = 0;
       });
     }
   }
