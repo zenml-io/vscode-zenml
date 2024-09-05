@@ -109,6 +109,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
       return {
         name: run.name,
         value: stringValue,
+        title: "Includes all code, logs, and metadata for a specific pipeline run with message",
         children: [
           { name: run.status },
           { name: run.stackName },
@@ -125,15 +126,16 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
   private getTreeData() {
     let pipelineData = this.getPipelineData();
     let treeData: TreeItem[] = [
-      {name: 'Server', value: 'serverContext'},
-      {name: 'Environment', value: 'environmentContext'},
+      {name: 'Server', value: 'serverContext', title: 'Includes all server metadata with message'},
+      {name: 'Environment', value: 'environmentContext', title: 'Includes all server metadata with message'},
       {
         name: 'Pipeline Runs',
         value: 'pipelineContext',
+        title: 'Includes all code, logs, and metadata for pipeline runs with message',
         children : pipelineData
       },
-      {name: 'Stack', value: 'stackContext'},
-      {name: 'Stack Components', value: 'stackComponentsContext'}
+      {name: 'Stack', value: 'stackContext', title: 'Includes all stack metadata with message'},
+      {name: 'Stack Components', value: 'stackComponentsContext', title: 'Includes all stack component metadata with message'}
     ];
     return treeData;
   }
@@ -142,10 +144,15 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
     let convertedTreeData = treeData.map((item) => {
       let iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0h24v24H0z" fill="none" stroke="none"/></svg>';
       let childrenEl = '';
+      let title = ''
 
       if (item.children) {
         iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>';
         childrenEl = `<div class="tree-item-children">${this.convertTreeDataToHtml(item.children, level + 1)}</div>`;
+      }
+
+      if (item.title) {
+        title = item.title
       }
 
       let checkboxEl = level < 2 ? `<input type="checkbox" class="tree-item-checkbox" value='${item.value}'>` : '';
@@ -156,7 +163,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
               <span class="tree-item-icon">
                   ${iconSvg}
               </span>
-              <span class="tree-item-name">${item.name}</span>
+              <span class="tree-item-name" title="${title}">${item.name}</span>
               ${checkboxEl}
             </div>
             ${childrenEl}

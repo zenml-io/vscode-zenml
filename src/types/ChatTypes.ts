@@ -19,5 +19,6 @@ export interface ChatMessage {
 export interface TreeItem {
   name: string,
   value?: string,
-  children?: TreeItem[] 
+  children?: TreeItem[],
+  title?: string
 }
