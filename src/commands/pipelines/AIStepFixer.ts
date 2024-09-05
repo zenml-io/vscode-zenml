@@ -1,14 +1,3 @@
-// --------------------------------------------------------------------------------------------------------------------------------------------------------
-// ########################################################################################################################################################
-// --------------------------------------------------------------------------------------------------------------------------------------------------------
-// TODO
-// TODO Update AIStepFixer.codeRecommendations to store reference to the file URI and the in-memory virtual file URI, rather than file path. This is needed
-// TODO for updateCodeRecommendations to work correctly.
-// TODO
-// --------------------------------------------------------------------------------------------------------------------------------------------------------
-// ########################################################################################################################################################
-// --------------------------------------------------------------------------------------------------------------------------------------------------------
-
 import * as vscode from 'vscode';
 import { findFirstLineNumber, searchWorkspaceByFileContent } from '../../common/utilities';
 import fs from 'fs/promises';
@@ -120,7 +109,9 @@ export default class AIStepFixer {
     sourceCode: string,
     existingPanel?: vscode.WebviewPanel
   ) {
-    const rec = this.codeRecommendations.find(rec => rec.sourceUri === sourceUri);
+    const rec = this.codeRecommendations.find(
+      rec => rec.sourceUri.toString() === sourceUri.toString()
+    );
 
     if (!rec && code.length > 1) {
       this.codeRecommendations.push({
@@ -137,12 +128,14 @@ export default class AIStepFixer {
         if (typeof input !== 'object' || input === null || !('modified' in input)) return;
         const uri = input.modified;
         if (typeof uri !== 'object' || uri === null || !('path' in uri)) return;
-        const recIndex = this.codeRecommendations.findIndex(ele => ele.recUri === uri);
+        const recIndex = this.codeRecommendations.findIndex(
+          ele => ele.recUri?.toString() === uri.toString()
+        );
         if (recIndex === -1) return;
 
         setTimeout(() => {
           const editors = vscode.window.visibleTextEditors;
-          if (editors.some(editor => editor.document.uri === uri)) return;
+          if (editors.some(editor => editor.document.uri.toString() === uri.toString())) return;
 
           this.codeRecommendations.splice(recIndex, 1);
           this.updateRecommendationsContext();
@@ -180,7 +173,9 @@ export default class AIStepFixer {
     );
 
     const recUri = vscode.Uri.parse(`zenml-minfs:/${fileName}`);
-    const rec = this.codeRecommendations.find(ele => ele.sourceUri === sourceUri);
+    const rec = this.codeRecommendations.find(
+      ele => ele.sourceUri.toString() === sourceUri.toString()
+    );
     if (rec) {
       rec.recUri = recUri;
       this.updateRecommendationsContext();
