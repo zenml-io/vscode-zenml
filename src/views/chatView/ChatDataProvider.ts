@@ -97,29 +97,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
     html = html.replace('${chatLogHtml}', chatLogHtml);
 
     return html;
-  }
-
-  /**
-   * Render the chat log as HTML.
-   */
-  private renderChatLog(): string {
-    return this.messages.filter(msg => msg['role'] !== 'system')
-      .map((message) => {
-        let content = marked.parse(message.content);
-        if (message.role === 'user') {
-          return `<div class="bg-gray-100 p-4 rounded-lg">
-              <p class="font-semibold text-zenml">User</p>
-              ${content}
-          </div>`;
-        } else {
-          return `<div class="p-4 rounded-lg">
-            <p class="font-semibold text-zenml">ZenML Assistant</p>
-            ${content}
-          </div>`;
-        }
-      })
-      .join('');
-  }
+  };
 
   private clearChatLog(): void {
     this.messages.length = 0;
@@ -210,28 +188,73 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
   }
 
   /**
-   * Add a message to the chat log, get a response from Gemini, and update the webview.
+   * Add a message to the chat log, get a response from AI provider and update the webview.
    */
+  private streamingMessage: ChatMessage | null = null;
+
   async addMessage(message: string, context?: string[]) {
-    this.messages.push({role: 'user', content: `${message}`});
+    this.messages.push({role: 'user', content: message});
+    this.updateWebviewContent();
 
     try {
-      const botResponse = await this.chatService.getChatResponse(this.messages, context);
-      this.messages.push({role: 'assistant', content: `${botResponse}`});
+      const responseGenerator = this.chatService.getChatResponse(this.messages, context);
+      this.streamingMessage = {role: 'assistant', content: ''};
+
+      for await (const partialResponse of responseGenerator) {
+        for (const letter of partialResponse) {
+          this.streamingMessage.content += letter;
+          this.sendMessageToWebview(letter);
+          // Add a tiny delay between characters to simulate typing
+          await new Promise(resolve => setTimeout(resolve, 5)); // Adjust delay as needed
+        }
+      }
+
+      this.messages.push(this.streamingMessage);
+      this.streamingMessage = null;
       this.updateWebviewContent();
-      this.sendMessageToWebview(`${botResponse}`);
     } catch (error) {
-      this.messages.push({role: 'system', content: 'Error: Unable to get response from Gemini'});
-      this.updateWebviewContent();
+      console.error('Error in addMessage:', error);
+      this.sendMessageToWebview('Error: Unable to get response from Gemini');
     }
   }
 
   /**
-   * Send a message from Gemini back to the webview
+   * Render the chat log as HTML.
    */
-  private sendMessageToWebview(message: string) {
+  private renderChatLog(): string {
+    return this.messages.filter(msg => msg['role'] !== 'system')
+      .map((message) => {
+        let content = marked.parse(message.content);
+        if (message.role === 'user') {
+          return `<div class="bg-gray-100 p-4 rounded-lg">
+              <p class="font-semibold text-zenml">User</p>
+              ${content}
+          </div>`;
+        } else {
+          return `<div class="p-4 rounded-lg">
+            <p class="font-semibold text-zenml">ZenML Assistant</p>
+            ${content}
+          </div>`;
+        }
+      })
+      .join('') + this.renderStreamingMessage();
+  }
+
+  private renderStreamingMessage(): string {
+    if (!this.streamingMessage) {return '';}
+    let content = marked.parse(this.streamingMessage.content);
+    return `<div class="p-4 rounded-lg">
+      <p class="font-semibold text-zenml">ZenML Assistant</p>
+      ${content}
+    </div>`;
+  }
+
+  /**
+   * Send a message from AI provider back to the webview
+   */
+  private sendMessageToWebview(text: string) {
     if (this._view) {
-      this._view.webview.postMessage({ command: 'recieveMessage', text: message });
+      this._view.webview.postMessage({ command: 'receiveMessage', text });
     }
   }
 }
