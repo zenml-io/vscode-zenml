@@ -144,7 +144,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
     let convertedTreeData = treeData.map((item) => {
       let iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0h24v24H0z" fill="none" stroke="none"/></svg>';
       let childrenEl = '';
-      let title = ''
+      let title = '';
 
       if (item.children) {
         iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>';
@@ -152,7 +152,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
       }
 
       if (item.title) {
-        title = item.title
+        title = item.title;
       }
 
       let checkboxEl = level < 2 ? `<input type="checkbox" class="tree-item-checkbox" value='${item.value}'>` : '';
@@ -218,7 +218,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
           this.streamingMessage.content += letter;
           this.sendMessageToWebview(letter);
           // Add a tiny delay between characters to simulate typing
-          await new Promise(resolve => setTimeout(resolve, 5)); // Adjust delay as needed
+          await new Promise(resolve => setTimeout(resolve, 1)); // Adjust delay as needed
         }
       }
 
@@ -236,6 +236,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
    */
   private renderChatLog(): string {
     const renderer = {
+      // @ts-ignore
       code({ text, lang, escaped, isInline }) {
         const code = text.replace(/\n$/, '') + (isInline ? '' : '\n');
       
@@ -249,9 +250,11 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
       }
     };
 
+    // @ts-ignore
     marked.use({ renderer });
 
     return this.messages.filter(msg => msg['role'] !== 'system')
+      .reverse()
       .map((message) => {
         let content = marked.parse(message.content);
         if (message.role === 'user') {
@@ -273,6 +276,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
     if (!this.streamingMessage) {return '';}
 
     const renderer = {
+      // @ts-ignore
       code({ text, lang, escaped, isInline }) {
         const code = text.replace(/\n$/, '') + (isInline ? '' : '\n');
       
@@ -286,6 +290,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
       }
     };
 
+    // @ts-ignore
     marked.use({ renderer });
 
     let content = marked.parse(this.streamingMessage.content);
