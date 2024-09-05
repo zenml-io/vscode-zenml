@@ -13,16 +13,42 @@
 (function () {
   const vscode = acquireVsCodeApi();
 
+  // Function to save the current state
+  function saveState() {
+    const model = document.querySelector('.model-dropdown').value;
+    const checkedBoxes = Array.from(document.querySelectorAll('#tree-view input[type="checkbox"]:checked'))
+      .map(checkbox => checkbox.value);
+    
+    localStorage.setItem('selectedModel', model);
+    localStorage.setItem('checkedContexts', JSON.stringify(checkedBoxes));
+  }
+
+  // Function to restore the saved state
+  function restoreState() {
+    const selectedModel = localStorage.getItem('selectedModel');
+    const checkedContexts = JSON.parse(localStorage.getItem('checkedContexts')) || [];
+
+    if (selectedModel) {
+      document.querySelector('.model-dropdown').value = selectedModel;
+    }
+
+    checkedContexts.forEach(value => {
+      const checkbox = document.querySelector(`#tree-view input[type="checkbox"][value="${value}"]`);
+      if (checkbox) {
+        checkbox.checked = true;
+      }
+    });
+  }
+
   // Function to send the message
   function sendMessage(event) {
     event.preventDefault();
     const formData = new FormData(event.target);
-    const text = formData.get('messageInput').trim();
+    const text = formData.get('messageInput');
     const checkedBoxes = document.querySelectorAll('#tree-view input[type="checkbox"]:checked');
-    const model = document.querySelector('.model-dropdown');
+    const model = document.querySelector('.model-dropdown').value;
     let checkedValues = Array.from(checkedBoxes).map(checkbox => checkbox.value);
-    checkedValues.unshift(model.value);
-    // const sampleQuestions = document.querySelector('#sampleQuestions')
+    checkedValues.unshift(model);
 
     if (text) {
       vscode.postMessage({
@@ -32,13 +58,20 @@
       });
 
       event.target.reset();
-      appendToChat(text, 'user');
-      // sampleQuestions.classList.remove('flex')
-      // sampleQuestions.classList.add('hide')
+      saveState(); // Save state before refresh
     }
   }
 
-  document.getElementById('chatForm').addEventListener('submit', sendMessage);  
+  window.addEventListener('message', event => {
+    const message = event.data;
+    switch (message.command) {
+      case 'updateChatLog':
+        document.getElementById('chatMessages').innerHTML = message.chatLogHtml;
+        break;
+    }
+  });
+
+  document.getElementById('chatForm').addEventListener('submit', sendMessage);
 
   
   // Clears Chat Log
@@ -46,6 +79,7 @@
     vscode.postMessage({
       command: 'clearChat',
     });
+    saveState(); // Save state before refresh
   }
   
   document.getElementById('clearChat').addEventListener('click', clearChatLog);
@@ -60,7 +94,7 @@
       
       if (!messageDiv || messageDiv.getAttribute('data-role') !== 'assistant') {
         messageDiv = document.createElement('div');
-        messageDiv.className = 'p-4 rounded-lg mb-2';
+        messageDiv.className = 'p-4 assistant';
         messageDiv.setAttribute('data-role', 'assistant');
         messageDiv.innerHTML = `<p class="font-semibold text-zenml">ZenML Assistant</p><div class="message-content"></div>`;
         chatMessages.appendChild(messageDiv);
@@ -84,4 +118,13 @@
       appendToChat(message.text, 'assistant');
     }
   });
+
+  // Add event listeners to save state when dropdown or checkboxes change
+  document.querySelector('.model-dropdown').addEventListener('change', saveState);
+  document.querySelectorAll('#tree-view input[type="checkbox"]').forEach(checkbox => {
+    checkbox.addEventListener('change', saveState);
+  });
+
+  // Restore state when page loads
+  document.addEventListener('DOMContentLoaded', restoreState);
 })();

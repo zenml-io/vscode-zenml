@@ -12,7 +12,7 @@
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import * as marked from 'marked';
+import { marked } from 'marked';
 import { ChatService } from './chatService';
 import { ChatMessage, TreeItem } from '../../types/ChatTypes';
 import { PipelineDataProvider } from '../activityBar';
@@ -36,7 +36,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
   ) {
     this._view = webviewView;
     this.configureWebViewOptions(webviewView.webview);
-    this.updateWebviewContent();
+    this.loadWebviewContent();
 
     // Handle messages received from the webview
     webviewView.webview.onDidReceiveMessage(async message => {
@@ -57,7 +57,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
    * Handle incoming messages from the webview.
    */
   private async handleWebviewMessage(message: any) {
-    if (message.command === 'sendMessage' && message.text?.trim()) {
+    if (message.command === 'sendMessage' && message.text) {
       await this.addMessage(message.text, message.context);
     }
 
@@ -81,9 +81,6 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
     const jsUri = webview.asWebviewUri(
       vscode.Uri.joinPath(extensionUri, 'resources', 'chat-view', 'chat.js')
     );
-    const markedUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(extensionUri, 'resources', 'chat-view', 'marked.min.js')
-    );
 
     // Chat log HTML
     const chatLogHtml = this.renderChatLog();
@@ -92,7 +89,6 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
     // Replace placeholders in the HTML with actual values
     html = html.replace('${cssUri}', cssUri.toString());
     html = html.replace('${jsUri}', jsUri.toString());
-    html = html.replace('${markedUri}', markedUri.toString());
     html = html.replace('${treeItemHtml}', treeItemHtml);
     html = html.replace('${chatLogHtml}', chatLogHtml);
 
@@ -175,10 +171,20 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
     return this.convertTreeDataToHtml(treeData);
   }
 
+  private updateWebviewContent() {
+    if (this._view) {
+      const chatLogHtml = this.renderChatLog();
+      this._view.webview.postMessage({
+        command: 'updateChatLog',
+        chatLogHtml: chatLogHtml
+      });
+    }
+  }
+
   /**
    * Update the webview with the latest content, including the chat message.
    */
-  private updateWebviewContent() {
+  private loadWebviewContent() {
     if (this._view) {
       this._view.webview.html = this.getWebviewContent(
         this._view.webview,
@@ -217,21 +223,37 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
       this.sendMessageToWebview('Error: Unable to get response from Gemini');
     }
   }
-
+  
   /**
    * Render the chat log as HTML.
    */
   private renderChatLog(): string {
+    const renderer = {
+      code({ text, lang, escaped, isInline }) {
+        const code = text.replace(/\n$/, '') + (isInline ? '' : '\n');
+      
+        if (isInline) {
+          return `<code>${code}</code>`;
+        }
+      
+        return '<pre><code>'
+          + code
+          + '</code></pre>\n';
+      }
+    };
+
+    marked.use({ renderer });
+
     return this.messages.filter(msg => msg['role'] !== 'system')
       .map((message) => {
         let content = marked.parse(message.content);
         if (message.role === 'user') {
-          return `<div class="bg-gray-100 p-4 rounded-lg">
+          return `<div class="p-4 user">
               <p class="font-semibold text-zenml">User</p>
               ${content}
           </div>`;
         } else {
-          return `<div class="p-4 rounded-lg">
+          return `<div class="p-4 assistant">
             <p class="font-semibold text-zenml">ZenML Assistant</p>
             ${content}
           </div>`;
@@ -242,8 +264,25 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
 
   private renderStreamingMessage(): string {
     if (!this.streamingMessage) {return '';}
+
+    const renderer = {
+      code({ text, lang, escaped, isInline }) {
+        const code = text.replace(/\n$/, '') + (isInline ? '' : '\n');
+      
+        if (isInline) {
+          return `<code>${code}</code>`;
+        }
+      
+        return '<pre><code>'
+          + code
+          + '</code></pre>\n';
+      }
+    };
+
+    marked.use({ renderer });
+
     let content = marked.parse(this.streamingMessage.content);
-    return `<div class="p-4 rounded-lg">
+    return `<div class="p-4 assistant">
       <p class="font-semibold text-zenml">ZenML Assistant</p>
       ${content}
     </div>`;
