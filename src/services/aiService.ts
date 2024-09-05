@@ -85,15 +85,16 @@ export class AIService {
 
     const response = completion.choices[0].message.content;
 
-    console.log('\n\n\n', completion.choices[0].message.content, '\n\n\n');
-
     if (response === null) {
       return undefined;
     }
 
     return {
       message: response,
-      code: [{ language: 'l33t', content: 'aeey oh' }],
+      code: [
+        { language: 'l33t', content: 'aeey oh' },
+        { language: 'test', content: 'oh aeey' },
+      ],
     };
   }
 }

@@ -129,7 +129,7 @@ export default class DagRenderer extends WebviewBase {
         case 'stepFix':
           // TODO Proper error handling
           if (!WebviewBase.context) return;
-          AIStepFixer.suggestFixForStep(message.id, node, WebviewBase.context);
+          AIStepFixer.getInstance().suggestFixForStep(message.id, node, WebviewBase.context);
           break;
       }
     };

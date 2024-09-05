@@ -313,7 +313,7 @@
         "command": "zenml.displayNextCodeRecommendation",
         "title": "Next Recommendation",
         "category": "ZenML GenAI",
-        "when": "resourcePath in zenml.aiCodeRecommendations"
+        "when": "resourceFilename in zenml.aiCodeRecommendations && resourceScheme == zenml-minfs"
       }
     ],
     "viewsContainers": {
@@ -491,7 +491,7 @@
         {
           "command": "zenml.displayNextCodeRecommendation",
           "group": "navigation",
-          "when": "resourcePath in zenml.aiCodeRecommendations"
+          "when": "resourceFilename in zenml.aiCodeRecommendations && resourceScheme == zenml-minfs"
         }
       ]
     }

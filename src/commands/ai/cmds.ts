@@ -88,7 +88,8 @@ const displayNextCodeRecommendation = () => {
   let filePath = vscode.window.activeTextEditor?.document.fileName;
   if (!filePath) return;
 
-  AIStepFixer.updateCodeRecommendation(filePath);
+  const stepFixer = AIStepFixer.getInstance();
+  stepFixer.updateCodeRecommendation(filePath);
 };
 
 export const aiCommands = {
