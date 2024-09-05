@@ -33,6 +33,13 @@ export class ChatService {
   private static instance: ChatService;
   private tokenjs: any;
   private context: vscode.ExtensionContext;
+  private providers: Record<string, string> = {
+    'claude-3-5-sonnet-20240620': 'anthropic',
+    'claude-3-opus-20240229': 'anthropic',
+    'gpt-4o': 'openai',
+    'gemini-1.5-pro': 'gemini',
+    'gemini-1.5-flash': 'gemini'
+  };
 
   private constructor(context: vscode.ExtensionContext) {
     this.context = context;
@@ -69,8 +76,8 @@ export class ChatService {
       }
       
       const completion = await this.tokenjs.chat.completions.create({
-        provider: 'gemini',
-        model: 'gemini-1.5-flash',
+        provider: this.providers[context[0]],
+        model: context[0],
         messages: messages,
       });
 

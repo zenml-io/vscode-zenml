@@ -19,7 +19,9 @@
     const formData = new FormData(event.target);
     const text = formData.get('messageInput').trim();
     const checkedBoxes = document.querySelectorAll('#tree-view input[type="checkbox"]:checked');
-    const checkedValues = Array.from(checkedBoxes).map(checkbox => checkbox.value);
+    const model = document.querySelector('.model-dropdown')
+    let checkedValues = Array.from(checkedBoxes).map(checkbox => checkbox.value);
+    checkedValues.unshift(model.value)
     // const sampleQuestions = document.querySelector('#sampleQuestions')
 
     if (text) {
