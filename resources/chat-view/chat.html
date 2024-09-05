@@ -1,15 +1,3 @@
-<!-- Copyright(c) ZenML GmbH 2024. All Rights Reserved.
-Licensed under the Apache License, Version 2.0(the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at:
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-or implied.See the License for the specific language governing
-permissions and limitations under the License. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -48,6 +36,7 @@ permissions and limitations under the License. -->
       #chatForm {
         background: var(--vscode-input-background);
         border: 1px solid var(--vscode-input-border);
+        border-radius: 0.375rem 0.375rem 0 0;
       }
       #chatMessages {
         color: var(--vscode-editor-foreground);
@@ -67,60 +56,98 @@ permissions and limitations under the License. -->
         display: none;
       }
       .tree-view {
-            background-color: var(--vscode-editor-background);
-            color: var(--vscode-editor-foreground);
-            width: 256px;
-            max-height: 300px;
-            overflow: auto;
-            border: 2px var(--vscode-editor-foreground) solid;
-            border-radius: 0.375rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-        .tree-item {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-        }
-        .tree-item:hover {
-          background-color: var(--vscode-list-background);
-        }
-        .tree-item-content {
-            display: flex;
-            align-items: center;
-            flex-grow: 1;
-            padding: 2px 8px;
-        }
-        .tree-item-icon {
-            width: 16px;
-            height: 16px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center; 
-        }
-        .tree-item-name {
-            font-size: 14px;
-            color: var(--vscode-editor-foreground);
-            margin-left: 4px;
-            flex-grow: 1;
-        }
-        .tree-item-children {
-            display: none;
-            width: 100%;
-        }
-        .tree-item-children.open {
-            display: block;
-        }
-        .tree-item-wrapper {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-        }
-        .tree-item-checkbox {
-            width: 16px;
-            height: 16px;
-            margin-left: 8px;
-        }
-   </style>
+        background-color: var(--vscode-editor-background);
+        color: var(--vscode-editor-foreground);
+        width: 256px;
+        max-height: 300px;
+        overflow: auto;
+        border: 2px var(--vscode-editor-foreground) solid;
+        border-radius: 0.375rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      }
+      .tree-item {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+      }
+      .tree-item:hover {
+        background-color: var(--vscode-list-background);
+      }
+      .tree-item-content {
+        display: flex;
+        align-items: center;
+        flex-grow: 1;
+        padding: 2px 8px;
+      }
+      .tree-item-icon {
+        width: 16px;
+        height: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center; 
+      }
+      .tree-item-name {
+        font-size: 14px;
+        color: var(--vscode-editor-foreground);
+        margin-left: 4px;
+        flex-grow: 1;
+      }
+      .tree-item-children {
+        display: none;
+        width: 100%;
+      }
+      .tree-item-children.open {
+        display: block;
+      }
+      .tree-item-wrapper {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+      }
+      .tree-item-checkbox {
+        width: 16px;
+        height: 16px;
+        margin-left: 8px;
+      }
+      .chatbar-options {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        padding: 0.5rem;
+        background-color: var(--vscode-input-background);
+        border: 1px solid var(--vscode-input-border);
+        border-top: none;
+        border-radius: 0 0 0.375rem 0.375rem;
+      }
+      .model-dropdown {
+        font-size: 0.75rem;
+        padding: 0.25rem;
+        background-color: var(--vscode-dropdown-background);
+        color: var(--vscode-dropdown-foreground);
+        border: 1px solid var(--vscode-dropdown-border);
+        border-radius: 0.25rem;
+        margin-right: 0.5rem;
+      }
+      .context-button {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        background-color: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border: none;
+        border-radius: 0.25rem;
+        cursor: pointer;
+      }
+      .context-button:hover {
+        background-color: var(--vscode-button-hoverBackground);
+      }
+      .context-dropdown {
+        position: absolute;
+        left: 0;
+        right: 0;
+        margin-top: 0.25rem;
+        z-index: 10;
+      }
+    </style>
 </head>
 <body class="font-plus-jakarta">
   <div class="container mx-auto px-4 py-8 max-w-4xl">
@@ -128,27 +155,27 @@ permissions and limitations under the License. -->
     
     <div class="mb-6">
       <div class="relative">
-          <form id="chatForm" class="flex items-center rounded-full shadow-sm">
-              <div class="relative">
-                  <button type="button" id="optionsToggle" class="p-2 text-gray-400 hover:text-zenml focus:outline-none">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                  </button>
-                  <div id="optionsDropdown" class="absolute left-8 top-0 mt-2 hidden z-10">
-                      <div id="tree-view" class="tree-view">${treeItemHtml}</div>
-                  </div>
-              </div>
-              <input type="text" id="messageInput" name="messageInput" class="flex-grow p-3 focus:outline-none" placeholder="Type your message...">
-              <button type="submit" id="sendMessage" class="p-2 text-zenml hover:text-purple-700 focus:outline-none">
-                  <svg aria-label="send" role="img" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" class="fill-current">
-                      <path d="M120-160v-240l320-80-320-80v-240l760 320-760 320Z"></path>
-                  </svg>
-              </button>
-              <button id="clearChat">
-                Clear Chat
-              </button>
-          </form>
+        <form id="chatForm" class="flex items-center rounded-t-full shadow-sm">
+          <input type="text" id="messageInput" name="messageInput" class="flex-grow p-3 focus:outline-none rounded-l-full" placeholder="Type your message...">
+          <button type="submit" id="sendMessage" class="p-2 text-zenml hover:text-purple-700 focus:outline-none">
+            <svg aria-label="send" role="img" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" class="fill-current">
+              <path d="M120-160v-240l320-80-320-80v-240l760 320-760 320Z"></path>
+            </svg>
+          </button>
+        </form>
+        <div class="chatbar-options">
+          <select class="model-dropdown">
+            <option value="claude-3.5-sonnet">claude-3.5-sonnet</option>
+            <option value="claude-3-opus">claude-3-opus</option>
+            <option value="claude-3-haiku">claude-3-haiku</option>
+          </select>
+          <div class="relative">
+            <button id="contextButton" class="context-button">Context</button>
+            <div id="optionsDropdown" class="context-dropdown hidden">
+              <div id="tree-view" class="tree-view">${treeItemHtml}</div>
+            </div>
+          </div>
+        </div>
       </div>
       <div id="chatMessages" class="space-y-4 mb-4 mt-4">${chatLogHtml}</div>
       <div id="sampleQuestions" class="flex flex-col mt-auto md:mt-0">
@@ -189,15 +216,16 @@ permissions and limitations under the License. -->
   <script src="${jsUri}"></script>
   <script>
     document.addEventListener('DOMContentLoaded', (event) => {
-      const optionsToggle = document.getElementById('optionsToggle');
+      const contextButton = document.getElementById('contextButton');
       const optionsDropdown = document.getElementById('optionsDropdown');
 
-      optionsToggle.addEventListener('click', () => {
+      contextButton.addEventListener('click', (event) => {
+        event.stopPropagation();
         optionsDropdown.classList.toggle('hidden');
       });
 
       document.addEventListener('click', (event) => {
-        if (!optionsToggle.contains(event.target) && !optionsDropdown.contains(event.target)) {
+        if (!contextButton.contains(event.target) && !optionsDropdown.contains(event.target)) {
           optionsDropdown.classList.add('hidden');
         }
       });
@@ -214,7 +242,6 @@ permissions and limitations under the License. -->
           if (event.target !== checkboxEl) {
             event.stopPropagation();
             childrenEl.classList.toggle('open');
-
 
             if (childrenEl.classList.contains('open')) {
               chevronEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
