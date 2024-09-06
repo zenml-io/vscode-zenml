@@ -200,6 +200,10 @@
       .assistant {
         background-color: var(--vscode-input-background);
       }
+
+      .expand span {
+        color: var(--vscode-textLink-foreground)
+      }
     </style>
 </head>
 <body class="font-plus-jakarta">
@@ -319,6 +323,17 @@
         });
       });
       const textarea = document.getElementById('messageInput')
+      const sendButton = document.getElementById('sendMessage');
+
+      function disableInput() {
+        isInputDisabled = true;
+        sendButton.disabled = true;
+      }
+
+      function enableInput() {
+        isInputDisabled = false;
+        sendButton.disabled = false;
+      }
 
       textarea.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -336,6 +351,31 @@
 
           // Dispatch the event on the form
           form.dispatchEvent(event);
+        }
+      });
+
+      // Listen for messages from the extension
+      window.addEventListener('message', event => {
+        const message = event.data;
+        if (message.command === 'disableInput') {
+          disableInput();
+        } else if (message.command === 'enableInput') {
+          enableInput();
+        }
+      });
+
+      textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+
+          if (!isInputDisabled) {
+            const form = document.getElementById('chatForm');
+            const event = new SubmitEvent('submit', {
+              bubbles: true,
+              cancelable: true,
+            });
+            form.dispatchEvent(event);
+          }
         }
       });
 
