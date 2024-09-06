@@ -182,6 +182,9 @@
         context.push('stackContext');
         context.push('stackComponentsContext');
         break;
+      case 'summarizeLogs':
+        message = 'Generate a summary of my logs.';
+        context.push('logsContext');
       default:
         break;
     }
