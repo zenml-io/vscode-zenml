@@ -129,6 +129,9 @@ export class ChatService {
         case 'stackComponentsContext':
           systemMessage.content += this.getStackComponentData();
           break;
+        case 'logsContext':
+          systemMessage.content += this.getLogData();
+          break;
         default:
           if (context.includes('Pipeline run:')) {
             systemMessage.content += context;
