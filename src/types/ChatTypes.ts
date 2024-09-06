@@ -21,4 +21,5 @@ export interface TreeItem {
   value?: string;
   children?: TreeItem[];
   title?: string;
+  hidden?: boolean;
 }
