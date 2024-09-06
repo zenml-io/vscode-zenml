@@ -48,7 +48,6 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.window.registerWebviewViewProvider('zenmlAPIView', apiWebviewProvider)
   );
 
-
   /**
    * Register's the openChat command **********************************************************************************************
    */
@@ -59,8 +58,8 @@ export async function activate(context: vscode.ExtensionContext) {
       'ZenML Chat', // Title of the panel displayed to the user
       vscode.ViewColumn.One, // Editor column to show the new webview panel in
       {
-          enableScripts: true, // Enable scripts in the webview
-          retainContextWhenHidden: true // Keep the webview's context when hidden
+        enableScripts: true, // Enable scripts in the webview
+        retainContextWhenHidden: true, // Keep the webview's context when hidden
       }
     );
 
@@ -72,18 +71,18 @@ export async function activate(context: vscode.ExtensionContext) {
 
     const dummyCancellationToken: vscode.CancellationToken = {
       isCancellationRequested: false,
-      onCancellationRequested: (callback) => {
-          // No-op, as the token is never cancelled
-          return new vscode.Disposable(() => {});
-      }
-  };
+      onCancellationRequested: callback => {
+        // No-op, as the token is never cancelled
+        return new vscode.Disposable(() => {});
+      },
+    };
     // Use CancellationToken.None
     // const cancellationToken = vscode.CancellationToken.None;
 
     // Fake WebviewView object
     const fakeWebviewView = {
-        webview: panel.webview,
-        onDidDispose: panel.onDidDispose
+      webview: panel.webview,
+      onDidDispose: panel.onDidDispose,
     } as vscode.WebviewView;
 
     // Call resolveWebviewView with all required arguments
@@ -91,7 +90,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // Ensure to dispose of the panel when not needed
     panel.onDidDispose(() => {
-        // Clean up resources or perform any necessary actions when the panel is disposed
+      // Clean up resources or perform any necessary actions when the panel is disposed
     });
   });
 

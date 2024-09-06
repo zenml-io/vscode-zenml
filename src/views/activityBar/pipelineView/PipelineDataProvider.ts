@@ -139,7 +139,7 @@ export class PipelineDataProvider extends PaginatedDataProvider {
 
       if ('runs' in result) {
         const { runs, total, total_pages, current_page, items_per_page } = result;
-        this.pipelineRuns = runs
+        this.pipelineRuns = runs;
 
         this.pagination = {
           currentPage: current_page,
