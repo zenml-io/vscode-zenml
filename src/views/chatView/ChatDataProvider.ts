@@ -93,7 +93,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
     html = html.replace('${chatLogHtml}', chatLogHtml);
 
     return html;
-  };
+  }
 
   private clearChatLog(): void {
     this.messages.length = 0;
@@ -102,14 +102,14 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
 
   private getPipelineData(): TreeItem[] {
     let pipelineRuns = PipelineDataProvider.getInstance().pipelineRuns;
-    let pipelineTreeItems = pipelineRuns.map((run) => {
+    let pipelineTreeItems = pipelineRuns.map(run => {
       let formattedStartTime = new Date(run.startTime).toLocaleString();
       let formattedEndTime = run.endTime ? new Date(run.endTime).toLocaleString() : 'N/A';
       let stringValue = `Pipeline run:${JSON.stringify(run)}`;
       return {
         name: run.name,
         value: stringValue,
-        title: "Includes all code, logs, and metadata for a specific pipeline run with message",
+        title: 'Includes all code, logs, and metadata for a specific pipeline run with message',
         children: [
           { name: run.status },
           { name: run.stackName },
@@ -117,7 +117,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
           { name: formattedEndTime },
           { name: `${run.os} ${run.osVersion}` },
           { name: run.pythonVersion },
-        ]
+        ],
       };
     });
     return pipelineTreeItems;
@@ -126,28 +126,42 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
   private getTreeData() {
     let pipelineData = this.getPipelineData();
     let treeData: TreeItem[] = [
-      {name: 'Server', value: 'serverContext', title: 'Includes all server metadata with message'},
-      {name: 'Environment', value: 'environmentContext', title: 'Includes all server metadata with message'},
+      {
+        name: 'Server',
+        value: 'serverContext',
+        title: 'Includes all server metadata with message',
+      },
+      {
+        name: 'Environment',
+        value: 'environmentContext',
+        title: 'Includes all server metadata with message',
+      },
       {
         name: 'Pipeline Runs',
         value: 'pipelineContext',
         title: 'Includes all code, logs, and metadata for pipeline runs with message',
-        children : pipelineData
+        children: pipelineData,
       },
-      {name: 'Stack', value: 'stackContext', title: 'Includes all stack metadata with message'},
-      {name: 'Stack Components', value: 'stackComponentsContext', title: 'Includes all stack component metadata with message'}
+      { name: 'Stack', value: 'stackContext', title: 'Includes all stack metadata with message' },
+      {
+        name: 'Stack Components',
+        value: 'stackComponentsContext',
+        title: 'Includes all stack component metadata with message',
+      },
     ];
     return treeData;
   }
 
   private convertTreeDataToHtml(treeData: TreeItem[], level = 0) {
-    let convertedTreeData = treeData.map((item) => {
-      let iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0h24v24H0z" fill="none" stroke="none"/></svg>';
+    let convertedTreeData = treeData.map(item => {
+      let iconSvg =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0h24v24H0z" fill="none" stroke="none"/></svg>';
       let childrenEl = '';
       let title = '';
 
       if (item.children) {
-        iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>';
+        iconSvg =
+          '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>';
         childrenEl = `<div class="tree-item-children">${this.convertTreeDataToHtml(item.children, level + 1)}</div>`;
       }
 
@@ -155,7 +169,8 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
         title = item.title;
       }
 
-      let checkboxEl = level < 2 ? `<input type="checkbox" class="tree-item-checkbox" value='${item.value}'>` : '';
+      let checkboxEl =
+        level < 2 ? `<input type="checkbox" class="tree-item-checkbox" value='${item.value}'>` : '';
 
       return `<div class="tree-item">
         <div class="tree-item-wrapper">
@@ -183,7 +198,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
       const chatLogHtml = this.renderChatLog();
       this._view.webview.postMessage({
         command: 'updateChatLog',
-        chatLogHtml: chatLogHtml
+        chatLogHtml: chatLogHtml,
       });
     }
   }
@@ -206,12 +221,12 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
   private streamingMessage: ChatMessage | null = null;
 
   async addMessage(message: string, context?: string[]) {
-    this.messages.push({role: 'user', content: message});
+    this.messages.push({ role: 'user', content: message });
     this.updateWebviewContent();
 
     try {
       const responseGenerator = this.chatService.getChatResponse(this.messages, context || []);
-      this.streamingMessage = {role: 'assistant', content: ''};
+      this.streamingMessage = { role: 'assistant', content: '' };
 
       for await (const partialResponse of responseGenerator) {
         for (const letter of partialResponse) {
@@ -230,7 +245,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
       this.sendMessageToWebview('Error: Unable to get response from Gemini');
     }
   }
-  
+
   /**
    * Render the chat log as HTML.
    */
@@ -239,55 +254,56 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
       // @ts-ignore
       code({ text, lang, escaped, isInline }) {
         const code = text.replace(/\n$/, '') + (isInline ? '' : '\n');
-      
+
         if (isInline) {
           return `<code>${code}</code>`;
         }
-      
-        return '<pre><code>'
-          + code
-          + '</code></pre>\n';
-      }
+
+        return '<pre><code>' + code + '</code></pre>\n';
+      },
     };
 
     // @ts-ignore
     marked.use({ renderer });
 
-    return this.messages.filter(msg => msg['role'] !== 'system')
-      .reverse()
-      .map((message) => {
-        let content = marked.parse(message.content);
-        if (message.role === 'user') {
-          return `<div class="p-4 user">
+    return (
+      this.messages
+        .filter(msg => msg['role'] !== 'system')
+        .reverse()
+        .map(message => {
+          let content = marked.parse(message.content);
+          if (message.role === 'user') {
+            return `<div class="p-4 user">
               <p class="font-semibold text-zenml">User</p>
               ${content}
           </div>`;
-        } else {
-          return `<div class="p-4 assistant">
+          } else {
+            return `<div class="p-4 assistant">
             <p class="font-semibold text-zenml">ZenML Assistant</p>
             ${content}
           </div>`;
-        }
-      })
-      .join('') + this.renderStreamingMessage();
+          }
+        })
+        .join('') + this.renderStreamingMessage()
+    );
   }
 
   private renderStreamingMessage(): string {
-    if (!this.streamingMessage) {return '';}
+    if (!this.streamingMessage) {
+      return '';
+    }
 
     const renderer = {
       // @ts-ignore
       code({ text, lang, escaped, isInline }) {
         const code = text.replace(/\n$/, '') + (isInline ? '' : '\n');
-      
+
         if (isInline) {
           return `<code>${code}</code>`;
         }
-      
-        return '<pre><code>'
-          + code
-          + '</code></pre>\n';
-      }
+
+        return '<pre><code>' + code + '</code></pre>\n';
+      },
     };
 
     // @ts-ignore

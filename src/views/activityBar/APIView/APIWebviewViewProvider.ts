@@ -23,29 +23,25 @@ export class APIWebviewViewProvider implements vscode.WebviewViewProvider {
     token: vscode.CancellationToken
   ): void {
     this._view = webviewView;
-  
+
     webviewView.webview.options = {
       enableScripts: true,
       localResourceRoots: [this.context.extensionUri],
     };
-  
+
     webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
-  
+
     // Add this line to log console messages from the webview
-    webviewView.webview.onDidReceiveMessage(
-      (message) => {
-        switch (message.command) {
-          case 'registerLLMAPIKey':
-            this._handleRegisterApiKey();
-            break;
-        }
-      },
-    );
-  
+    webviewView.webview.onDidReceiveMessage(message => {
+      switch (message.command) {
+        case 'registerLLMAPIKey':
+          this._handleRegisterApiKey();
+          break;
+      }
+    });
   }
 
   private _getHtmlForWebview(webview: vscode.Webview): string {
-
     const nonce = getNonce();
 
     return `
@@ -127,7 +123,6 @@ export class APIWebviewViewProvider implements vscode.WebviewViewProvider {
       </body>
     </html>
   `;
-      
   }
 
   private _handleRegisterApiKey(): void {
@@ -136,7 +131,7 @@ export class APIWebviewViewProvider implements vscode.WebviewViewProvider {
   }
 
   dispose(): void {
-    this._disposables.forEach((disposable) => disposable.dispose());
+    this._disposables.forEach(disposable => disposable.dispose());
   }
 }
 

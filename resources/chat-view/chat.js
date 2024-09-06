@@ -16,9 +16,10 @@
   // Function to save the current state
   function saveState() {
     const model = document.querySelector('.model-dropdown').value;
-    const checkedBoxes = Array.from(document.querySelectorAll('#tree-view input[type="checkbox"]:checked'))
-      .map(checkbox => checkbox.value);
-    
+    const checkedBoxes = Array.from(
+      document.querySelectorAll('#tree-view input[type="checkbox"]:checked')
+    ).map(checkbox => checkbox.value);
+
     localStorage.setItem('selectedModel', model);
     localStorage.setItem('checkedContexts', JSON.stringify(checkedBoxes));
   }
@@ -33,7 +34,9 @@
     }
 
     checkedContexts.forEach(value => {
-      const checkbox = document.querySelector(`#tree-view input[type="checkbox"][value="${value}"]`);
+      const checkbox = document.querySelector(
+        `#tree-view input[type="checkbox"][value="${value}"]`
+      );
       if (checkbox) {
         checkbox.checked = true;
       }
@@ -73,25 +76,25 @@
 
   document.getElementById('chatForm').addEventListener('submit', sendMessage);
 
-  
-  // Clears Chat Log
+  // Clears chat log
   function clearChatLog() {
     vscode.postMessage({
       command: 'clearChat',
     });
     saveState(); // Save state before refresh
   }
-  
+
   document.getElementById('clearChat').addEventListener('click', clearChatLog);
- 
+
   function appendToChat(text, role) {
     const chatMessages = document.getElementById('chatMessages');
     let messageDiv;
 
     if (role === 'assistant') {
-      messageDiv = chatMessages.querySelector('div[data-role="assistant"]:last-child') || 
-                   chatMessages.firstElementChild;
-      
+      messageDiv =
+        chatMessages.querySelector('div[data-role="assistant"]:last-child') ||
+        chatMessages.firstElementChild;
+
       if (!messageDiv || messageDiv.getAttribute('data-role') !== 'assistant') {
         messageDiv = document.createElement('div');
         messageDiv.className = 'p-4 assistant';
@@ -101,10 +104,10 @@
         chatMessages.insertBefore(messageDiv, chatMessages.firstChild);
         currentAssistantMessage = '';
       }
-      
+
       currentAssistantMessage += text;
       const contentDiv = messageDiv.querySelector('.message-content');
-      
+
       requestAnimationFrame(() => {
         contentDiv.innerHTML = marked.parse(currentAssistantMessage);
         chatMessages.scrollTop = 0;
@@ -128,4 +131,45 @@
 
   // Restore state when page loads
   document.addEventListener('DOMContentLoaded', restoreState);
+
+  // Send a pre-determined message when the button is clicked
+  function sendSampleMessage() {
+    const model = document.querySelector('.model-dropdown').value;
+    let context = [model];
+    let buttonValue = this.value;
+    let message;
+
+    switch (buttonValue) {
+      case 'aboutChat':
+        message = 'What can this chat do?';
+        break;
+      case 'improveStack':
+        message = 'Help me improve my stack.';
+        context.push('stackContext');
+        context.push('stackComponentsContext');
+        break;
+      case 'summarizeStats':
+        message = 'Generate a summary of my stats.';
+        context.push('serverContext');
+        context.push('environmentContext');
+        context.push('pipelineContext');
+        context.push('stackContext');
+        context.push('stackComponentsContext');
+        break;
+      default:
+        break;
+    }
+
+    vscode.postMessage({
+      command: 'sendMessage',
+      text: message,
+      context: context,
+    });
+
+    saveState();
+  }
+
+  document.querySelectorAll('.sampleQuestions').forEach(button => {
+    button.addEventListener('click', sendSampleMessage);
+  });
 })();

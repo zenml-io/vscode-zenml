@@ -38,7 +38,7 @@ export class ChatService {
     'claude-3-opus-20240229': 'anthropic',
     'gpt-4o': 'openai',
     'gemini-1.5-pro': 'gemini',
-    'gemini-1.5-flash': 'gemini'
+    'gemini-1.5-flash': 'gemini',
   };
 
   private constructor(context: vscode.ExtensionContext) {
@@ -65,16 +65,21 @@ export class ChatService {
       this.tokenjs = new TokenJS({ apiKey });
     } catch (error) {
       console.error('Error loading TokenJS:', error);
-      vscode.window.showErrorMessage(`Failed to initialize ChatService: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      vscode.window.showErrorMessage(
+        `Failed to initialize ChatService: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
-  public async *getChatResponse(messages: ChatMessage[], context: string[]): AsyncGenerator<string, void, unknown> {
+  public async *getChatResponse(
+    messages: ChatMessage[],
+    context: string[]
+  ): AsyncGenerator<string, void, unknown> {
     try {
       if (context) {
         messages = await this.addContext(messages, context);
       }
-      
+
       const completion = await this.tokenjs.chat.completions.create({
         streaming: true,
         provider: this.providers[context[0]] ?? '',
@@ -91,7 +96,6 @@ export class ChatService {
       } else {
         throw new Error('Unexpected response from API');
       }
-
     } catch (error) {
       console.error('Error with Gemini API:', error);
       if (error instanceof Error) {
@@ -102,7 +106,10 @@ export class ChatService {
     }
   }
 
-  private async addContext(messages: ChatMessage[], requestedContext: any[]): Promise<ChatMessage[]> {
+  private async addContext(
+    messages: ChatMessage[],
+    requestedContext: any[]
+  ): Promise<ChatMessage[]> {
     let systemMessage: ChatMessage = { role: 'system', content: 'Context: ' };
     for (let context of requestedContext) {
       // TODO possibly create interface for context, change requestContext type (currently any[])
@@ -213,94 +220,129 @@ export class ChatService {
     //change back to just step or add artifact command
     let pipelineData = PipelineDataProvider.getInstance().getPipelineData();
     let lsClient = LSClient.getInstance();
-    let dagData = await Promise.all(pipelineData.map(async (node: PipelineTreeItem) => {
-      let dag = await lsClient.sendLsClientRequest<PipelineRunDag>('getPipelineRunDag', [node.id]);
-      return dag;
-    }));
+    let dagData = await Promise.all(
+      pipelineData.map(async (node: PipelineTreeItem) => {
+        let dag = await lsClient.sendLsClientRequest<PipelineRunDag>('getPipelineRunDag', [
+          node.id,
+        ]);
+        return dag;
+      })
+    );
 
-    let stepData = await Promise.all(dagData.map(async (dag: PipelineRunDag) => {
-      let filteredNodes = await Promise.all(dag.nodes.map(async (node: DagArtifact|DagStep) => {
-        if (type === "all" || node.type === type) {
-          return await lsClient.sendLsClientRequest<JsonObject>('getPipelineRunStep', [node.id]);
-        }
-        return null;
-      }));
-      return filteredNodes.filter((value) => value !== null);
-    }));
+    let stepData = await Promise.all(
+      dagData.map(async (dag: PipelineRunDag) => {
+        let filteredNodes = await Promise.all(
+          dag.nodes.map(async (node: DagArtifact | DagStep) => {
+            if (type === 'all' || node.type === type) {
+              return await lsClient.sendLsClientRequest<JsonObject>('getPipelineRunStep', [
+                node.id,
+              ]);
+            }
+            return null;
+          })
+        );
+        return filteredNodes.filter(value => value !== null);
+      })
+    );
     return stepData;
   }
 
   private async getLogData() {
     let lsClient = LSClient.getInstance();
- 
+
     let globalConfig = await lsClient.sendLsClientRequest<ZenmlGlobalConfigResp>('getGlobalConfig');
     let apiToken = globalConfig.store.api_token;
     let dashboardUrl = globalConfig.store.url;
 
     if (!apiToken) {
-      throw new Error('API Token is not available in gloval configuration');
+      throw new Error('API Token is not available in global configuration');
     }
 
     let pipelineRunSteps = await this.getPipelineRunNodes('step');
 
-    let logs = await Promise.all(pipelineRunSteps[0].map(async (step) => {
-      if (step && step.id) {
-        try {
-          let response = await axios.get(`${dashboardUrl}/api/v1/steps/${step.id}/logs`, {
-            headers: {
-              Authorization: `Bearer ${apiToken}`,
-              'accept': 'application/json'
-            }
-          });
-          return response.data;
-        } catch (error) {
-          console.error(`Failed to get logs for step with id ${step.id}`, error);
+    let logs = await Promise.all(
+      pipelineRunSteps[0].map(async step => {
+        if (step && step.id) {
+          try {
+            let response = await axios.get(`${dashboardUrl}/api/v1/steps/${step.id}/logs`, {
+              headers: {
+                Authorization: `Bearer ${apiToken}`,
+                accept: 'application/json',
+              },
+            });
+            return response.data;
+          } catch (error) {
+            console.error(`Failed to get logs for step with id ${step.id}`, error);
+          }
+        } else {
+          console.warn('Encountered a null or invalid step.');
         }
-      } else {
-        console.warn('Encountered a null or invalid step.');
-      }
-      
-    }));
+      })
+    );
     return logs;
   }
 
-  private async getPipelineRunLogs(id:string) {
+  private async getPipelineRunLogs(id: string) {
     let lsClient = LSClient.getInstance();
 
     let dagData = await lsClient.sendLsClientRequest<PipelineRunDag>('getPipelineRunDag', [id]);
 
-    let stepData = await Promise.all(dagData.nodes.map(async (node: DagArtifact|DagStep) => {
-        if (node.type === "step") {
+    let stepData = await Promise.all(
+      dagData.nodes.map(async (node: DagArtifact | DagStep) => {
+        if (node.type === 'step') {
           return await lsClient.sendLsClientRequest<JsonObject>('getPipelineRunStep', [node.id]);
         }
         return null;
       })
     );
 
-    stepData = stepData.filter((value) => value !== null);
+    stepData = stepData.filter(value => value !== null);
 
     let globalConfig = await lsClient.sendLsClientRequest<ZenmlGlobalConfigResp>('getGlobalConfig');
     let apiToken = globalConfig.store.api_token;
     let dashboardUrl = globalConfig.store.url;
 
     if (!apiToken) {
-      throw new Error('API Token is not available in gloval configuration');
+      throw new Error('API Token is not available in global configuration');
     }
 
-    let logs = await Promise.all(stepData.map(async (step) => {
-      if (step && typeof step === 'object' && 'id' in step) {
-        let validStep = step as JsonObject;
-        let response = await axios.get(`${dashboardUrl}/api/v1/steps/${validStep.id}/logs`, {
-          headers: {
-            Authorization: `Bearer ${apiToken}`,
-            'accept': 'application/json'
-          }
-        });
-        return response.data; 
-      }
-      return null; // returns null if step is invalid
-    }));
+    let logs = await Promise.all(
+      stepData.map(async step => {
+        if (step && typeof step === 'object' && 'id' in step) {
+          let validStep = step as JsonObject;
+          let response = await axios.get(`${dashboardUrl}/api/v1/steps/${validStep.id}/logs`, {
+            headers: {
+              Authorization: `Bearer ${apiToken}`,
+              accept: 'application/json',
+            },
+          });
+          return response.data;
+        }
+        return null; // returns null if step is invalid
+      })
+    );
     logs = logs.filter(log => log !== null); // Filters out possible null logs.
     return logs;
+  }
+
+  private async getMetadata() {
+    let lsClient = LSClient.getInstance();
+
+    let globalConfig = await lsClient.sendLsClientRequest<ZenmlGlobalConfigResp>('getGlobalConfig');
+    let apiToken = globalConfig.store.api_token;
+    let dashboardUrl = globalConfig.store.url;
+
+    if (!apiToken) {
+      throw new Error('API Token is not available in global configuration');
+    }
+
+    // Grabs a list of metadata IDs
+    // Eventually should be reformatted to grab individual metadata based on the metadata ID
+    let metadata = await axios.get(`${dashboardUrl}/api/v1/run-metadata`, {
+      headers: {
+        Authorization: `Bearer ${apiToken}`,
+        accept: 'application/json',
+      },
+    });
   }
 }
