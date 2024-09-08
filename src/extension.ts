@@ -23,6 +23,7 @@ import { LSP_ZENML_CLIENT_INITIALIZED } from './utils/constants';
 import { toggleCommands } from './utils/global';
 import DagRenderer from './commands/pipelines/DagRender';
 import WebviewBase from './common/WebviewBase';
+import { registerChatCommands } from './commands/chat/registry';
 
 export async function activate(context: vscode.ExtensionContext) {
   const eventBus = EventBus.getInstance();
@@ -47,57 +48,6 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider('zenmlAPIView', apiWebviewProvider)
   );
-
-  /**
-   * Register's the openChat command **********************************************************************************************
-   */
-  let renderChatCommand = vscode.commands.registerCommand('zenml.openChat', () => {
-    // chatDataProvider.resolveWebviewView(fakeWebviewView, panel);
-    const panel = vscode.window.createWebviewPanel(
-      'zenmlChat', // Identifies the type of the webview. Used internally
-      'ZenML Chat', // Title of the panel displayed to the user
-      vscode.ViewColumn.One, // Editor column to show the new webview panel in
-      {
-        enableScripts: true, // Enable scripts in the webview
-        retainContextWhenHidden: true, // Keep the webview's context when hidden
-      }
-    );
-
-    // Create an instance of ChatDataProvider
-    const chatDataProvider = new ChatDataProvider(context);
-
-    // Fake WebviewViewResolveContext
-    const fakeContext = {} as vscode.WebviewViewResolveContext;
-
-    const dummyCancellationToken: vscode.CancellationToken = {
-      isCancellationRequested: false,
-      onCancellationRequested: callback => {
-        // No-op, as the token is never cancelled
-        return new vscode.Disposable(() => {});
-      },
-    };
-    // Use CancellationToken.None
-    // const cancellationToken = vscode.CancellationToken.None;
-
-    // Fake WebviewView object
-    const fakeWebviewView = {
-      webview: panel.webview,
-      onDidDispose: panel.onDidDispose,
-    } as vscode.WebviewView;
-
-    // Call resolveWebviewView with all required arguments
-    chatDataProvider.resolveWebviewView(fakeWebviewView, fakeContext, dummyCancellationToken);
-
-    // Ensure to dispose of the panel when not needed
-    panel.onDidDispose(() => {
-      // Clean up resources or perform any necessary actions when the panel is disposed
-    });
-  });
-
-  context.subscriptions.push(renderChatCommand);
-  /**
-   * ******************************************************************************************************************************************
-   */
 
   await ZenExtension.activate(context, lsClient);
 

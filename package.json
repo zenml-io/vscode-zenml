@@ -282,7 +282,7 @@
       },
       {
         "command": "zenml.openChat",
-        "title": "Open Chat",
+        "title": "Open Chat. *Using this feature will incure charges as normal with your LLM provider.",
         "icon": "$(comment-discussion)",
         "category": "ZenML Chat"
       },

@@ -41,6 +41,11 @@ export class APIWebviewViewProvider implements vscode.WebviewViewProvider {
     });
   }
 
+  private _handleRegisterApiKey(): void {
+    vscode.window.showInformationMessage('Registering LLM API Key');
+    vscode.commands.executeCommand('zenml.registerLLMAPIKey');
+  }
+
   private _getHtmlForWebview(webview: vscode.Webview): string {
     const nonce = getNonce();
 
@@ -123,11 +128,6 @@ export class APIWebviewViewProvider implements vscode.WebviewViewProvider {
       </body>
     </html>
   `;
-  }
-
-  private _handleRegisterApiKey(): void {
-    vscode.window.showInformationMessage('Registering LLM API Key');
-    vscode.commands.executeCommand('zenml.registerLLMAPIKey');
   }
 
   dispose(): void {
