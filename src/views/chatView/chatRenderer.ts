@@ -56,7 +56,6 @@ export function renderChatLog(messages: ChatMessage[], streamingMessage: ChatMes
 
   const renderedMessages = messages
     .filter(msg => msg['role'] !== 'system')
-    .reverse()
     .map(message => {
       let content = marked.parse(message.content);
       const roleClass = message.role === 'user' ? 'user' : 'assistant';
