@@ -16,6 +16,7 @@ import * as vscode from 'vscode';
 import { DocumentSelector, LogLevel, Uri, WorkspaceFolder } from 'vscode';
 import { Trace } from 'vscode-jsonrpc/node';
 import { getWorkspaceFolders, isVirtualWorkspace } from './vscodeapi';
+import { simpleGit, SimpleGit, grepQueryBuilder } from 'simple-git';
 
 function logLevelToTrace(logLevel: LogLevel): Trace {
   switch (logLevel) {
@@ -118,7 +119,8 @@ export function findFirstLineNumber(str: string, substr: string): number | null 
 export async function searchWorkspaceByFileContent(content: string) {
   const files = await vscode.workspace.findFiles('**/*');
   const pythonFiles = files.filter(file => file.toString().endsWith('.py'));
-  const matches: vscode.Uri[] = [];
+  let matches: vscode.Uri[] = [];
+
   await Promise.all(
     pythonFiles.map(
       async file =>
@@ -129,6 +131,45 @@ export async function searchWorkspaceByFileContent(content: string) {
         })
     )
   );
+
+  // ? Currently we're defaulting to manual search and then git grep; should it be the other way around?
+
+  // ? Also, this grep implementation searches the working tree, meaning that it cannot find the file if
+  // ?   the user has saved changes to the file, even if they're uncomitted. Is this the behavior we want?
+  // ?   I think finding the file among committed files may be a useful feature, but may result in too
+  // ?   many edge cases to be viable
+  if (matches.length === 0) {
+    // TODO Search for nearest git repository from each root, rather than just assume the repository is
+    // TODO   in the root workspace directory
+    let workspaceRoots = vscode.workspace.workspaceFolders?.map(folder => folder.uri.fsPath) || [];
+
+    let git: SimpleGit;
+    let matchingFilePaths: string[] | undefined;
+    for (let root of workspaceRoots) {
+      try {
+        git = simpleGit({ baseDir: root });
+        const lines = content.split(/\r?\n/).filter(line => line !== '');
+        for (let line of lines) {
+          if (!matchingFilePaths) {
+            matchingFilePaths = [
+              ...(await git.grep(line, ['-I', '-w', '-F', '--full-name'])).paths,
+            ].map(filePath => path.join(root, filePath));
+            continue;
+          }
+          if (matchingFilePaths.length === 0) break;
+
+          let matchingLines = [
+            ...(await git.grep(line, ['-I', '-w', '-F', '--full-name'])).paths,
+          ].map(filePath => path.join(root, filePath));
+          matchingFilePaths = matchingFilePaths.filter(filePath =>
+            matchingLines.includes(filePath)
+          );
+        }
+      } catch {}
+    }
+
+    matches = matchingFilePaths?.map(path => vscode.Uri.file(path)) || [];
+  }
 
   return matches;
 }
