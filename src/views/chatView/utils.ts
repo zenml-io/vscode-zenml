@@ -58,7 +58,7 @@ export async function* getChatResponse(
     const systemMessage: ChatMessage = { 
       role: 'system', 
       content:
-        "Format the response to look nice, create <br><br> between sections. Obvious JSON, objects, or other code should be in a code block."
+        "Format every response to look nice. Add <br><br> between sections for easier readability, and put code in code blocks. You are an assistant that summarizes information, problem solves, or optimizes code."
       };
     messages.push(systemMessage);
     if (context) {
@@ -103,6 +103,7 @@ async function addContext(messages: ChatMessage[], requestedContext: any[]): Pro
         break;
       case 'pipelineContext':
         systemMessage.content += getPipelineData();
+        systemMessage.content += "\n A pipeline is a series of steps in a machine learning workflow.";
         break;
       case 'stackContext':
         systemMessage.content += getStackData();
