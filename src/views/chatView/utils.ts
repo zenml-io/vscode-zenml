@@ -55,6 +55,12 @@ export async function* getChatResponse(
   context: string[]
 ): AsyncGenerator<string, void, unknown> {
   try {
+    const systemMessage: ChatMessage = { 
+      role: 'system', 
+      content:
+        "Format the response to look nice, create <br><br> between sections. Obvious JSON, objects, or other code should be in a code block."
+      };
+    messages.push(systemMessage);
     if (context) {
       messages = await addContext(messages, context);
     }
