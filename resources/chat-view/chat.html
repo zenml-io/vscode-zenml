@@ -205,12 +205,26 @@
       .expand span {
         color: var(--vscode-textLink-foreground)
       }
+
+      .loader {
+        width: 5px;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        animation: l5 1s infinite linear alternate;
+      }
+      @keyframes l5 {
+          0%  {box-shadow: 10px 0 #000, -10px 0 #0002;background: #000 }
+          33% {box-shadow: 10px 0 #000, -10px 0 #0002;background: #0002}
+          66% {box-shadow: 10px 0 #0002,-10px 0 #000; background: #0002}
+          100%{box-shadow: 10px 0 #0002,-10px 0 #000; background: #000 }
+      }
     </style>
 </head>
 <body class="font-plus-jakarta">
   <div class="container mx-auto px-4 py-8 max-w-4xl">
     <h1 class="text-3xl font-bold text-center text-zenml mb-8">ZenML Chat</h1>
     <div id="chatMessages" class="space-y-4 mb-4 mt-4 overflow-y-auto flex-grow" style="max-height: calc(100vh - 300px);">${chatLogHtml}</div>
+    <div id="loader"></div>
     <div class="fixed bottom-0">
       <div class="mb-6">
         <div class="relative">
@@ -263,7 +277,7 @@
                 <div class="rounded-lg bg-card text-card-foreground md:h-auto grow text-sm overflow-hidden dark:bg-transparent dark:hover:bg-shallow hover:cursor-pointer border md:border-none shadow-sm md:shadow-none">
                   <div class="px-4 md:text-center">
                     <button class="sampleQuestions" id="improveStack" value="improveStack"> 
-                      Help me improve my stack
+                      Improve my stack
                     </button>
                   </div>
                 </div>
@@ -275,7 +289,7 @@
                 <div class="rounded-lg bg-card text-card-foreground md:h-auto grow text-sm overflow-hidden dark:bg-transparent dark:hover:bg-shallow hover:cursor-pointer border md:border-none shadow-sm md:shadow-none">
                   <div class="px-4 md:text-center">
                     <button class="sampleQuestions" id="summarizeStats" value="summarizeStats">
-                      Generate a summary of my stats
+                      Summarize my stats
                     </button>
                   </div>
                 </div>
@@ -335,6 +349,16 @@
       });
       const textarea = document.getElementById('messageInput')
       const sendButton = document.getElementById('sendMessage');
+      const loader = document.getElementById('loader');
+      let isInputDisabled = false;
+
+      function showLoader() {
+        loader.classList.add('loader');
+      }
+
+      function hideLoader() {
+        loader.classList.remove('loader');
+      }
 
       function disableInput() {
         isInputDisabled = true;
@@ -345,33 +369,22 @@
         isInputDisabled = false;
         sendButton.disabled = false;
       }
-
-      textarea.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          // Prevent the default behavior of the Enter key
-          e.preventDefault();
-
-          // Get the form element
-          const form = document.getElementById('chatForm');
-
-          // Create a new SubmitEvent
-          const event = new SubmitEvent('submit', {
-            bubbles: true,
-            cancelable: true,
-          });
-
-          // Dispatch the event on the form
-          form.dispatchEvent(event);
-        }
-      });
-
+      
       // Listen for messages from the extension
       window.addEventListener('message', event => {
         const message = event.data;
-        if (message.command === 'disableInput') {
-          disableInput();
-        } else if (message.command === 'enableInput') {
-          enableInput();
+
+        switch (message.text) {
+          case 'disableInput':
+            disableInput();
+            break;
+          case 'enableInput': 
+            enableInput();
+            break;
+          case 'hideLoader':
+            hideLoader();
+          default:
+            break;
         }
       });
 
@@ -386,6 +399,7 @@
               cancelable: true,
             });
             form.dispatchEvent(event);
+            showLoader();
           }
         }
       });
