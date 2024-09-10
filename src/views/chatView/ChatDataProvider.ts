@@ -110,4 +110,8 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
       this._view.webview.postMessage({ command: 'receiveMessage', text });
     }
   }
+
+  showInfoMessage(text: string) {
+    vscode.window.showInformationMessage(text);
+  }
 }

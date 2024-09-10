@@ -198,8 +198,26 @@
         font-style: italic;
       }
 
+      .copy-button {
+        position: absolute;
+        bottom: 8px;
+        right: 8px;
+        background-color: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border: none;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+
+      .copy-button:hover {
+        background-color: var(--vscode-button-hoverBackground);
+      }
+
       .assistant {
         background-color: var(--vscode-input-background);
+        position: relative;
       }
 
       .expand span {

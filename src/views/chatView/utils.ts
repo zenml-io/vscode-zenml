@@ -54,11 +54,52 @@ export async function* getChatResponse(
   messages: ChatMessage[],
   context: string[]
 ): AsyncGenerator<string, void, unknown> {
+  // testing out formatting
+  const alans = "Format every response to look nice. Add <br><br> between sections for easier readability, and put code in code blocks. You are an assistant that summarizes information, problem solves, or optimizes code.";
+  const wills = "Format the response using full markdown, create <br><br> between sections and newline characters and use indendation. Obvious JSON, objects, or other code should be in a code block or blockquotes (and make sure to add newline characters when appropriate). Use ordered and unordered lists as much as possible (use <br><br> before lists).";
+  const combined = `Format every response to look nice using full markdown. Add <br><br> between sections and use newline characters with indentation where appropriate. Obvious JSON, objects, or other code should be in code blocks or blockquotes, and make sure to add newline characters when needed. Use ordered and unordered lists as much as possible (with <br><br> before lists). You are an assistant that summarizes information, problem solves, or optimizes code.`;
+  const optimized = `Format responses using full markdown for readability. Separate sections with <br><br> and use newline characters when needed for clarity. Present all code, JSON, and data structures in code blocks or blockquotes. Use ordered and unordered lists whenever applicable, with spacing before lists. Your role is to summarize information, solve problems, and optimize code.`;
+  const revised = `Format every response using full markdown. Add <br><br> between sections for better readability. Use newline characters and indentation where appropriate. Ensure that all JSON, objects, and other code are enclosed in code blocks, and blockquotes when necessary. Before ordered or unordered lists, insert <br><br> for clarity. You are an assistant that summarizes information, solves problems, or optimizes code, ensuring clarity and structure in all responses.`;
+  const template = `
+  You are an assistant that summarizes information, problem solves, or optimizes code.
+
+  Structure (with markdown) the output like this:
+  ---
+  <hr>
+  <h2>Category 1</h2>
+  <hr>
+  <strong>Key 1-1</strong>
+  value 1-1
+  <br>
+  <strong>Key 1-2</strong>
+  value 1-2
+  <br><br>
+  <hr>
+  <h2>Category 2</h2>
+  <hr>
+  <strong>Key 2-1</strong>
+  value 2-1
+  <br>
+  <strong>Key 2-2</strong>
+  value 2-2
+  
+  Put in codeblocks where appropriate.
+  if there's an explanation at the end, add it like:
+
+  <br><br>
+  <hr>
+  <h1>Summary</h1>
+  <hr>
+  <hr>
+  Explanation
+  <li>point 1</li>
+  <li>point 2</li>
+  `;
+  
   try {
     const systemMessage: ChatMessage = { 
       role: 'system', 
-      content:
-        "Format every response to look nice. Add <br><br> between sections for easier readability, and put code in code blocks. You are an assistant that summarizes information, problem solves, or optimizes code."
+      content:template,
       };
     messages.push(systemMessage);
     if (context) {
