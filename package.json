@@ -282,7 +282,7 @@
       },
       {
         "command": "zenml.openChat",
-        "title": "Open Chat. *Using this feature will incure charges as normal with your LLM provider.",
+        "title": "Open ZenML Chat View",
         "icon": "$(comment-discussion)",
         "category": "ZenML Chat"
       },
@@ -306,8 +306,8 @@
       },
       {
         "command": "zenml.registerLLMAPIKey",
-        "title": "Register LLM API Key",
-        "icon": "$(add)",
+        "title": "Register/Change LLM API Key",
+        "icon": "$(comment-discussion)",
         "category": "ZenML Secrets"
       }
     ],
@@ -431,7 +431,7 @@
         },
         {
           "when": "view == zenmlAPIView",
-          "command": "zenml.openChat",
+          "command": "zenml.registerLLMAPIKey",
           "group": "navigation"
         }
       ],
