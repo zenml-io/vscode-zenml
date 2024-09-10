@@ -103,17 +103,21 @@
         messageDiv = document.createElement('div');
         messageDiv.className = 'p-4 assistant';
         messageDiv.setAttribute('data-role', 'assistant');
-        messageDiv.innerHTML = `<p class="font-semibold text-zenml">ZenML Assistant</p><div class="message-content"></div>`;
+        messageDiv.innerHTML = `
+          <p class="font-semibold text-zenml">ZenML Assistant</p>
+        `;
 
         chatMessages.appendChild(messageDiv, chatMessages.firstChild);
         currentAssistantMessage = '';
       }
 
       currentAssistantMessage += text;
-      const contentDiv = messageDiv.querySelector('.message-content');
 
       requestAnimationFrame(() => {
-        contentDiv.innerHTML = marked.parse(currentAssistantMessage);
+        messageDiv.innerHTML = `
+          <p class="font-semibold text-zenml">ZenML Assistant</p>
+          ${marked.parse(currentAssistantMessage)}
+        `;
         chatMessages.scrollTop = chatMessages.scrollHeight;
       });
     }
@@ -136,18 +140,63 @@
     switch (message.command) {
       case 'updateChatLog':
         document.getElementById('chatMessages').innerHTML = message.chatLogHtml;
+        addCopyButtonsToAssistantMessages(); // For the potential view refresh command
         break;
       case 'receiveMessage': {
         if (message.text === 'disableInput') {
           disableInput();
         } else if (message.text === 'enableInput') {
           enableInput();
+          addCopyButtonToLastAssistantMessage();
         } else {
           appendToChat(message.text, 'assistant');
         }
       }
+      case 'showInfo':
+        vscode.window.showInformationMesage(message.text);
     }
   });
+
+  function addCopyButtonsToAssistantMessages() {
+    const assistantMessages = document.querySelectorAll('.assistant');
+    assistantMessages.forEach(addCopyButtonToMessage);
+  }
+  
+  function addCopyButtonToLastAssistantMessage() {
+    const lastAssistantMessage = document.querySelector('.assistant:last-child');
+    if (lastAssistantMessage) {
+      addCopyButtonToMessage(lastAssistantMessage);
+    }
+  }
+  
+  function addCopyButtonToMessage(messageDiv) {
+    if (!messageDiv.querySelector('.copy-button')) {
+      const copyButton = document.createElement('button');
+      copyButton.className = 'copy-button';
+      copyButton.textContent = 'Copy';
+      copyButton.addEventListener('click', () => {
+        // Find all text content within the message div, excluding the "ZenML Assistant" header and the copy button
+        const content = Array.from(messageDiv.childNodes)
+          .filter(node =>
+            node.nodeType === Node.TEXT_NODE ||
+            (node.nodeType === Node.ELEMENT_NODE &&
+              !node.classList.contains('font-semibold')) &&
+              !node.classList.contains('copy-button'))
+          .map(node => node.textContent)
+          .join('')
+          .trim();
+  
+        if (content) {
+          navigator.clipboard.writeText(content).then(() => {
+            vscode.postMessage({ command: 'showInfo', text: 'Message copied to clipboard' });
+          });
+        } else {
+          vscode.postMessage({ command: 'showInfo', text: 'No content to copy' });
+        }
+      });
+      messageDiv.appendChild(copyButton);
+    }
+  }
 
   // Add event listeners to save state when dropdown or checkboxes change
   document.querySelector('.model-dropdown').addEventListener('change', saveState);

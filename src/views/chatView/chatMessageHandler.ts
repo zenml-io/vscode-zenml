@@ -20,4 +20,8 @@ export async function handleWebviewMessage(message: any, chatDataProvider: ChatD
   if (message.command === 'clearChat') {
     await chatDataProvider.clearChatLog();
   }
+
+  if (message.command === 'showInfo') {
+    chatDataProvider.showInfoMessage(message.text);
+  }
 }
