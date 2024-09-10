@@ -120,24 +120,22 @@ export async function searchWorkspaceByFileContent(content: string) {
   const files = await vscode.workspace.findFiles('**/*');
   const pythonFiles = files.filter(file => file.toString().endsWith('.py'));
   let matches: vscode.Uri[] = [];
+  let fileContents: string[] = [];
 
   await Promise.all(
     pythonFiles.map(
       async file =>
         await vscode.workspace.openTextDocument(file).then(doc => {
-          if (doc.getText().includes(content)) {
+          const docText = doc.getText();
+
+          if (docText.includes(content)) {
             matches.push(file);
+            fileContents.push(docText);
           }
         })
     )
   );
 
-  // ? Currently we're defaulting to manual search and then git grep; should it be the other way around?
-
-  // ? Also, this grep implementation searches the working tree, meaning that it cannot find the file if
-  // ?   the user has saved changes to the file, even if they're uncomitted. Is this the behavior we want?
-  // ?   I think finding the file among committed files may be a useful feature, but may result in too
-  // ?   many edge cases to be viable
   if (matches.length === 0) {
     // TODO Search for nearest git repository from each root, rather than just assume the repository is
     // TODO   in the root workspace directory
@@ -146,6 +144,8 @@ export async function searchWorkspaceByFileContent(content: string) {
     let git: SimpleGit;
     let matchingFilePaths: string[] | undefined;
     for (let root of workspaceRoots) {
+      let matchingLines: string[] | undefined;
+
       try {
         git = simpleGit({ baseDir: root });
         const lines = content.split(/\r?\n/).filter(line => line !== '');
@@ -158,12 +158,18 @@ export async function searchWorkspaceByFileContent(content: string) {
           }
           if (matchingFilePaths.length === 0) break;
 
-          let matchingLines = [
-            ...(await git.grep(line, ['-I', '-w', '-F', '--full-name'])).paths,
-          ].map(filePath => path.join(root, filePath));
-          matchingFilePaths = matchingFilePaths.filter(filePath =>
-            matchingLines.includes(filePath)
+          matchingLines = [...(await git.grep(line, ['-I', '-w', '-F', '--full-name'])).paths].map(
+            filePath => path.join(root, filePath)
           );
+
+          matchingFilePaths = matchingFilePaths.filter(filePath =>
+            matchingLines?.includes(filePath)
+          );
+        }
+
+        matchingLines = matchingLines?.map(path => path.replaceAll(root, '').slice(1));
+        for (let path of matchingLines || []) {
+          fileContents.push(await git.show(`HEAD:${path}`));
         }
       } catch {}
     }
@@ -171,5 +177,6 @@ export async function searchWorkspaceByFileContent(content: string) {
     matches = matchingFilePaths?.map(path => vscode.Uri.file(path)) || [];
   }
 
-  return matches;
+  const results = matches.map((uri, i) => ({ uri, content: fileContents[i] }));
+  return results;
 }

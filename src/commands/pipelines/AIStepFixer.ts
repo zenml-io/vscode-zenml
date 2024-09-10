@@ -65,10 +65,11 @@ export default class AIStepFixer {
 
     // TODO manage the possibility of zero or multiple files containing the source code
     this.createCodeRecommendation(
-      sourceCodeFileMatches[0],
+      sourceCodeFileMatches[0].uri,
       codeChoices,
       String(stepData.sourceCode).trim(),
-      existingPanel
+      existingPanel,
+      sourceCodeFileMatches[0].content
     );
     this.createVirtualDocument(id, message || 'Something went wrong', existingPanel);
 
@@ -107,7 +108,8 @@ export default class AIStepFixer {
     sourceUri: vscode.Uri,
     code: string[],
     sourceCode: string,
-    existingPanel?: vscode.WebviewPanel
+    existingPanel?: vscode.WebviewPanel,
+    fileContents?: string
   ) {
     const rec = this.codeRecommendations.find(
       rec => rec.sourceUri.toString() === sourceUri.toString()
@@ -143,7 +145,7 @@ export default class AIStepFixer {
       });
     }
 
-    this.editStepFile(sourceUri, code[0], sourceCode, true, existingPanel);
+    this.editStepFile(sourceUri, code[0], sourceCode, true, existingPanel, fileContents);
   }
 
   // TODO store the original fileContents in codeRecommendations, so that code recommendations can be made even after
@@ -153,9 +155,10 @@ export default class AIStepFixer {
     newContent: string,
     oldContent: string,
     openFile = true,
-    existingPanel?: vscode.WebviewPanel
+    existingPanel?: vscode.WebviewPanel,
+    fileContents?: string
   ) {
-    const fileContents = await fs.readFile(sourceUri.fsPath, { encoding: 'utf-8' });
+    fileContents = fileContents || (await fs.readFile(sourceUri.fsPath, { encoding: 'utf-8' }));
     const fileName = path.posix.basename(sourceUri.path);
     const firstLine = new vscode.Position(findFirstLineNumber(fileContents, oldContent) || 0, 0);
     const lastLine = new vscode.Position(firstLine.line + oldContent.split('\n').length, 0);
