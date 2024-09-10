@@ -64,15 +64,21 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
       this.streamingMessage = { role: 'assistant', content: '' };
 
       this.sendMessageToWebview('disableInput');
+      let isResponseLoaded = false;
 
       for await (const partialResponse of responseGenerator) {
+        if (!isResponseLoaded) {
+          this.sendMessageToWebview('hideLoader');
+          isResponseLoaded = true;
+        }
+
         for (const letter of partialResponse) {
           this.streamingMessage.content += letter;
           this.sendMessageToWebview(letter);
           await new Promise(resolve => setTimeout(resolve, 1));
         }
       }
-
+      
       this.messages.push(this.streamingMessage);
       this.streamingMessage = null;
       this.updateWebviewContent();
