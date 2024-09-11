@@ -237,59 +237,59 @@ permissions and limitations under the License. -->
       }
 
       .loader {
-        width: 5px;
+        width: 50px;
         aspect-ratio: 1;
         border-radius: 50%;
-        animation: l5 1s infinite linear alternate;
+        border: 8px solid;
+        border-color: var(--vscode-input-background) var(--vscode-input-foreground);
+        animation: l1 1s infinite;
       }
-      @keyframes l5 {
-          0%  {box-shadow: 10px 0 #000, -10px 0 #0002;background: #000 }
-          33% {box-shadow: 10px 0 #000, -10px 0 #0002;background: #0002}
-          66% {box-shadow: 10px 0 #0002,-10px 0 #000; background: #0002}
-          100%{box-shadow: 10px 0 #0002,-10px 0 #000; background: #000 }
-      }
+      @keyframes l1 {to{transform: rotate(.5turn)}}
     </style>
 </head>
 <body class="font-plus-jakarta">
-  <div class="container mx-auto px-4 py-8 max-w-4xl">
+  <div class="container mx-auto px-4 py-8 max-w-4xl h-[95vh]">
     <h1 class="text-3xl font-bold text-center text-zenml mb-8">ZenML Chat</h1>
-    <div id="chatMessages" class="space-y-4 mb-4 mt-4 overflow-y-auto flex-grow" style="max-height: calc(100vh - 300px);">${chatLogHtml}</div>
-    <div id="loader"></div>
-    <div class="fixed bottom-0">
-      <div class="mb-6">
-        <div class="relative">
-          <form id="chatForm" class="flex items-center rounded-t-full shadow-sm">
-            <textarea type="text" id="messageInput" name="messageInput" class="flex-grow p-3" placeholder="Type your message..."></textarea>
-            <button type="submit" id="sendMessage" class="p-2 text-zenml hover:text-purple-700 focus:outline-none">
-              <svg aria-label="send" role="img" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" class="fill-current">
-                <path d="M120-160v-240l320-80-320-80v-240l760 320-760 320Z"></path>
-              </svg>
-            </button>
-          </form>
-          <div class="chatbar-options">
-            <div class="model-dropdown">
-              ${providerDropdownHtml}
-            </div>
-            <div class="model-dropdown">
-              ${modelDropdownHtml}
-            </div>
-              
-            <div class="relative">
-              <button id="contextButton" class="context-button" title="Send ZenML context with message">Context</button>
-              <div id="optionsDropdown" class="context-dropdown hidden">
-                <div id="tree-view" class="tree-view">${treeItemHtml}</div>
-              </div>
-            </div>
-            <div class="relative">
-              <button id="clearChat" class="context-button">
-                Clear Chat
+    <div class="flex flex-col w-full h-full">
+      <div id="chatMessages" class="space-y-4 mb-4 mt-4 overflow-y-auto flex-grow" style="max-height: calc(100vh - 300px);">${chatLogHtml}</div>
+      <div class="flex justify-center content-start">
+        <div id="loader" class="mb-4 mt-4"></div>
+      </div>
+      <div class="bottom-0">
+        <div class="mb-6">
+          <div class="relative">
+            <form id="chatForm" class="flex items-center rounded-t-full shadow-sm w-full">
+              <textarea type="text" id="messageInput" name="messageInput" class="flex-grow p-3" placeholder="Type your message..."></textarea>
+              <button type="submit" id="sendMessage" class="p-2 text-zenml hover:text-purple-700 focus:outline-none">
+                <svg aria-label="send" role="img" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" class="fill-current">
+                  <path d="M120-160v-240l320-80-320-80v-240l760 320-760 320Z"></path>
+                </svg>
               </button>
+            </form>
+            <div class="chatbar-options">
+              <div class="model-dropdown">
+                ${providerDropdownHtml}
+              </div>
+              <div class="model-dropdown">
+                ${modelDropdownHtml}
+              </div>
+              <div class="relative">
+                <button id="contextButton" class="context-button" title="Send ZenML context with message">Context</button>
+                <div id="optionsDropdown" class="context-dropdown hidden">
+                  <div id="tree-view" class="tree-view">${treeItemHtml}</div>
+                </div>
+              </div>
+              <div class="relative">
+                <button id="clearChat" class="context-button">
+                  Clear Chat
+                </button>
+              </div>
             </div>
           </div>
         </div>
         <div id="sampleQuestions" class="flex flex-col space-y-4 mb-4 mt-4">
           <div class="md:col-span-4 md:col-start-2 md:flex md:justify-center">
-            <div class="w-full px-6 md:grid md:grid-cols-3 space-y-2 md:space-y-0">
+            <div class="w-full px-6 md:grid md:grid-cols-4 space-y-2 md:space-y-0">
               <div class="flex flex-row items-center">
                 <div class="rounded-lg bg-card text-card-foreground md:h-auto grow text-sm overflow-hidden dark:bg-transparent dark:hover:bg-shallow hover:cursor-pointer border md:border-none shadow-sm md:shadow-none">
                   <div class="px-4 md:text-center">
@@ -322,6 +322,9 @@ permissions and limitations under the License. -->
                     </button>
                   </div>
                 </div>
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" class="hidden md:block size-6 text-gray">
+                  <path d="M7.5 2C7.77614 2 8 2.22386 8 2.5L8 12.5C8 12.7761 7.77614 13 7.5 13C7.22386 13 7 12.7761 7 12.5L7 2.5C7 2.22386 7.22386 2 7.5 2Z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"></path>
+                </svg>
               </div>
               <div class="flex flex-row items-center"> 
                 <div class="rounded-lg bg-card text-card-foreground md:h-auto grow text-sm overflow-hidden dark:bg-transparent dark:hover:bg-shallow hover:cursor-pointer border md:border-none shadow-sm md:shadow-none">

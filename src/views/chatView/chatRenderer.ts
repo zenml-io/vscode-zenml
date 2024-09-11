@@ -51,9 +51,12 @@ export function getWebviewContent(
 
 function getProviderDropdownHtml(currentProvider: string, availableProviders: string[]): string {
   const options = availableProviders
-    .map(provider => `<option value="${provider}" ${provider === currentProvider ? 'selected' : ''}>${provider}</option>`)
+    .map(
+      provider =>
+        `<option value="${provider}" ${provider === currentProvider ? 'selected' : ''}>${provider}</option>`
+    )
     .join('');
-  
+
   return `
     <select id="provider-dropdown" class="model-dropdown">
       ${options}
@@ -65,7 +68,7 @@ function getModelDropdownHtml(availableModels: string[]): string {
   const options = availableModels
     .map(model => `<option value="${model}">${model}</option>`)
     .join('');
-  
+
   return `
     <select id="model-dropdown" class="model-dropdown">
       ${options}
@@ -73,7 +76,10 @@ function getModelDropdownHtml(availableModels: string[]): string {
   `;
 }
 
-export function renderChatLog(messages: ChatMessage[], streamingMessage: ChatMessage | null = null): string {
+export function renderChatLog(
+  messages: ChatMessage[],
+  streamingMessage: ChatMessage | null = null
+): string {
   const renderer = {
     // @ts-ignore
     code({ text, lang, escaped, isInline }) {
