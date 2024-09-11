@@ -27,9 +27,11 @@ let tokenjs: any;
 export async function initializeTokenJS(context: vscode.ExtensionContext, provider: string) {
   const apiKeySecret = `zenml.${provider.toLowerCase()}.key`;
   const apiKey = await context.secrets.get(apiKeySecret);
-  
+
   if (!apiKey) {
-    throw new Error(`API key for ${provider} not found. Please set the ${apiKeySecret} in VS Code secrets.`);
+    throw new Error(
+      `API key for ${provider} not found. Please set the ${apiKeySecret} in VS Code secrets.`
+    );
   }
   const config: Record<string, string> = {};
   config['apiKey'] = apiKey;
@@ -45,8 +47,10 @@ export async function* getChatResponse(
   model: string
 ): AsyncGenerator<string, void, unknown> {
   // testing out formatting
-  const alans = "Format every response to look nice. Add <br><br> between sections for easier readability, and put code in code blocks. You are an assistant that summarizes information, problem solves, or optimizes code.";
-  const wills = "Format the response using full markdown, create <br><br> between sections and newline characters and use indendation. Obvious JSON, objects, or other code should be in a code block or blockquotes (and make sure to add newline characters when appropriate). Use ordered and unordered lists as much as possible (use <br><br> before lists).";
+  const alans =
+    'Format every response to look nice. Add <br><br> between sections for easier readability, and put code in code blocks. You are an assistant that summarizes information, problem solves, or optimizes code.';
+  const wills =
+    'Format the response using full markdown, create <br><br> between sections and newline characters and use indendation. Obvious JSON, objects, or other code should be in a code block or blockquotes (and make sure to add newline characters when appropriate). Use ordered and unordered lists as much as possible (use <br><br> before lists).';
   const combined = `Format every response to look nice using full markdown. Add <br><br> between sections and use newline characters with indentation where appropriate. Obvious JSON, objects, or other code should be in code blocks or blockquotes, and make sure to add newline characters when needed. Use ordered and unordered lists as much as possible (with <br><br> before lists). You are an assistant that summarizes information, problem solves, or optimizes code.`;
   const optimized = `Format responses using full markdown for readability. Separate sections with <br><br> and use newline characters when needed for clarity. Present all code, JSON, and data structures in code blocks or blockquotes. Use ordered and unordered lists whenever applicable, with spacing before lists. Your role is to summarize information, solve problems, and optimize code.`;
   const revised = `Format every response using full markdown. Add <br><br> between sections for better readability. Use newline characters and indentation where appropriate. Ensure that all JSON, objects, and other code are enclosed in code blocks, and blockquotes when necessary. Before ordered or unordered lists, insert <br><br> for clarity. You are an assistant that summarizes information, solves problems, or optimizes code, ensuring clarity and structure in all responses.`;
@@ -92,8 +96,8 @@ export async function* getChatResponse(
   console.log(`getChatResponse called with provider: ${provider}, model: ${model}`);
 
   const fullMessages = [
-    {role: 'system', content: template },
-    { role: 'user', content: await addContext(context)},
+    { role: 'system', content: template },
+    { role: 'user', content: await addContext(context) },
     ...messages,
   ];
   try {
@@ -101,9 +105,9 @@ export async function* getChatResponse(
       stream: true,
       provider: provider.toLowerCase(),
       model: model,
-      messages: fullMessages.map(msg => ({ 
-        role: msg.role as 'system' | 'user' | 'assistant', 
-        content: msg.content 
+      messages: fullMessages.map(msg => ({
+        role: msg.role as 'system' | 'user' | 'assistant',
+        content: msg.content,
       })),
     });
 
@@ -130,7 +134,7 @@ export async function addContext(requestedContext: string[]): Promise<string> {
         break;
       case 'pipelineContext':
         systemMessage += getPipelineData().contextString;
-        systemMessage += "\n A pipeline is a series of steps in a machine learning workflow.";
+        systemMessage += '\n A pipeline is a series of steps in a machine learning workflow.';
         break;
       case 'stackContext':
         systemMessage += getStackData();
@@ -155,7 +159,6 @@ export async function addContext(requestedContext: string[]): Promise<string> {
   }
   return systemMessage;
 }
-
 
 function getServerData(): string {
   let serverData = ServerDataProvider.getInstance().getCurrentStatus();
@@ -204,9 +207,7 @@ async function getPipelineRunNodes(type: string) {
   let lsClient = LSClient.getInstance();
   let dagData = await Promise.all(
     pipelineData.map(async node => {
-      let dag = await lsClient.sendLsClientRequest<PipelineRunDag>('getPipelineRunDag', [
-        node.id,
-      ]);
+      let dag = await lsClient.sendLsClientRequest<PipelineRunDag>('getPipelineRunDag', [node.id]);
       return dag;
     })
   );
@@ -216,9 +217,7 @@ async function getPipelineRunNodes(type: string) {
       let filteredNodes = await Promise.all(
         dag.nodes.map(async (node: DagArtifact | DagStep) => {
           if (type === 'all' || node.type === type) {
-            return await lsClient.sendLsClientRequest<JsonObject>('getPipelineRunStep', [
-              node.id,
-            ]);
+            return await lsClient.sendLsClientRequest<JsonObject>('getPipelineRunStep', [node.id]);
           }
           return null;
         })
@@ -308,73 +307,74 @@ async function getPipelineRunLogs(id: string) {
 }
 
 function getPipelineData(): { contextString: string; treeItems: TreeItem[] } {
-    let pipelineRuns = PipelineDataProvider.getInstance().pipelineRuns;
-    let contextString = '';
-    let treeItems: TreeItem[] = [];
+  let pipelineRuns = PipelineDataProvider.getInstance().pipelineRuns;
+  let contextString = '';
+  let treeItems: TreeItem[] = [];
 
-    pipelineRuns.forEach((run, index) => {
-        let formattedStartTime = new Date(run.startTime).toLocaleString();
-        let formattedEndTime = run.endTime ? new Date(run.endTime).toLocaleString() : 'N/A';
-        
-        contextString += `Pipeline Run:\n` +
-        `Name: ${run.name}\n` +
-        `Status: ${run.status}\n` +
-        `Stack Name: ${run.stackName}\n` +
-        `Start Time: ${formattedStartTime}\n` +
-        `End Time: ${formattedEndTime}\n` +
-        `OS: ${run.os} ${run.osVersion}\n` +
-        `Python Version: ${run.pythonVersion}\n\n`;
+  pipelineRuns.forEach((run, index) => {
+    let formattedStartTime = new Date(run.startTime).toLocaleString();
+    let formattedEndTime = run.endTime ? new Date(run.endTime).toLocaleString() : 'N/A';
 
-        let stringValue = `Pipeline run:${JSON.stringify(run)}`;
-        let treeItem: TreeItem = {
-        name: run.name,
-        value: stringValue,
-        title: 'Includes all code, logs, and metadata for a specific pipeline run with message',
-        hidden: index > 9,
-        children: [
-            { name: run.status },
-            { name: run.stackName },
-            { name: formattedStartTime },
-            { name: formattedEndTime },
-            { name: `${run.os} ${run.osVersion}` },
-            { name: run.pythonVersion },
-        ],
-        };
-        treeItems.push(treeItem);
-    });
+    contextString +=
+      `Pipeline Run:\n` +
+      `Name: ${run.name}\n` +
+      `Status: ${run.status}\n` +
+      `Stack Name: ${run.stackName}\n` +
+      `Start Time: ${formattedStartTime}\n` +
+      `End Time: ${formattedEndTime}\n` +
+      `OS: ${run.os} ${run.osVersion}\n` +
+      `Python Version: ${run.pythonVersion}\n\n`;
 
-    if (treeItems.length > 9) {
-        treeItems.push({ name: 'Expand' });
-    }
+    let stringValue = `Pipeline run:${JSON.stringify(run)}`;
+    let treeItem: TreeItem = {
+      name: run.name,
+      value: stringValue,
+      title: 'Includes all code, logs, and metadata for a specific pipeline run with message',
+      hidden: index > 9,
+      children: [
+        { name: run.status },
+        { name: run.stackName },
+        { name: formattedStartTime },
+        { name: formattedEndTime },
+        { name: `${run.os} ${run.osVersion}` },
+        { name: run.pythonVersion },
+      ],
+    };
+    treeItems.push(treeItem);
+  });
 
-    return { contextString, treeItems };
+  if (treeItems.length > 9) {
+    treeItems.push({ name: 'Expand' });
+  }
+
+  return { contextString, treeItems };
 }
 
 export function getTreeData(): TreeItem[] {
-    let { contextString, treeItems } = getPipelineData();
-    let treeData: TreeItem[] = [
-        {
-        name: 'Server',
-        value: 'serverContext',
-        title: 'Includes all server metadata with message',
-        },
-        {
-        name: 'Environment',
-        value: 'environmentContext',
-        title: 'Includes all server metadata with message',
-        },
-        {
-        name: 'Pipeline Runs',
-        value: 'pipelineContext',
-        title: 'Includes all code, logs, and metadata for pipeline runs with message',
-        children: treeItems,
-        },
-        { name: 'Stack', value: 'stackContext', title: 'Includes all stack metadata with message' },
-        {
-        name: 'Stack Components',
-        value: 'stackComponentsContext',
-        title: 'Includes all stack component metadata with message',
-        },
-    ];
-    return treeData;
+  let { contextString, treeItems } = getPipelineData();
+  let treeData: TreeItem[] = [
+    {
+      name: 'Server',
+      value: 'serverContext',
+      title: 'Includes all server metadata with message',
+    },
+    {
+      name: 'Environment',
+      value: 'environmentContext',
+      title: 'Includes all server metadata with message',
+    },
+    {
+      name: 'Pipeline Runs',
+      value: 'pipelineContext',
+      title: 'Includes all code, logs, and metadata for pipeline runs with message',
+      children: treeItems,
+    },
+    { name: 'Stack', value: 'stackContext', title: 'Includes all stack metadata with message' },
+    {
+      name: 'Stack Components',
+      value: 'stackComponentsContext',
+      title: 'Includes all stack component metadata with message',
+    },
+  ];
+  return treeData;
 }

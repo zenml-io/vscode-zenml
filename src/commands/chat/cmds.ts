@@ -14,15 +14,10 @@ import * as vscode from 'vscode';
 import { ChatDataProvider } from '../../views/chatView/ChatDataProvider';
 
 const openChat = (context: vscode.ExtensionContext) => {
-  const panel = vscode.window.createWebviewPanel(
-    'zenmlChat',
-    'ZenML Chat',
-    vscode.ViewColumn.One,
-    {
-      enableScripts: true,
-      retainContextWhenHidden: true,
-    }
-  );
+  const panel = vscode.window.createWebviewPanel('zenmlChat', 'ZenML Chat', vscode.ViewColumn.One, {
+    enableScripts: true,
+    retainContextWhenHidden: true,
+  });
 
   const chatDataProvider = new ChatDataProvider(context);
 

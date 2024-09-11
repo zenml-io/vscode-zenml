@@ -14,7 +14,12 @@ import { ChatDataProvider } from './ChatDataProvider';
 
 export async function handleWebviewMessage(message: any, chatDataProvider: ChatDataProvider) {
   if (message.command === 'sendMessage' && message.text) {
-    await chatDataProvider.addMessage(message.text, message.context, message.provider, message.model);
+    await chatDataProvider.addMessage(
+      message.text,
+      message.context,
+      message.provider,
+      message.model
+    );
   }
 
   if (message.command === 'clearChat') {
