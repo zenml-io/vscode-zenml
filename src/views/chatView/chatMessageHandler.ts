@@ -14,7 +14,7 @@ import { ChatDataProvider } from './ChatDataProvider';
 
 export async function handleWebviewMessage(message: any, chatDataProvider: ChatDataProvider) {
   if (message.command === 'sendMessage' && message.text) {
-    await chatDataProvider.addMessage(message.text, message.context);
+    await chatDataProvider.addMessage(message.text, message.context, message.provider, message.model);
   }
 
   if (message.command === 'clearChat') {
@@ -23,5 +23,13 @@ export async function handleWebviewMessage(message: any, chatDataProvider: ChatD
 
   if (message.command === 'showInfo') {
     chatDataProvider.showInfoMessage(message.text);
+  }
+
+  if (message.command === 'updateProvider') {
+    chatDataProvider.updateProvider(message.provider);
+  }
+
+  if (message.command === 'updateModel') {
+    chatDataProvider.updateModel(message.model);
   }
 }

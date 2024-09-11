@@ -22,37 +22,27 @@ import { PipelineRunDag, DagArtifact, DagStep } from '../../types/PipelineTypes'
 import { JsonObject } from '../panel/panelView/PanelTreeItem';
 import { StackComponentTreeItem } from '../activityBar';
 
-const providers: Record<string, string> = {
-  'claude-3-5-sonnet-20240620': 'anthropic',
-  'claude-3-opus-20240229': 'anthropic',
-  'gpt-4o': 'openai',
-  'gemini-1.5-pro': 'gemini',
-  'gemini-1.5-flash': 'gemini',
-};
-
 let tokenjs: any;
 
-export async function initializeTokenJS(context: vscode.ExtensionContext) {
-  try {
-    const module = await import('token.js');
-    const { TokenJS } = module;
-    let provider = 'Gemini';
-    const apiKey = await context.secrets.get(`zenml.${provider.toLowerCase()}.key`);
-    if (!apiKey) {
-      vscode.window.showErrorMessage('No Gemini API key found. Please register one');
-    }
-    tokenjs = new TokenJS({ apiKey });
-  } catch (error) {
-    console.error('Error loading TokenJS:', error);
-    vscode.window.showErrorMessage(
-      `Failed to initialize ChatService: ${error instanceof Error ? error.message : 'Unknown error'}`
-    );
+export async function initializeTokenJS(context: vscode.ExtensionContext, provider: string) {
+  const apiKeySecret = `zenml.${provider.toLowerCase()}.key`;
+  const apiKey = await context.secrets.get(apiKeySecret);
+  
+  if (!apiKey) {
+    throw new Error(`API key for ${provider} not found. Please set the ${apiKeySecret} in VS Code secrets.`);
   }
+  const config: Record<string, string> = {};
+  config['apiKey'] = apiKey;
+  const module = await import('token.js');
+  const { TokenJS } = module;
+  tokenjs = new TokenJS(config);
 }
 
 export async function* getChatResponse(
   messages: ChatMessage[],
-  context: string[]
+  context: string[],
+  provider: string,
+  model: string
 ): AsyncGenerator<string, void, unknown> {
   // testing out formatting
   const alans = "Format every response to look nice. Add <br><br> between sections for easier readability, and put code in code blocks. You are an assistant that summarizes information, problem solves, or optimizes code.";
@@ -95,81 +85,77 @@ export async function* getChatResponse(
   <li>point 1</li>
   <li>point 2</li>
   `;
-  
-  try {
-    const systemMessage: ChatMessage = { 
-      role: 'system', 
-      content:template,
-      };
-    messages.push(systemMessage);
-    if (context) {
-      messages = await addContext(messages, context);
-    }
+  if (!tokenjs) {
+    throw new Error('TokenJS not initialized');
+  }
 
-    const completion = await tokenjs.chat.completions.create({
-      streaming: true,
-      provider: providers[context[0]] ?? '',
-      model: context[0] ?? '',
-      messages: messages,
+  console.log(`getChatResponse called with provider: ${provider}, model: ${model}`);
+
+  const fullMessages = [
+    {role: 'system', content: template },
+    { role: 'user', content: await addContext(context)},
+    ...messages,
+  ];
+  try {
+    const stream = await tokenjs.chat.completions.create({
+      stream: true,
+      provider: provider.toLowerCase(),
+      model: model,
+      messages: fullMessages.map(msg => ({ 
+        role: msg.role as 'system' | 'user' | 'assistant', 
+        content: msg.content 
+      })),
     });
 
-    if (Symbol.asyncIterator in completion) {
-      for await (const part of completion) {
-        yield part.choices[0]?.delta?.content || '';
+    for await (const part of stream) {
+      if (part.choices[0]?.delta?.content) {
+        yield part.choices[0].delta.content;
       }
-    } else if (completion.choices && completion.choices.length > 0) {
-      yield completion.choices[0].message.content || '';
-    } else {
-      throw new Error('Unexpected response from API');
     }
-  } catch (error) {
-    console.error('Error with Gemini API:', error);
-    if (error instanceof Error) {
-      yield `Error: ${error.message}. Please check your API key and network connection.`;
-    } else {
-      yield 'Error: An unexpected error occurred while getting a response from Gemini.';
-    }
+  } catch (error: any) {
+    console.error('Error in getChatResponse:', error);
+    throw new Error(`Error with ${provider} API: ${error.message}`);
   }
 }
 
-async function addContext(messages: ChatMessage[], requestedContext: any[]): Promise<ChatMessage[]> {
-  let systemMessage: ChatMessage = { role: 'system', content: 'Context: ' };
+export async function addContext(requestedContext: string[]): Promise<string> {
+  let systemMessage = 'Context: ';
   for (let context of requestedContext) {
     switch (context) {
       case 'serverContext':
-        systemMessage.content += getServerData();
+        systemMessage += getServerData();
         break;
       case 'environmentContext':
-        systemMessage.content += await getEnvironmentData();
+        systemMessage += await getEnvironmentData();
         break;
       case 'pipelineContext':
-        systemMessage.content += getPipelineData();
-        systemMessage.content += "\n A pipeline is a series of steps in a machine learning workflow.";
+        systemMessage += getPipelineData().contextString;
+        systemMessage += "\n A pipeline is a series of steps in a machine learning workflow.";
         break;
       case 'stackContext':
-        systemMessage.content += getStackData();
+        systemMessage += getStackData();
         break;
       case 'stackComponentsContext':
-        systemMessage.content += getStackComponentData();
+        systemMessage += getStackComponentData();
         break;
       case 'logsContext':
-        systemMessage.content += await getLogData();
+        systemMessage += await getLogData();
         break;
       default:
         if (context.includes('Pipeline run:')) {
-          systemMessage.content += context;
-          context = JSON.parse(context.replace('Pipeline run:', ''));
-          let logs = await getPipelineRunLogs(context.id);
+          let runData = JSON.parse(context.replace('Pipeline run:', ''));
+          systemMessage += `Pipeline run: ${JSON.stringify(runData)}\n`;
+          let logs = await getPipelineRunLogs(runData.id);
           let nodeData = await getPipelineRunNodes('step');
-          systemMessage.content += `Step Data: ${JSON.stringify(nodeData)}`;
-          systemMessage.content += `Logs: ${logs}`;
+          systemMessage += `Step Data: ${JSON.stringify(nodeData)}\n`;
+          systemMessage += `Logs: ${logs}\n`;
         }
         break;
     }
   }
-  messages.push(systemMessage);
-  return messages;
+  return systemMessage;
 }
+
 
 function getServerData(): string {
   let serverData = ServerDataProvider.getInstance().getCurrentStatus();
