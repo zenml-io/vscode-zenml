@@ -314,6 +314,12 @@
         "title": "Next Recommendation",
         "category": "ZenML GenAI",
         "when": "resourceFilename in zenml.aiCodeRecommendations && resourceScheme == zenml-minfs"
+      },
+      {
+        "command": "zenml.acceptCodeRecommendation",
+        "title": "Accept Change",
+        "category": "ZenML GenAI",
+        "when": "resourceFilename in zenml.aiCodeRecommendations && resourceScheme == zenml-minfs"
       }
     ],
     "viewsContainers": {
@@ -490,6 +496,11 @@
       "editor/title": [
         {
           "command": "zenml.displayNextCodeRecommendation",
+          "group": "navigation",
+          "when": "resourceFilename in zenml.aiCodeRecommendations && resourceScheme == zenml-minfs"
+        },
+        {
+          "command": "zenml.acceptCodeRecommendation",
           "group": "navigation",
           "when": "resourceFilename in zenml.aiCodeRecommendations && resourceScheme == zenml-minfs"
         }

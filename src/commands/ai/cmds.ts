@@ -11,6 +11,8 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 
+import { SaveAIChangeEmitter } from '../pipelines/AIStepFixer';
+
 const mockLog = `Step data_splitter has started.
 
 By default, the PandasMaterializer stores data as a .csv file. If you want to store data more efficiently, you can install pyarrow by running 'pip install pyarrow'. This will allow PandasMaterializer to automatically store the data as a .parquet file instead.
@@ -92,7 +94,14 @@ const displayNextCodeRecommendation = () => {
   stepFixer.updateCodeRecommendation(uri);
 };
 
+const acceptCodeRecommendation = () => {
+  let doc = vscode.window.activeTextEditor?.document;
+  console.log(doc?.fileName, doc?.uri.scheme);
+  if (doc) SaveAIChangeEmitter.fire(doc);
+};
+
 export const aiCommands = {
   sendOpenAIRequest,
   displayNextCodeRecommendation,
+  acceptCodeRecommendation,
 };

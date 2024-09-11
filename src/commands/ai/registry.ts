@@ -34,6 +34,9 @@ export const registerAICommands = (context: ExtensionContext) => {
       registerCommand('zenml.displayNextCodeRecommendation', () =>
         aiCommands.displayNextCodeRecommendation()
       ),
+      registerCommand('zenml.acceptCodeRecommendation', () =>
+        aiCommands.acceptCodeRecommendation()
+      ),
     ];
 
     registeredCommands.forEach(cmd => {

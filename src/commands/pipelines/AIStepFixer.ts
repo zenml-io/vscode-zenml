@@ -135,6 +135,7 @@ export default class AIStepFixer {
         );
         if (recIndex === -1) return;
 
+        // TODO change this to use TabGroups
         setTimeout(() => {
           const editors = vscode.window.visibleTextEditors;
           if (editors.some(editor => editor.document.uri.toString() === uri.toString())) return;
@@ -148,8 +149,6 @@ export default class AIStepFixer {
     this.editStepFile(sourceUri, code[0], sourceCode, true, existingPanel, fileContents);
   }
 
-  // TODO store the original fileContents in codeRecommendations, so that code recommendations can be made even after
-  // TODO the user has made changes to the file
   private async editStepFile(
     sourceUri: vscode.Uri,
     newContent: string,
@@ -160,15 +159,12 @@ export default class AIStepFixer {
   ) {
     fileContents = fileContents || (await fs.readFile(sourceUri.fsPath, { encoding: 'utf-8' }));
     const fileName = path.posix.basename(sourceUri.path);
-    const firstLine = new vscode.Position(findFirstLineNumber(fileContents, oldContent) || 0, 0);
-    const lastLine = new vscode.Position(firstLine.line + oldContent.split('\n').length, 0);
-    const oldRange = new vscode.Range(firstLine, lastLine);
 
     const recName = `Recommendations for ${fileName}`;
     // TODO update to throw error if oldContent is not found in fileContents
     await this.minFS.writeFile(
       vscode.Uri.parse(`zenml-minfs:/${fileName}`),
-      Buffer.from(fileContents),
+      Buffer.from(fileContents.replace(oldContent, newContent)),
       {
         create: true,
         overwrite: true,
@@ -184,7 +180,8 @@ export default class AIStepFixer {
       this.updateRecommendationsContext();
     }
 
-    vscode.workspace.onWillSaveTextDocument(e => {
+    vscode.workspace.onWillSaveTextDocument(async e => {
+      console.log(e.reason);
       if (
         e.document.uri.scheme !== 'zenml-minfs' ||
         e.document.fileName !== `/${fileName}` ||
@@ -195,11 +192,26 @@ export default class AIStepFixer {
       fs.writeFile(sourceUri.fsPath, e.document.getText());
     });
 
-    const edit = new vscode.WorkspaceEdit();
-    edit.replace(recUri, oldRange, newContent);
+    SaveAIChangeEmitter.event(doc => {
+      if (
+        !doc ||
+        !(typeof doc === 'object') ||
+        !('uri' in doc) ||
+        !(doc.uri instanceof vscode.Uri) ||
+        doc.uri.toString() !== recUri.toString() ||
+        !('getText' in doc) ||
+        !(typeof doc.getText === 'function')
+      )
+        return;
 
-    const success = await vscode.workspace.applyEdit(edit);
-    if (success && openFile) {
+      fs.writeFile(sourceUri.fsPath, doc.getText());
+    });
+
+    vscode.workspace.onDidSaveTextDocument(async e => {
+      console.log(e.uri.scheme, e.fileName);
+    });
+
+    if (openFile) {
       if (existingPanel) existingPanel.reveal(existingPanel.viewColumn, false);
       vscode.commands.executeCommand('vscode.diff', sourceUri, recUri, recName);
     }
@@ -392,3 +404,5 @@ export class Directory implements vscode.FileStat {
 }
 
 export type Entry = File | Directory;
+
+export const SaveAIChangeEmitter = new vscode.EventEmitter();
