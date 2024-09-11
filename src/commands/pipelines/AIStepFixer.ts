@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { searchWorkspaceByFileContent } from '../../common/utilities';
+import { searchGitCacheByFileContent, searchWorkspaceByFileContent } from '../../common/utilities';
 import fs from 'fs/promises';
 import { integer } from 'vscode-languageclient';
 import { LSClient } from '../../services/LSClient';
@@ -59,9 +59,31 @@ export default class AIStepFixer {
       })
       .filter(content => content);
 
-    const sourceCodeFileMatches = await searchWorkspaceByFileContent(
+    let sourceCodeFileMatches = await searchWorkspaceByFileContent(
       String(stepData.sourceCode).trim()
     );
+
+    let usedGitGrep = false;
+    if (sourceCodeFileMatches.length === 0) {
+      sourceCodeFileMatches = await searchGitCacheByFileContent(String(stepData.sourceCode).trim());
+      usedGitGrep = true;
+    }
+
+    if (sourceCodeFileMatches.length === 0) {
+      vscode.window.showWarningMessage(
+        `We could not find a file with this step in your local environment, so cannot display inline recommendations. If the file is local, make sure it is available within your VSCode workspace and try again.`
+      );
+    } else if (sourceCodeFileMatches.length > 1) {
+      vscode.window.showWarningMessage(
+        `We found multiple files with this step in your local environment, so cannot determine in which file to display inline recommendations. If you would like inline recommendations, you can adjust your VSCode environment so that it contains only one file with the registered step and try again.`
+      );
+    }
+
+    if (usedGitGrep) {
+      vscode.window.showInformationMessage(
+        `We could not find a local file with this step in your current workspace, but found one cached in the nearest git log.`
+      );
+    }
 
     // TODO manage the possibility of zero or multiple files containing the source code
     this.createCodeRecommendation(
@@ -98,7 +120,7 @@ export default class AIStepFixer {
     })();
 
     vscode.workspace.registerTextDocumentContentProvider('fix-my-pipeline', provider);
-    const uri = vscode.Uri.parse('fix-my-pipeline:' + id + '.md');
+    const uri = vscode.Uri.parse(`fix-my-pipeline:${id}.md`);
 
     if (existingPanel) existingPanel.reveal(existingPanel.viewColumn, false);
     vscode.commands.executeCommand('markdown.showPreviewToSide', uri);

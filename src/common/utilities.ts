@@ -116,6 +116,7 @@ export function findFirstLineNumber(str: string, substr: string): number | null 
   return firstLine;
 }
 
+// TODO make sure that multiple copies of the file are present in the git log, that it will only return one copy of that file, not multiple
 export async function searchWorkspaceByFileContent(content: string) {
   const files = await vscode.workspace.findFiles('**/*');
   const pythonFiles = files.filter(file => file.toString().endsWith('.py'));
@@ -136,48 +137,50 @@ export async function searchWorkspaceByFileContent(content: string) {
     )
   );
 
-  if (matches.length === 0) {
-    // TODO Search for nearest git repository from each root, rather than just assume the repository is
-    // TODO   in the root workspace directory
-    const GREP_OPTIONS = ['-I', '-w', '-F', '--full-name', '--cached'];
-    let workspaceRoots = vscode.workspace.workspaceFolders?.map(folder => folder.uri.fsPath) || [];
+  const results = matches.map((uri, i) => ({ uri, content: fileContents[i] }));
+  return results;
+}
 
-    let git: SimpleGit;
-    let matchingFilePaths: string[] | undefined;
-    for (let root of workspaceRoots) {
-      let matchingLines: string[] | undefined;
+export async function searchGitCacheByFileContent(content: string) {
+  // TODO Search for nearest git repository from each root, rather than just assume the repository is
+  // TODO   in the root workspace directory
+  const GREP_OPTIONS = ['-I', '-w', '-F', '--full-name', '--cached'];
+  const workspaceRoots = vscode.workspace.workspaceFolders?.map(folder => folder.uri.fsPath) || [];
+  let matches: vscode.Uri[] = [];
+  let fileContents: string[] = [];
+  let git: SimpleGit;
 
-      try {
-        git = simpleGit({ baseDir: root });
-        const lines = content.split(/\r?\n/).filter(line => line !== '');
-        for (let line of lines) {
-          if (!matchingFilePaths) {
-            matchingFilePaths = [...(await git.grep(line, GREP_OPTIONS)).paths].map(filePath =>
-              path.join(root, filePath)
-            );
-            continue;
-          }
-          if (matchingFilePaths.length === 0) break;
+  let matchingFilePaths: string[] | undefined;
+  for (let root of workspaceRoots) {
+    let matchingLines: string[] | undefined;
 
-          matchingLines = [...(await git.grep(line, GREP_OPTIONS)).paths].map(filePath =>
+    try {
+      git = simpleGit({ baseDir: root });
+      const lines = content.split(/\r?\n/).filter(line => line !== '');
+      for (let line of lines) {
+        if (!matchingFilePaths) {
+          matchingFilePaths = [...(await git.grep(line, GREP_OPTIONS)).paths].map(filePath =>
             path.join(root, filePath)
           );
-
-          matchingFilePaths = matchingFilePaths.filter(filePath =>
-            matchingLines?.includes(filePath)
-          );
+          continue;
         }
+        if (matchingFilePaths.length === 0) break;
 
-        matchingLines = matchingLines?.map(path => path.replaceAll(root, '').slice(1));
-        for (let path of matchingLines || []) {
-          fileContents.push(await git.show(`HEAD:${path}`));
-        }
-      } catch {}
-    }
+        matchingLines = [...(await git.grep(line, GREP_OPTIONS)).paths].map(filePath =>
+          path.join(root, filePath)
+        );
 
-    matches = matchingFilePaths?.map(path => vscode.Uri.file(path)) || [];
+        matchingFilePaths = matchingFilePaths.filter(filePath => matchingLines?.includes(filePath));
+      }
+
+      matchingLines = matchingLines?.map(path => path.replaceAll(root, '').slice(1));
+      for (let path of matchingLines || []) {
+        fileContents.push(await git.show(`HEAD:${path}`));
+      }
+    } catch {}
   }
 
+  matches = matchingFilePaths?.map(path => vscode.Uri.file(path)) || [];
   const results = matches.map((uri, i) => ({ uri, content: fileContents[i] }));
   return results;
 }
