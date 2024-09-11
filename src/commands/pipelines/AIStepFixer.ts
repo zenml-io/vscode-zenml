@@ -63,10 +63,11 @@ export default class AIStepFixer {
       String(stepData.sourceCode).trim()
     );
 
-    let usedGitGrep = false;
     if (sourceCodeFileMatches.length === 0) {
       sourceCodeFileMatches = await searchGitCacheByFileContent(String(stepData.sourceCode).trim());
-      usedGitGrep = true;
+      vscode.window.showInformationMessage(
+        `We could not find a local file with this step in your current workspace, but found one cached in the nearest git log.`
+      );
     }
 
     if (sourceCodeFileMatches.length === 0) {
@@ -77,22 +78,16 @@ export default class AIStepFixer {
       vscode.window.showWarningMessage(
         `We found multiple files with this step in your local environment, so cannot determine in which file to display inline recommendations. If you would like inline recommendations, you can adjust your VSCode environment so that it contains only one file with the registered step and try again.`
       );
-    }
-
-    if (usedGitGrep) {
-      vscode.window.showInformationMessage(
-        `We could not find a local file with this step in your current workspace, but found one cached in the nearest git log.`
+    } else if (sourceCodeFileMatches.length === 1) {
+      this.createCodeRecommendation(
+        sourceCodeFileMatches[0].uri,
+        codeChoices,
+        String(stepData.sourceCode).trim(),
+        existingPanel,
+        sourceCodeFileMatches[0].content
       );
     }
 
-    // TODO manage the possibility of zero or multiple files containing the source code
-    this.createCodeRecommendation(
-      sourceCodeFileMatches[0].uri,
-      codeChoices,
-      String(stepData.sourceCode).trim(),
-      existingPanel,
-      sourceCodeFileMatches[0].content
-    );
     this.createVirtualDocument(id, message || 'Something went wrong', existingPanel);
 
     if (existingPanel) existingPanel.webview.postMessage('AI Query Complete');
