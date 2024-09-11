@@ -20,9 +20,11 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
   private messages: ChatMessage[] = [];
   private streamingMessage: ChatMessage | null = null;
+  private currentProvider: string = 'Gemini';
+  private currentModel: string = 'gemini-pro';
 
   constructor(private readonly context: vscode.ExtensionContext) {
-    initializeTokenJS(context);
+    initializeTokenJS(this.context, this.currentProvider);
   }
 
   resolveWebviewView(
@@ -50,17 +52,72 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
       this._view.webview.html = getWebviewContent(
         this._view.webview,
         this.context.extensionUri,
-        this.messages
+        this.messages,
+        this.currentProvider,
+        this.getAvailableProviders(),
+        this.getAvailableModels()
       );
     }
   }
 
-  async addMessage(message: string, context?: string[]) {
+  private getAvailableProviders(): string[] {
+    return ['Gemini', 'OpenAI', 'Anthropic'];
+  }
+
+  private getAvailableModels(): string[] {
+    switch (this.currentProvider) {
+      case 'Gemini':
+        return [
+          'gemini-1.5-pro',
+          'gemini-1.5-flash',
+          'gemini-1.0-pro'
+        ];
+      case 'OpenAI':
+        return [
+          'gpt-4o', 'gpt-4o-mini', 'gpt-4o-2024-05-13', 'gpt-4-turbo', 'gpt-4-turbo-2024-04-09',
+          'gpt-4-0125-preview', 'gpt-4-turbo-preview', 'gpt-4-1106-preview', 'gpt-4-vision-preview',
+          'gpt-4', 'gpt-4-0314', 'gpt-4-0613', 'gpt-4-32k', 'gpt-4-32k-0314', 'gpt-4-32k-0613',
+          'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo-0301', 'gpt-3.5-turbo-0613',
+          'gpt-3.5-turbo-1106', 'gpt-3.5-turbo-0125', 'gpt-3.5-turbo-16k-0613'
+        ];
+      case 'Anthropic':
+        return [
+          'claude-3-5-sonnet-20240620', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229', 
+          'claude-3-haiku-20240307', 'claude-2.1', 'claude-2.0', 'claude-instant-1.2'
+        ];
+      default:
+        return [];
+    }
+  }
+
+  async updateProvider(provider: string) {
+    this.currentProvider = provider;
+    this.currentModel = this.getAvailableModels()[0];
+    
+    try {
+      await initializeTokenJS(this.context, provider);
+      this.loadWebviewContent();
+    } catch (error: any) {
+      console.error('Error initializing TokenJS:', error);
+      vscode.window.showErrorMessage(`Failed to initialize ${provider}: ${error.message}`);
+    }
+  }
+
+  updateModel(model: string) {
+    this.currentModel = model;
+  }
+
+  async addMessage(message: string, context?: string[], provider?: string, model?: string) {
     this.messages.push({ role: 'user', content: message });
     this.updateWebviewContent();
 
     try {
-      const responseGenerator = getChatResponse(this.messages, context || []);
+      const responseGenerator = getChatResponse(
+        this.messages,
+        context || [],
+        provider || this.currentProvider,
+        model || this.currentModel
+      );
       this.streamingMessage = { role: 'assistant', content: '' };
 
       this.sendMessageToWebview('disableInput');

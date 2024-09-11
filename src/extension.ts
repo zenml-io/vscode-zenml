@@ -16,14 +16,12 @@ import { LSClient } from './services/LSClient';
 import { ZenExtension } from './services/ZenExtension';
 import { refreshUIComponents } from './utils/refresh';
 import { EnvironmentDataProvider } from './views/activityBar/environmentView/EnvironmentDataProvider';
-import { ChatDataProvider } from './views/chatView/ChatDataProvider';
 import { APIWebviewViewProvider } from './views/activityBar/APIView/APIWebviewViewProvider';
 import { registerEnvironmentCommands } from './commands/environment/registry';
 import { LSP_ZENML_CLIENT_INITIALIZED } from './utils/constants';
 import { toggleCommands } from './utils/global';
 import DagRenderer from './commands/pipelines/DagRender';
 import WebviewBase from './common/WebviewBase';
-import { registerChatCommands } from './commands/chat/registry';
 
 export async function activate(context: vscode.ExtensionContext) {
   const eventBus = EventBus.getInstance();

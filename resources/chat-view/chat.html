@@ -1,3 +1,15 @@
+<!-- Copyright(c) ZenML GmbH 2024. All Rights Reserved.
+Licensed under the Apache License, Version 2.0(the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at:
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+or implied.See the License for the specific language governing
+permissions and limitations under the License. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -255,14 +267,13 @@
             </button>
           </form>
           <div class="chatbar-options">
-            <select class="model-dropdown">
-              <option value="claude-3-5-sonnet-20240620">claude-3.5-sonnet</option>
-              <option value="gpt-4o">gpt-4o</option>
-              <option value="claude-3-opus-20240229">claude-3-opus</option>
-              <option value="claude-3-haiku-20240307">claude-3-haiku</option>
-              <option value="gemini-1.5-pro">gemini-1.5-pro</option>
-              <option value="gemini-1.5-flash">gemini-1.5-flash</option>     
-            </select>
+            <div class="model-dropdown">
+              ${providerDropdownHtml}
+            </div>
+            <div class="model-dropdown">
+              ${modelDropdownHtml}
+            </div>
+              
             <div class="relative">
               <button id="contextButton" class="context-button" title="Send ZenML context with message">Context</button>
               <div id="optionsDropdown" class="context-dropdown hidden">

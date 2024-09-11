@@ -19,7 +19,10 @@ import { getTreeData } from './utils';
 export function getWebviewContent(
   webview: vscode.Webview,
   extensionUri: vscode.Uri,
-  messages: ChatMessage[]
+  messages: ChatMessage[],
+  currentProvider: string,
+  availableProviders: string[],
+  availableModels: string[]
 ): string {
   const htmlPath = vscode.Uri.joinPath(extensionUri, 'resources', 'chat-view', 'chat.html');
   let html = fs.readFileSync(htmlPath.fsPath, 'utf8');
@@ -33,13 +36,41 @@ export function getWebviewContent(
 
   const chatLogHtml = renderChatLog(messages);
   let treeItemHtml = getTreeHtml();
+  let providerDropdownHtml = getProviderDropdownHtml(currentProvider, availableProviders);
+  let modelDropdownHtml = getModelDropdownHtml(availableModels);
 
   html = html.replace('${cssUri}', cssUri.toString());
   html = html.replace('${jsUri}', jsUri.toString());
   html = html.replace('${treeItemHtml}', treeItemHtml);
+  html = html.replace('${providerDropdownHtml}', providerDropdownHtml);
+  html = html.replace('${modelDropdownHtml}', modelDropdownHtml);
   html = html.replace('${chatLogHtml}', chatLogHtml);
 
   return html;
+}
+
+function getProviderDropdownHtml(currentProvider: string, availableProviders: string[]): string {
+  const options = availableProviders
+    .map(provider => `<option value="${provider}" ${provider === currentProvider ? 'selected' : ''}>${provider}</option>`)
+    .join('');
+  
+  return `
+    <select id="provider-dropdown" class="model-dropdown">
+      ${options}
+    </select>
+  `;
+}
+
+function getModelDropdownHtml(availableModels: string[]): string {
+  const options = availableModels
+    .map(model => `<option value="${model}">${model}</option>`)
+    .join('');
+  
+  return `
+    <select id="model-dropdown" class="model-dropdown">
+      ${options}
+    </select>
+  `;
 }
 
 export function renderChatLog(messages: ChatMessage[], streamingMessage: ChatMessage | null = null): string {

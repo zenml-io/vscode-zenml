@@ -15,22 +15,28 @@
 
   // Function to save the current state
   function saveState() {
-    const model = document.querySelector('.model-dropdown').value;
+    const provider = document.querySelector('#provider-dropdown').value;
+    const model = document.querySelector('#model-dropdown').value;
     const checkedBoxes = Array.from(
       document.querySelectorAll('#tree-view input[type="checkbox"]:checked')
     ).map(checkbox => checkbox.value);
 
+    localStorage.setItem('selectedProvider', provider);
     localStorage.setItem('selectedModel', model);
     localStorage.setItem('checkedContexts', JSON.stringify(checkedBoxes));
   }
 
   // Function to restore the saved state
   function restoreState() {
+    const selectedProvider = localStorage.getItem('selectedProvider');
     const selectedModel = localStorage.getItem('selectedModel');
     const checkedContexts = JSON.parse(localStorage.getItem('checkedContexts')) || [];
 
+    if (selectedProvider) {
+      document.querySelector('#provider-dropdown').value = selectedProvider;
+    }
     if (selectedModel) {
-      document.querySelector('.model-dropdown').value = selectedModel;
+      document.querySelector('#model-dropdown').value = selectedModel;
     }
 
     checkedContexts.forEach(value => {
@@ -43,27 +49,25 @@
     });
   }
 
-  // Function to send the message
   function sendMessage(event) {
     event.preventDefault();
-    if (isInputDisabled) {
-      return;
-    }
-
-    const formData = new FormData(event.target);
-    const text = formData.get('messageInput');
+    if (isInputDisabled) { return; }
+  
+    const message = messageInput.value.trim();
+    const selectedProvider = document.querySelector('#provider-dropdown').value;
+    const selectedModel = document.querySelector('#model-dropdown').value;
     const checkedBoxes = document.querySelectorAll('#tree-view input[type="checkbox"]:checked');
-    const model = document.querySelector('.model-dropdown').value;
-    let checkedValues = Array.from(checkedBoxes).map(checkbox => checkbox.value);
-    checkedValues.unshift(model);
-
-    if (text) {
+    const context = Array.from(checkedBoxes).map(checkbox => checkbox.value);
+  
+    if (message) {
       vscode.postMessage({
         command: 'sendMessage',
-        text: text,
-        context: checkedValues,
+        text: message,
+        context: context,
+        provider: selectedProvider,
+        model: selectedModel
       });
-
+  
       event.target.reset();
       saveState(); // Save state before refresh
     }
@@ -135,6 +139,19 @@
     document.getElementById('sendMessage').disabled = false;
   }
 
+  const providerDropdown = document.getElementById('provider-dropdown');
+  const modelDropdown = document.getElementById('model-dropdown');
+
+  providerDropdown.addEventListener('change', (event) => {
+    const selectedProvider = event.target.value;
+    vscode.postMessage({ command: 'updateProvider', provider: selectedProvider });
+  });
+
+  modelDropdown.addEventListener('change', (event) => {
+    const selectedModel = event.target.value;
+    vscode.postMessage({ command: 'updateModel', model: selectedModel });
+  });
+
   window.addEventListener('message', event => {
     const message = event.data;
     switch (message.command) {
@@ -151,11 +168,22 @@
         } else {
           appendToChat(message.text, 'assistant');
         }
+        break;
       }
-      case 'showInfo':
+      case 'showInfo': {
         vscode.window.showInformationMesage(message.text);
+        break;
+      } 
+      case 'updateModelList': {
+        updateModelDropdown(message.models);
+        break;
+      }
     }
   });
+
+  function updateModelDropdown(models) {
+    modelDropdown.innerHTML = models.map(model => `<option value="${model}">${model}</option>`).join('');
+  }
 
   function addCopyButtonsToAssistantMessages() {
     const assistantMessages = document.querySelectorAll('.assistant');
@@ -198,8 +226,9 @@
     }
   }
 
-  // Add event listeners to save state when dropdown or checkboxes change
-  document.querySelector('.model-dropdown').addEventListener('change', saveState);
+  // Add event listeners to save state when dropdowns or checkboxes change
+  document.querySelector('#provider-dropdown').addEventListener('change', saveState);
+  document.querySelector('#model-dropdown').addEventListener('change', saveState);
   document.querySelectorAll('#tree-view input[type="checkbox"]').forEach(checkbox => {
     checkbox.addEventListener('change', saveState);
   });
@@ -207,9 +236,9 @@
   // Restore state when page loads
   document.addEventListener('DOMContentLoaded', restoreState);
 
-  // Send a pre-determined message when the button is clicked
   function sendSampleMessage() {
-    const model = document.querySelector('.model-dropdown').value;
+    const provider = document.querySelector('#provider-dropdown').value;
+    const model = document.querySelector('#model-dropdown').value;
     let context = [model];
     let buttonValue = this.value;
     let message;
@@ -234,17 +263,22 @@
       case 'summarizeLogs':
         message = 'Generate a summary of my logs.';
         context.push('logsContext');
+        break;
       default:
         break;
     }
 
-    vscode.postMessage({
-      command: 'sendMessage',
-      text: message,
-      context: context,
-    });
+    if (message) {
+      vscode.postMessage({
+        command: 'sendMessage',
+        text: message,
+        context: context,
+        provider: provider,
+        model: model
+      });
 
-    saveState();
+      saveState();
+    }
   }
 
   document.querySelectorAll('.sampleQuestions').forEach(button => {
