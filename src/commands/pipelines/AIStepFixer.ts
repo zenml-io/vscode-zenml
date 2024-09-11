@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { findFirstLineNumber, searchWorkspaceByFileContent } from '../../common/utilities';
+import { searchWorkspaceByFileContent } from '../../common/utilities';
 import fs from 'fs/promises';
 import { integer } from 'vscode-languageclient';
 import { LSClient } from '../../services/LSClient';
@@ -157,7 +157,9 @@ export default class AIStepFixer {
     existingPanel?: vscode.WebviewPanel,
     fileContents?: string
   ) {
-    fileContents = fileContents || (await fs.readFile(sourceUri.fsPath, { encoding: 'utf-8' }));
+    fileContents = fileContents
+      ? fileContents
+      : await fs.readFile(sourceUri.fsPath, { encoding: 'utf-8' });
     const fileName = path.posix.basename(sourceUri.path);
 
     const recName = `Recommendations for ${fileName}`;
@@ -181,7 +183,6 @@ export default class AIStepFixer {
     }
 
     vscode.workspace.onWillSaveTextDocument(async e => {
-      console.log(e.reason);
       if (
         e.document.uri.scheme !== 'zenml-minfs' ||
         e.document.fileName !== `/${fileName}` ||
@@ -205,10 +206,6 @@ export default class AIStepFixer {
         return;
 
       fs.writeFile(sourceUri.fsPath, doc.getText());
-    });
-
-    vscode.workspace.onDidSaveTextDocument(async e => {
-      console.log(e.uri.scheme, e.fileName);
     });
 
     if (openFile) {

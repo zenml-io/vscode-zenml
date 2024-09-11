@@ -139,6 +139,7 @@ export async function searchWorkspaceByFileContent(content: string) {
   if (matches.length === 0) {
     // TODO Search for nearest git repository from each root, rather than just assume the repository is
     // TODO   in the root workspace directory
+    const GREP_OPTIONS = ['-I', '-w', '-F', '--full-name', '--cached'];
     let workspaceRoots = vscode.workspace.workspaceFolders?.map(folder => folder.uri.fsPath) || [];
 
     let git: SimpleGit;
@@ -151,15 +152,15 @@ export async function searchWorkspaceByFileContent(content: string) {
         const lines = content.split(/\r?\n/).filter(line => line !== '');
         for (let line of lines) {
           if (!matchingFilePaths) {
-            matchingFilePaths = [
-              ...(await git.grep(line, ['-I', '-w', '-F', '--full-name'])).paths,
-            ].map(filePath => path.join(root, filePath));
+            matchingFilePaths = [...(await git.grep(line, GREP_OPTIONS)).paths].map(filePath =>
+              path.join(root, filePath)
+            );
             continue;
           }
           if (matchingFilePaths.length === 0) break;
 
-          matchingLines = [...(await git.grep(line, ['-I', '-w', '-F', '--full-name'])).paths].map(
-            filePath => path.join(root, filePath)
+          matchingLines = [...(await git.grep(line, GREP_OPTIONS)).paths].map(filePath =>
+            path.join(root, filePath)
           );
 
           matchingFilePaths = matchingFilePaths.filter(filePath =>
