@@ -431,19 +431,6 @@ export type Entry = File | Directory;
 
 export const SaveAIChangeEmitter = new vscode.EventEmitter();
 
-///
-///
-///
-///
-///
-///
-///
-///
-///
-///
-///
-///
-
 export async function multiStepInput(context: vscode.ExtensionContext) {
   const providers: vscode.QuickPickItem[] = AIStepFixer.providers.map(label => ({ label }));
 
@@ -502,6 +489,7 @@ export async function multiStepInput(context: vscode.ExtensionContext) {
   const shouldResume = () => new Promise<boolean>(() => {});
 
   const state = await collectInputs();
+  AIService.getInstance(context).setDefaultModel(state.model.label);
   vscode.window.showInformationMessage(`Set default AI model to ${state.model.label}`);
 }
 

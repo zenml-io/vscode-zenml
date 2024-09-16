@@ -119,4 +119,10 @@ export class AIService {
 
     return models;
   }
+
+  // TODO fetch a secret for the default LLM
+  public getDefaultModel() {}
+
+  // TODO set a secret for the default LLM
+  public setDefaultModel(model: string) {}
 }
