@@ -102,7 +102,15 @@ import svgPanZoom from 'svg-pan-zoom';
         <ul>
           <li id="inspect">Inspect</li>
           <li id="open-dashboard-url">Open Dashboard URL</li>
-          ${step?.querySelector('svg.failed') ? `<li id="suggest-fix">Suggest Fix</li>` : ''}
+          ${
+            step?.querySelector('svg.failed')
+              ? `<li id="suggest-fix">Suggest Fix</li>
+                <li id="select-model">
+                  <span class="context-menu-subitem-indicator">∟</span>
+                  Choose AI Model
+                </li>`
+              : ''
+          }
         </ul>
       </div>`,
       evt.pageX,
@@ -157,6 +165,9 @@ import svgPanZoom from 'svg-pan-zoom';
     contextMenu.querySelector('#suggest-fix')?.addEventListener('click', () => {
       contextMenu.querySelector('#suggest-fix').textContent = 'Loading...';
       vscode.postMessage({ command: `stepFix`, id: stepId || artifactId });
+    });
+    contextMenu.querySelector('#select-model')?.addEventListener('click', () => {
+      vscode.postMessage({ command: `selectLLM`, id: stepId || artifactId });
     });
     contextMenu.addEventListener('click', evt => {
       if (evt.target.id !== 'suggest-fix') closeContextMenu();

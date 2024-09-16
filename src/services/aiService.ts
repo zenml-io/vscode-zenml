@@ -16,6 +16,7 @@ import * as vscode from 'vscode';
 // typescript incorrectly identifies the .js as a file extension, not the name of the module
 // @ts-expect-error
 import { TokenJS } from 'token.js';
+import { SupportedLLMProviders } from '../commands/pipelines/AIStepFixer';
 
 export interface FixMyPipelineResponse {
   message: string;
@@ -96,5 +97,26 @@ export class AIService {
         { language: 'test', content: 'oh aeey' },
       ],
     };
+  }
+
+  // TODO implement fetching list of LLMs
+  public async getModels(provider: SupportedLLMProviders) {
+    let models: string[] = [];
+    switch (provider) {
+      case 'Anthropic':
+        // fetch list of ChatGPT models
+        models = ['these', 'are'];
+        break;
+      case 'Google':
+        models = ['simply'];
+        // fetch list of Gemini models
+        break;
+      case 'OpenAI':
+        models = ['some', 'test', 'values'];
+        // fetch list of Claude models
+        break;
+    }
+
+    return models;
   }
 }

@@ -8,12 +8,19 @@ import { AIService } from '../../services/aiService';
 import { PipelineTreeItem } from '../../views/activityBar';
 import { JsonObject } from '../../views/panel/panelView/PanelTreeItem';
 import * as path from 'path';
+import WebviewBase from '../../common/WebviewBase';
 
-export default class AIStepFixer {
+export default class AIStepFixer extends WebviewBase {
   private static instance: AIStepFixer;
+  public static providers = ['Anthropic (Claude)', 'Google (Gemini)', 'OpenAI (ChatGPT)'];
   private minFS: MinimalFS;
 
   private constructor() {
+    super();
+
+    if (WebviewBase.context === null) {
+      throw new Error('Extension Context Not Propagated');
+    }
     this.minFS = new MinimalFS();
 
     vscode.workspace.registerFileSystemProvider('zenml-minfs', this.minFS, {
@@ -36,17 +43,20 @@ export default class AIStepFixer {
     currentCodeIndex: integer;
   }[] = [];
 
-  public async suggestFixForStep(
-    id: string,
-    node: PipelineTreeItem,
-    context: vscode.ExtensionContext
-  ): Promise<void> {
+  public async selectLLM() {
+    if (!WebviewBase.context) return;
+    multiStepInput(WebviewBase.context);
+  }
+
+  public async suggestFixForStep(id: string, node: PipelineTreeItem): Promise<void> {
+    if (!WebviewBase.context) return;
+
     const client = LSClient.getInstance();
     const stepData = await client.sendLsClientRequest<JsonObject>('getPipelineRunStep', [id]);
     const log = await fs.readFile(String(stepData.logsUri), { encoding: 'utf-8' });
     const p = Panels.getInstance();
     const existingPanel = p.getPanel(node.id);
-    const ai = AIService.getInstance(context);
+    const ai = AIService.getInstance(WebviewBase.context);
 
     const response = await ai.fixMyPipelineRequest(log, String(stepData.sourceCode));
 
@@ -420,3 +430,291 @@ export class Directory implements vscode.FileStat {
 export type Entry = File | Directory;
 
 export const SaveAIChangeEmitter = new vscode.EventEmitter();
+
+///
+///
+///
+///
+///
+///
+///
+///
+///
+///
+///
+///
+
+export async function multiStepInput(context: vscode.ExtensionContext) {
+  const providers: vscode.QuickPickItem[] = AIStepFixer.providers.map(label => ({ label }));
+
+  interface State {
+    title: string;
+    step: number;
+    totalSteps: number;
+    provider: vscode.QuickPickItem | string;
+    model: vscode.QuickPickItem;
+  }
+  const title = 'Select AI Model';
+
+  async function collectInputs() {
+    const state = {} as Partial<State>;
+    await MultiStepInput.run(input => pickProvider(input, state));
+    return state as State;
+  }
+
+  async function pickProvider(input: MultiStepInput, state: Partial<State>) {
+    const pick = await input.showQuickPick({
+      title,
+      step: 1,
+      totalSteps: 2,
+      placeholder: `Select your model's provider`,
+      items: providers,
+      activeItem: typeof state.provider !== 'string' ? state.provider : undefined,
+      shouldResume: shouldResume,
+    });
+    state.provider = pick;
+    return (input: MultiStepInput) => pickModel(input, state);
+  }
+
+  async function pickModel(input: MultiStepInput, state: Partial<State>) {
+    const models = await getAvailableModels(state.provider!);
+    state.model = await input.showQuickPick({
+      title,
+      step: 2,
+      totalSteps: 2,
+      placeholder: 'Select your model',
+      items: models,
+      activeItem: state.model,
+      shouldResume: shouldResume,
+    });
+  }
+
+  async function getAvailableModels(
+    provider: vscode.QuickPickItem | string
+  ): Promise<vscode.QuickPickItem[]> {
+    provider = typeof provider === 'string' ? provider : provider.label;
+    provider = provider.split(' ')[0];
+    if (!supportedLLMProviders.find(p => p === provider)) return [];
+
+    return (await AIService.getInstance(context).getModels(provider)).map(label => ({ label }));
+  }
+
+  const shouldResume = () => new Promise<boolean>(() => {});
+
+  const state = await collectInputs();
+  vscode.window.showInformationMessage(`Set default AI model to ${state.model.label}`);
+}
+
+// -------------------------------------------------------
+// Helper code that wraps the API for the multi-step case.
+// -------------------------------------------------------
+const supportedLLMProviders = ['Anthropic', 'Google', 'OpenAI'];
+export type SupportedLLMProviders = (typeof supportedLLMProviders)[number];
+
+class InputFlowAction {
+  static back = new InputFlowAction();
+  static cancel = new InputFlowAction();
+  static resume = new InputFlowAction();
+}
+
+type InputStep = (input: MultiStepInput) => Thenable<InputStep | void>;
+
+interface QuickPickParameters<T extends vscode.QuickPickItem> {
+  title: string;
+  step: number;
+  totalSteps: number;
+  items: T[];
+  activeItem?: T;
+  ignoreFocusOut?: boolean;
+  placeholder: string;
+  buttons?: vscode.QuickInputButton[];
+  shouldResume: () => Thenable<boolean>;
+}
+
+interface InputBoxParameters {
+  title: string;
+  step: number;
+  totalSteps: number;
+  value: string;
+  prompt: string;
+  validate: (value: string) => Promise<string | undefined>;
+  buttons?: vscode.QuickInputButton[];
+  ignoreFocusOut?: boolean;
+  placeholder?: string;
+  shouldResume: () => Thenable<boolean>;
+}
+
+class MultiStepInput {
+  static async run<T>(start: InputStep) {
+    const input = new MultiStepInput();
+    return input.stepThrough(start);
+  }
+
+  private current?: vscode.QuickInput;
+  private steps: InputStep[] = [];
+
+  private async stepThrough<T>(start: InputStep) {
+    let step: InputStep | void = start;
+    while (step) {
+      this.steps.push(step);
+      if (this.current) {
+        this.current.enabled = false;
+        this.current.busy = true;
+      }
+      try {
+        step = await step(this);
+      } catch (err) {
+        if (err === InputFlowAction.back) {
+          this.steps.pop();
+          step = this.steps.pop();
+        } else if (err === InputFlowAction.resume) {
+          step = this.steps.pop();
+        } else if (err === InputFlowAction.cancel) {
+          step = undefined;
+        } else {
+          throw err;
+        }
+      }
+    }
+    if (this.current) {
+      this.current.dispose();
+    }
+  }
+
+  async showQuickPick<T extends vscode.QuickPickItem, P extends QuickPickParameters<T>>({
+    title,
+    step,
+    totalSteps,
+    items,
+    activeItem,
+    ignoreFocusOut,
+    placeholder,
+    buttons,
+    shouldResume,
+  }: P) {
+    const disposables: vscode.Disposable[] = [];
+    try {
+      return await new Promise<T | (P extends { buttons: (infer I)[] } ? I : never)>(
+        (resolve, reject) => {
+          const input = vscode.window.createQuickPick<T>();
+          input.title = title;
+          input.step = step;
+          input.totalSteps = totalSteps;
+          input.ignoreFocusOut = ignoreFocusOut ?? false;
+          input.placeholder = placeholder;
+          input.items = items;
+          if (activeItem) {
+            input.activeItems = [activeItem];
+          }
+          input.buttons = [
+            ...(this.steps.length > 1 ? [vscode.QuickInputButtons.Back] : []),
+            ...(buttons || []),
+          ];
+          disposables.push(
+            input.onDidTriggerButton(item => {
+              if (item === vscode.QuickInputButtons.Back) {
+                reject(InputFlowAction.back);
+              } else {
+                resolve(<any>item);
+              }
+            }),
+            input.onDidChangeSelection(items => resolve(items[0])),
+            input.onDidHide(() => {
+              (async () => {
+                reject(
+                  shouldResume && (await shouldResume())
+                    ? InputFlowAction.resume
+                    : InputFlowAction.cancel
+                );
+              })().catch(reject);
+            })
+          );
+          if (this.current) {
+            this.current.dispose();
+          }
+          this.current = input;
+          this.current.show();
+        }
+      );
+    } finally {
+      disposables.forEach(d => d.dispose());
+    }
+  }
+
+  async showInputBox<P extends InputBoxParameters>({
+    title,
+    step,
+    totalSteps,
+    value,
+    prompt,
+    validate,
+    buttons,
+    ignoreFocusOut,
+    placeholder,
+    shouldResume,
+  }: P) {
+    const disposables: vscode.Disposable[] = [];
+    try {
+      return await new Promise<string | (P extends { buttons: (infer I)[] } ? I : never)>(
+        (resolve, reject) => {
+          const input = vscode.window.createInputBox();
+          input.title = title;
+          input.step = step;
+          input.totalSteps = totalSteps;
+          input.value = value || '';
+          input.prompt = prompt;
+          input.ignoreFocusOut = ignoreFocusOut ?? false;
+          input.placeholder = placeholder;
+          input.buttons = [
+            ...(this.steps.length > 1 ? [vscode.QuickInputButtons.Back] : []),
+            ...(buttons || []),
+          ];
+          let validating = validate('');
+          disposables.push(
+            input.onDidTriggerButton(item => {
+              if (item === vscode.QuickInputButtons.Back) {
+                reject(InputFlowAction.back);
+              } else {
+                resolve(<any>item);
+              }
+            }),
+            input.onDidAccept(async () => {
+              const value = input.value;
+              input.enabled = false;
+              input.busy = true;
+              if (!(await validate(value))) {
+                resolve(value);
+              }
+              input.enabled = true;
+              input.busy = false;
+            }),
+            input.onDidChangeValue(async text => {
+              const current = validate(text);
+              validating = current;
+              const validationMessage = await current;
+              if (current === validating) {
+                input.validationMessage = validationMessage;
+              }
+            }),
+            input.onDidHide(() => {
+              (async () => {
+                reject(
+                  shouldResume && (await shouldResume())
+                    ? InputFlowAction.resume
+                    : InputFlowAction.cancel
+                );
+              })().catch(reject);
+            })
+          );
+          if (this.current) {
+            this.current.dispose();
+          }
+          this.current = input;
+          this.current.show();
+        }
+      );
+    } finally {
+      disposables.forEach(d => d.dispose());
+    }
+  }
+}

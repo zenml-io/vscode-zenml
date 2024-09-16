@@ -183,3 +183,8 @@ g.svg-pan-zoom-control {
 #loading-ai {
   opacity: 0%;
 }
+
+.context-menu-subitem-indicator {
+  font-size: 0.7rem;
+  vertical-align: text-top;
+}
