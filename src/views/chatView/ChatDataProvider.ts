@@ -15,6 +15,8 @@ import { ChatMessage } from '../../types/ChatTypes';
 import { getChatResponse, initializeTokenJS } from './utils';
 import { renderChatLog, getWebviewContent } from './chatRenderer';
 import { handleWebviewMessage } from './chatMessageHandler';
+import { EventBus } from '../../services/EventBus';
+import { LSP_ZENML_STACK_CHANGED } from '../../utils/constants';
 
 export class ChatDataProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
@@ -22,9 +24,11 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
   private streamingMessage: ChatMessage | null = null;
   private currentProvider: string = 'Gemini';
   private currentModel: string = 'gemini-pro';
+  private eventBus: EventBus = EventBus.getInstance();
 
   constructor(private readonly context: vscode.ExtensionContext) {
     initializeTokenJS(this.context, this.currentProvider);
+    this.eventBus.addListener(LSP_ZENML_STACK_CHANGED, this.refreshWebview.bind(this));
   }
 
   resolveWebviewView(
@@ -108,6 +112,15 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
     }
   }
 
+  /**
+   * Refreshes the webview once the LSClient emits a notification that the stack changes.
+   */
+  private async refreshWebview() {
+    if (this._view) {
+      this.loadWebviewContent();
+    }
+  }
+
   async updateProvider(provider: string) {
     this.currentProvider = provider;
     this.currentModel = this.getAvailableModels()[0];
@@ -143,7 +156,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
 
       for await (const partialResponse of responseGenerator) {
         if (!isResponseLoaded) {
-          this.sendMessageToWebview('hideLoader');
+          this._view?.webview.postMessage({ command: 'hideLoader' });
           isResponseLoaded = true;
         }
 
