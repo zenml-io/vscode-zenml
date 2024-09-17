@@ -51,23 +51,25 @@
 
   function sendMessage(event) {
     event.preventDefault();
-    if (isInputDisabled) { return; }
-  
+    if (isInputDisabled) {
+      return;
+    }
+
     const message = messageInput.value.trim();
     const selectedProvider = document.querySelector('#provider-dropdown').value;
     const selectedModel = document.querySelector('#model-dropdown').value;
     const checkedBoxes = document.querySelectorAll('#tree-view input[type="checkbox"]:checked');
     const context = Array.from(checkedBoxes).map(checkbox => checkbox.value);
-  
+
     if (message) {
       vscode.postMessage({
         command: 'sendMessage',
         text: message,
         context: context,
         provider: selectedProvider,
-        model: selectedModel
+        model: selectedModel,
       });
-  
+
       event.target.reset();
       saveState(); // Save state before refresh
     }
@@ -142,12 +144,12 @@
   const providerDropdown = document.getElementById('provider-dropdown');
   const modelDropdown = document.getElementById('model-dropdown');
 
-  providerDropdown.addEventListener('change', (event) => {
+  providerDropdown.addEventListener('change', event => {
     const selectedProvider = event.target.value;
     vscode.postMessage({ command: 'updateProvider', provider: selectedProvider });
   });
 
-  modelDropdown.addEventListener('change', (event) => {
+  modelDropdown.addEventListener('change', event => {
     const selectedModel = event.target.value;
     vscode.postMessage({ command: 'updateModel', model: selectedModel });
   });
@@ -173,7 +175,7 @@
       case 'showInfo': {
         vscode.window.showInformationMesage(message.text);
         break;
-      } 
+      }
       case 'updateModelList': {
         updateModelDropdown(message.models);
         break;
@@ -182,21 +184,23 @@
   });
 
   function updateModelDropdown(models) {
-    modelDropdown.innerHTML = models.map(model => `<option value="${model}">${model}</option>`).join('');
+    modelDropdown.innerHTML = models
+      .map(model => `<option value="${model}">${model}</option>`)
+      .join('');
   }
 
   function addCopyButtonsToAssistantMessages() {
     const assistantMessages = document.querySelectorAll('.assistant');
     assistantMessages.forEach(addCopyButtonToMessage);
   }
-  
+
   function addCopyButtonToLastAssistantMessage() {
     const lastAssistantMessage = document.querySelector('.assistant:last-child');
     if (lastAssistantMessage) {
       addCopyButtonToMessage(lastAssistantMessage);
     }
   }
-  
+
   function addCopyButtonToMessage(messageDiv) {
     if (!messageDiv.querySelector('.copy-button')) {
       const copyButton = document.createElement('button');
@@ -205,15 +209,17 @@
       copyButton.addEventListener('click', () => {
         // Find all text content within the message div, excluding the "ZenML Assistant" header and the copy button
         const content = Array.from(messageDiv.childNodes)
-          .filter(node =>
-            node.nodeType === Node.TEXT_NODE ||
-            (node.nodeType === Node.ELEMENT_NODE &&
-              !node.classList.contains('font-semibold')) &&
-              !node.classList.contains('copy-button'))
+          .filter(
+            node =>
+              node.nodeType === Node.TEXT_NODE ||
+              (node.nodeType === Node.ELEMENT_NODE &&
+                !node.classList.contains('font-semibold') &&
+                !node.classList.contains('copy-button'))
+          )
           .map(node => node.textContent)
           .join('')
           .trim();
-  
+
         if (content) {
           navigator.clipboard.writeText(content).then(() => {
             vscode.postMessage({ command: 'showInfo', text: 'Message copied to clipboard' });
@@ -247,11 +253,6 @@
       case 'aboutChat':
         message = 'What can this chat do?';
         break;
-      case 'improveStack':
-        message = 'Help me improve my stack.';
-        context.push('stackContext');
-        context.push('stackComponentsContext');
-        break;
       case 'summarizeStats':
         message = 'Generate a summary of my stats.';
         context.push('serverContext');
@@ -274,7 +275,7 @@
         text: message,
         context: context,
         provider: provider,
-        model: model
+        model: model,
       });
 
       saveState();
