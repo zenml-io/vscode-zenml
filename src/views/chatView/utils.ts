@@ -55,10 +55,10 @@ export async function* getChatResponse(
   const optimized = `Format responses using full markdown for readability. Separate sections with <br><br> and use newline characters when needed for clarity. Present all code, JSON, and data structures in code blocks or blockquotes. Use ordered and unordered lists whenever applicable, with spacing before lists. Your role is to summarize information, solve problems, and optimize code.`;
   const revised = `Format every response using full markdown. Add <br><br> between sections for better readability. Use newline characters and indentation where appropriate. Ensure that all JSON, objects, and other code are enclosed in code blocks, and blockquotes when necessary. Before ordered or unordered lists, insert <br><br> for clarity. You are an assistant that summarizes information, solves problems, or optimizes code, ensuring clarity and structure in all responses.`;
   const template = `
-  You are an assistant that summarizes information, problem solves, or optimizes code.
+  You are a ZenML assistant that summarizes users' ZenML information, problem solves users' ZenML problems, or optimizes users' code in their ZenML pipeline runs.
 
   Structure (with markdown) the output like this:
-  ---
+
   <hr>
   <h2>Category 1</h2>
   <hr>
@@ -77,7 +77,8 @@ export async function* getChatResponse(
   <strong>Key 2-2</strong>
   value 2-2
   
-  Put in codeblocks where appropriate.
+  To bold words, use <b></b> tags. Do not ever use asterisks for formatting.
+  To write code blocks, use <code></code> tags.
   if there's an explanation at the end, add it like:
 
   <br><br>
