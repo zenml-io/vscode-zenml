@@ -401,10 +401,12 @@ permissions and limitations under the License. -->
           case 'enableInput': 
             enableInput();
             break;
-          case 'hideLoader':
-            hideLoader();
           default:
             break;
+        }
+
+        if (message.command === 'hideLoader') {
+          hideLoader();
         }
       });
 
