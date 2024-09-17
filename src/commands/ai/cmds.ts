@@ -73,17 +73,70 @@ def data_splitter(
     dataset_tst = pd.DataFrame(dataset_tst, columns=dataset.columns)
     return dataset_trn, dataset_tst`;
 
+const mockResponse = `The error you encountered arises from the \`test\` function being called with a parameter value of \`1\`. The key part of the error message is:
+
+\`\`\`
+ValueError: The parameter passed to the test function must be any non-1 integer
+\`\`\`
+
+This error indicates that the \`test\` function has a specific requirement that it must receive a parameter that is a non-1 integer. Here are some reasons why this error could occur:
+
+1. **Incorrect Parameter Value**: The code currently calls \`test(1)\`, which directly violates the function's parameter requirement as stated in the error message. The \`test\` function likely expects a value such that it will not be \`1\`, and passing \`1\` directly results in the error. This is the root cause of the issue.
+
+2. **Missing Parameter Validation**: If the \`test\` function is your own implementation, it may lack proper input validation and checks that could catch such issues before they lead to errors during execution. Ensuring that conditions about parameter values are validated can simplify debugging.
+
+### Proposed Code Changes
+
+To resolve the error, you need to modify the value passed to the \`test\` function in the \`data_splitter\` function. Here is the revised code with the necessary change (you can change the \`1\` to any valid non-1 integer value, for example, \`2\`):
+
+\`\`\`python
+@step
+def data_splitter(
+    dataset: pd.DataFrame, test_size: float = 0.2
+) -> Tuple[
+    Annotated[pd.DataFrame, "raw_dataset_trn"],
+    Annotated[pd.DataFrame, "raw_dataset_tst"],
+]:
+    """Dataset splitter step.
+
+    This is an example of a dataset splitter step that splits the data
+    into train and test set before passing it to ML model.
+
+    This step is parameterized, which allows you to configure the step
+    independently of the step code, before running it in a pipeline.
+    In this example, the step can be configured to use different test
+    set sizes. See the documentation for more information:
+
+        https://docs.zenml.io/how-to/build-pipelines/use-pipeline-step-parameters
+
+    Args:
+        dataset: Dataset read from source.
+        test_size: 0.0..1.0 defining portion of test set.
+
+    Returns:
+        The split dataset: dataset_trn, dataset_tst.
+    """
+    dataset_trn, dataset_tst = train_test_split(
+        dataset,
+        test_size=test_size,
+        random_state=42,
+        shuffle=True,
+    )
+    dataset_trn = pd.DataFrame(dataset_trn, columns=dataset.columns)
+    dataset_tst = pd.DataFrame(dataset_tst, columns=dataset.columns)
+    test(2)  # Updated from 1 to 2
+    return dataset_trn, dataset_tst
+\`\`\`
+
+By passing \`2\` (or any other valid non-1 integer) to \`test\`, you should no longer encounter this specific error, thereby allowing the \`data_splitter\` function to execute correctly. If there are additional constraints or requirements for the \`test\` function's parameters, be sure to modify accordingly as per those guidelines.`;
+
 import * as vscode from 'vscode';
 import type { ExtensionContext } from 'vscode';
 import { AIService } from '../../services/aiService';
 import AIStepFixer from '../pipelines/AIStepFixer';
 
 const sendOpenAIRequest = async (context: ExtensionContext) => {
-  const ai = AIService.getInstance(context);
-
-  const response = await ai.fixMyPipelineRequest(mockLog, mockSourceCode);
-
-  console.log(response);
+  // Depricated command, used for testing/development
 };
 
 const displayNextCodeRecommendation = () => {
