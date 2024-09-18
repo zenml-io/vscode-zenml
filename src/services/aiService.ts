@@ -17,18 +17,22 @@ import * as vscode from 'vscode';
 // @ts-expect-error
 import { TokenJS } from 'token.js';
 
-type CompatibleProviders = 'anthropic' | 'gemini' | 'openai';
-type CompatibleModels =
-  | 'claude-3-5-sonnet-20240620'
-  | 'claude-3-opus-20240229'
-  | 'claude-3-haiku-20240307'
-  | 'gemini-1.5-pro'
-  | 'gemini-1.5-flash'
-  | 'gemini-1.0-pro'
-  | 'gpt-4o'
-  | 'gpt-4o-mini'
-  | 'gpt-4-turbo'
-  | 'gpt-3.5-turbo';
+const supportedLLMProviders = ['anthropic', 'gemini', 'openai'] as const;
+export type SupportedLLMProviders = (typeof supportedLLMProviders)[number];
+
+const supportedAnthropicModels = [
+  'claude-3-5-sonnet-20240620',
+  'claude-3-opus-20240229',
+  'claude-3-haiku-20240307',
+] as const;
+const supportedGeminiModels = ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-1.0-pro'] as const;
+const supportedOpenAIModels = ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'] as const;
+
+type AnthropicModels = (typeof supportedAnthropicModels)[number];
+type GeminiModels = (typeof supportedGeminiModels)[number];
+type OpenAIModels = (typeof supportedOpenAIModels)[number];
+
+export type SupportedLLMModels = AnthropicModels | GeminiModels | OpenAIModels;
 
 export interface FixMyPipelineResponse {
   message: string;
@@ -38,8 +42,13 @@ export interface FixMyPipelineResponse {
 export class AIService {
   private static instance: AIService;
   private context: ExtensionContext;
-  private provider: CompatibleProviders;
-  private model: CompatibleModels;
+  private provider: SupportedLLMProviders;
+  private model: SupportedLLMModels;
+  private supportedModels: Record<SupportedLLMProviders, readonly string[]> = {
+    anthropic: supportedAnthropicModels,
+    gemini: supportedGeminiModels,
+    openai: supportedOpenAIModels,
+  };
 
   private constructor(context: ExtensionContext) {
     this.context = context;
@@ -54,7 +63,10 @@ export class AIService {
       throw new Error('No LLM provider is configured.');
     }
 
-    const [provider, model] = configuration.split('.') as [CompatibleProviders, CompatibleModels];
+    const [provider, model] = configuration.split('.') as [
+      SupportedLLMProviders,
+      SupportedLLMModels,
+    ];
     this.provider = provider;
     this.model = model;
   }
@@ -133,30 +145,7 @@ export class AIService {
     };
   }
 
-  // TODO implement fetching list of LLMs
-  public async getModels(provider: string) {
-    let models: string[] = [];
-    switch (provider) {
-      case 'Anthropic':
-        // fetch list of ChatGPT models
-        models = ['these', 'are'];
-        break;
-      case 'Google':
-        models = ['simply'];
-        // fetch list of Gemini models
-        break;
-      case 'OpenAI':
-        models = ['some', 'test', 'values'];
-        // fetch list of Claude models
-        break;
-    }
-
-    return models;
+  public getModels(provider: SupportedLLMProviders): string[] {
+    return this.supportedModels[provider].slice();
   }
-
-  // TODO fetch a secret for the default LLM
-  public getDefaultModel() {}
-
-  // TODO set a secret for the default LLM
-  public setDefaultModel(model: string) {}
 }
