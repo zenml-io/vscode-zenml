@@ -44,12 +44,16 @@ export default class AIStepFixer extends WebviewBase {
   }[] = [];
 
   public async selectLLM() {
-    if (!WebviewBase.context) return;
+    if (!WebviewBase.context) {
+      return;
+    }
     multiStepInput(WebviewBase.context);
   }
 
   public async suggestFixForStep(id: string, node: PipelineTreeItem): Promise<void> {
-    if (!WebviewBase.context) return;
+    if (!WebviewBase.context) {
+      return;
+    }
 
     const client = LSClient.getInstance();
     const stepData = await client.sendLsClientRequest<JsonObject>('getPipelineRunStep', [id]);
@@ -60,7 +64,9 @@ export default class AIStepFixer extends WebviewBase {
 
     const response = await ai.fixMyPipelineRequest(log, String(stepData.sourceCode));
 
-    if (!response) return;
+    if (!response) {
+      return;
+    }
     const { message, code } = response;
 
     const codeChoices = code
@@ -100,12 +106,16 @@ export default class AIStepFixer extends WebviewBase {
 
     this.createVirtualDocument(id, message || 'Something went wrong', existingPanel);
 
-    if (existingPanel) existingPanel.webview.postMessage('AI Query Complete');
+    if (existingPanel) {
+      existingPanel.webview.postMessage('AI Query Complete');
+    }
   }
 
   public async updateCodeRecommendation(recUri: vscode.Uri) {
     const rec = this.codeRecommendations.find(rec => rec.recUri?.toString === recUri.toString);
-    if (!rec) return;
+    if (!rec) {
+      return;
+    }
 
     rec.currentCodeIndex =
       rec.currentCodeIndex + 1 < rec.code.length ? rec.currentCodeIndex + 1 : 0;
@@ -127,7 +137,9 @@ export default class AIStepFixer extends WebviewBase {
     vscode.workspace.registerTextDocumentContentProvider('fix-my-pipeline', provider);
     const uri = vscode.Uri.parse(`fix-my-pipeline:${id}.md`);
 
-    if (existingPanel) existingPanel.reveal(existingPanel.viewColumn, false);
+    if (existingPanel) {
+      existingPanel.reveal(existingPanel.viewColumn, false);
+    }
     vscode.commands.executeCommand('markdown.showPreviewToSide', uri);
   }
 
@@ -154,18 +166,26 @@ export default class AIStepFixer extends WebviewBase {
 
       vscode.window.tabGroups.onDidChangeTabs(evt => {
         const input = evt.closed[0]?.input;
-        if (typeof input !== 'object' || input === null || !('modified' in input)) return;
+        if (typeof input !== 'object' || input === null || !('modified' in input)) {
+          return;
+        }
         const uri = input.modified;
-        if (typeof uri !== 'object' || uri === null || !('path' in uri)) return;
+        if (typeof uri !== 'object' || uri === null || !('path' in uri)) {
+          return;
+        }
         const recIndex = this.codeRecommendations.findIndex(
           ele => ele.recUri?.toString() === uri.toString()
         );
-        if (recIndex === -1) return;
+        if (recIndex === -1) {
+          return;
+        }
 
         // TODO change this to use TabGroups
         setTimeout(() => {
           const editors = vscode.window.visibleTextEditors;
-          if (editors.some(editor => editor.document.uri.toString() === uri.toString())) return;
+          if (editors.some(editor => editor.document.uri.toString() === uri.toString())) {
+            return;
+          }
 
           this.codeRecommendations.splice(recIndex, 1);
           this.updateRecommendationsContext();
@@ -214,8 +234,9 @@ export default class AIStepFixer extends WebviewBase {
         e.document.uri.scheme !== 'zenml-minfs' ||
         e.document.fileName !== `/${fileName}` ||
         e.reason !== vscode.TextDocumentSaveReason.Manual
-      )
+      ) {
         return;
+      }
 
       fs.writeFile(sourceUri.fsPath, e.document.getText());
     });
@@ -229,14 +250,17 @@ export default class AIStepFixer extends WebviewBase {
         doc.uri.toString() !== recUri.toString() ||
         !('getText' in doc) ||
         !(typeof doc.getText === 'function')
-      )
+      ) {
         return;
+      }
 
       fs.writeFile(sourceUri.fsPath, doc.getText());
     });
 
     if (openFile) {
-      if (existingPanel) existingPanel.reveal(existingPanel.viewColumn, false);
+      if (existingPanel) {
+        existingPanel.reveal(existingPanel.viewColumn, false);
+      }
       vscode.commands.executeCommand('vscode.diff', sourceUri, recUri, recName);
     }
   }
@@ -481,9 +505,13 @@ export async function multiStepInput(context: vscode.ExtensionContext) {
   ): Promise<vscode.QuickPickItem[]> {
     provider = typeof provider === 'string' ? provider : provider.label;
     provider = provider.split(' ')[0];
-    if (!supportedLLMProviders.find(p => p === provider)) return [];
+    if (!supportedLLMProviders.find(p => p === provider)) {
+      return [];
+    }
 
-    return (await AIService.getInstance(context).getModels(provider)).map(label => ({ label }));
+    return AIService.getInstance(context)
+      .getModels(provider)
+      .map(label => ({ label }));
   }
 
   const shouldResume = () => new Promise<boolean>(() => {});

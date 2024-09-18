@@ -141,7 +141,9 @@ const sendOpenAIRequest = async (context: ExtensionContext) => {
 
 const displayNextCodeRecommendation = () => {
   let uri = vscode.window.activeTextEditor?.document.uri;
-  if (!uri) return;
+  if (!uri) {
+    return;
+  }
 
   const stepFixer = AIStepFixer.getInstance();
   stepFixer.updateCodeRecommendation(uri);
@@ -150,7 +152,9 @@ const displayNextCodeRecommendation = () => {
 const acceptCodeRecommendation = () => {
   let doc = vscode.window.activeTextEditor?.document;
   console.log(doc?.fileName, doc?.uri.scheme);
-  if (doc) SaveAIChangeEmitter.fire(doc);
+  if (doc) {
+    SaveAIChangeEmitter.fire(doc);
+  }
 };
 
 export const aiCommands = {
