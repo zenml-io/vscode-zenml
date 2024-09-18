@@ -17,6 +17,19 @@ import * as vscode from 'vscode';
 // @ts-expect-error
 import { TokenJS } from 'token.js';
 
+type CompatibleProviders = 'anthropic' | 'gemini' | 'openai';
+type CompatibleModels =
+  | 'claude-3-5-sonnet-20240620'
+  | 'claude-3-opus-20240229'
+  | 'claude-3-haiku-20240307'
+  | 'gemini-1.5-pro'
+  | 'gemini-1.5-flash'
+  | 'gemini-1.0-pro'
+  | 'gpt-4o'
+  | 'gpt-4o-mini'
+  | 'gpt-4-turbo'
+  | 'gpt-3.5-turbo';
+
 export interface FixMyPipelineResponse {
   message: string;
   code: { language: string; content: string }[];
@@ -25,17 +38,39 @@ export interface FixMyPipelineResponse {
 export class AIService {
   private static instance: AIService;
   private context: ExtensionContext;
+  private provider: CompatibleProviders;
+  private model: CompatibleModels;
 
   private constructor(context: ExtensionContext) {
     this.context = context;
+
+    const configuration = vscode.workspace.getConfiguration('zenml').get('llm-provider') as
+      | string
+      | null;
+    if (configuration === null) {
+      vscode.window.showWarningMessage(
+        'No LLM provider configured. Please choose a provider and model in the ZenML Extension settings.'
+      );
+      throw new Error('No LLM provider is configured.');
+    }
+
+    const [provider, model] = configuration.split('.') as [CompatibleProviders, CompatibleModels];
+    this.provider = provider;
+    this.model = model;
   }
 
-  private async getApiKey() {
-    const apiKey = await this.context.secrets.get('zenml.openai.key');
-    return apiKey;
+  private async setAPIKey() {
+    const keyStr = `${this.provider.toUpperCase()}_API_KEY`;
+    const apiKey = await this.context.secrets.get(`zenml.${this.provider}.key`);
+    process.env[keyStr] = process.env[keyStr] || apiKey;
+
+    if (!process.env[keyStr] && !apiKey) {
+      vscode.window.showErrorMessage(
+        `No ${this.provider} key configured. Please add an environment variable of save a variable through the command palette.`
+      );
+    }
   }
 
-  // TODO make private after its working
   private extractPythonSnippets(response: string): string[] {
     return response
       .split('```')
@@ -47,6 +82,7 @@ export class AIService {
     if (!AIService.instance) {
       AIService.instance = new AIService(context);
     }
+
     return AIService.instance;
   }
 
@@ -54,22 +90,12 @@ export class AIService {
     log: string,
     code: string
   ): Promise<FixMyPipelineResponse | undefined> {
-    const apiKey = await this.getApiKey();
-
-    if (process.env['OPENAI_API_KEY'] === undefined && apiKey) {
-      process.env['OPENAI_API_KEY'] = apiKey;
-    }
-
-    if (!apiKey) {
-      vscode.window.showErrorMessage('No OpenAI API Key available. Please register your key.');
-      throw new Error('No OpenAI API Key available.');
-    }
+    await this.setAPIKey();
 
     const tokenjs = new TokenJS();
-
     const completion = await tokenjs.chat.completions.create({
-      provider: 'openai',
-      model: 'gpt-4o-mini',
+      provider: this.provider,
+      model: this.model,
       messages: [
         {
           role: 'system',
