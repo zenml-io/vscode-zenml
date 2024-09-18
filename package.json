@@ -313,13 +313,13 @@
         "command": "zenml.displayNextCodeRecommendation",
         "title": "Next Recommendation",
         "category": "ZenML GenAI",
-        "when": "resourceFilename in zenml.aiCodeRecommendations && resourceScheme == zenml-minfs"
+        "when": "resourceFilename in zenml.aiCodeRecommendations && resourceScheme == zenml-stepfixer"
       },
       {
         "command": "zenml.acceptCodeRecommendation",
         "title": "Accept Change",
         "category": "ZenML GenAI",
-        "when": "resourceFilename in zenml.aiCodeRecommendations && resourceScheme == zenml-minfs"
+        "when": "resourceFilename in zenml.aiCodeRecommendations && resourceScheme == zenml-stepfixer"
       }
     ],
     "viewsContainers": {
@@ -497,12 +497,12 @@
         {
           "command": "zenml.displayNextCodeRecommendation",
           "group": "navigation",
-          "when": "resourceFilename in zenml.aiCodeRecommendations && resourceScheme == zenml-minfs"
+          "when": "resourceFilename in zenml.aiCodeRecommendations && resourceScheme == zenml-stepfixer"
         },
         {
           "command": "zenml.acceptCodeRecommendation",
           "group": "navigation",
-          "when": "resourceFilename in zenml.aiCodeRecommendations && resourceScheme == zenml-minfs"
+          "when": "resourceFilename in zenml.aiCodeRecommendations && resourceScheme == zenml-stepfixer"
         }
       ]
     }
