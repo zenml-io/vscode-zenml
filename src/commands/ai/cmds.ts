@@ -11,7 +11,7 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 
-import { SaveAIChangeEmitter } from '../pipelines/AIStepFixer';
+import { SaveAIChangeEmitter } from '../pipelines/StepFixerFs';
 
 const mockLog = `Step data_splitter has started.
 
