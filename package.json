@@ -144,7 +144,7 @@
       {
         "title": "ZenML AI",
         "properties": {
-          "zenml.llm-provider": {
+          "zenml.llm-model": {
             "enum": [
               "anthropic.claude-3-5-sonnet-20240620",
               "anthropic.claude-3-opus-20240229",
