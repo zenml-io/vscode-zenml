@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
+import { PipelineDataProvider } from '../activityBar';
 import { ChatDataProvider } from './ChatDataProvider';
 
 export async function handleWebviewMessage(message: any, chatDataProvider: ChatDataProvider) {
@@ -36,5 +37,15 @@ export async function handleWebviewMessage(message: any, chatDataProvider: ChatD
 
   if (message.command === 'updateModel') {
     chatDataProvider.updateModel(message.model);
+  }
+
+  if (message.command === 'prevPage') {
+    await PipelineDataProvider.getInstance().goToPreviousPage();
+    await chatDataProvider.refreshWebview();
+  }
+
+  if (message.command === 'nextPage') {
+    await PipelineDataProvider.getInstance().goToNextPage();
+    await chatDataProvider.refreshWebview();
   }
 }

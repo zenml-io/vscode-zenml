@@ -22,4 +22,6 @@ export interface TreeItem {
   children?: TreeItem[];
   title?: string;
   hidden?: boolean;
+  firstPage?: boolean;
+  lastPage?: boolean;
 }

@@ -40,34 +40,43 @@ permissions and limitations under the License. -->
         background-color: var(--vscode-editor-background);
         color: var(--vscode-editor-foreground);
       }
+
       ul {
         color:black !important;
       }
+
       form {
         display: contents;
       }
+
       #chatForm {
         background: var(--vscode-input-background);
         border: 1px solid var(--vscode-input-border);
         border-radius: 0.375rem 0.375rem 0 0;
       }
+
       #chatMessages {
         color: var(--vscode-editor-foreground);
       }
+
       #messageInput {
         color: var(--vscode-input-foreground);
         background-color: var(--vscode-input-background);
       }
+
       .rounded-lg {
         background-color: var(--vscode-editor-background);
         color: var(--vscode-editor-foreground);
       }
+
       .rounded-lg:hover {
         background-color: var(--vscode-button-hoverBackground);
       }
+
       .hide {
         display: none;
       }
+
       .tree-view {
         background-color: var(--vscode-editor-background);
         color: var(--vscode-editor-foreground);
@@ -78,20 +87,24 @@ permissions and limitations under the License. -->
         border-radius: 0.375rem;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
       }
+
       .tree-item {
         display: flex;
         align-items: center;
         cursor: pointer;
       }
+
       .tree-item:hover {
         background-color: var(--vscode-list-background);
       }
+
       .tree-item-content {
         display: flex;
         align-items: center;
         flex-grow: 1;
         padding: 2px 8px;
       }
+
       .tree-item-icon {
         width: 16px;
         height: 16px;
@@ -99,29 +112,35 @@ permissions and limitations under the License. -->
         align-items: center;
         justify-content: center; 
       }
+
       .tree-item-name {
         font-size: 14px;
         color: var(--vscode-editor-foreground);
         margin-left: 4px;
         flex-grow: 1;
       }
+
       .tree-item-children {
         display: none;
         width: 100%;
       }
+
       .tree-item-children.open {
         display: block;
       }
+
       .tree-item-wrapper {
         display: flex;
         flex-direction: column;
         width: 100%;
       }
+
       .tree-item-checkbox {
         width: 16px;
         height: 16px;
         margin-left: 8px;
       }
+
       .chatbar-options {
         display: flex;
         justify-content: flex-start;
@@ -132,6 +151,7 @@ permissions and limitations under the License. -->
         border-top: none;
         border-radius: 0 0 0.375rem 0.375rem;
       }
+
       .model-dropdown {
         font-size: 0.75rem;
         padding: 0.25rem;
@@ -141,6 +161,7 @@ permissions and limitations under the License. -->
         border-radius: 0.25rem;
         margin-right: 0.5rem;
       }
+
       .context-button {
         font-size: 0.75rem;
         padding: 0.25rem;
@@ -151,9 +172,11 @@ permissions and limitations under the License. -->
         cursor: pointer;
         margin-right: 0.5rem;
       }
+
       .context-button:hover {
         background-color: var(--vscode-button-hoverBackground);
       }
+
       .context-dropdown {
         position: absolute;
         left: 0;
@@ -162,6 +185,7 @@ permissions and limitations under the License. -->
         margin-bottom: 0.25rem;
         z-index: 10;
       }
+
       #chatMessages h1, #chatMessages h2, #chatMessages h3, #chatMessages h4, #chatMessages h5, #chatMessages h6 {
         color: var(--vscode-editor-foreground);
         font-weight: bold;
@@ -275,7 +299,7 @@ permissions and limitations under the License. -->
               </div>
               <div class="relative">
                 <button id="contextButton" class="context-button" title="Send ZenML context with message">Context</button>
-                <div id="optionsDropdown" class="context-dropdown hidden">
+                <div id="optionsDropdown" class="context-dropdown ">
                   <div id="tree-view" class="tree-view">${treeItemHtml}</div>
                 </div>
               </div>
@@ -334,17 +358,37 @@ permissions and limitations under the License. -->
     document.addEventListener('DOMContentLoaded', (event) => {
       const contextButton = document.getElementById('contextButton');
       const optionsDropdown = document.getElementById('optionsDropdown');
-
+      
+      let isContextDisplayed = localStorage.getItem('displayContext') === 'true';
+      if (isContextDisplayed) {
+        optionsDropdown.classList.remove('hidden');
+        localStorage.setItem('displayContext', "true");
+      } else {
+        optionsDropdown.classList.add('hidden');
+        localStorage.setItem('displayContext', "false");
+      }
+      
       contextButton.addEventListener('click', (event) => {
         event.stopPropagation();
         optionsDropdown.classList.toggle('hidden');
+        isContextDisplayed = !isContextDisplayed;
+        localStorage.setItem('displayContext', String(isContextDisplayed));
       });
-
+      
       document.addEventListener('click', (event) => {
         if (!contextButton.contains(event.target) && !optionsDropdown.contains(event.target)) {
           optionsDropdown.classList.add('hidden');
+          localStorage.setItem('displayContext', "false");
         }
       });
+      
+      const pipelineRunsDropdown = document.querySelectorAll('div.tree-item-children')[0];
+      let isContextPipelineRunsDisplayed = localStorage.getItem('displayContextPipelineRuns') === 'true';
+      if (isContextPipelineRunsDisplayed === true && isContextDisplayed === true) {
+        pipelineRunsDropdown.classList.add('open');
+      } else {
+        pipelineRunsDropdown.classList.remove('open');
+      }
 
       const treeItemsWithChildren = Array.from(document.querySelectorAll('div.tree-item-wrapper'))
       .filter(treeItemsWithChildren => treeItemsWithChildren.querySelector('div.tree-item-children') !== null);
@@ -354,10 +398,14 @@ permissions and limitations under the License. -->
           const checkboxEl = this.querySelector('input[type="checkbox"]');
           const childrenEl = this.parentNode.querySelector('div.tree-item-children');
           const chevronEl = this.querySelector('span.tree-item-icon');
+          const prevPageButton = document.getElementById('prevPage');
+          const nextPageButton = document.getElementById('nextPage');
 
-          if (event.target !== checkboxEl) {
+          if (event.target !== checkboxEl && event.target !== nextPageButton && event.target !== prevPageButton) {
             event.stopPropagation();
             childrenEl.classList.toggle('open');
+            isContextPipelineRunsDisplayed = !isContextPipelineRunsDisplayed
+            localStorage.setItem('displayContextPipelineRuns', String(isContextPipelineRunsDisplayed));
 
             if (childrenEl.classList.contains('open')) {
               chevronEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
