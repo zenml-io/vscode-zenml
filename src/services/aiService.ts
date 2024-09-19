@@ -42,8 +42,8 @@ export interface FixMyPipelineResponse {
 export class AIService {
   private static instance: AIService;
   private context: ExtensionContext;
-  private provider: SupportedLLMProviders;
-  private model: SupportedLLMModels;
+  public provider: SupportedLLMProviders | null;
+  public model: SupportedLLMModels | null;
   private supportedModels: Record<SupportedLLMProviders, readonly string[]> = {
     anthropic: supportedAnthropicModels,
     gemini: supportedGeminiModels,
@@ -53,14 +53,14 @@ export class AIService {
   private constructor(context: ExtensionContext) {
     this.context = context;
 
-    const configuration = vscode.workspace.getConfiguration('zenml').get('llm-provider') as
+    const configuration = vscode.workspace.getConfiguration('zenml').get('llm-model') as
       | string
       | null;
+
     if (configuration === null) {
-      vscode.window.showWarningMessage(
-        'No LLM provider configured. Please choose a provider and model in the ZenML Extension settings.'
-      );
-      throw new Error('No LLM provider is configured.');
+      this.provider = null;
+      this.model = null;
+      return;
     }
 
     const [provider, model] = configuration.split('.') as [
@@ -72,6 +72,10 @@ export class AIService {
   }
 
   private async setAPIKey() {
+    if (!this.provider) {
+      return;
+    }
+
     const keyStr = `${this.provider.toUpperCase()}_API_KEY`;
     const apiKey = await this.context.secrets.get(`zenml.${this.provider}.key`);
     process.env[keyStr] = process.env[keyStr] || apiKey;
@@ -102,8 +106,11 @@ export class AIService {
     log: string,
     code: string
   ): Promise<FixMyPipelineResponse | undefined> {
-    await this.setAPIKey();
+    if (!this.provider || !this.model) {
+      return;
+    }
 
+    await this.setAPIKey();
     const tokenjs = new TokenJS();
     const completion = await tokenjs.chat.completions.create({
       provider: this.provider,
@@ -130,7 +137,6 @@ export class AIService {
     });
 
     const response = completion.choices[0].message.content;
-
     if (response === null) {
       return undefined;
     }
@@ -145,7 +151,16 @@ export class AIService {
     };
   }
 
-  public getModels(provider: SupportedLLMProviders): string[] {
+  public getSupportedModels(provider: SupportedLLMProviders): string[] {
     return this.supportedModels[provider].slice();
+  }
+
+  public getSupportedProviders(): string[] {
+    return supportedLLMProviders.slice();
+  }
+
+  public setModel(provider: SupportedLLMProviders, model: SupportedLLMModels) {
+    const config = `${provider}.${model}`;
+    vscode.workspace.getConfiguration('zenml').update('llm-model', config);
   }
 }

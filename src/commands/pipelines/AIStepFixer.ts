@@ -11,10 +11,10 @@ import * as path from 'path';
 import WebviewBase from '../../common/WebviewBase';
 import MultiStepInput from './MultiStepInput';
 import StepFixerFs, { SaveAIChangeEmitter } from './StepFixerFs';
+import { SupportedLLMModels, SupportedLLMProviders } from '../../services/aiService';
 
 export default class AIStepFixer extends WebviewBase {
   private static instance: AIStepFixer;
-  public static providers = ['Anthropic', 'Google', 'OpenAI'];
   private stepFs: StepFixerFs;
 
   private constructor() {
@@ -453,17 +453,19 @@ export class Directory implements vscode.FileStat {
 
 export type Entry = File | Directory;
 
-export const SaveAIChangeEmitter = new vscode.EventEmitter();
-
 export async function multiStepInput(context: vscode.ExtensionContext) {
-  const providers: vscode.QuickPickItem[] = AIStepFixer.providers.map(label => ({ label }));
+  const providers: vscode.QuickPickItem[] = AIService.getInstance(context)
+    .getSupportedProviders()
+    .map(label => ({
+      label,
+    }));
 
   interface State {
     title: string;
     step: number;
     totalSteps: number;
-    provider: vscode.QuickPickItem | string;
-    model: vscode.QuickPickItem;
+    provider: SupportedLLMProviders;
+    model: SupportedLLMModels;
   }
   const title = 'Select AI Model';
 
@@ -478,55 +480,50 @@ export async function multiStepInput(context: vscode.ExtensionContext) {
       title,
       step: 1,
       totalSteps: 2,
-      placeholder: `Select your model's provider`,
+      placeholder: `Select your LLM provider`,
       items: providers,
       activeItem: typeof state.provider !== 'string' ? state.provider : undefined,
       shouldResume: shouldResume,
     });
-    state.provider = pick;
+
+    state.provider = pick.label as SupportedLLMProviders;
     return (input: MultiStepInput) => pickModel(input, state);
   }
 
   async function pickModel(input: MultiStepInput, state: Partial<State>) {
-    const models = await getAvailableModels(state.provider!);
-    state.model = await input.showQuickPick({
+    const models = getAvailableModels(state.provider!);
+    const pick = await input.showQuickPick({
       title,
       step: 2,
       totalSteps: 2,
       placeholder: 'Select your model',
       items: models,
-      activeItem: state.model,
+      activeItem: state.model ? { label: state.model } : undefined,
       shouldResume: shouldResume,
     });
+
+    state.model = pick.label as SupportedLLMModels;
   }
 
-  async function getAvailableModels(
-    provider: vscode.QuickPickItem | string
-  ): Promise<vscode.QuickPickItem[]> {
+  function getAvailableModels(provider: vscode.QuickPickItem | string): vscode.QuickPickItem[] {
+    const ai = AIService.getInstance(context);
+
     provider = typeof provider === 'string' ? provider : provider.label;
     provider = provider.split(' ')[0];
-    if (!supportedLLMProviders.find(p => p === provider)) {
-      return [];
-    }
 
-    return AIService.getInstance(context)
-      .getModels(provider)
-      .map(label => ({ label }));
+    return ai.getSupportedModels(provider as SupportedLLMProviders).map(label => ({ label }));
   }
 
   const shouldResume = () => new Promise<boolean>(() => {});
 
   const state = await collectInputs();
-  AIService.getInstance(context).setDefaultModel(state.model.label);
-  vscode.window.showInformationMessage(`Set default AI model to ${state.model.label}`);
+  AIService.getInstance(context).setModel(state.provider, state.model);
+  vscode.window.showInformationMessage(`Set default AI model to ${state.model}`);
 }
 
 // -------------------------------------------------------
 // Helper code that wraps the API for the multi-step case.
 // -------------------------------------------------------
-const supportedLLMProviders = ['Anthropic', 'Google', 'OpenAI'];
-export type SupportedLLMProviders = (typeof supportedLLMProviders)[number];
-
 class InputFlowAction {
   static back = new InputFlowAction();
   static cancel = new InputFlowAction();
@@ -558,179 +555,4 @@ interface InputBoxParameters {
   ignoreFocusOut?: boolean;
   placeholder?: string;
   shouldResume: () => Thenable<boolean>;
-}
-
-class MultiStepInput {
-  static async run<T>(start: InputStep) {
-    const input = new MultiStepInput();
-    return input.stepThrough(start);
-  }
-
-  private current?: vscode.QuickInput;
-  private steps: InputStep[] = [];
-
-  private async stepThrough<T>(start: InputStep) {
-    let step: InputStep | void = start;
-    while (step) {
-      this.steps.push(step);
-      if (this.current) {
-        this.current.enabled = false;
-        this.current.busy = true;
-      }
-      try {
-        step = await step(this);
-      } catch (err) {
-        if (err === InputFlowAction.back) {
-          this.steps.pop();
-          step = this.steps.pop();
-        } else if (err === InputFlowAction.resume) {
-          step = this.steps.pop();
-        } else if (err === InputFlowAction.cancel) {
-          step = undefined;
-        } else {
-          throw err;
-        }
-      }
-    }
-    if (this.current) {
-      this.current.dispose();
-    }
-  }
-
-  async showQuickPick<T extends vscode.QuickPickItem, P extends QuickPickParameters<T>>({
-    title,
-    step,
-    totalSteps,
-    items,
-    activeItem,
-    ignoreFocusOut,
-    placeholder,
-    buttons,
-    shouldResume,
-  }: P) {
-    const disposables: vscode.Disposable[] = [];
-    try {
-      return await new Promise<T | (P extends { buttons: (infer I)[] } ? I : never)>(
-        (resolve, reject) => {
-          const input = vscode.window.createQuickPick<T>();
-          input.title = title;
-          input.step = step;
-          input.totalSteps = totalSteps;
-          input.ignoreFocusOut = ignoreFocusOut ?? false;
-          input.placeholder = placeholder;
-          input.items = items;
-          if (activeItem) {
-            input.activeItems = [activeItem];
-          }
-          input.buttons = [
-            ...(this.steps.length > 1 ? [vscode.QuickInputButtons.Back] : []),
-            ...(buttons || []),
-          ];
-          disposables.push(
-            input.onDidTriggerButton(item => {
-              if (item === vscode.QuickInputButtons.Back) {
-                reject(InputFlowAction.back);
-              } else {
-                resolve(<any>item);
-              }
-            }),
-            input.onDidChangeSelection(items => resolve(items[0])),
-            input.onDidHide(() => {
-              (async () => {
-                reject(
-                  shouldResume && (await shouldResume())
-                    ? InputFlowAction.resume
-                    : InputFlowAction.cancel
-                );
-              })().catch(reject);
-            })
-          );
-          if (this.current) {
-            this.current.dispose();
-          }
-          this.current = input;
-          this.current.show();
-        }
-      );
-    } finally {
-      disposables.forEach(d => d.dispose());
-    }
-  }
-
-  async showInputBox<P extends InputBoxParameters>({
-    title,
-    step,
-    totalSteps,
-    value,
-    prompt,
-    validate,
-    buttons,
-    ignoreFocusOut,
-    placeholder,
-    shouldResume,
-  }: P) {
-    const disposables: vscode.Disposable[] = [];
-    try {
-      return await new Promise<string | (P extends { buttons: (infer I)[] } ? I : never)>(
-        (resolve, reject) => {
-          const input = vscode.window.createInputBox();
-          input.title = title;
-          input.step = step;
-          input.totalSteps = totalSteps;
-          input.value = value || '';
-          input.prompt = prompt;
-          input.ignoreFocusOut = ignoreFocusOut ?? false;
-          input.placeholder = placeholder;
-          input.buttons = [
-            ...(this.steps.length > 1 ? [vscode.QuickInputButtons.Back] : []),
-            ...(buttons || []),
-          ];
-          let validating = validate('');
-          disposables.push(
-            input.onDidTriggerButton(item => {
-              if (item === vscode.QuickInputButtons.Back) {
-                reject(InputFlowAction.back);
-              } else {
-                resolve(<any>item);
-              }
-            }),
-            input.onDidAccept(async () => {
-              const value = input.value;
-              input.enabled = false;
-              input.busy = true;
-              if (!(await validate(value))) {
-                resolve(value);
-              }
-              input.enabled = true;
-              input.busy = false;
-            }),
-            input.onDidChangeValue(async text => {
-              const current = validate(text);
-              validating = current;
-              const validationMessage = await current;
-              if (current === validating) {
-                input.validationMessage = validationMessage;
-              }
-            }),
-            input.onDidHide(() => {
-              (async () => {
-                reject(
-                  shouldResume && (await shouldResume())
-                    ? InputFlowAction.resume
-                    : InputFlowAction.cancel
-                );
-              })().catch(reject);
-            })
-          );
-          if (this.current) {
-            this.current.dispose();
-          }
-          this.current = input;
-          this.current.show();
-        }
-      );
-    } finally {
-      disposables.forEach(d => d.dispose());
-    }
-  }
 }
