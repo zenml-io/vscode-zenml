@@ -147,13 +147,13 @@ export async function addContext(requestedContext: string[]): Promise<string> {
         systemMessage += await getLogData();
         break;
       default:
-        if (context.includes('Pipeline run:')) {
-          let runData = JSON.parse(context.replace('Pipeline run:', ''));
-          systemMessage += `Pipeline run: ${JSON.stringify(runData)}\n`;
+        if (context.includes('Pipeline Run:')) {
+          let runData = JSON.parse(context.replace('Pipeline Run:', ''));
           let logs = await getPipelineRunLogs(runData.id);
-          let nodeData = await getPipelineRunNodes('step');
-          systemMessage += `Step Data: ${JSON.stringify(nodeData)}\n`;
+          let nodeData = await getPipelineRunNodes('step', runData.id);
+          systemMessage += `Pipeline Run: ${JSON.stringify(runData)}\n`;
           systemMessage += `Logs: ${logs}\n`;
+          systemMessage += `Step Data: ${JSON.stringify(nodeData)}\n`;
         }
         break;
     }
@@ -203,8 +203,16 @@ function getStackData(): string {
   return `Stack Data:\n${contextString}\n`;
 }
 
-async function getPipelineRunNodes(type: string) {
-  let pipelineData = PipelineDataProvider.getInstance().getPipelineData();
+async function getPipelineRunNodes(type: string, id?: string) {
+  let pipelineRuns = PipelineDataProvider.getInstance().getPipelineData();
+  let pipelineData;
+
+  if (id) {
+    pipelineData = pipelineRuns.filter((pipelineRun) => pipelineRun.id === id);;
+  } else {
+    pipelineData = pipelineRuns;
+  }
+
   let lsClient = LSClient.getInstance();
   let dagData = await Promise.all(
     pipelineData.map(async node => {
@@ -312,7 +320,7 @@ function getPipelineData(): { contextString: string; treeItems: TreeItem[] } {
   let contextString = '';
   let treeItems: TreeItem[] = [];
 
-  pipelineRuns.forEach((run, index) => {
+  pipelineRuns.forEach(run => {
     let formattedStartTime = new Date(run.startTime).toLocaleString();
     let formattedEndTime = run.endTime ? new Date(run.endTime).toLocaleString() : 'N/A';
 
@@ -326,12 +334,11 @@ function getPipelineData(): { contextString: string; treeItems: TreeItem[] } {
       `OS: ${run.os} ${run.osVersion}\n` +
       `Python Version: ${run.pythonVersion}\n\n`;
 
-    let stringValue = `Pipeline run:${JSON.stringify(run)}`;
+    let stringValue = `Pipeline Run:${JSON.stringify(run)}`;
     let treeItem: TreeItem = {
       name: run.name,
       value: stringValue,
       title: 'Includes all code, logs, and metadata for a specific pipeline run with message',
-      hidden: index > 9,
       children: [
         { name: run.status },
         { name: run.stackName },
@@ -344,15 +351,37 @@ function getPipelineData(): { contextString: string; treeItems: TreeItem[] } {
     treeItems.push(treeItem);
   });
 
-  if (treeItems.length > 9) {
-    treeItems.push({ name: 'Expand' });
-  }
-
   return { contextString, treeItems };
 }
 
+function getPaginatedTreeData(): TreeItem[] {
+  let { treeItems } = getPipelineData();
+  let paginatedTreeItems = [];
+  let pagination = PipelineDataProvider.getInstance().pagination;
+  let paginatedTreeItem = { title: "pagination", name: `${pagination.currentPage} of ${pagination.totalPages}`, firstPage: false, lastPage: false };
+  
+  for (let i = 0; i < treeItems.length; i++) {
+    paginatedTreeItems.push(treeItems[i]);
+  }
+
+  if (pagination.currentPage === 1) {
+    paginatedTreeItem.firstPage = true;
+  } else if (pagination.currentPage === pagination.totalPages) {
+    paginatedTreeItem.lastPage = true;
+  } else {
+    paginatedTreeItem.firstPage = false;
+    paginatedTreeItem.lastPage = false;
+  }
+
+  if (pagination.totalItems > pagination.itemsPerPage) {
+    paginatedTreeItems.push(paginatedTreeItem);
+  }
+
+  return paginatedTreeItems;
+}
+
 export function getTreeData(): TreeItem[] {
-  let { contextString, treeItems } = getPipelineData();
+  let treeItems = getPaginatedTreeData();
   let treeData: TreeItem[] = [
     {
       name: 'Server',

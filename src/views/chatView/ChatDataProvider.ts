@@ -115,7 +115,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
   /**
    * Refreshes the webview once the LSClient emits a notification that the stack changes.
    */
-  private async refreshWebview() {
+  public async refreshWebview() {
     if (this._view) {
       this.loadWebviewContent();
     }

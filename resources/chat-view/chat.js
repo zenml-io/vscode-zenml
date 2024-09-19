@@ -17,20 +17,38 @@
   function saveState() {
     const provider = document.querySelector('#provider-dropdown').value;
     const model = document.querySelector('#model-dropdown').value;
-    const checkedBoxes = Array.from(
+
+    // All visible context
+    const visibleBoxes = Array.from(
+      document.querySelectorAll('#tree-view input[type="checkbox"]')
+    ).map(checkbox => checkbox.value);
+
+    // Context that is selected and not visible
+    // This should only be selected pipeline runs on different pages
+    // Hidden context will always start as active context
+    let state = JSON.parse(localStorage.getItem('selectedContexts')) || [];
+    const hiddenBoxes = [...new Set(state)].filter(
+      selectedContext => !visibleBoxes.includes(selectedContext)
+    );
+
+    // Context that is selected and visible
+    const activeBoxes = Array.from(
       document.querySelectorAll('#tree-view input[type="checkbox"]:checked')
     ).map(checkbox => checkbox.value);
 
+    // If there are any hidden saved boxes
+    state = activeBoxes.concat(hiddenBoxes);
+
     localStorage.setItem('selectedProvider', provider);
     localStorage.setItem('selectedModel', model);
-    localStorage.setItem('checkedContexts', JSON.stringify(checkedBoxes));
+    localStorage.setItem('selectedContexts', JSON.stringify(state));
   }
 
   // Function to restore the saved state
   function restoreState() {
     const selectedProvider = localStorage.getItem('selectedProvider');
     const selectedModel = localStorage.getItem('selectedModel');
-    const checkedContexts = JSON.parse(localStorage.getItem('checkedContexts')) || [];
+    const selectedContexts = JSON.parse(localStorage.getItem('selectedContexts')) || [];
 
     if (selectedProvider) {
       document.querySelector('#provider-dropdown').value = selectedProvider;
@@ -39,13 +57,14 @@
       document.querySelector('#model-dropdown').value = selectedModel;
     }
 
-    checkedContexts.forEach(value => {
-      const checkbox = document.querySelector(
-        `#tree-view input[type="checkbox"][value="${value}"]`
-      );
-      if (checkbox) {
-        checkbox.checked = true;
-      }
+    const allCheckboxes = document.querySelectorAll('#tree-view input[type="checkbox"]');
+
+    selectedContexts.forEach(savedValue => {
+      allCheckboxes.forEach(checkbox => {
+        if (checkbox.value === savedValue) {
+          checkbox.checked = true;
+        }
+      });
     });
   }
 
@@ -56,10 +75,9 @@
     }
 
     const message = messageInput.value.trim();
-    const selectedProvider = document.querySelector('#provider-dropdown').value;
-    const selectedModel = document.querySelector('#model-dropdown').value;
-    const checkedBoxes = document.querySelectorAll('#tree-view input[type="checkbox"]:checked');
-    const context = Array.from(checkedBoxes).map(checkbox => checkbox.value);
+    const selectedProvider = localStorage.getItem('selectedProvider');
+    const selectedModel = localStorage.getItem('selectedModel');
+    const context = JSON.parse(localStorage.getItem('selectedContexts')) || [];
 
     if (message) {
       vscode.postMessage({
@@ -286,17 +304,18 @@
     button.addEventListener('click', sendSampleMessage);
   });
 
-  const expandElement = document.querySelector('.expand');
+  const prevPageButton = document.getElementById('prevPage');
+  const nextPageButton = document.getElementById('nextPage');
 
-  function expandList(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    const hiddenElements = expandElement.parentElement.querySelectorAll('.hidden');
-    hiddenElements.forEach(element => {
-      element.classList.remove('hidden');
+  if (prevPageButton) {
+    prevPageButton.addEventListener('click', () => {
+      vscode.postMessage({ command: 'prevPage' });
     });
-    expandElement.remove();
   }
 
-  expandElement.addEventListener('click', expandList);
+  if (nextPageButton) {
+    nextPageButton.addEventListener('click', () => {
+      vscode.postMessage({ command: 'nextPage' });
+    });
+  }
 })();

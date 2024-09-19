@@ -123,9 +123,10 @@ function convertTreeDataToHtml(treeData: TreeItem[], level = 0): string {
   let convertedTreeData = treeData.map(item => {
     let iconSvg =
       '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0h24v24H0z" fill="none" stroke="none"/></svg>';
-    let childrenEl = '',
-      title = '',
-      hidden = '';
+    let prevPageEl = '';
+    let nextPageEl = '';
+    let childrenEl = '';
+    let title = '';
 
     if (item.children) {
       iconSvg =
@@ -136,28 +137,31 @@ function convertTreeDataToHtml(treeData: TreeItem[], level = 0): string {
     if (item.title) {
       title = item.title;
     }
-    if (item.hidden) {
-      hidden = ' hidden';
-    }
 
-    let checkboxEl =
-      level < 2 ? `<input type="checkbox" class="tree-item-checkbox" value='${item.value}'>` : '';
+    let checkboxEl = level < 2 ? `<input type="checkbox" class="tree-item-checkbox" value='${item.value}'>` : '';
 
-    if (item.name === 'Expand') {
-      hidden += ' expand';
+    if (item.title === 'pagination') {
       checkboxEl = '';
+      if (item.firstPage) {
+        nextPageEl = `<button class"tree-item-button" id="nextPage">Next</button>`;
+      } else if (item.lastPage) {
+        prevPageEl = `<button class"tree-item-button" id="prevPage">Prev</button>`;
+      } else {
+        nextPageEl = `<button class"tree-item-button" id="nextPage">Next</button>`;
+        prevPageEl = `<button class"tree-item-button" id="prevPage">Prev</button>`;
+      }
     }
 
-    return `<div class="tree-item${hidden}">
+    return `<div class="tree-item">
       <div class="tree-item-wrapper">
-          <div class="tree-item-content" style="padding-left: ${level * 16}px;">
-            <span class="tree-item-icon">
-                ${iconSvg}
-            </span>
-            <span class="tree-item-name" title="${title}">${item.name}</span>
-            ${checkboxEl}
-          </div>
-          ${childrenEl}
+        <div class="tree-item-content" style="padding-left: ${level * 16}px;">
+          <span class="tree-item-icon">${iconSvg}</span>
+          ${prevPageEl}
+          <span class="tree-item-name" title="${title}">${item.name}</span>
+          ${nextPageEl}
+          ${checkboxEl}
+        </div>
+        ${childrenEl}
       </div>
     </div>`;
   });
