@@ -32,7 +32,7 @@ export class PaginatedDataProvider implements TreeDataProvider<TreeItem> {
     totalPages: number;
   } = {
     currentPage: 1,
-    itemsPerPage: 3,
+    itemsPerPage: 10,
     totalItems: 0,
     totalPages: 0,
   };
