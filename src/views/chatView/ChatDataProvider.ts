@@ -12,11 +12,11 @@
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
 import { ChatMessage } from '../../types/ChatTypes';
-import { getChatResponse, initializeTokenJS } from './utils';
 import { renderChatLog, getWebviewContent } from './chatRenderer';
 import { handleWebviewMessage } from './chatMessageHandler';
 import { EventBus } from '../../services/EventBus';
 import { LSP_ZENML_STACK_CHANGED } from '../../utils/constants';
+import { getChatResponse, initializeTokenJS } from './utils/TokenUtils';
 
 export class ChatDataProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;

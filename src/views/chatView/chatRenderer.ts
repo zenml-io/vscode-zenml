@@ -14,7 +14,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { marked } from 'marked';
 import { ChatMessage, TreeItem } from '../../types/ChatTypes';
-import { getTreeData } from './utils';
+import { getTreeData } from './utils/PipelineUtils';
 
 export function getWebviewContent(
   webview: vscode.Webview,
