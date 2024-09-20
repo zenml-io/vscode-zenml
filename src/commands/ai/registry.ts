@@ -27,10 +27,6 @@ import { ExtensionContext, commands } from 'vscode';
 export const registerAICommands = (context: ExtensionContext) => {
   try {
     const registeredCommands = [
-      registerCommand(
-        'zenml.sendOpenAIMessage',
-        async () => await aiCommands.sendOpenAIRequest(context)
-      ),
       registerCommand('zenml.displayNextCodeRecommendation', () =>
         aiCommands.displayNextCodeRecommendation()
       ),
