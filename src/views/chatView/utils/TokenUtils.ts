@@ -84,7 +84,7 @@ export async function* getChatResponse(
 
   const fullMessages = [
     { role: 'system', content: template },
-    { role: 'user', content: await addContext(context) },
+    { role: 'system', content: await addContext(context) },
     ...messages,
   ];
   try {
