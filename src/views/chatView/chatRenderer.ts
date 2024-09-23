@@ -138,7 +138,8 @@ function convertTreeDataToHtml(treeData: TreeItem[], level = 0): string {
       title = item.title;
     }
 
-    let checkboxEl = level < 2 ? `<input type="checkbox" class="tree-item-checkbox" value='${item.value}'>` : '';
+    let checkboxEl =
+      level < 2 ? `<input type="checkbox" class="tree-item-checkbox" value='${item.value}'>` : '';
 
     if (item.title === 'pagination') {
       checkboxEl = '';

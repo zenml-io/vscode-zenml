@@ -185,7 +185,7 @@ async function getPipelineRunNodes(type: string, id?: string) {
   let pipelineData;
 
   if (id) {
-    pipelineData = pipelineRuns.filter((pipelineRun) => pipelineRun.id === id);;
+    pipelineData = pipelineRuns.filter(pipelineRun => pipelineRun.id === id);
   } else {
     pipelineData = pipelineRuns;
   }

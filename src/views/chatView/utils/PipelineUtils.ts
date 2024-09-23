@@ -57,8 +57,13 @@ export function getPaginatedTreeData(): TreeItem[] {
   let { treeItems } = getPipelineData();
   let paginatedTreeItems = [];
   let pagination = PipelineDataProvider.getInstance().pagination;
-  let paginatedTreeItem = { title: "pagination", name: `${pagination.currentPage} of ${pagination.totalPages}`, firstPage: false, lastPage: false };
-  
+  let paginatedTreeItem = {
+    title: 'pagination',
+    name: `${pagination.currentPage} of ${pagination.totalPages}`,
+    firstPage: false,
+    lastPage: false,
+  };
+
   for (let i = 0; i < treeItems.length; i++) {
     paginatedTreeItems.push(treeItems[i]);
   }

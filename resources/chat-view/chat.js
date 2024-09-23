@@ -68,14 +68,15 @@
     });
 
     const pipelineRunsDropdown = document.querySelectorAll('div.tree-item-children')[0];
-    let isContextPipelineRunsDisplayed = localStorage.getItem('displayContextPipelineRuns') === 'true';
+    let isContextPipelineRunsDisplayed =
+      localStorage.getItem('displayContextPipelineRuns') === 'true';
 
     if (isContextPipelineRunsDisplayed === true) {
-        pipelineRunsDropdown.classList.add('open');
-      } else {
-        pipelineRunsDropdown.classList.remove('open');
-      }
+      pipelineRunsDropdown.classList.add('open');
+    } else {
+      pipelineRunsDropdown.classList.remove('open');
     }
+  }
 
   function sendMessage(event) {
     event.preventDefault();
@@ -328,172 +329,183 @@
     });
   }
 
+  document.addEventListener('DOMContentLoaded', event => {
+    const contextButton = document.getElementById('contextButton');
+    const optionsDropdown = document.getElementById('optionsDropdown');
 
-
-
-document.addEventListener('DOMContentLoaded', (event) => {
-  const contextButton = document.getElementById('contextButton');
-  const optionsDropdown = document.getElementById('optionsDropdown');
-  
-  let isContextDisplayed = localStorage.getItem('displayContext') === 'true';
-  if (isContextDisplayed) {
-    optionsDropdown.classList.remove('hidden');
-    localStorage.setItem('displayContext', "true");
-  } else {
-    optionsDropdown.classList.add('hidden');
-    localStorage.setItem('displayContext', "false");
-  }
-  
-  contextButton.addEventListener('click', (event) => {
-    event.stopPropagation();
-    optionsDropdown.classList.toggle('hidden');
-    isContextDisplayed = !isContextDisplayed;
-    localStorage.setItem('displayContext', String(isContextDisplayed));
-  });
-  
-  document.addEventListener('click', (event) => {
-    if (!contextButton.contains(event.target) && !optionsDropdown.contains(event.target)) {
+    let isContextDisplayed = localStorage.getItem('displayContext') === 'true';
+    if (isContextDisplayed) {
+      optionsDropdown.classList.remove('hidden');
+    } else {
       optionsDropdown.classList.add('hidden');
-      localStorage.setItem('displayContext', "false");
     }
-  });
-  
-  const pipelineRunsDropdown = document.querySelectorAll('div.tree-item-children')[0];
-  let isContextPipelineRunsDisplayed = localStorage.getItem('displayContextPipelineRuns') === 'true';
-  if (isContextPipelineRunsDisplayed === true && isContextDisplayed === true) {
-    pipelineRunsDropdown.classList.add('open');
-  } else {
-    pipelineRunsDropdown.classList.remove('open');
-  }
 
-  const treeItemsWithChildren = Array.from(document.querySelectorAll('div.tree-item-wrapper'))
-  .filter(treeItemsWithChildren => treeItemsWithChildren.querySelector('div.tree-item-children') !== null);
+    contextButton.addEventListener('click', event => {
+      event.stopPropagation();
+      optionsDropdown.classList.toggle('hidden');
+      isContextDisplayed = !isContextDisplayed;
+      localStorage.setItem('displayContext', String(isContextDisplayed));
+    });
 
-  treeItemsWithChildren.forEach(wrapper => {
-    wrapper.querySelector('div.tree-item-content').addEventListener('click', function(event) {
-      const checkboxEl = this.querySelector('input[type="checkbox"]');
-      const childrenEl = this.parentNode.querySelector('div.tree-item-children');
-      const chevronEl = this.querySelector('span.tree-item-icon');
-      const prevPageButton = document.getElementById('prevPage');
-      const nextPageButton = document.getElementById('nextPage');
+    document.addEventListener('click', event => {
+      if (!contextButton.contains(event.target) && !optionsDropdown.contains(event.target)) {
+        optionsDropdown.classList.add('hidden');
+        isContextDisplayed = false;
+        localStorage.setItem('displayContext', String(isContextDisplayed));
+      }
+    });
 
-      if (event.target !== checkboxEl && event.target !== nextPageButton && event.target !== prevPageButton) {
-        event.stopPropagation();
-        childrenEl.classList.toggle('open');
-        isContextPipelineRunsDisplayed = !isContextPipelineRunsDisplayed;
-        localStorage.setItem('displayContextPipelineRuns', String(isContextPipelineRunsDisplayed));
+    const pipelineRunsDropdown = document.querySelectorAll('div.tree-item-children')[0];
+    let isContextPipelineRunsDisplayed =
+      localStorage.getItem('displayContextPipelineRuns') === 'true';
+    if (isContextPipelineRunsDisplayed === true && isContextDisplayed === true) {
+      pipelineRunsDropdown.classList.add('open');
+    } else {
+      pipelineRunsDropdown.classList.remove('open');
+    }
 
-        if (childrenEl.classList.contains('open')) {
-          chevronEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
-        } else {
-          chevronEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>';
+    const treeItemsWithChildren = Array.from(
+      document.querySelectorAll('div.tree-item-wrapper')
+    ).filter(
+      treeItemsWithChildren =>
+        treeItemsWithChildren.querySelector('div.tree-item-children') !== null
+    );
+
+    treeItemsWithChildren.forEach(wrapper => {
+      wrapper.querySelector('div.tree-item-content').addEventListener('click', function (event) {
+        const checkboxEl = this.querySelector('input[type="checkbox"]');
+        const childrenEl = this.parentNode.querySelector('div.tree-item-children');
+        const chevronEl = this.querySelector('span.tree-item-icon');
+        const prevPageButton = document.getElementById('prevPage');
+        const nextPageButton = document.getElementById('nextPage');
+
+        if (
+          event.target !== checkboxEl &&
+          event.target !== nextPageButton &&
+          event.target !== prevPageButton
+        ) {
+          event.stopPropagation();
+          childrenEl.classList.toggle('open');
+          isContextPipelineRunsDisplayed = !isContextPipelineRunsDisplayed;
+          localStorage.setItem(
+            'displayContextPipelineRuns',
+            String(isContextPipelineRunsDisplayed)
+          );
+
+          if (childrenEl.classList.contains('open')) {
+            chevronEl.innerHTML =
+              '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+          } else {
+            chevronEl.innerHTML =
+              '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>';
+          }
+        }
+      });
+    });
+
+    const textarea = document.getElementById('messageInput');
+    const sendButton = document.getElementById('sendMessage');
+    const loader = document.getElementById('loader');
+    let isInputDisabled = false;
+
+    function showLoader() {
+      loader.classList.add('loader');
+    }
+
+    function hideLoader() {
+      loader.classList.remove('loader');
+    }
+
+    function disableInput() {
+      isInputDisabled = true;
+      sendButton.disabled = true;
+    }
+
+    function enableInput() {
+      isInputDisabled = false;
+      sendButton.disabled = false;
+    }
+
+    // Listen for messages from the extension
+    window.addEventListener('message', event => {
+      const message = event.data;
+
+      switch (message.text) {
+        case 'disableInput':
+          disableInput();
+          break;
+        case 'enableInput':
+          enableInput();
+          break;
+        default:
+          break;
+      }
+
+      if (message.command === 'hideLoader') {
+        hideLoader();
+      }
+    });
+
+    textarea.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+
+        if (!isInputDisabled) {
+          const form = document.getElementById('chatForm');
+          const event = new SubmitEvent('submit', {
+            bubbles: true,
+            cancelable: true,
+          });
+          form.dispatchEvent(event);
+          showLoader();
         }
       }
     });
-  });
-  const textarea = document.getElementById('messageInput');
-  const sendButton = document.getElementById('sendMessage');
-  const loader = document.getElementById('loader');
-  let isInputDisabled = false;
 
-  function showLoader() {
-    loader.classList.add('loader');
-  }
-
-  function hideLoader() {
-    loader.classList.remove('loader');
-  }
-
-  function disableInput() {
-    isInputDisabled = true;
-    sendButton.disabled = true;
-  }
-
-  function enableInput() {
-    isInputDisabled = false;
-    sendButton.disabled = false;
-  }
-  
-  // Listen for messages from the extension
-  window.addEventListener('message', event => {
-    const message = event.data;
-
-    switch (message.text) {
-      case 'disableInput':
-        disableInput();
-        break;
-      case 'enableInput': 
-        enableInput();
-        break;
-      default:
-        break;
-    }
-
-    if (message.command === 'hideLoader') {
-      hideLoader();
-    }
-  });
-
-  textarea.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-
-      if (!isInputDisabled) {
-        const form = document.getElementById('chatForm');
-        const event = new SubmitEvent('submit', {
-          bubbles: true,
-          cancelable: true,
-        });
-        form.dispatchEvent(event);
-        showLoader();
-      }
-    }
-  });
-
-  textarea.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter' && e.shiftKey) {
-      // Insert a new line when Shift+Enter is pressed
-      e.preventDefault();
-      textarea.value += '\n';
-      textarea.scrollTop = textarea.scrollHeight;
-    }
-  });
-
-  // Restore dropdown state
-  restoreState();
-});
-
-// Function to restore the saved state
-function restoreState() {
-  const selectedProvider = localStorage.getItem('selectedProvider');
-  const selectedModel = localStorage.getItem('selectedModel');
-  const selectedContexts = JSON.parse(localStorage.getItem('selectedContexts')) || [];
-
-  if (selectedProvider) {
-    document.querySelector('#provider-dropdown').value = selectedProvider;
-  }
-  if (selectedModel) {
-    document.querySelector('#model-dropdown').value = selectedModel;
-  }
-
-  const allCheckboxes = document.querySelectorAll('#tree-view input[type="checkbox"]');
-
-  selectedContexts.forEach(savedValue => {
-    allCheckboxes.forEach(checkbox => {
-      if (checkbox.value === savedValue) {
-        checkbox.checked = true;
+    textarea.addEventListener('keypress', e => {
+      if (e.key === 'Enter' && e.shiftKey) {
+        // Insert a new line when Shift+Enter is pressed
+        e.preventDefault();
+        textarea.value += '\n';
+        textarea.scrollTop = textarea.scrollHeight;
       }
     });
+
+    // Restore dropdown state
+    restoreState();
   });
 
-  const pipelineRunsDropdown = document.querySelectorAll('div.tree-item-children')[0];
-  let isContextPipelineRunsDisplayed = localStorage.getItem('displayContextPipelineRuns') === 'true';
+  // Function to restore the saved state
+  function restoreState() {
+    const selectedProvider = localStorage.getItem('selectedProvider');
+    const selectedModel = localStorage.getItem('selectedModel');
+    const selectedContexts = JSON.parse(localStorage.getItem('selectedContexts')) || [];
 
-  if (isContextPipelineRunsDisplayed === true) {
+    if (selectedProvider) {
+      document.querySelector('#provider-dropdown').value = selectedProvider;
+    }
+    if (selectedModel) {
+      document.querySelector('#model-dropdown').value = selectedModel;
+    }
+
+    const allCheckboxes = document.querySelectorAll('#tree-view input[type="checkbox"]');
+
+    selectedContexts.forEach(savedValue => {
+      allCheckboxes.forEach(checkbox => {
+        if (checkbox.value === savedValue) {
+          checkbox.checked = true;
+        }
+      });
+    });
+
+    const pipelineRunsDropdown = document.querySelectorAll('div.tree-item-children')[0];
+    let isContextPipelineRunsDisplayed =
+      localStorage.getItem('displayContextPipelineRuns') === 'true';
+
+    if (isContextPipelineRunsDisplayed === true) {
       pipelineRunsDropdown.classList.add('open');
     } else {
       pipelineRunsDropdown.classList.remove('open');
     }
   }
-  
 })();
