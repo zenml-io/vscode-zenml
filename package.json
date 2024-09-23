@@ -50,7 +50,7 @@
     "compile": "webpack",
     "compile-tests": "tsc -p . --outDir out",
     "deploy": "vsce publish",
-    "format": "prettier --ignore-path .gitignore --write \"**/*.+(ts|json)\"",
+    "format": "prettier --ignore-path .gitignore --write \"**/*.+(ts|json|js|html)\"",
     "format-check": "prettier --ignore-path .gitignore --check \"**/*.+(ts|json)\"",
     "install": "pip install -r requirements.txt --target bundled/libs",
     "lint": "eslint src --ext ts",
