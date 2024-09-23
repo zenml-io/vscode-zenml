@@ -145,8 +145,10 @@ function convertTreeDataToHtml(treeData: TreeItem[], level = 0): string {
       checkboxEl = '';
       if (item.firstPage) {
         nextPageEl = `<button class"tree-item-button" id="nextPage">Next</button>`;
+        prevPageEl = `<button class"tree-item-button" id="prevPage" style="visibility: hidden;">Prev</button>`;
       } else if (item.lastPage) {
         prevPageEl = `<button class"tree-item-button" id="prevPage">Prev</button>`;
+        nextPageEl = `<button class"tree-item-button" id="nextPage" style="visibility: hidden;">Next</button>`;
       } else {
         nextPageEl = `<button class"tree-item-button" id="nextPage">Next</button>`;
         prevPageEl = `<button class"tree-item-button" id="prevPage">Prev</button>`;
