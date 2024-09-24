@@ -78,11 +78,13 @@ export class AIService {
 
     const keyStr = `${this.provider.toUpperCase()}_API_KEY`;
     const apiKey = await this.context.secrets.get(`zenml.${this.provider}.key`);
-    process.env[keyStr] = process.env[keyStr] || apiKey;
+    if (!process.env[keyStr] && apiKey) {
+      process.env[keyStr] = apiKey;
+    }
 
     if (!process.env[keyStr] && !apiKey) {
       vscode.window.showErrorMessage(
-        `No ${this.provider} key configured. Please add an environment variable of save a variable through the command palette.`
+        `No ${this.provider} API key configured. Please add an environment variable or save a key through the command palette.`
       );
     }
   }
