@@ -16,6 +16,7 @@ import * as vscode from 'vscode';
 // typescript incorrectly identifies the .js as a file extension, not the name of the module
 // @ts-expect-error
 import { TokenJS } from 'token.js';
+import AIStepFixer from '../commands/pipelines/AIStepFixer';
 
 const supportedLLMProviders = ['anthropic', 'gemini', 'openai'] as const;
 export type SupportedLLMProviders = (typeof supportedLLMProviders)[number];
@@ -115,7 +116,10 @@ export class AIService {
     code: string
   ): Promise<FixMyPipelineResponse | undefined> {
     if (!this.provider || !this.model) {
-      vscode.window.showErrorMessage(`No AI model`);
+      AIStepFixer.getInstance().selectLLM();
+      vscode.window.showErrorMessage(
+        `No AI model selected. Please select one through the command palette above and try again.`
+      );
       return;
     }
 
