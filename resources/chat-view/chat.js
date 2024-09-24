@@ -11,6 +11,7 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 (function () {
+  let currentAssistantMessage = '';
   const vscode = acquireVsCodeApi();
 
   // Function to save the current state
@@ -201,7 +202,7 @@
         break;
       }
       case 'showInfo': {
-        vscode.window.showInformationMesage(message.text);
+        vscode.window.showInformationMessage(message.text);
         break;
       }
       case 'updateModelList': {
@@ -416,96 +417,29 @@
       loader.classList.remove('loader');
     }
 
-    function disableInput() {
-      isInputDisabled = true;
-      sendButton.disabled = true;
-    }
-
-    function enableInput() {
-      isInputDisabled = false;
-      sendButton.disabled = false;
-    }
-
-    // Listen for messages from the extension
-    window.addEventListener('message', event => {
-      const message = event.data;
-
-      switch (message.text) {
-        case 'disableInput':
-          disableInput();
-          break;
-        case 'enableInput':
-          enableInput();
-          break;
-        default:
-          break;
-      }
-
-      if (message.command === 'hideLoader') {
-        hideLoader();
-      }
-    });
-
     textarea.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-
-        if (!isInputDisabled) {
-          const form = document.getElementById('chatForm');
-          const event = new SubmitEvent('submit', {
-            bubbles: true,
-            cancelable: true,
-          });
-          form.dispatchEvent(event);
-          showLoader();
+      if (e.key === 'Enter') {
+        if (e.shiftKey) {
+          // Insert a new line when Shift+Enter is pressed
+          e.preventDefault();
+          textarea.value += '\n';
+          textarea.scrollTop = textarea.scrollHeight;
+        } else {
+          e.preventDefault();
+          if (!isInputDisabled) {
+            const form = document.getElementById('chatForm');
+            const event = new SubmitEvent('submit', {
+              bubbles: true,
+              cancelable: true,
+            });
+            form.dispatchEvent(event);
+            showLoader();
+          }
         }
-      }
-    });
-
-    textarea.addEventListener('keypress', e => {
-      if (e.key === 'Enter' && e.shiftKey) {
-        // Insert a new line when Shift+Enter is pressed
-        e.preventDefault();
-        textarea.value += '\n';
-        textarea.scrollTop = textarea.scrollHeight;
       }
     });
 
     // Restore dropdown state
     restoreState();
   });
-
-  // Function to restore the saved state
-  function restoreState() {
-    const selectedProvider = localStorage.getItem('selectedProvider');
-    const selectedModel = localStorage.getItem('selectedModel');
-    const selectedContexts = JSON.parse(localStorage.getItem('selectedContexts')) || [];
-
-    if (selectedProvider) {
-      document.querySelector('#provider-dropdown').value = selectedProvider;
-    }
-    if (selectedModel) {
-      document.querySelector('#model-dropdown').value = selectedModel;
-    }
-
-    const allCheckboxes = document.querySelectorAll('#tree-view input[type="checkbox"]');
-
-    selectedContexts.forEach(savedValue => {
-      allCheckboxes.forEach(checkbox => {
-        if (checkbox.value === savedValue) {
-          checkbox.checked = true;
-        }
-      });
-    });
-
-    const pipelineRunsDropdown = document.querySelectorAll('div.tree-item-children')[0];
-    let isContextPipelineRunsDisplayed =
-      localStorage.getItem('displayContextPipelineRuns') === 'true';
-
-    if (isContextPipelineRunsDisplayed === true) {
-      pipelineRunsDropdown.classList.add('open');
-    } else {
-      pipelineRunsDropdown.classList.remove('open');
-    }
-  }
 })();
