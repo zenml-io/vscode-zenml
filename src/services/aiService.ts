@@ -84,8 +84,9 @@ export class AIService {
 
     if (!process.env[keyStr] && !apiKey) {
       vscode.window.showErrorMessage(
-        `No ${this.provider} API key configured. Please add an environment variable or save a key through the command palette.`
+        `No ${this.provider} API key configured. Please add an environment variable or save a key through the command palette and try again.`
       );
+      vscode.commands.executeCommand('zenml.registerLLMAPIKey');
     }
   }
 
@@ -109,7 +110,7 @@ export class AIService {
     code: string
   ): Promise<FixMyPipelineResponse | undefined> {
     if (!this.provider || !this.model) {
-      // TODO display an error
+      vscode.window.showErrorMessage(`No AI model`);
       return;
     }
 
