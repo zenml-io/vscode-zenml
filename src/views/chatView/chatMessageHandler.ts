@@ -54,41 +54,41 @@ const commandHandlers: Record<string, CommandHandler> = {
       }
     }
   },
-  showInfo: (message, chatDataProvider) => {
+  showInfo: async (message, chatDataProvider) => {
     if (!message.text) {
       console.error('showInfo command received without text property');
-      return Promise.resolve();
+      return;
     }
     try {
       chatDataProvider.showInfoMessage(message.text);
     } catch (error) {
       console.error('Error showing info message:', error);
+      chatDataProvider.showInfoMessage('Failed to show info message. Please try again.');
     }
-    return Promise.resolve();
   },
-  updateProvider: (message, chatDataProvider) => {
+  updateProvider: async (message, chatDataProvider) => {
     if (!message.provider) {
       console.error('updateProvider command received without provider property');
-      return Promise.resolve();
+      return;
     }
     try {
       chatDataProvider.updateProvider(message.provider);
     } catch (error) {
       console.error('Error updating provider:', error);
+      chatDataProvider.showInfoMessage('Failed to update provider. Please try again.');
     }
-    return Promise.resolve();
   },
-  updateModel: (message, chatDataProvider) => {
+  updateModel: async (message, chatDataProvider) => {
     if (!message.model) {
       console.error('updateModel command received without model property');
-      return Promise.resolve();
+      return;
     }
     try {
       chatDataProvider.updateModel(message.model);
     } catch (error) {
       console.error('Error updating model:', error);
+      chatDataProvider.showInfoMessage('Failed to update model. Please try again.');
     }
-    return Promise.resolve();
   },
   prevPage: async (_, chatDataProvider) => {
     try {
