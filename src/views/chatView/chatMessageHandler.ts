@@ -16,10 +16,25 @@ import { WebviewMessage } from '../../types/ChatTypes';
 
 type CommandHandler = (message: WebviewMessage, chatDataProvider: ChatDataProvider) => Promise<void>;
 
+class NetworkError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'NetworkError';
+  }
+}
+
+class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
 const commandHandlers: Record<string, CommandHandler> = {
   sendMessage: async (message, chatDataProvider) => {
     if (!message.text) {
       console.error('sendMessage command received without text property');
+      chatDataProvider.showInfoMessage('Message text is required.');
       return;
     }
     try {
@@ -31,7 +46,13 @@ const commandHandlers: Record<string, CommandHandler> = {
       );
     } catch (error) {
       console.error('Error adding message:', error);
-      chatDataProvider.showInfoMessage('Failed to send message. Please try again.');
+      if (error instanceof NetworkError) {
+        chatDataProvider.showInfoMessage('Network error. Please check your connection and try again.');
+      } else if (error instanceof ValidationError) {
+        chatDataProvider.showInfoMessage('Invalid message format. Please try again.');
+      } else {
+        chatDataProvider.showInfoMessage('An unexpected error occurred. Please try again.');
+      }
     }
   },
   clearChat: async (_, chatDataProvider) => {
