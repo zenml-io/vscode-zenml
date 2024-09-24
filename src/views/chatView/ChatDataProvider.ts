@@ -25,10 +25,14 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
   private currentProvider: string = 'Gemini';
   private currentModel: string = 'gemini-pro';
   private eventBus: EventBus = EventBus.getInstance();
+  private _disposables: vscode.Disposable[] = [];
 
   constructor(private readonly context: vscode.ExtensionContext) {
     initializeTokenJS(this.context, this.currentProvider);
     this.eventBus.addListener(LSP_ZENML_STACK_CHANGED, this.refreshWebview.bind(this));
+    this._disposables.push(
+      new vscode.Disposable(() => this.eventBus.removeListener(LSP_ZENML_STACK_CHANGED, this.refreshWebview.bind(this)))
+    );
   }
 
   resolveWebviewView(
@@ -40,9 +44,19 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
     this.configureWebViewOptions(webviewView.webview);
     this.loadWebviewContent();
 
-    webviewView.webview.onDidReceiveMessage(async message => {
+    const messageListener = async (message: any) => {
       await handleWebviewMessage(message, this);
-    });
+    };
+
+    webviewView.webview.onDidReceiveMessage(messageListener);
+    this._disposables.push(
+      new vscode.Disposable(() => webviewView.webview.onDidReceiveMessage(messageListener))
+    );
+  }
+
+  dispose(): void {
+    this._disposables.forEach(disposable => disposable.dispose());
+    this._disposables = [];
   }
 
   private configureWebViewOptions(webview: vscode.Webview) {

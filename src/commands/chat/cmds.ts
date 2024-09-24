@@ -38,7 +38,7 @@ const openChat = (context: vscode.ExtensionContext) => {
   chatDataProvider.resolveWebviewView(fakeWebviewView, fakeContext, dummyCancellationToken);
 
   panel.onDidDispose(() => {
-    // Clean up resources or perform any necessary actions when the panel is disposed
+    chatDataProvider.dispose();
   });
 };
 
