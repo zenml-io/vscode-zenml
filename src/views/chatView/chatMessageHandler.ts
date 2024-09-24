@@ -13,22 +13,9 @@
 import { PipelineDataProvider } from '../activityBar';
 import { ChatDataProvider } from './ChatDataProvider';
 import { WebviewMessage } from '../../types/ChatTypes';
+import { NetworkError, ValidationError, StorageError } from './utils/CustomErrors';
 
 type CommandHandler = (message: WebviewMessage, chatDataProvider: ChatDataProvider) => Promise<void>;
-
-class NetworkError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'NetworkError';
-  }
-}
-
-class ValidationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'ValidationError';
-  }
-}
 
 const commandHandlers: Record<string, CommandHandler> = {
   sendMessage: async (message, chatDataProvider) => {
@@ -60,7 +47,11 @@ const commandHandlers: Record<string, CommandHandler> = {
       await chatDataProvider.clearChatLog();
     } catch (error) {
       console.error('Error clearing chat log:', error);
-      chatDataProvider.showInfoMessage('Failed to clear chat. Please try again.');
+      if (error instanceof StorageError) {
+        chatDataProvider.showInfoMessage('Unable to clear chat history. Storage error occurred.');
+      } else {
+        chatDataProvider.showInfoMessage('Failed to clear chat. Please try again.');
+      }
     }
   },
   showInfo: (message, chatDataProvider) => {
