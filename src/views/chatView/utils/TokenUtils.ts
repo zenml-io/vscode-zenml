@@ -98,13 +98,22 @@ export async function* getChatResponse(
       })),
     });
 
-    for await (const part of stream) {
-      if (part.choices[0]?.delta?.content) {
-        yield part.choices[0].delta.content;
+    try {
+      for await (const part of stream) {
+        if (part.choices[0]?.delta?.content) {
+          yield part.choices[0].delta.content;
+        }
       }
+    } catch (streamError) {
+      console.error('Streaming error in getChatResponse:', streamError);
+      throw new Error(`Streaming error with ${provider} API: ${streamError instanceof Error ? streamError.message : String(streamError)}`);
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in getChatResponse:', error);
-    throw new Error(`Error with ${provider} API: ${error.message}`);
+    if (error instanceof Error) {
+      throw new Error(`Error with ${provider} API: ${error.message}`);
+    } else {
+      throw new Error(`Error with ${provider} API: ${String(error)}`);
+    }
   }
 }
