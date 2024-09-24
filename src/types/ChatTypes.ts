@@ -25,3 +25,11 @@ export interface TreeItem {
   firstPage?: boolean;
   lastPage?: boolean;
 }
+
+export interface WebviewMessage {
+  command: string;
+  text?: string;
+  context?: string[];
+  provider?: string;
+  model?: string;
+}

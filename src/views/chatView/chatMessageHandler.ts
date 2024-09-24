@@ -12,40 +12,57 @@
 // permissions and limitations under the License.
 import { PipelineDataProvider } from '../activityBar';
 import { ChatDataProvider } from './ChatDataProvider';
+import { WebviewMessage } from '../../types/ChatTypes';
 
-export async function handleWebviewMessage(message: any, chatDataProvider: ChatDataProvider) {
-  if (message.command === 'sendMessage' && message.text) {
-    await chatDataProvider.addMessage(
-      message.text,
-      message.context,
-      message.provider,
-      message.model
-    );
-  }
+type CommandHandler = (message: WebviewMessage, chatDataProvider: ChatDataProvider) => Promise<void>;
 
-  if (message.command === 'clearChat') {
+const commandHandlers: Record<string, CommandHandler> = {
+  sendMessage: async (message, chatDataProvider) => {
+    if (message.text) {
+      await chatDataProvider.addMessage(
+        message.text,
+        message.context,
+        message.provider,
+        message.model
+      );
+    }
+  },
+  clearChat: async (_, chatDataProvider) => {
     await chatDataProvider.clearChatLog();
-  }
-
-  if (message.command === 'showInfo') {
-    chatDataProvider.showInfoMessage(message.text);
-  }
-
-  if (message.command === 'updateProvider') {
-    chatDataProvider.updateProvider(message.provider);
-  }
-
-  if (message.command === 'updateModel') {
-    chatDataProvider.updateModel(message.model);
-  }
-
-  if (message.command === 'prevPage') {
+  },
+  showInfo: (message, chatDataProvider) => {
+    if (message.text) {
+      chatDataProvider.showInfoMessage(message.text);
+    }
+    return Promise.resolve();
+  },
+  updateProvider: (message, chatDataProvider) => {
+    if (message.provider) {
+      chatDataProvider.updateProvider(message.provider);
+    }
+    return Promise.resolve();
+  },
+  updateModel: (message, chatDataProvider) => {
+    if (message.model) {
+      chatDataProvider.updateModel(message.model);
+    }
+    return Promise.resolve();
+  },
+  prevPage: async (_, chatDataProvider) => {
     await PipelineDataProvider.getInstance().goToPreviousPage();
     await chatDataProvider.refreshWebview();
-  }
-
-  if (message.command === 'nextPage') {
+  },
+  nextPage: async (_, chatDataProvider) => {
     await PipelineDataProvider.getInstance().goToNextPage();
     await chatDataProvider.refreshWebview();
+  },
+};
+
+export async function handleWebviewMessage(message: WebviewMessage, chatDataProvider: ChatDataProvider) {
+  const handler = commandHandlers[message.command];
+  if (handler) {
+    await handler(message, chatDataProvider);
+  } else {
+    console.warn(`Unknown command: ${message.command}`);
   }
 }
