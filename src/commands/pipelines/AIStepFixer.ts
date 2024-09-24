@@ -67,6 +67,7 @@ export default class AIStepFixer extends WebviewBase {
     const response = await ai.fixMyPipelineRequest(log, String(stepData.sourceCode));
 
     if (!response) {
+      // TODO send the message to the webview to close the dropdown
       return;
     }
     const { message, code } = response;

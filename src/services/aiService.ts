@@ -107,6 +107,7 @@ export class AIService {
     code: string
   ): Promise<FixMyPipelineResponse | undefined> {
     if (!this.provider || !this.model) {
+      // TODO display an error
       return;
     }
 
@@ -160,6 +161,8 @@ export class AIService {
   }
 
   public setModel(provider: SupportedLLMProviders, model: SupportedLLMModels) {
+    this.provider = provider;
+    this.model = model;
     const config = `${provider}.${model}`;
     vscode.workspace.getConfiguration('zenml').update('llm-model', config);
   }
