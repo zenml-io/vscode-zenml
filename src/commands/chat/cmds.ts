@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
+// ... existing code ...
 import * as vscode from 'vscode';
 import { ChatDataProvider } from '../../views/chatView/ChatDataProvider';
 
@@ -21,21 +22,20 @@ const openChat = (context: vscode.ExtensionContext) => {
 
   const chatDataProvider = new ChatDataProvider(context);
 
-  const fakeContext = {} as vscode.WebviewViewResolveContext;
-
-  const dummyCancellationToken: vscode.CancellationToken = {
-    isCancellationRequested: false,
-    onCancellationRequested: callback => {
-      return new vscode.Disposable(() => {});
-    },
+  // Create a WebviewViewResolveContext
+  const webviewViewResolveContext: vscode.WebviewViewResolveContext<unknown> = {
+    state: undefined,
   };
 
-  const fakeWebviewView = {
+  const webviewView = {
     webview: panel.webview,
     onDidDispose: panel.onDidDispose,
   } as vscode.WebviewView;
 
-  chatDataProvider.resolveWebviewView(fakeWebviewView, fakeContext, dummyCancellationToken);
+  chatDataProvider.resolveWebviewView(webviewView, webviewViewResolveContext, {
+    isCancellationRequested: false,
+    onCancellationRequested: callback => new vscode.Disposable(() => {}),
+  });
 
   panel.onDidDispose(() => {
     chatDataProvider.dispose();
