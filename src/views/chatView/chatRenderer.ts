@@ -12,7 +12,7 @@
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { marked } from 'marked';
+import { marked, Renderer, Tokens } from 'marked';
 import { ChatMessage, TreeItem } from '../../types/ChatTypes';
 import { getTreeData } from './utils/PipelineUtils';
 
@@ -76,16 +76,14 @@ export function renderChatLog(
   messages: ChatMessage[],
   streamingMessage: ChatMessage | null = null
 ): string {
-  const renderer = {
-    // @ts-ignore
-    code({ text, lang, escaped, isInline }) {
-      const code = text.replace(/\n$/, '') + (isInline ? '' : '\n');
-      return isInline ? `<code>${code}</code>` : '<pre><code>' + code + '</code></pre>\n';
+  const renderer: Partial<Renderer> = {
+    code({ text, lang, escaped }: Tokens.Code) {
+      const formattedCode = text.replace(/\n$/, '') + (escaped ? '' : '\n');
+      return escaped ? `<code>${formattedCode}</code>` : '<pre><code>' + formattedCode + '</code></pre>\n';
     },
   };
 
-  // @ts-ignore
-  marked.use({ renderer });
+  marked.use({ renderer: renderer as Renderer });
 
   const renderedMessages = messages
     .filter(msg => msg['role'] !== 'system')
