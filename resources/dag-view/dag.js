@@ -15,6 +15,8 @@ import svgPanZoom from 'svg-pan-zoom';
 (() => {
   const dag = document.querySelector('#dag');
   let contextMenu = null;
+  let currentLLM = 'none';
+  let LLMFetched = null;
   const panZoom = svgPanZoom(dag);
   panZoom.enableControlIcons();
   panZoom.setMaxZoom(40);
@@ -33,6 +35,12 @@ import svgPanZoom from 'svg-pan-zoom';
   window.addEventListener('resize', resize);
 
   const edges = [...document.querySelectorAll('polyline')];
+
+  function fetchingLLM() {
+    return new Promise(resolve => {
+      LLMFetched = () => resolve(true);
+    });
+  }
 
   dag.addEventListener('mouseover', evt => {
     let target = evt.target;
@@ -86,7 +94,7 @@ import svgPanZoom from 'svg-pan-zoom';
     }
   });
 
-  dag.addEventListener('contextmenu', evt => {
+  dag.addEventListener('contextmenu', async evt => {
     closeContextMenu();
     evt.preventDefault();
 
@@ -95,6 +103,11 @@ import svgPanZoom from 'svg-pan-zoom';
 
     if (!step && !artifact) {
       return;
+    }
+
+    if (step?.querySelector('svg.failed')) {
+      vscode.postMessage({ command: `getLLM`, id: '' });
+      await fetchingLLM();
     }
 
     openContextMenu(
@@ -107,7 +120,7 @@ import svgPanZoom from 'svg-pan-zoom';
               ? `<li id="suggest-fix">Suggest Fix</li>
                 <li id="select-model">
                   <span class="context-menu-subitem-indicator">∟</span>
-                  Choose AI Model
+                  Choose AI Model (current: ${currentLLM})
                 </li>`
               : ''
           }
@@ -121,6 +134,12 @@ import svgPanZoom from 'svg-pan-zoom';
 
   window.addEventListener('message', evt => {
     if (evt.data === 'AI Query Complete') closeContextMenu();
+    if (evt.data.includes('model: ')) {
+      currentLLM = evt.data.split('model: ')[1];
+      try {
+        LLMFetched();
+      } catch {}
+    }
   });
 
   function openContextMenu(html, x, y, target) {

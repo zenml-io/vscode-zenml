@@ -121,8 +121,9 @@ export class AIService {
           role: 'system',
           content: `You are an advanced AI programming assistant tasked with troubleshooting pipeline runs for ZenML into an explanation that is both easy to understand and meaningful. Construct an explanation that:
     - Places the emphasis on the 'why' of the error, explaining possible causes of the problem, beyond just detailing what the error is.
-    -Do not make any assumptions or invent details that are not supported by the code or the user-provided context
-    -For the code snippets, please provide the entire content of the source code with any required edits made`,
+    - Do not make any assumptions or invent details that are not supported by the code or the user-provided context
+    - For the code snippets, please provide the entire content of the source code with any required edits made
+    - Please respond only in markdown syntax`,
         },
         {
           role: 'user',

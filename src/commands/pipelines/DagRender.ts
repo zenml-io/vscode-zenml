@@ -22,6 +22,7 @@ import { PanelDataProvider } from '../../views/panel/panelView/PanelDataProvider
 import Panels from '../../common/panels';
 import WebviewBase from '../../common/WebviewBase';
 import AIStepFixer from './AIStepFixer';
+import { AIService } from '../../services/aiService';
 
 const ROOT_PATH = ['resources', 'dag-view'];
 const CSS_FILE = 'dag.css';
@@ -134,6 +135,13 @@ export default class DagRenderer extends WebviewBase {
         case 'selectLLM':
           if (!WebviewBase.context) return;
           AIStepFixer.getInstance().selectLLM();
+          break;
+
+        case 'getLLM':
+          if (!WebviewBase.context) return;
+          panel.webview.postMessage(
+            `model: ${AIService.getInstance(WebviewBase.context).model || 'none'}`
+          );
           break;
       }
     };

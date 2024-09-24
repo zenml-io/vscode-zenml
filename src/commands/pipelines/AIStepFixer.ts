@@ -67,7 +67,7 @@ export default class AIStepFixer extends WebviewBase {
     const response = await ai.fixMyPipelineRequest(log, String(stepData.sourceCode));
 
     if (!response) {
-      // TODO send the message to the webview to close the dropdown
+      this.closeWebviewContextMenu(existingPanel);
       return;
     }
     const { message, code } = response;
@@ -108,10 +108,7 @@ export default class AIStepFixer extends WebviewBase {
     }
 
     this.createVirtualDocument(id, message || 'Something went wrong', existingPanel);
-
-    if (existingPanel) {
-      existingPanel.webview.postMessage('AI Query Complete');
-    }
+    this.closeWebviewContextMenu(existingPanel);
   }
 
   public async updateCodeRecommendation(recUri: vscode.Uri) {
@@ -124,6 +121,12 @@ export default class AIStepFixer extends WebviewBase {
       rec.currentCodeIndex + 1 < rec.code.length ? rec.currentCodeIndex + 1 : 0;
 
     this.editStepFile(rec.sourceUri, rec.code[rec.currentCodeIndex], rec.sourceCode, false);
+  }
+
+  private closeWebviewContextMenu(existingPanel: vscode.WebviewPanel | undefined) {
+    if (existingPanel) {
+      existingPanel.webview.postMessage('AI Query Complete');
+    }
   }
 
   private async createVirtualDocument(
