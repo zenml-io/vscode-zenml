@@ -42,6 +42,20 @@ export interface TreeItem {
 }
 
 /**
+    * Represents a context item in the tree structure.
+    */
+export interface ContextItem {
+  /** The name of the context item. */
+  name: string;
+  /** The value associated with the context item. */
+  value: string;
+  /** The title of the context item. */
+  title: string;
+  /** The children of the context item (optional). */
+  children?: TreeItem[];
+}
+
+/**
  * Represents the available AI models.
  */
 export type AIModel =

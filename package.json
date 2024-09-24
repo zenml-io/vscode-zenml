@@ -530,6 +530,7 @@
     "@vscode/python-extension": "^1.0.5",
     "axios": "^1.7.7",
     "dagre": "^0.8.5",
+    "date-fns": "^4.1.0",
     "fs-extra": "^11.2.0",
     "hbs": "^4.2.0",
     "ky": "^1.7.1",
