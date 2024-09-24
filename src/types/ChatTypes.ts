@@ -11,28 +11,42 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 
+/**
+ * Represents a chat message.
+ */
 export interface ChatMessage {
+  /** The role of the message sender (e.g., user, assistant). */
   role: string;
+  /** The content of the message. */
   content: string;
 }
 
+/**
+ * Represents an item in a tree structure.
+ */
 export interface TreeItem {
+  /** The name of the tree item. */
   name: string;
+  /** The value associated with the tree item (optional). */
   value?: string | number;
+  /** The children of the tree item (optional). */
   children?: TreeItem[];
+  /** The title of the tree item (optional). */
   title?: string;
+  /** Whether the tree item is hidden (optional). */
   hidden?: boolean;
+  /** Whether the tree item is the first page (optional). */
   firstPage?: boolean;
+  /** Whether the tree item is the last page (optional). */
   lastPage?: boolean;
 }
 
-export interface WebviewMessage {
-  command: 'sendMessage' | 'clearChat' | 'showInfo' | 'updateProvider' | 'updateModel' | 'prevPage' | 'nextPage';
-  text?: string;
-  context?: string[];
-  provider?: 'openai' | 'anthropic' | 'gemini';
-  model?: | 'gemini-1.5-pro' 
-  | 'gemini-1.5-flash' 
+/**
+ * Represents the available AI models.
+ */
+export type AIModel =
+  | 'gemini-1.5-pro'
+  | 'gemini-1.5-flash'
   | 'gemini-1.0-pro'
   | 'gpt-4o'
   | 'gpt-4o-mini'
@@ -63,4 +77,19 @@ export interface WebviewMessage {
   | 'claude-2.1'
   | 'claude-2.0'
   | 'claude-instant-1.2';
+
+/**
+ * Represents a message sent to the webview.
+ */
+export interface WebviewMessage {
+  /** The command to be executed in the webview. */
+  command: 'sendMessage' | 'clearChat' | 'showInfo' | 'updateProvider' | 'updateModel' | 'prevPage' | 'nextPage';
+  /** The text content of the message (if applicable). */
+  text?: string;
+  /** Additional context for the message (if applicable). */
+  context?: string[];
+  /** The AI provider to be used (if applicable). */
+  provider?: 'openai' | 'anthropic' | 'gemini';
+  /** The AI model to be used (if applicable). */
+  model?: AIModel;
 }
