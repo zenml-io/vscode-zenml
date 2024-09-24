@@ -27,9 +27,6 @@ export function getWebviewContent(
   const htmlPath = vscode.Uri.joinPath(extensionUri, 'resources', 'chat-view', 'chat.html');
   let html = fs.readFileSync(htmlPath.fsPath, 'utf8');
 
-  const cssUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, 'resources', 'chat-view', 'chat.css')
-  );
   const jsUri = webview.asWebviewUri(
     vscode.Uri.joinPath(extensionUri, 'resources', 'chat-view', 'chat.js')
   );
@@ -39,7 +36,6 @@ export function getWebviewContent(
   let providerDropdownHtml = getProviderDropdownHtml(currentProvider, availableProviders);
   let modelDropdownHtml = getModelDropdownHtml(availableModels);
 
-  html = html.replace('${cssUri}', cssUri.toString());
   html = html.replace('${jsUri}', jsUri.toString());
   html = html.replace('${treeItemHtml}', treeItemHtml);
   html = html.replace('${providerDropdownHtml}', providerDropdownHtml);
