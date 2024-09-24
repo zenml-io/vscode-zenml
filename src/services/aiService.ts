@@ -63,12 +63,9 @@ export class AIService {
       return;
     }
 
-    const [provider, model] = configuration.split('.') as [
-      SupportedLLMProviders,
-      SupportedLLMModels,
-    ];
-    this.provider = provider;
-    this.model = model;
+    const [provider, model] = configuration.split('.');
+    this.provider = this.decode(provider) as SupportedLLMProviders;
+    this.model = this.decode(model) as SupportedLLMModels;
   }
 
   private async setAPIKey() {
@@ -84,7 +81,7 @@ export class AIService {
 
     if (!process.env[keyStr] && !apiKey) {
       vscode.window.showErrorMessage(
-        `No ${this.provider} API key configured. Please add an environment variable or save a key through the command palette and try again.`
+        `No ${this.provider} API key configured. Please add an environment variable or save a key through the command palette above and try again.`
       );
       vscode.commands.executeCommand('zenml.registerLLMAPIKey');
     }
@@ -95,6 +92,14 @@ export class AIService {
       .split('```')
       .filter(ele => ele.startsWith('python'))
       .map(snippet => snippet.slice(7));
+  }
+
+  private encode(str: string) {
+    return str.replaceAll('.', '%2E');
+  }
+
+  private decode(str: string) {
+    return str.replaceAll('%2E', '.');
   }
 
   public static getInstance(context: ExtensionContext) {
@@ -165,9 +170,9 @@ export class AIService {
   }
 
   public setModel(provider: SupportedLLMProviders, model: SupportedLLMModels) {
-    this.provider = provider;
-    this.model = model;
-    const config = `${provider}.${model}`;
+    this.provider = this.decode(provider) as SupportedLLMProviders;
+    this.model = this.decode(model) as SupportedLLMModels;
+    const config = `${this.encode(provider)}.${this.encode(model)}`;
     vscode.workspace.getConfiguration('zenml').update('llm-model', config);
   }
 }
