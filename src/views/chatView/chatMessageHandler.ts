@@ -15,7 +15,11 @@ import { ChatDataProvider } from './ChatDataProvider';
 import { WebviewMessage } from '../../types/ChatTypes';
 import { NetworkError, ValidationError, StorageError } from './utils/CustomErrors';
 
-type CommandHandler = (message: WebviewMessage, chatDataProvider: ChatDataProvider) => Promise<void>;
+type CommandHandler = (
+  message: WebviewMessage,
+  chatDataProvider: ChatDataProvider,
+  pipelineDataProvider: PipelineDataProvider
+) => Promise<void>;
 
 const commandHandlers: Record<string, CommandHandler> = {
   sendMessage: async (message, chatDataProvider) => {
@@ -90,18 +94,18 @@ const commandHandlers: Record<string, CommandHandler> = {
       chatDataProvider.showInfoMessage('Failed to update model. Please try again.');
     }
   },
-  prevPage: async (_, chatDataProvider) => {
+  prevPage: async (_, chatDataProvider, pipelineDataProvider) => {
     try {
-      await PipelineDataProvider.getInstance().goToPreviousPage();
+      await pipelineDataProvider.goToPreviousPage();
       await chatDataProvider.refreshWebview();
     } catch (error) {
       console.error('Error going to previous page:', error);
       chatDataProvider.showInfoMessage('Failed to go to previous page. Please try again.');
     }
   },
-  nextPage: async (_, chatDataProvider) => {
+  nextPage: async (_, chatDataProvider, pipelineDataProvider) => {
     try {
-      await PipelineDataProvider.getInstance().goToNextPage();
+      await pipelineDataProvider.goToNextPage();
       await chatDataProvider.refreshWebview();
     } catch (error) {
       console.error('Error going to next page:', error);
@@ -110,10 +114,14 @@ const commandHandlers: Record<string, CommandHandler> = {
   },
 };
 
-export async function handleWebviewMessage(message: WebviewMessage, chatDataProvider: ChatDataProvider) {
+export async function handleWebviewMessage(
+  message: WebviewMessage,
+  chatDataProvider: ChatDataProvider,
+  pipelineDataProvider: PipelineDataProvider
+) {
   const handler = commandHandlers[message.command];
   if (handler) {
-    await handler(message, chatDataProvider);
+    await handler(message, chatDataProvider, pipelineDataProvider);
   } else {
     console.warn(`Unknown command: ${message.command}`);
   }

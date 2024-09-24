@@ -17,6 +17,7 @@ import { handleWebviewMessage } from './chatMessageHandler';
 import { EventBus } from '../../services/EventBus';
 import { LSP_ZENML_STACK_CHANGED } from '../../utils/constants';
 import { getChatResponse, initializeTokenJS } from './utils/TokenUtils';
+import { PipelineDataProvider } from '../activityBar';
 
 export class ChatDataProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
@@ -45,7 +46,8 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
     this.loadWebviewContent();
 
     const messageListener = async (message: any) => {
-      await handleWebviewMessage(message, this);
+      const pipelineDataProvider = PipelineDataProvider.getInstance();
+      await handleWebviewMessage(message, this, pipelineDataProvider);
     };
 
     webviewView.webview.onDidReceiveMessage(messageListener);
