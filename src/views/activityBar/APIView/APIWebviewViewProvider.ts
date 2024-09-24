@@ -31,19 +31,16 @@ export class APIWebviewViewProvider implements vscode.WebviewViewProvider {
 
     webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
-    // Add this line to log console messages from the webview
     webviewView.webview.onDidReceiveMessage(message => {
       switch (message.command) {
-        case 'registerLLMAPIKey':
-          this._handleRegisterApiKey();
+        case 'openChat':
+          this._handleOpenChat();
           break;
       }
     });
   }
 
-  private _handleRegisterApiKey(): void {
-    // vscode.window.showInformationMessage('Registering LLM API Key');
-    // vscode.commands.executeCommand('zenml.registerLLMAPIKey');
+  private _handleOpenChat(): void {
     vscode.commands.executeCommand('zenml.openChat');
   }
 
@@ -118,13 +115,13 @@ export class APIWebviewViewProvider implements vscode.WebviewViewProvider {
         </style>
       </head>
       <body>
-        <button id="register-api-key-button">Open Chat</button>
+        <button id="open-chat-button">Open Chat</button>
         <p><i>Using the chat feature will incur charges from your model provider as normal.</i></p>
         <script nonce="${nonce}">
           const vscode = acquireVsCodeApi();
-          const button = document.getElementById('register-api-key-button');
+          const button = document.getElementById('open-chat-button');
           button.addEventListener('click', () => {
-            vscode.postMessage({ command: 'registerLLMAPIKey' });
+            vscode.postMessage({ command: 'openChat' });
           });
         </script>
       </body>
