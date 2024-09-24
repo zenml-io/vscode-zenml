@@ -81,10 +81,9 @@ export class AIService {
     }
 
     if (!process.env[keyStr] && !apiKey) {
-      vscode.window.showErrorMessage(
+      throw new Error(
         `No ${this.provider} API key configured. Please add an environment variable or save a key through the command palette above and try again.`
       );
-      vscode.commands.executeCommand('zenml.registerLLMAPIKey');
     }
   }
 
@@ -123,32 +122,48 @@ export class AIService {
       return;
     }
 
-    await this.setAPIKey();
+    try {
+      await this.setAPIKey();
+    } catch (e) {
+      const error = e as Error;
+      vscode.window.showErrorMessage(error.message);
+      vscode.commands.executeCommand('zenml.registerLLMAPIKey');
+      return;
+    }
+
     const tokenjs = new TokenJS();
-    const completion = await tokenjs.chat.completions.create({
-      provider: this.provider,
-      model: this.model,
-      messages: [
-        {
-          role: 'system',
-          content: `You are an advanced AI programming assistant tasked with troubleshooting pipeline runs for ZenML into an explanation that is both easy to understand and meaningful. Construct an explanation that:
-    - Places the emphasis on the 'why' of the error, explaining possible causes of the problem, beyond just detailing what the error is.
-    - Do not make any assumptions or invent details that are not supported by the code or the user-provided context
-    - For the code snippets, please provide the entire content of the source code with any required edits made
-    - Please respond only in markdown syntax`,
-        },
-        {
-          role: 'user',
-          content: `Here is the content of the error message: ${log}`,
-        },
-        { role: 'user', content: `Here is the source code where the error occured: ${code}` },
-        {
-          role: 'user',
-          content:
-            'Now, please explain some possible causes of the error. If you identify any code errors that could resolve the issue, please also provide the full content of the source code with the proposed changes made.',
-        },
-      ],
-    });
+    let completion;
+    try {
+      completion = await tokenjs.chat.completions.create({
+        provider: this.provider,
+        model: this.model,
+        messages: [
+          {
+            role: 'system',
+            content: `You are an advanced AI programming assistant tasked with troubleshooting pipeline runs for ZenML into an explanation that is both easy to understand and meaningful. Construct an explanation that:
+      - Places the emphasis on the 'why' of the error, explaining possible causes of the problem, beyond just detailing what the error is.
+      - Do not make any assumptions or invent details that are not supported by the code or the user-provided context
+      - For the code snippets, please provide the entire content of the source code with any required edits made
+      - Please respond only in markdown syntax`,
+          },
+          {
+            role: 'user',
+            content: `Here is the content of the error message: ${log}`,
+          },
+          { role: 'user', content: `Here is the source code where the error occured: ${code}` },
+          {
+            role: 'user',
+            content:
+              'Now, please explain some possible causes of the error. If you identify any code errors that could resolve the issue, please also provide the full content of the source code with the proposed changes made.',
+          },
+        ],
+      });
+    } catch {
+      vscode.window.showErrorMessage(
+        `Something went wrong. Please verify your API key is correct and active.`
+      );
+      return;
+    }
 
     const response = completion.choices[0].message.content;
     if (response === null) {
