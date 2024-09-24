@@ -14,14 +14,14 @@
 import * as vscode from 'vscode';
 import type { ExtensionContext } from 'vscode';
 
-const registerLLMAPIKey = async (context: ExtensionContext) => {
-  const options: vscode.QuickPickItem[] = [
-    { label: 'Anthropic' },
-    { label: 'Gemini' },
-    { label: 'OpenAI' },
-  ];
+const LLM_PROVIDERS: vscode.QuickPickItem[] = [
+  { label: 'Anthropic' },
+  { label: 'Gemini' },
+  { label: 'OpenAI' },
+];
 
-  const selectedOption = await vscode.window.showQuickPick(options, {
+const registerLLMAPIKey = async (context: ExtensionContext) => {
+  const selectedOption = await vscode.window.showQuickPick(LLM_PROVIDERS, {
     placeHolder: 'Please select a provider.',
     canPickMany: false,
   });
