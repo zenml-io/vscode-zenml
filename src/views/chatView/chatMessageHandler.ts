@@ -18,43 +18,83 @@ type CommandHandler = (message: WebviewMessage, chatDataProvider: ChatDataProvid
 
 const commandHandlers: Record<string, CommandHandler> = {
   sendMessage: async (message, chatDataProvider) => {
-    if (message.text) {
+    if (!message.text) {
+      console.error('sendMessage command received without text property');
+      return;
+    }
+    try {
       await chatDataProvider.addMessage(
         message.text,
         message.context,
         message.provider,
         message.model
       );
+    } catch (error) {
+      console.error('Error adding message:', error);
+      chatDataProvider.showInfoMessage('Failed to send message. Please try again.');
     }
   },
   clearChat: async (_, chatDataProvider) => {
-    await chatDataProvider.clearChatLog();
+    try {
+      await chatDataProvider.clearChatLog();
+    } catch (error) {
+      console.error('Error clearing chat log:', error);
+      chatDataProvider.showInfoMessage('Failed to clear chat. Please try again.');
+    }
   },
   showInfo: (message, chatDataProvider) => {
-    if (message.text) {
+    if (!message.text) {
+      console.error('showInfo command received without text property');
+      return Promise.resolve();
+    }
+    try {
       chatDataProvider.showInfoMessage(message.text);
+    } catch (error) {
+      console.error('Error showing info message:', error);
     }
     return Promise.resolve();
   },
   updateProvider: (message, chatDataProvider) => {
-    if (message.provider) {
+    if (!message.provider) {
+      console.error('updateProvider command received without provider property');
+      return Promise.resolve();
+    }
+    try {
       chatDataProvider.updateProvider(message.provider);
+    } catch (error) {
+      console.error('Error updating provider:', error);
     }
     return Promise.resolve();
   },
   updateModel: (message, chatDataProvider) => {
-    if (message.model) {
+    if (!message.model) {
+      console.error('updateModel command received without model property');
+      return Promise.resolve();
+    }
+    try {
       chatDataProvider.updateModel(message.model);
+    } catch (error) {
+      console.error('Error updating model:', error);
     }
     return Promise.resolve();
   },
   prevPage: async (_, chatDataProvider) => {
-    await PipelineDataProvider.getInstance().goToPreviousPage();
-    await chatDataProvider.refreshWebview();
+    try {
+      await PipelineDataProvider.getInstance().goToPreviousPage();
+      await chatDataProvider.refreshWebview();
+    } catch (error) {
+      console.error('Error going to previous page:', error);
+      chatDataProvider.showInfoMessage('Failed to go to previous page. Please try again.');
+    }
   },
   nextPage: async (_, chatDataProvider) => {
-    await PipelineDataProvider.getInstance().goToNextPage();
-    await chatDataProvider.refreshWebview();
+    try {
+      await PipelineDataProvider.getInstance().goToNextPage();
+      await chatDataProvider.refreshWebview();
+    } catch (error) {
+      console.error('Error going to next page:', error);
+      chatDataProvider.showInfoMessage('Failed to go to next page. Please try again.');
+    }
   },
 };
 
