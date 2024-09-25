@@ -202,7 +202,7 @@
         break;
       }
       case 'showInfo': {
-        vscode.window.showInformationMessage(message.text);
+        vscode.window.showInformationMessage({ command: 'showInfoToExtension', text: message.text });
         break;
       }
       case 'updateModelList': {
@@ -407,7 +407,7 @@
     const textarea = document.getElementById('messageInput');
     const sendButton = document.getElementById('sendMessage');
     const loader = document.getElementById('loader');
-    let isInputDisabled = false;
+    isInputDisabled = false;
 
     function showLoader() {
       loader.classList.add('loader');
@@ -428,7 +428,7 @@
           e.preventDefault();
           if (!isInputDisabled) {
             const form = document.getElementById('chatForm');
-            const event = new SubmitEvent('submit', {
+            const event = new Event('submit', {
               bubbles: true,
               cancelable: true,
             });
