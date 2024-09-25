@@ -155,3 +155,36 @@ g.svg-pan-zoom-control {
   width: 100%;
   height: 100%;
 }
+
+#context-menu {
+  position: absolute;
+  background: white;
+  box-shadow: 0 4px 5px 3px rgba(0, 0, 0, 0.2);
+  border-radius: 5px;
+}
+
+#context-menu ul {
+  list-style: none;
+  padding: 0px;
+}
+
+#context-menu li {
+  font-weight: 500;
+  font-size: 14px;
+  padding: 10px 40px 10px 20px;
+  cursor: pointer;
+}
+
+#context-menu li:hover {
+  color: grey;
+  background: lightgrey;
+}
+
+#loading-ai {
+  opacity: 0%;
+}
+
+.context-menu-subitem-indicator {
+  font-size: 0.7rem;
+  vertical-align: text-top;
+}

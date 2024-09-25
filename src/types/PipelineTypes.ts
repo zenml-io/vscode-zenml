@@ -33,6 +33,50 @@ export interface PipelineRun {
   pythonVersion: string;
 }
 
+export interface StepData {
+  author: {
+    email: string;
+    fullName: string;
+  };
+  cacheKey: string;
+  duration: string;
+  endTime: string;
+  id: string;
+  logsUri: string;
+  name: string;
+  orchestrator: { runId: string };
+  pipeline: { name: string; status: string };
+  sourceCode: string;
+  stackName: string;
+  startTime: string;
+  status: string;
+}
+
+export type ArtifactData = {
+  name: string;
+  version: string;
+  id: string;
+  type: string;
+  author: {
+    fullName: string;
+    email: string;
+  };
+  data: {
+    uri: string;
+    dataType: string;
+  };
+  metadata: {
+    dtype: Record<string, string>;
+    max: Record<string, number>;
+    mean: Record<string, number>;
+    min: Record<string, number>;
+    std: Record<string, number>;
+    shape: [number, number];
+    storage_size: number;
+  };
+  updated: string;
+};
+
 export interface DagStep {
   id: string;
   type: 'step';
