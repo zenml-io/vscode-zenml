@@ -54,6 +54,9 @@ const registerLLMAPIKey = async (context: ExtensionContext) => {
   }
 
   await context.secrets.store(secretKey, apiKey);
+
+  process.env[`${model.toUpperCase()}_API_KEY`] = apiKey;
+
   vscode.window.showInformationMessage(`${model} API key stored successfully.`);
 };
 
