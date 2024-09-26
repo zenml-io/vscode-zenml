@@ -24,7 +24,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
   private messages: ChatMessage[] = [];
   private streamingMessage: ChatMessage | null = null;
   private currentProvider: string = 'Gemini';
-  private currentModel: string = 'gemini-pro';
+  private currentModel: string = this.getAvailableModels()[0];
   private eventBus: EventBus = EventBus.getInstance();
   private _disposables: vscode.Disposable[] = [];
   private refreshWebviewBound = this.refreshWebview.bind(this);
