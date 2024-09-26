@@ -47,12 +47,18 @@ export async function addContext(requestedContext: string[]): Promise<string> {
         break;
       default:
         if (context.includes('Pipeline Run:')) {
-          let runData = JSON.parse(context.replace('Pipeline Run:', ''));
-          let logs = await getPipelineRunLogs(runData.id);
-          let nodeData = await getPipelineRunNodes('step', runData.id);
-          systemMessage += `Pipeline Run: ${JSON.stringify(runData)}\n`;
-          systemMessage += `Logs: ${logs}\n`;
-          systemMessage += `Step Data: ${JSON.stringify(nodeData)}\n`;
+          try {
+            let runData = JSON.parse(context.replace('Pipeline Run:', ''));
+            let logs = await getPipelineRunLogs(runData.id);
+            let nodeData = await getPipelineRunNodes('step', runData.id);
+            systemMessage += `Pipeline Run: ${JSON.stringify(runData)}\n`;
+            systemMessage += `Logs: ${logs}\n`;
+            systemMessage += `Step Data: ${JSON.stringify(nodeData)}\n`;
+          } catch (error) {
+            console.error('Failed to parse pipeline run data from context:', error);
+            systemMessage += 'Failed to parse pipeline run data from context.\n';
+          }
+          
         }
         break;
     }
