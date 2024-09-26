@@ -25,7 +25,17 @@ export function getWebviewContent(
   availableModels: string[]
 ): string {
   const htmlPath = vscode.Uri.joinPath(extensionUri, 'resources', 'chat-view', 'chat.html');
-  let html = fs.readFileSync(htmlPath.fsPath, 'utf8');
+  let html: string;
+  try {
+    html = fs.readFileSync(htmlPath.fsPath, 'utf8');
+  } catch (err) {
+    if (err instanceof Error) {
+      vscode.window.showErrorMessage(`Failed to load HTML template: ${err.message}`);
+    } else {
+      vscode.window.showErrorMessage('Failed to load HTML template due to an unkown error.');
+    }
+    return '';
+  }
 
   const jsUri = webview.asWebviewUri(
     vscode.Uri.joinPath(extensionUri, 'resources', 'chat-view', 'chat.js')
@@ -138,14 +148,14 @@ function convertTreeDataToHtml(treeData: TreeItem[], level = 0): string {
     if (item.title === 'pagination') {
       checkboxEl = '';
       if (item.firstPage) {
-        nextPageEl = `<button class"tree-item-button" id="nextPage">Next</button>`;
-        prevPageEl = `<button class"tree-item-button" id="prevPage" style="visibility: hidden;">Prev</button>`;
+        nextPageEl = `<button class="tree-item-button" id="nextPage">Next</button>`;
+        prevPageEl = `<button class="tree-item-button" id="prevPage" style="visibility: hidden;">Prev</button>`;
       } else if (item.lastPage) {
-        prevPageEl = `<button class"tree-item-button" id="prevPage">Prev</button>`;
-        nextPageEl = `<button class"tree-item-button" id="nextPage" style="visibility: hidden;">Next</button>`;
+        prevPageEl = `<button class="tree-item-button" id="prevPage">Prev</button>`;
+        nextPageEl = `<button class="tree-item-button" id="nextPage" style="visibility: hidden;">Next</button>`;
       } else {
-        nextPageEl = `<button class"tree-item-button" id="nextPage">Next</button>`;
-        prevPageEl = `<button class"tree-item-button" id="prevPage">Prev</button>`;
+        nextPageEl = `<button class="tree-item-button" id="nextPage">Next</button>`;
+        prevPageEl = `<button class="tree-item-button" id="prevPage">Prev</button>`;
       }
     }
 
