@@ -148,10 +148,13 @@
 
       currentAssistantMessage += text;
 
+      const html = marked.parse(currentAssistantMessage);
+      const sanitizeHtml = DOMPurify.sanitize(html);
+
       requestAnimationFrame(() => {
         messageDiv.innerHTML = `
           <p class="font-semibold text-zenml">ZenML Assistant</p>
-          ${marked.parse(currentAssistantMessage)}
+          ${sanitizeHtml}
         `;
         chatMessages.scrollTop = chatMessages.scrollHeight;
       });
@@ -187,7 +190,8 @@
     const message = event.data;
     switch (message.command) {
       case 'updateChatLog':
-        document.getElementById('chatMessages').innerHTML = message.chatLogHtml;
+        const sanitizeHtml = DOMPurify.sanitize(message.chatLogHtml);
+        document.getElementById('chatMessages').innerHTML = sanitizeHtml;
         addCopyButtonsToAssistantMessages(); // For the potential view refresh command
         break;
       case 'receiveMessage': {
@@ -202,7 +206,10 @@
         break;
       }
       case 'showInfo': {
-        vscode.window.showInformationMessage({ command: 'showInfoToExtension', text: message.text });
+        vscode.window.showInformationMessage({
+          command: 'showInfoToExtension',
+          text: message.text,
+        });
         break;
       }
       case 'updateModelList': {
