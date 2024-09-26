@@ -27,12 +27,13 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
   private currentModel: string = 'gemini-pro';
   private eventBus: EventBus = EventBus.getInstance();
   private _disposables: vscode.Disposable[] = [];
+  private refreshWebviewBound = this.refreshWebview.bind(this);
 
   constructor(private readonly context: vscode.ExtensionContext) {
     initializeTokenJS(this.context, this.currentProvider);
-    this.eventBus.addListener(LSP_ZENML_STACK_CHANGED, this.refreshWebview.bind(this));
+    this.eventBus.addListener(LSP_ZENML_STACK_CHANGED, this.refreshWebviewBound);
     this._disposables.push(
-      new vscode.Disposable(() => this.eventBus.removeListener(LSP_ZENML_STACK_CHANGED, this.refreshWebview.bind(this)))
+      new vscode.Disposable(() => this.eventBus.removeListener(LSP_ZENML_STACK_CHANGED, this.refreshWebviewBound))
     );
   }
 
