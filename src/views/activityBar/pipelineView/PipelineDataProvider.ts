@@ -35,13 +35,23 @@ export class PipelineDataProvider extends PaginatedDataProvider {
   private eventBus = EventBus.getInstance();
   private zenmlClientReady = false;
   private pipelineData: PipelineTreeItem[] = [];
-  public pipelineRuns: PipelineRun[] = [];
+  private pipelineRuns: PipelineRun[] = [];
 
   constructor() {
     super();
     this.items = [LOADING_TREE_ITEMS.get('pipelineRuns')!];
     this.viewName = 'PipelineRuns';
     this.subscribeToEvents();
+  }
+
+  /**
+   * Retrieves the pipeline runs data.
+   * Returns a copy of the pipeline runs array to prevent external modifications.
+   *
+   * @returns {PipelineRun[]} A copy of the pipeline runs array.
+   */
+  public getPipelineRuns(): PipelineRun[] {
+    return [...this.pipelineRuns];
   }
 
   /**

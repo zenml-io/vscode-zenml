@@ -23,7 +23,7 @@ const CONTEXT_ITEMS: readonly ContextItem[] = [
 
 export function getPipelineData(): { contextString: string; treeItems: TreeItem[] } {
   try {
-    const pipelineRuns = PipelineDataProvider.getInstance().pipelineRuns;
+    const pipelineRuns = PipelineDataProvider.getInstance().getPipelineRuns();
     let contextString = '';
     const treeItems: TreeItem[] = pipelineRuns.map(run => {
       const formattedStartTime = format(new Date(run.startTime), 'Pp');
