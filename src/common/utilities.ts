@@ -116,7 +116,6 @@ export function findFirstLineNumber(str: string, substr: string): number | null 
   return firstLine;
 }
 
-// TODO make sure that multiple copies of the file are present in the git log, that it will only return one copy of that file, not multiple
 export async function searchWorkspaceByFileContent(content: string) {
   const files = await vscode.workspace.findFiles('**/*');
   const pythonFiles = files.filter(file => file.toString().endsWith('.py'));
@@ -124,17 +123,27 @@ export async function searchWorkspaceByFileContent(content: string) {
   let fileContents: string[] = [];
 
   await Promise.all(
-    pythonFiles.map(
-      async file =>
-        await vscode.workspace.openTextDocument(file).then(doc => {
+    pythonFiles.map(async file => {
+      try {
+        console.log(file.fsPath);
+
+        return await vscode.workspace.openTextDocument(file).then(doc => {
           const docText = doc.getText();
 
-          if (docText.includes(content)) {
+          const normalizedDocText = docText.replace(/\r\n/g, '\n');
+          const normalizedContent = content.replace(/\r\n/g, '\n');
+          if (normalizedDocText.includes(normalizedContent)) {
             matches.push(file);
             fileContents.push(docText);
           }
-        })
-    )
+        });
+      } catch (e) {
+        const error = e as Error;
+        console.error(
+          `Something went wrong while trying to access ${file.fsPath}: ${error.message}`
+        );
+      }
+    })
   );
 
   const results = matches.map((uri, i) => ({ uri, content: fileContents[i] }));
@@ -142,8 +151,6 @@ export async function searchWorkspaceByFileContent(content: string) {
 }
 
 export async function searchGitCacheByFileContent(content: string) {
-  // TODO Search for nearest git repository from each root, rather than just assume the repository is
-  // TODO   in the root workspace directory
   const GREP_OPTIONS = ['-I', '-w', '-F', '--full-name', '--cached'];
   const workspaceRoots = vscode.workspace.workspaceFolders?.map(folder => folder.uri.fsPath) || [];
   let matches: vscode.Uri[] = [];
@@ -173,11 +180,14 @@ export async function searchGitCacheByFileContent(content: string) {
         matchingFilePaths = matchingFilePaths.filter(filePath => matchingLines?.includes(filePath));
       }
 
-      matchingLines = matchingLines?.map(path => path.replaceAll(root, '').slice(1));
+      const rootRegex = new RegExp(root, 'g');
+      matchingLines = matchingLines?.map(path => path.replace(rootRegex, '').slice(1));
       for (let path of matchingLines || []) {
         fileContents.push(await git.show(`HEAD:${path}`));
       }
-    } catch {}
+    } catch {
+      console.info(`No git repository found at ${root}`);
+    }
   }
 
   matches = matchingFilePaths?.map(path => vscode.Uri.file(path)) || [];

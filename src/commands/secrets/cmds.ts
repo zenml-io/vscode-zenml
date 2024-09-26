@@ -13,15 +13,10 @@
 
 import * as vscode from 'vscode';
 import type { ExtensionContext } from 'vscode';
+import { supportedLLMProviders } from '../../services/aiService';
 
 const registerLLMAPIKey = async (context: ExtensionContext) => {
-  const options: vscode.QuickPickItem[] = [
-    { label: 'Anthropic' },
-    { label: 'Gemini' },
-    { label: 'OpenAI' },
-  ];
-
-  const selectedOption = await vscode.window.showQuickPick(options, {
+  const selectedOption = await vscode.window.showQuickPick(supportedLLMProviders, {
     placeHolder: 'Please select an LLM.',
     canPickMany: false,
   });
@@ -31,7 +26,7 @@ const registerLLMAPIKey = async (context: ExtensionContext) => {
     return undefined;
   }
 
-  const model = selectedOption.label;
+  const model = selectedOption;
   const secretKey = `zenml.${model.toLowerCase()}.key`;
 
   let apiKey = await context.secrets.get(secretKey);
@@ -53,11 +48,14 @@ const registerLLMAPIKey = async (context: ExtensionContext) => {
     return;
   }
 
-  await context.secrets.store(secretKey, apiKey);
-
-  process.env[`${model.toUpperCase()}_API_KEY`] = apiKey;
-
-  vscode.window.showInformationMessage(`${model} API key stored successfully.`);
+  try {
+    await context.secrets.store(secretKey, apiKey);
+    process.env[`${model.toUpperCase()}_API_KEY`] = apiKey;
+    vscode.window.showInformationMessage(`${model} API key stored successfully.`);
+  } catch (e) {
+    const error = e as Error;
+    vscode.window.showErrorMessage(`Failed to store ${model} API key: ${error.message}`);
+  }
 };
 
 export const secretsCommands = {

@@ -133,12 +133,10 @@ import svgPanZoom from 'svg-pan-zoom';
   });
 
   window.addEventListener('message', evt => {
-    if (evt.data === 'AI Query Complete') closeContextMenu();
-    if (evt.data.includes('model: ')) {
-      currentLLM = evt.data.split('model: ')[1];
-      try {
-        LLMFetched();
-      } catch {}
+    if (evt.data.command === 'closeContextMenu') closeContextMenu();
+    if (evt.data.command === 'getLLM') {
+      currentLLM = evt.data.data;
+      LLMFetched();
     }
   });
 
@@ -155,14 +153,10 @@ import svgPanZoom from 'svg-pan-zoom';
     const menuWidth = parseInt(style.width.match(/\d+/)[0], 10);
 
     contextMenu.style.top =
-      menuHeight + y <= document.documentElement.clientHeight
-        ? (contextMenu.style.top = `${y}px`)
-        : (contextMenu.style.top = `${y - menuHeight}px`);
+      menuHeight + y <= document.documentElement.clientHeight ? `${y}px` : `${y - menuHeight}px`;
 
     contextMenu.style.left =
-      menuWidth + x <= document.documentElement.clientWidth
-        ? (contextMenu.style.left = `${x}px`)
-        : (contextMenu.style.left = `${x - menuWidth}px`);
+      menuWidth + x <= document.documentElement.clientWidth ? `${x}px` : `${x - menuWidth}px`;
   }
 
   function closeContextMenu() {
@@ -182,6 +176,10 @@ import svgPanZoom from 'svg-pan-zoom';
       vscode.postMessage({ command: `${command}Url`, id: stepId || artifactId });
     });
     contextMenu.querySelector('#suggest-fix')?.addEventListener('click', () => {
+      if (contextMenu.querySelector('#suggest-fix').textContent === 'Loading...') {
+        return;
+      }
+
       contextMenu.querySelector('#suggest-fix').textContent = 'Loading...';
       vscode.postMessage({ command: `stepFix`, id: stepId || artifactId });
     });

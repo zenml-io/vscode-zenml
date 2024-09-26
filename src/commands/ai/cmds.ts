@@ -19,18 +19,31 @@ import AIStepFixer from '../pipelines/AIStepFixer';
 const displayNextCodeRecommendation = () => {
   let uri = vscode.window.activeTextEditor?.document.uri;
   if (!uri) {
+    vscode.window.showInformationMessage('No active text editor found.');
     return;
   }
 
-  const stepFixer = AIStepFixer.getInstance();
-  stepFixer.updateCodeRecommendation(uri);
+  try {
+    const stepFixer = AIStepFixer.getInstance();
+    stepFixer.updateCodeRecommendation(uri);
+  } catch (e) {
+    const error = e as Error;
+    vscode.window.showErrorMessage(`Failed to update code recommendation: ${error.message}`);
+  }
 };
 
 const acceptCodeRecommendation = () => {
-  let doc = vscode.window.activeTextEditor?.document;
-  console.log(doc?.fileName, doc?.uri.scheme);
-  if (doc) {
+  const doc = vscode.window.activeTextEditor?.document;
+  if (!doc) {
+    vscode.window.showInformationMessage('No active text editor found.');
+    return;
+  }
+
+  try {
     SaveAIChangeEmitter.fire(doc);
+  } catch (e) {
+    const error = e as Error;
+    vscode.window.showErrorMessage(`Failed to accept AI code recommendation: ${error.message}`);
   }
 };
 

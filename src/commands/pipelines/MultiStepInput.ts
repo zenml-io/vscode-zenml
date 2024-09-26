@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
 
-class InputFlowAction {
-  static back = new InputFlowAction();
-  static cancel = new InputFlowAction();
-  static resume = new InputFlowAction();
-}
+const InputFlowAction = {
+  back: Symbol('back'),
+  cancel: Symbol('cancel'),
+  resume: Symbol('resume'),
+};
 
-type InputStep = (input: MultiStepInput) => Thenable<InputStep | void>;
+export type InputStep = (input: MultiStepInput) => Thenable<InputStep | undefined>;
 
 interface QuickPickParameters<T extends vscode.QuickPickItem> {
   title: string;
@@ -43,7 +43,7 @@ export default class MultiStepInput {
   private steps: InputStep[] = [];
 
   private async stepThrough<T>(start: InputStep) {
-    let step: InputStep | void = start;
+    let step: InputStep | undefined = start;
     while (step) {
       this.steps.push(step);
       if (this.current) {

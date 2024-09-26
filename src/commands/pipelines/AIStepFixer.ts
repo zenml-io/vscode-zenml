@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import { searchGitCacheByFileContent, searchWorkspaceByFileContent } from '../../common/utilities';
 import fs from 'fs/promises';
-import { integer } from 'vscode-languageclient';
 import { LSClient } from '../../services/LSClient';
 import Panels from '../../common/panels';
 import { AIService } from '../../services/aiService';
@@ -9,9 +8,10 @@ import { PipelineTreeItem } from '../../views/activityBar';
 import { JsonObject } from '../../views/panel/panelView/PanelTreeItem';
 import * as path from 'path';
 import WebviewBase from '../../common/WebviewBase';
-import MultiStepInput from './MultiStepInput';
+import MultiStepInput, { InputStep } from './MultiStepInput';
 import StepFixerFs, { SaveAIChangeEmitter } from './StepFixerFs';
 import { SupportedLLMModels, SupportedLLMProviders } from '../../services/aiService';
+import { randomUUID } from 'crypto';
 
 export default class AIStepFixer extends WebviewBase {
   private static instance: AIStepFixer;
@@ -28,6 +28,73 @@ export default class AIStepFixer extends WebviewBase {
     vscode.workspace.registerFileSystemProvider('zenml-stepfixer', this.stepFs, {
       isCaseSensitive: true,
     });
+
+    vscode.window.tabGroups.onDidChangeTabs(evt => {
+      const input = evt.closed[0]?.input;
+      if (typeof input !== 'object' || input === null || !('modified' in input)) {
+        return;
+      }
+      const uri = input.modified;
+      if (typeof uri !== 'object' || uri === null || !('path' in uri)) {
+        return;
+      }
+      const recIndex = this.codeRecommendations.findIndex(
+        ele => ele.recUri?.toString() === uri.toString()
+      );
+      if (recIndex === -1) {
+        return;
+      }
+
+      // TODO switch to tabgroups
+      setTimeout(() => {
+        const tabs = vscode.window.tabGroups.all.flatMap(group => group.tabs);
+        const uris = tabs.filter(tab => 'uri' in tab).map(tab => tab.uri as vscode.Uri);
+        if (uris.some(tabUri => tabUri.toString() === uri.toString())) {
+          return;
+        }
+
+        this.codeRecommendations.splice(recIndex, 1);
+        this.updateRecommendationsContext();
+      }, 1000);
+    });
+
+    vscode.workspace.onWillSaveTextDocument(async e => {
+      const rec = this.codeRecommendations.find(
+        ele => e.document.fileName === `/${path.posix.basename(ele.recUri?.path || '')}`
+      );
+
+      if (
+        !rec ||
+        e.document.uri.scheme !== 'zenml-stepfixer' ||
+        e.reason !== vscode.TextDocumentSaveReason.Manual
+      ) {
+        return;
+      }
+
+      try {
+        await fs.writeFile(rec.sourceUri.fsPath, e.document.getText());
+      } catch (e) {
+        const error = e as Error;
+        vscode.window.showErrorMessage(`Failed to save AI recommendation: ${error.message}`);
+      }
+    });
+
+    SaveAIChangeEmitter.event(async doc => {
+      const rec = this.codeRecommendations.find(
+        ele => ele.recUri?.toString() === doc.uri.toString()
+      );
+
+      if (!rec || doc.uri.toString() !== rec.recUri?.toString()) {
+        return;
+      }
+
+      try {
+        await fs.writeFile(rec.sourceUri.fsPath, doc.getText());
+      } catch (e) {
+        const error = e as Error;
+        vscode.window.showErrorMessage(`Failed to save AI recommendation: ${error.message}`);
+      }
+    });
   }
 
   public static getInstance() {
@@ -42,7 +109,7 @@ export default class AIStepFixer extends WebviewBase {
     recUri: vscode.Uri | undefined;
     code: string[];
     sourceCode: string;
-    currentCodeIndex: integer;
+    currentCodeIndex: number;
   }[] = [];
 
   public async selectLLM() {
@@ -71,7 +138,7 @@ export default class AIStepFixer extends WebviewBase {
       return state as State;
     }
 
-    async function pickProvider(input: MultiStepInput, state: Partial<State>) {
+    async function pickProvider(input: MultiStepInput, state: Partial<State>): Promise<InputStep> {
       const pick = await input.showQuickPick({
         title,
         step: 1,
@@ -85,7 +152,7 @@ export default class AIStepFixer extends WebviewBase {
       return (input: MultiStepInput) => pickModel(input, state);
     }
 
-    async function pickModel(input: MultiStepInput, state: Partial<State>) {
+    async function pickModel(input: MultiStepInput, state: Partial<State>): Promise<undefined> {
       const models = await getAvailableModels(state.provider!);
       state.model = await input.showQuickPick({
         title,
@@ -102,7 +169,7 @@ export default class AIStepFixer extends WebviewBase {
       provider: vscode.QuickPickItem
     ): Promise<vscode.QuickPickItem[]> {
       if (!WebviewBase.context) return [];
-      if (!providers.find(p => p === provider)) return [];
+      if (!providers.find(p => p.label === provider.label)) return [];
 
       return (
         await AIService.getInstance(WebviewBase.context).getSupportedModels(
@@ -113,7 +180,7 @@ export default class AIStepFixer extends WebviewBase {
       }));
     }
 
-    const shouldResume = () => new Promise<boolean>(() => {});
+    const shouldResume = () => Promise.resolve(false);
 
     const state = await collectInputs();
     AIService.getInstance(WebviewBase.context).setModel(
@@ -130,19 +197,34 @@ export default class AIStepFixer extends WebviewBase {
 
     const client = LSClient.getInstance();
     const stepData = await client.sendLsClientRequest<JsonObject>('getPipelineRunStep', [id]);
-    const log = await fs.readFile(String(stepData.logsUri), { encoding: 'utf-8' });
+    let log;
+    try {
+      log = await fs.readFile(String(stepData.logsUri), { encoding: 'utf-8' });
+    } catch (e) {
+      const error = e as Error;
+      vscode.window.showErrorMessage(`Failed to read pipeline run logs file: ${error.message}`);
+      return;
+    }
+
     const p = Panels.getInstance();
     const existingPanel = p.getPanel(node.id);
     const ai = AIService.getInstance(WebviewBase.context);
 
-    const response = await ai.fixMyPipelineRequest(log, String(stepData.sourceCode));
-
+    let response;
+    try {
+      response = await ai.fixMyPipelineRequest(log, String(stepData.sourceCode));
+    } catch (e) {
+      const error = e as Error;
+      vscode.window.showErrorMessage(`Failed to get AI fix: ${error.message}`);
+      this.closeWebviewContextMenu(existingPanel);
+      return;
+    }
     if (!response) {
       this.closeWebviewContextMenu(existingPanel);
       return;
     }
-    const { message, code } = response;
 
+    const { message, code } = response;
     const codeChoices = code
       .map(c => {
         return c.content;
@@ -196,7 +278,7 @@ export default class AIStepFixer extends WebviewBase {
 
   private closeWebviewContextMenu(existingPanel: vscode.WebviewPanel | undefined) {
     if (existingPanel) {
-      existingPanel.webview.postMessage('AI Query Complete');
+      existingPanel.webview.postMessage({ command: 'closeContextMenu' });
     }
   }
 
@@ -212,7 +294,7 @@ export default class AIStepFixer extends WebviewBase {
     })();
 
     vscode.workspace.registerTextDocumentContentProvider('fix-my-pipeline', provider);
-    const uri = vscode.Uri.parse(`fix-my-pipeline:${id}.md`);
+    const uri = vscode.Uri.parse(`fix-my-pipeline:${randomUUID()}.md`);
 
     if (existingPanel) {
       existingPanel.reveal(existingPanel.viewColumn, false);
@@ -240,33 +322,6 @@ export default class AIStepFixer extends WebviewBase {
         currentCodeIndex: 0,
       });
       this.updateRecommendationsContext();
-
-      vscode.window.tabGroups.onDidChangeTabs(evt => {
-        const input = evt.closed[0]?.input;
-        if (typeof input !== 'object' || input === null || !('modified' in input)) {
-          return;
-        }
-        const uri = input.modified;
-        if (typeof uri !== 'object' || uri === null || !('path' in uri)) {
-          return;
-        }
-        const recIndex = this.codeRecommendations.findIndex(
-          ele => ele.recUri?.toString() === uri.toString()
-        );
-        if (recIndex === -1) {
-          return;
-        }
-
-        setTimeout(() => {
-          const editors = vscode.window.visibleTextEditors;
-          if (editors.some(editor => editor.document.uri.toString() === uri.toString())) {
-            return;
-          }
-
-          this.codeRecommendations.splice(recIndex, 1);
-          this.updateRecommendationsContext();
-        }, 1000);
-      });
     }
 
     this.editStepFile(sourceUri, code[0], sourceCode, true, existingPanel, fileContents);
@@ -280,12 +335,21 @@ export default class AIStepFixer extends WebviewBase {
     existingPanel?: vscode.WebviewPanel,
     fileContents?: string
   ) {
-    fileContents = fileContents
-      ? fileContents
-      : await fs.readFile(sourceUri.fsPath, { encoding: 'utf-8' });
-    const fileName = path.posix.basename(sourceUri.path);
+    if (!fileContents) {
+      fileContents = await (async () => {
+        try {
+          return await fs.readFile(sourceUri.fsPath, { encoding: 'utf-8' });
+        } catch (e) {
+          const error = e as Error;
+          vscode.window.showErrorMessage(`Failed to read source file: ${error.message}`);
+          return ''; // Return empty content or handle accordingly
+        }
+      })();
+    }
 
+    const fileName = path.posix.basename(sourceUri.path);
     const recName = `Recommendations for ${fileName}`;
+
     await this.stepFs.writeFile(
       vscode.Uri.parse(`zenml-stepfixer:/${fileName}`),
       Buffer.from(fileContents.replace(oldContent, newContent)),
@@ -303,34 +367,6 @@ export default class AIStepFixer extends WebviewBase {
       rec.recUri = recUri;
       this.updateRecommendationsContext();
     }
-
-    vscode.workspace.onWillSaveTextDocument(async e => {
-      if (
-        e.document.uri.scheme !== 'zenml-stepfixer' ||
-        e.document.fileName !== `/${fileName}` ||
-        e.reason !== vscode.TextDocumentSaveReason.Manual
-      ) {
-        return;
-      }
-
-      fs.writeFile(sourceUri.fsPath, e.document.getText());
-    });
-
-    SaveAIChangeEmitter.event(doc => {
-      if (
-        !doc ||
-        !(typeof doc === 'object') ||
-        !('uri' in doc) ||
-        !(doc.uri instanceof vscode.Uri) ||
-        doc.uri.toString() !== recUri.toString() ||
-        !('getText' in doc) ||
-        !(typeof doc.getText === 'function')
-      ) {
-        return;
-      }
-
-      fs.writeFile(sourceUri.fsPath, doc.getText());
-    });
 
     if (openFile) {
       if (existingPanel) {

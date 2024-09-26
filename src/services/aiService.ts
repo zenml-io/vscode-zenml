@@ -18,7 +18,7 @@ import * as vscode from 'vscode';
 import { TokenJS } from 'token.js';
 import AIStepFixer from '../commands/pipelines/AIStepFixer';
 
-const supportedLLMProviders = ['anthropic', 'gemini', 'openai'] as const;
+export const supportedLLMProviders = ['anthropic', 'gemini', 'openai'] as const;
 export type SupportedLLMProviders = (typeof supportedLLMProviders)[number];
 
 const supportedAnthropicModels = [
@@ -87,19 +87,40 @@ export class AIService {
     }
   }
 
-  private extractPythonSnippets(response: string): string[] {
+  private extractPythonSnippets(response: string, codeblockStr: string): string[] {
     return response
-      .split('```')
-      .filter(ele => ele.startsWith('python'))
+      .split(codeblockStr)
+      .filter(ele => ele.startsWith('python') && ele.includes('@step'))
       .map(snippet => snippet.slice(7));
   }
 
+  private normalizeCodeblocks(response: string, codeblockStr: string): string {
+    let lines = response.replace(/\r\n/g, '\n').split('\n');
+
+    let metadata = lines
+      .map((line, i) => ({ index: i, text: line.trim() }))
+      .filter(line => line.text === '```python' || line.text === '```');
+
+    metadata = metadata.filter((line, i) => {
+      return (
+        (line.text === '```python' && (i === 0 || metadata[i - 1].text === '```')) ||
+        (line.text === '```' && (i === metadata.length - 1 || metadata[i + 1].text === '```python'))
+      );
+    });
+
+    for (let line of metadata) {
+      lines[line.index] = lines[line.index].replace(/```/g, codeblockStr);
+    }
+
+    return lines.join('\n');
+  }
+
   private encode(str: string) {
-    return str.replaceAll('.', '%2E');
+    return str.replace(/\./g, '%2E');
   }
 
   private decode(str: string) {
-    return str.replaceAll('%2E', '.');
+    return str.replace(/%2E/g, '.');
   }
 
   public static getInstance(context: ExtensionContext) {
@@ -144,7 +165,8 @@ export class AIService {
       - Places the emphasis on the 'why' of the error, explaining possible causes of the problem, beyond just detailing what the error is.
       - Do not make any assumptions or invent details that are not supported by the code or the user-provided context
       - For the code snippets, please provide the entire content of the source code with any required edits made
-      - Please respond only in markdown syntax`,
+      - Do not skip or truncate any code by including comments like "// ... the rest of your code"
+      - Please respond only in markdown syntax.`,
           },
           {
             role: 'user',
@@ -158,19 +180,26 @@ export class AIService {
           },
         ],
       });
-    } catch {
+    } catch (e) {
+      const error = e as Error;
       vscode.window.showErrorMessage(
-        `Something went wrong. Please verify your API key is correct and active.`
+        `Something went wrong. Please verify your API key is correct and active.: ${error.message}`
       );
       return;
     }
 
-    const response = completion.choices[0].message.content;
-    if (response === null) {
+    let response = completion?.choices[0]?.message?.content;
+    if (!response) {
       return undefined;
     }
 
-    const pythonSnippets = this.extractPythonSnippets(response).map(snippet => {
+    let codeblockStr = '```';
+    while (code.includes(codeblockStr)) {
+      codeblockStr = codeblockStr + '`';
+    }
+
+    response = this.normalizeCodeblocks(response, codeblockStr);
+    const pythonSnippets = this.extractPythonSnippets(response, codeblockStr).map(snippet => {
       return { language: 'python', content: snippet };
     });
 

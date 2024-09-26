@@ -139,9 +139,10 @@ export default class DagRenderer extends WebviewBase {
 
         case 'getLLM':
           if (!WebviewBase.context) return;
-          panel.webview.postMessage(
-            `model: ${AIService.getInstance(WebviewBase.context).model || 'none'}`
-          );
+          panel.webview.postMessage({
+            command: 'getLLM',
+            data: AIService.getInstance(WebviewBase.context).model || 'none',
+          });
           break;
       }
     };

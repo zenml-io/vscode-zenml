@@ -1,7 +1,7 @@
 import path from 'path';
 import * as vscode from 'vscode';
 
-export const SaveAIChangeEmitter = new vscode.EventEmitter();
+export const SaveAIChangeEmitter = new vscode.EventEmitter<vscode.TextDocument>();
 
 export default class StepFixerFs implements vscode.FileSystemProvider {
   root = new Directory('');
@@ -14,10 +14,11 @@ export default class StepFixerFs implements vscode.FileSystemProvider {
 
   readFile(uri: vscode.Uri): Uint8Array {
     const data = this._lookupAsFile(uri, false).data;
-    if (data) {
+    if (data !== undefined) {
       return data;
+    } else {
+      return new Uint8Array();
     }
-    throw vscode.FileSystemError.FileNotFound();
   }
 
   writeFile(
@@ -121,59 +122,55 @@ export default class StepFixerFs implements vscode.FileSystemProvider {
   // --- unused
 
   watch(_resource: vscode.Uri): vscode.Disposable {
-    throw MinFSError;
+    throw vscode.FileSystemError.Unavailable('Watching files is not supported by StepFixerFs.');
   }
   readDirectory(uri: vscode.Uri): [string, vscode.FileType][] {
-    throw MinFSError;
+    throw vscode.FileSystemError.Unavailable(
+      'Reading directories is not supported by StepFixerFs.'
+    );
   }
   rename(oldUri: vscode.Uri, newUri: vscode.Uri, options: { overwrite: boolean }): void {
-    throw MinFSError;
+    throw vscode.FileSystemError.NoPermissions('Renaming files is not supported by StepFixerFs.');
   }
   delete(uri: vscode.Uri): void {
-    throw MinFSError;
+    throw vscode.FileSystemError.NoPermissions('Deleting files is not supported by StepFixerFs.');
   }
   createDirectory(uri: vscode.Uri): void {
-    throw MinFSError;
+    throw vscode.FileSystemError.NoPermissions(
+      'Creating directories is not supported by StepFixerFs.'
+    );
   }
 }
 
-const MinFSError = new Error(
-  'Invalid operation attempted by minimal file system which only supports basic reading and writing to files'
-);
+class FsEntity implements vscode.FileStat {
+  public ctime: number;
+  public mtime: number;
+  public size: number;
+  public name: string;
+  public type: vscode.FileType;
 
-class File implements vscode.FileStat {
-  type: vscode.FileType;
-  ctime: number;
-  mtime: number;
-  size: number;
-
-  name: string;
-  data?: Uint8Array;
-
-  constructor(name: string) {
-    this.type = vscode.FileType.File;
+  constructor(name: string, type: vscode.FileType) {
     this.ctime = Date.now();
     this.mtime = Date.now();
     this.size = 0;
     this.name = name;
+    this.type = type;
   }
 }
 
-class Directory implements vscode.FileStat {
-  type: vscode.FileType;
-  ctime: number;
-  mtime: number;
-  size: number;
-
-  name: string;
-  entries: Map<string, File | Directory>;
+class File extends FsEntity {
+  public data?: Uint8Array;
 
   constructor(name: string) {
-    this.type = vscode.FileType.Directory;
-    this.ctime = Date.now();
-    this.mtime = Date.now();
-    this.size = 0;
-    this.name = name;
+    super(name, vscode.FileType.File);
+  }
+}
+
+class Directory extends FsEntity {
+  public entries: Map<string, Entry>;
+
+  constructor(name: string) {
+    super(name, vscode.FileType.Directory);
     this.entries = new Map();
   }
 }

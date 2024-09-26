@@ -176,12 +176,12 @@ g.svg-pan-zoom-control {
 }
 
 #context-menu li:hover {
-  color: grey;
-  background: lightgrey;
+  color: #333;
+  background: #e0e0e0;
 }
 
 #loading-ai {
-  opacity: 0%;
+  display: none;
 }
 
 .context-menu-subitem-indicator {
