@@ -115,26 +115,31 @@ async function getLogData() {
 
   let pipelineRunSteps = await getPipelineRunNodes('step');
 
-  let logs = await Promise.all(
-    pipelineRunSteps[0].map(async step => {
-      if (step && step.id) {
-        try {
-          let response = await axios.get(`${dashboardUrl}/api/v1/steps/${step.id}/logs`, {
-            headers: {
-              Authorization: `Bearer ${apiToken}`,
-              accept: 'application/json',
-            },
-          });
-          return response.data;
-        } catch (error) {
-          console.error(`Failed to get logs for step with id ${step.id}`, error);
+  if (pipelineRunSteps && pipelineRunSteps[0]) {
+    let logs = await Promise.all(
+      pipelineRunSteps[0].map(async step => {
+        if (step?.id) {
+          try {
+            let response = await axios.get(`${dashboardUrl}/api/v1/steps/${step.id}/logs`, {
+              headers: {
+                Authorization: `Bearer ${apiToken}`,
+                accept: 'application/json',
+              },
+            });
+            return response.data;
+          } catch (error) {
+            console.error(`Failed to get logs for step with id ${step.id}`, error);
+          }
+        } else {
+          console.warn('Encountered a null or invalid step.');
         }
-      } else {
-        console.warn('Encountered a null or invalid step.');
-      }
-    })
-  );
-  return logs;
+      })
+    );
+    return logs;
+  } else {
+    console.warn('No pipeline run steps found.');
+    return [];
+  }
 }
 
 async function getPipelineRunLogs(id: string) {
@@ -165,13 +170,18 @@ async function getPipelineRunLogs(id: string) {
     stepData.map(async step => {
       if (step && typeof step === 'object' && 'id' in step) {
         let validStep = step as JsonObject;
-        let response = await axios.get(`${dashboardUrl}/api/v1/steps/${validStep.id}/logs`, {
-          headers: {
-            Authorization: `Bearer ${apiToken}`,
-            accept: 'application/json',
-          },
-        });
-        return response.data;
+        try {
+          let response = await axios.get(`${dashboardUrl}/api/v1/steps/${validStep.id}/logs`, {
+            headers: {
+              Authorization: `Bearer ${apiToken}`,
+              accept: 'application/json',
+            },
+          });
+          return response.data;
+        } catch (error) {
+          console.error(`Failed to get logs for step with id ${validStep.id}`, error);
+          return null;
+        }
       }
       return null;
     })
