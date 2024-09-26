@@ -69,22 +69,22 @@ export class AIService {
     this.model = this.decode(model) as SupportedLLMModels;
   }
 
-  private async setAPIKey() {
+  private async getAPIKey() {
     if (!this.provider) {
-      return;
+      throw new Error(
+        `No API provider configured. Please select a provider and model through the command palette.`
+      );
     }
 
-    const keyStr = `${this.provider.toUpperCase()}_API_KEY`;
     const apiKey = await this.context.secrets.get(`zenml.${this.provider}.key`);
-    if (!process.env[keyStr] && apiKey) {
-      process.env[keyStr] = apiKey;
-    }
 
-    if (!process.env[keyStr] && !apiKey) {
+    if (apiKey === undefined) {
       throw new Error(
         `No ${this.provider} API key configured. Please add an environment variable or save a key through the command palette above and try again.`
       );
     }
+
+    return apiKey;
   }
 
   private extractPythonSnippets(response: string, codeblockStr: string): string[] {
@@ -143,8 +143,10 @@ export class AIService {
       return;
     }
 
+    let apiKey: string;
+
     try {
-      await this.setAPIKey();
+      apiKey = await this.getAPIKey();
     } catch (e) {
       const error = e as Error;
       vscode.window.showErrorMessage(error.message);
@@ -152,7 +154,8 @@ export class AIService {
       return;
     }
 
-    const tokenjs = new TokenJS();
+    const tokenjs = new TokenJS({ apiKey });
+
     let completion;
     try {
       completion = await tokenjs.chat.completions.create({
