@@ -45,7 +45,6 @@ export default class AIStepFixer extends WebviewBase {
         return;
       }
 
-      // TODO switch to tabgroups
       setTimeout(() => {
         const tabs = vscode.window.tabGroups.all.flatMap(group => group.tabs);
         const uris = tabs.filter(tab => 'uri' in tab).map(tab => tab.uri as vscode.Uri);
@@ -242,22 +241,24 @@ export default class AIStepFixer extends WebviewBase {
       );
     }
 
-    if (sourceCodeFileMatches.length === 0) {
-      vscode.window.showWarningMessage(
-        `We could not find a file with this step in your local environment, so cannot display inline recommendations. If the file is local, make sure it is available within your VSCode workspace and try again.`
-      );
-    } else if (sourceCodeFileMatches.length > 1) {
-      vscode.window.showWarningMessage(
-        `We found multiple files with this step in your local environment, so cannot determine in which file to display inline recommendations. If you would like inline recommendations, you can adjust your VSCode environment so that it contains only one file with the registered step and try again.`
-      );
-    } else if (sourceCodeFileMatches.length === 1) {
-      this.createCodeRecommendation(
-        sourceCodeFileMatches[0].uri,
-        codeChoices,
-        String(stepData.sourceCode).trim(),
-        existingPanel,
-        sourceCodeFileMatches[0].content
-      );
+    if (codeChoices.length > 0) {
+      if (sourceCodeFileMatches.length === 0) {
+        vscode.window.showWarningMessage(
+          `We could not find a file with this step in your local environment, so cannot display inline recommendations. If the file is local, make sure it is available within your VSCode workspace and try again.`
+        );
+      } else if (sourceCodeFileMatches.length > 1) {
+        vscode.window.showWarningMessage(
+          `We found multiple files with this step in your local environment, so cannot determine in which file to display inline recommendations. If you would like inline recommendations, you can adjust your VSCode environment so that it contains only one file with the registered step and try again.`
+        );
+      } else if (sourceCodeFileMatches.length === 1) {
+        this.createCodeRecommendation(
+          sourceCodeFileMatches[0].uri,
+          codeChoices,
+          String(stepData.sourceCode).trim(),
+          existingPanel,
+          sourceCodeFileMatches[0].content
+        );
+      }
     }
 
     this.createVirtualDocument(id, message || 'Something went wrong', existingPanel);
