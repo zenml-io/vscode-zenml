@@ -209,8 +209,16 @@
         updateModelDropdown(message.models);
         break;
       }
+      case 'hideLoader': {
+        hideLoader();
+        break;
+      }
     }
   });
+
+  function hideLoader() {
+    loader.classList.remove('loader');
+  }
 
   function updateModelDropdown(models) {
     modelDropdown.innerHTML = models
