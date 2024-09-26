@@ -180,7 +180,6 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
         for (const letter of partialResponse) {
           this.streamingMessage.content += letter;
           this.sendMessageToWebview(letter);
-          await new Promise(resolve => setTimeout(resolve, 1));
         }
       }
 
@@ -190,7 +189,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
       this.sendMessageToWebview('enableInput');
     } catch (error) {
       console.error('Error in addMessage:', error);
-      this.sendMessageToWebview('Error: Unable to get response from Gemini');
+      this.sendMessageToWebview(`Error: Unable to get response from ${provider || this.currentProvider}`);
       this.sendMessageToWebview('enableInput');
     }
   }
