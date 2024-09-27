@@ -177,3 +177,12 @@ def update_packages(session: nox.Session) -> None:
     session.install("wheel", "pip-tools")
     _update_pip_packages(session)
     _update_npm_packages(session)
+
+@nox.session
+def build_css(session):
+    session.install('tailwindcss')
+    session.run('npx', 'tailwindcss', '-i', './resources/chat-view/styles.css', '-o', './dist/styles.css', '--watch', external=True)
+
+@nox.session
+def dev(session):
+    session.run('nox', '-s', 'build_css', external=True)

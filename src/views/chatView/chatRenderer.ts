@@ -49,6 +49,10 @@ export function getWebviewContent(
     vscode.Uri.joinPath(extensionUri, 'node_modules', 'dompurify', 'dist', 'purify.min.js')
   );
 
+  const stylesUri = webview.asWebviewUri(
+    vscode.Uri.joinPath(extensionUri, 'dist', 'styles.css')
+  );
+
   const chatLogHtml = renderChatLog(messages);
   let treeItemHtml = getTreeHtml();
   let providerDropdownHtml = getProviderDropdownHtml(currentProvider, availableProviders);
@@ -57,6 +61,7 @@ export function getWebviewContent(
   html = html.replace('${jsUri}', jsUri.toString());
   html = html.replace('${markedUri}', markedUri.toString());
   html = html.replace('${purifyUri}', purifyUri.toString());
+  html = html.replace('${stylesUri}', stylesUri.toString());
   html = html.replace('${treeItemHtml}', treeItemHtml);
   html = html.replace('${providerDropdownHtml}', providerDropdownHtml);
   html = html.replace('${modelDropdownHtml}', modelDropdownHtml);
