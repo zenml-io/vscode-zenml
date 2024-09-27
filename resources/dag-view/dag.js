@@ -14,6 +14,9 @@ import svgPanZoom from 'svg-pan-zoom';
 
 (() => {
   const dag = document.querySelector('#dag');
+  let contextMenu = null;
+  let currentLLM = 'none';
+  let LLMFetched = null;
   const panZoom = svgPanZoom(dag);
   panZoom.enableControlIcons();
   panZoom.setMaxZoom(40);
@@ -32,6 +35,12 @@ import svgPanZoom from 'svg-pan-zoom';
   window.addEventListener('resize', resize);
 
   const edges = [...document.querySelectorAll('polyline')];
+
+  function fetchingLLM() {
+    return new Promise(resolve => {
+      LLMFetched = () => resolve(true);
+    });
+  }
 
   dag.addEventListener('mouseover', evt => {
     let target = evt.target;
@@ -52,6 +61,8 @@ import svgPanZoom from 'svg-pan-zoom';
   });
 
   dag.addEventListener('click', evt => {
+    closeContextMenu();
+
     const stepId = evt.target.closest('[data-stepid]')?.dataset.stepid;
     const artifactId = evt.target.closest('[data-artifactid]')?.dataset.artifactid;
 
@@ -82,6 +93,103 @@ import svgPanZoom from 'svg-pan-zoom';
       vscode.postMessage({ command: 'artifact', id: artifactId });
     }
   });
+
+  dag.addEventListener('contextmenu', async evt => {
+    closeContextMenu();
+    evt.preventDefault();
+
+    const step = evt.target.closest('[data-stepid]');
+    const artifact = evt.target.closest('[data-artifactid]');
+
+    if (!step && !artifact) {
+      return;
+    }
+
+    if (step?.querySelector('svg.failed')) {
+      vscode.postMessage({ command: `getLLM`, id: '' });
+      await fetchingLLM();
+    }
+
+    openContextMenu(
+      `<div id="context-menu">
+        <ul>
+          <li id="inspect">Inspect</li>
+          <li id="open-dashboard-url">Open Dashboard URL</li>
+          ${
+            step?.querySelector('svg.failed')
+              ? `<li id="suggest-fix">Suggest Fix</li>
+                <li id="select-model">
+                  <span class="context-menu-subitem-indicator">∟</span>
+                  Choose AI Model (current: ${currentLLM})
+                </li>`
+              : ''
+          }
+        </ul>
+      </div>`,
+      evt.pageX,
+      evt.pageY,
+      step || artifact
+    );
+  });
+
+  window.addEventListener('message', evt => {
+    if (evt.data.command === 'closeContextMenu') closeContextMenu();
+    if (evt.data.command === 'getLLM') {
+      currentLLM = evt.data.data;
+      LLMFetched();
+    }
+  });
+
+  function openContextMenu(html, x, y, target) {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html.trim();
+    contextMenu = tempDiv.firstChild;
+
+    addEventListenersToContextMenu(contextMenu, target);
+    document.body.insertBefore(contextMenu, document.body.firstChild);
+
+    const style = getComputedStyle(contextMenu);
+    const menuHeight = parseInt(style.height.match(/\d+/)[0], 10);
+    const menuWidth = parseInt(style.width.match(/\d+/)[0], 10);
+
+    contextMenu.style.top =
+      menuHeight + y <= document.documentElement.clientHeight ? `${y}px` : `${y - menuHeight}px`;
+
+    contextMenu.style.left =
+      menuWidth + x <= document.documentElement.clientWidth ? `${x}px` : `${x - menuWidth}px`;
+  }
+
+  function closeContextMenu() {
+    contextMenu?.remove();
+    contextMenu = null;
+  }
+
+  function addEventListenersToContextMenu(contextMenu, target) {
+    const stepId = target.closest('[data-stepid]')?.dataset.stepid;
+    const artifactId = target.closest('[data-artifactid]')?.dataset.artifactid;
+    const command = stepId ? 'step' : 'artifact';
+
+    contextMenu.querySelector('#inspect')?.addEventListener('click', () => {
+      vscode.postMessage({ command, id: stepId || artifactId });
+    });
+    contextMenu.querySelector('#open-dashboard-url')?.addEventListener('click', () => {
+      vscode.postMessage({ command: `${command}Url`, id: stepId || artifactId });
+    });
+    contextMenu.querySelector('#suggest-fix')?.addEventListener('click', () => {
+      if (contextMenu.querySelector('#suggest-fix').textContent === 'Loading...') {
+        return;
+      }
+
+      contextMenu.querySelector('#suggest-fix').textContent = 'Loading...';
+      vscode.postMessage({ command: `stepFix`, id: stepId || artifactId });
+    });
+    contextMenu.querySelector('#select-model')?.addEventListener('click', () => {
+      vscode.postMessage({ command: `selectLLM`, id: stepId || artifactId });
+    });
+    contextMenu.addEventListener('click', evt => {
+      if (evt.target.id !== 'suggest-fix') closeContextMenu();
+    });
+  }
 
   const nodes = [...document.querySelectorAll('.node > div')];
 
