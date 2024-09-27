@@ -290,7 +290,7 @@ export default class AIStepFixer extends WebviewBase {
   ) {
     const provider = new (class implements vscode.TextDocumentContentProvider {
       provideTextDocumentContent(uri: vscode.Uri): string {
-        return content;
+        return `> Note that the AI can only see the failing step function itself, so may add misinformed code, like redundant import statements. Edit accordingly.\n\n${content}`;
       }
     })();
 
