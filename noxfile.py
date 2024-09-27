@@ -179,10 +179,22 @@ def update_packages(session: nox.Session) -> None:
     _update_npm_packages(session)
 
 @nox.session
-def build_css(session):
-    session.install('tailwindcss')
-    session.run('npx', 'tailwindcss', '-i', './resources/chat-view/styles.css', '-o', './dist/styles.css', '--watch', external=True)
-
-@nox.session
-def dev(session):
-    session.run('nox', '-s', 'build_css', external=True)
+def build_css(session, watch=False):
+    try:
+        session.log("Installing tailwindcss...")
+        session.install('tailwindcss')
+        
+        session.log("Processing CSS...")
+        cmd = [
+            'npx', 'tailwindcss', 
+            '-i', './resources/chat-view/styles.css', 
+            '-o', './dist/styles.css'
+        ]
+        if watch:
+            cmd.append('--watch')
+        
+        session.run(*cmd, external=True)
+        session.log("CSS processing completed successfully.")
+    except Exception as e:
+        session.log(f"An error occurred during CSS processing: {str(e)}")
+        raise
