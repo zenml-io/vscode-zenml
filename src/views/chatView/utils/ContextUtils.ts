@@ -62,6 +62,7 @@ export async function addContext(requestedContext: ContextType[]): Promise<strin
           break;
         default:
           console.warn(`Unknown context type: ${context}`);
+          systemMessage += `Unknown context type: ${context}\n`;
           break;
       }
     }
@@ -137,124 +138,135 @@ function getStackData(): string {
   }
 }
 
-async function getLogData() {
-  let lsClient = LSClient.getInstance();
+async function getLogData(): Promise<any[]> {
+  try {
+    const lsClient = LSClient.getInstance();
+    const globalConfig = await lsClient.sendLsClientRequest<ZenmlGlobalConfigResp>('getGlobalConfig');
+    const apiToken = globalConfig.store.api_token;
+    const dashboardUrl = globalConfig.store.url;
 
-  let globalConfig = await lsClient.sendLsClientRequest<ZenmlGlobalConfigResp>('getGlobalConfig');
-  let apiToken = globalConfig.store.api_token;
-  let dashboardUrl = globalConfig.store.url;
+    if (!apiToken) {
+      throw new Error('API Token is not available in global configuration');
+    }
 
-  if (!apiToken) {
-    throw new Error('API Token is not available in global configuration');
-  }
+    const pipelineRunSteps = await getPipelineRunNodes('step');
 
-  let pipelineRunSteps = await getPipelineRunNodes('step');
+    if (!pipelineRunSteps?.[0]) {
+      console.warn('No pipeline run steps found.');
+      return [];
+    }
 
-  if (pipelineRunSteps && pipelineRunSteps[0]) {
-    let logs = await Promise.all(
-      pipelineRunSteps[0].map(async step => {
-        if (step?.id) {
-          try {
-            let response = await axios.get(`${dashboardUrl}/api/v1/steps/${step.id}/logs`, {
-              headers: {
-                Authorization: `Bearer ${apiToken}`,
-                accept: 'application/json',
-              },
-            });
-            return response.data;
-          } catch (error) {
-            console.error(`Failed to get logs for step with id ${step.id}`, error);
-          }
-        } else {
-          console.warn('Encountered a null or invalid step.');
-        }
-      })
-    );
-    return logs;
-  } else {
-    console.warn('No pipeline run steps found.');
+    const fetchStepLogs = async (step: any) => {
+      if (!step?.id) {
+        console.warn('Encountered a null or invalid step.');
+        return null;
+      }
+      try {
+        const response = await axios.get(`${dashboardUrl}/api/v1/steps/${step.id}/logs`, {
+          headers: {
+            Authorization: `Bearer ${apiToken}`,
+            accept: 'application/json',
+          },
+        });
+        return response.data;
+      } catch (error) {
+        console.error(`Failed to get logs for step with id ${step.id}`, error);
+        return null;
+      }
+    };
+
+    const logs = await Promise.all(pipelineRunSteps[0].map(fetchStepLogs));
+    return logs.filter(log => log !== null);
+  } catch (error) {
+    console.error('Failed to retrieve log data:', error);
     return [];
   }
 }
 
-async function getPipelineRunLogs(id: string) {
-  let lsClient = LSClient.getInstance();
+type Step = {
+  id: string;
+  [key: string]: any;
+};
 
-  let dagData = await lsClient.sendLsClientRequest<PipelineRunDag>('getPipelineRunDag', [id]);
-
-  let stepData = await Promise.all(
-    dagData.nodes.map(async (node: DagArtifact | DagStep) => {
-      if (node.type === 'step') {
-        return await lsClient.sendLsClientRequest<JsonObject>('getPipelineRunStep', [node.id]);
-      }
-      return null;
-    })
-  );
-
-  stepData = stepData.filter(value => value !== null);
-
-  let globalConfig = await lsClient.sendLsClientRequest<ZenmlGlobalConfigResp>('getGlobalConfig');
-  let apiToken = globalConfig.store.api_token;
-  let dashboardUrl = globalConfig.store.url;
-
-  if (!apiToken) {
-    throw new Error('API Token is not available in global configuration');
+async function fetchLogs(stepId: string, apiToken: string, dashboardUrl: string): Promise<any> {
+  try {
+    const response = await axios.get(`${dashboardUrl}/api/v1/steps/${stepId}/logs`, {
+      headers: {
+        Authorization: `Bearer ${apiToken}`,
+        accept: 'application/json',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Failed to get logs for step with id ${stepId}`, error);
+    return null;
   }
-
-  let logs = await Promise.all(
-    stepData.map(async step => {
-      if (step && typeof step === 'object' && 'id' in step) {
-        let validStep = step as JsonObject;
-        try {
-          let response = await axios.get(`${dashboardUrl}/api/v1/steps/${validStep.id}/logs`, {
-            headers: {
-              Authorization: `Bearer ${apiToken}`,
-              accept: 'application/json',
-            },
-          });
-          return response.data;
-        } catch (error) {
-          console.error(`Failed to get logs for step with id ${validStep.id}`, error);
-          return null;
-        }
-      }
-      return null;
-    })
-  );
-  logs = logs.filter(log => log !== null);
-  return logs;
 }
 
-async function getPipelineRunNodes(type: string, id?: string) {
-  let pipelineRuns = PipelineDataProvider.getInstance().getPipelineData();
-  let pipelineData;
+async function getPipelineRunLogs(id: string): Promise<any[]> {
+  try {
+    const lsClient = LSClient.getInstance();
+    const dagData = await lsClient.sendLsClientRequest<PipelineRunDag>('getPipelineRunDag', [id]);
 
-  if (id) {
-    pipelineData = pipelineRuns.filter(pipelineRun => pipelineRun.id === id);
-  } else {
-    pipelineData = pipelineRuns;
+    const stepData = (await Promise.all(
+      dagData.nodes.map(async (node: DagArtifact | DagStep) => {
+        if (node.type === 'step') {
+          return await lsClient.sendLsClientRequest<Step>('getPipelineRunStep', [node.id]);
+        }
+        return null;
+      })
+    )).filter((step): step is Step => step !== null);
+
+    const globalConfig = await lsClient.sendLsClientRequest<ZenmlGlobalConfigResp>('getGlobalConfig');
+    const apiToken = globalConfig.store.api_token;
+    const dashboardUrl = globalConfig.store.url;
+
+    if (!apiToken) {
+      throw new Error('API Token is not available in global configuration');
+    }
+
+    const logs = await Promise.all(
+      stepData.map(step => fetchLogs(step.id, apiToken, dashboardUrl))
+    );
+
+    return logs.filter(log => log !== null);
+  } catch (error) {
+    console.error('Failed to retrieve pipeline run logs:', error);
+    return [];
   }
+}
 
-  let lsClient = LSClient.getInstance();
-  let dagData = await Promise.all(
-    pipelineData.map(async node => {
-      let dag = await lsClient.sendLsClientRequest<PipelineRunDag>('getPipelineRunDag', [node.id]);
-      return dag;
-    })
-  );
+type NodeType = 'all' | 'step' | 'artifact';
 
-  let stepData = await Promise.all(
-    dagData.map(async (dag: PipelineRunDag) => {
-      let filteredNodes = await Promise.all(
+async function getPipelineRunNodes(nodeType: NodeType, pipelineRunId?: string): Promise<JsonObject[][]> {
+  try {
+    const pipelineDataProvider = PipelineDataProvider.getInstance();
+    const allPipelineRuns = pipelineDataProvider.getPipelineData();
+    const targetPipelineRuns = pipelineRunId
+      ? allPipelineRuns.filter(run => run.id === pipelineRunId)
+      : allPipelineRuns;
+
+    const lsClient = LSClient.getInstance();
+
+    const fetchAndFilterNodes = async (pipelineRun: { id: string }): Promise<JsonObject[]> => {
+      const dag = await lsClient.sendLsClientRequest<PipelineRunDag>('getPipelineRunDag', [pipelineRun.id]);
+      
+      const filteredNodes = await Promise.all(
         dag.nodes.map(async (node: DagArtifact | DagStep) => {
-          if (type === 'all' || node.type === type) {
+          if (nodeType === 'all' || node.type === nodeType) {
             return await lsClient.sendLsClientRequest<JsonObject>('getPipelineRunStep', [node.id]);
           }
           return null;
         })
       );
-      return filteredNodes.filter(value => value !== null);
-    })
-  );
-  return stepData;
+
+      return filteredNodes.filter((node): node is JsonObject => node !== null);
+    };
+
+    const pipelineNodesData = await Promise.all(targetPipelineRuns.map(fetchAndFilterNodes));
+    return pipelineNodesData;
+  } catch (error) {
+    console.error('Failed to retrieve pipeline run nodes:', error);
+    return [];
+  }
 }
