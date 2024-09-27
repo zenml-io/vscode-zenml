@@ -88,10 +88,20 @@ export class AIService {
   }
 
   private extractPythonSnippets(response: string, codeblockStr: string): string[] {
-    return response
+    const codeBlockLines = response
       .split(codeblockStr)
       .filter(ele => ele.startsWith('python') && ele.includes('@step'))
-      .map(snippet => snippet.slice(7));
+      .map(snippet => snippet.slice(7).replace(/\r\n/g, '\n').split('\n'));
+
+    const snippets = codeBlockLines.map(block => {
+      while (block.every(line => line[0].match(/\s/))) {
+        block = block.map(line => line.slice(1));
+      }
+
+      return block.join('\n');
+    });
+
+    return snippets;
   }
 
   private normalizeCodeblocks(response: string, codeblockStr: string): string {

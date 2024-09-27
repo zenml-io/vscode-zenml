@@ -344,7 +344,7 @@ export default class AIStepFixer extends WebviewBase {
         } catch (e) {
           const error = e as Error;
           vscode.window.showErrorMessage(`Failed to read source file: ${error.message}`);
-          return ''; // Return empty content or handle accordingly
+          return '';
         }
       })();
     }
