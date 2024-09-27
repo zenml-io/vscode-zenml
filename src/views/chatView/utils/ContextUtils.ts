@@ -70,45 +70,71 @@ export async function addContext(requestedContext: ContextType[]): Promise<strin
 }
 
 function getServerData(): string {
-  let serverData = ServerDataProvider.getInstance().getCurrentStatus();
-  return `Server Status Data:\n${JSON.stringify(serverData)}\n`;
+  try {
+    let serverData = ServerDataProvider.getInstance().getCurrentStatus();
+    return `Server Status Data:\n${JSON.stringify(serverData)}\n`;
+  } catch (error) {
+    console.error('Failed to get server status:', error);
+    return 'Server Status Data: Unable to retrieve\n';
+  }
 }
 
 function getStackComponentData(): string {
-  let components = ComponentDataProvider.getInstance().items;
-  let componentData = components
-    .map((item: vscode.TreeItem) => {
-      if (item instanceof StackComponentTreeItem) {
-        let { name, type, flavor, id } = item.component;
-        let stackId = item.stackId;
-        let idInfo = stackId ? ` - Stack ID: ${stackId}` : '';
-        let componentId = ` - Component ID: ${id}`;
-        return `Name: ${name}, Type: ${type}, Flavor: ${flavor}${componentId}${idInfo}`;
-      } else {
-        return `Label: ${item.label}, Description: ${item.description || 'N/A'}`;
-      }
-    })
-    .join('\n');
-  return `Stack Component Data:\n${componentData}\n`;
+  try {
+    let components = ComponentDataProvider.getInstance().items;
+    let componentData = components
+      .map((item: vscode.TreeItem) => {
+        if (item instanceof StackComponentTreeItem) {
+          let { name, type, flavor, id } = item.component;
+          let stackId = item.stackId;
+          let idInfo = stackId ? ` - Stack ID: ${stackId}` : '';
+          let componentId = ` - Component ID: ${id}`;
+          return `Name: ${name}, Type: ${type}, Flavor: ${flavor}${componentId}${idInfo}`;
+        } else if (item.label) {
+          return `Label: ${item.label}, Description: ${item.description || 'N/A'}`;
+        } else {
+          return 'Unknown item type';
+        }
+      })
+      .join('\n');
+    return `Stack Component Data:\n${componentData}\n`;
+  } catch (error) {
+    console.error('Failed to get stack component data:', error);
+    return 'Stack Component Data: Unable to retrieve\n';
+  }
 }
 
 async function getEnvironmentData(): Promise<string> {
-  let environmentData = await EnvironmentDataProvider.getInstance().getChildren();
-  let contextString = environmentData
-    .map(item => `${item.label}: ${item.description || ''}`)
-    .join('\n');
-  return `Environment Data:\n${contextString}\n`;
+  try {
+    let environmentData = await EnvironmentDataProvider.getInstance().getChildren();
+    let contextString = environmentData
+      .map(item => `${item.label}: ${item.description || ''}`)
+      .join('\n');
+    return `Environment Data:\n${contextString}\n`;
+  } catch (error) {
+    console.error('Failed to get environment data:', error);
+    return 'Environment Data: Unable to retrieve\n';
+  }
 }
 
 function getStackData(): string {
-  let stackData = StackDataProvider.getInstance().items;
-  let contextString = stackData
-    .map(item => {
-      let stackItem = item as vscode.TreeItem & { isActive: boolean; id: string };
-      return `Name: ${item.label}\n` + `ID: ${stackItem.id}\n` + `Active: ${stackItem.isActive}`;
-    })
-    .join('\n');
-  return `Stack Data:\n${contextString}\n`;
+  try {
+    let stackData = StackDataProvider.getInstance().items;
+    let contextString = stackData
+      .map(item => {
+        if ('isActive' in item && 'id' in item) {
+          return `Name: ${item.label || 'N/A'}\n` +
+                 `ID: ${item.id}\n` +
+                 `Active: ${item.isActive}`;
+        }
+        return `Name: ${item.label || 'N/A'}`;
+      })
+      .join('\n');
+    return `Stack Data:\n${contextString}\n`;
+  } catch (error) {
+    console.error('Failed to get stack data:', error);
+    return 'Stack Data: Unable to retrieve\n';
+  }
 }
 
 async function getLogData() {
