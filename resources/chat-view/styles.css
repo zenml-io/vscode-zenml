@@ -9,11 +9,11 @@ body {
   }
 
   ul {
-    color: black !important;
+    color: var(--vscode-editor-foreground);
   }
 
   form {
-    display: contents;
+    display: flex;
   }
 
   #chatForm {
@@ -161,21 +161,7 @@ body {
   #chatMessages h4,
   #chatMessages h5,
   #chatMessages h6 {
-    color: var(--vscode-editor-foreground);
     font-weight: bold;
-  }
-
-  #chatMessages p {
-    color: var(--vscode-editor-foreground);
-  }
-
-  #chatMessages ul,
-  #chatMessages ol {
-    color: var(--vscode-editor-foreground);
-  }
-
-  #chatMessages li {
-    color: var(--vscode-editor-foreground);
   }
 
   #chatMessages pre {
