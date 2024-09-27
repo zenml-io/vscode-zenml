@@ -125,8 +125,6 @@ export async function searchWorkspaceByFileContent(content: string) {
   await Promise.all(
     pythonFiles.map(async file => {
       try {
-        console.log(file.fsPath);
-
         return await vscode.workspace.openTextDocument(file).then(doc => {
           const docText = doc.getText();
 
