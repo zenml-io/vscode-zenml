@@ -22,45 +22,48 @@ import { getPipelineData } from './PipelineUtils';
 import { ComponentDataProvider } from '../../activityBar/componentView/ComponentDataProvider';
 import { EnvironmentDataProvider } from '../../activityBar/environmentView/EnvironmentDataProvider';
 
-export async function addContext(requestedContext: string[]): Promise<string> {
+type ContextType = 'serverContext' | 'environmentContext' | 'pipelineContext' | 'stackContext' | 'stackComponentsContext' | 'logsContext' | 'pipelineRunContext' | string;
+
+export async function addContext(requestedContext: ContextType[]): Promise<string> {
   let systemMessage = 'Context:\n';
   for (let context of requestedContext) {
-    switch (context) {
-      case 'serverContext':
-        systemMessage += getServerData();
-        break;
-      case 'environmentContext':
-        systemMessage += await getEnvironmentData();
-        break;
-      case 'pipelineContext':
-        systemMessage += getPipelineData().contextString;
-        systemMessage += '\n A pipeline is a series of steps in a machine learning workflow.';
-        break;
-      case 'stackContext':
-        systemMessage += getStackData();
-        break;
-      case 'stackComponentsContext':
-        systemMessage += getStackComponentData();
-        break;
-      case 'logsContext':
-        systemMessage += await getLogData();
-        break;
-      default:
-        if (context.includes('Pipeline Run:')) {
-          try {
-            let runData = JSON.parse(context.replace('Pipeline Run:', ''));
-            let logs = await getPipelineRunLogs(runData.id);
-            let nodeData = await getPipelineRunNodes('step', runData.id);
-            systemMessage += `Pipeline Run: ${JSON.stringify(runData)}\n`;
-            systemMessage += `Logs: ${logs}\n`;
-            systemMessage += `Step Data: ${JSON.stringify(nodeData)}\n`;
-          } catch (error) {
-            console.error('Failed to parse pipeline run data from context:', error);
-            systemMessage += 'Failed to parse pipeline run data from context.\n';
-          }
-          
-        }
-        break;
+    if (context.startsWith('Pipeline Run:')) {
+      try {
+        let runData = JSON.parse(context.replace('Pipeline Run:', ''));
+        let logs = await getPipelineRunLogs(runData.id);
+        let nodeData = await getPipelineRunNodes('step', runData.id);
+        systemMessage += `Pipeline Run: ${JSON.stringify(runData)}\n`;
+        systemMessage += `Logs: ${logs}\n`;
+        systemMessage += `Step Data: ${JSON.stringify(nodeData)}\n`;
+      } catch (error) {
+        console.error('Failed to parse pipeline run data from context:', error);
+        systemMessage += 'Failed to parse pipeline run data from context.\n';
+      }
+    } else {
+      switch (context) {
+        case 'serverContext':
+          systemMessage += getServerData();
+          break;
+        case 'environmentContext':
+          systemMessage += await getEnvironmentData();
+          break;
+        case 'pipelineContext':
+          systemMessage += getPipelineData().contextString;
+          systemMessage += '\n A pipeline is a series of steps in a machine learning workflow.';
+          break;
+        case 'stackContext':
+          systemMessage += getStackData();
+          break;
+        case 'stackComponentsContext':
+          systemMessage += getStackComponentData();
+          break;
+        case 'logsContext':
+          systemMessage += await getLogData();
+          break;
+        default:
+          console.warn(`Unknown context type: ${context}`);
+          break;
+      }
     }
   }
   return systemMessage;
