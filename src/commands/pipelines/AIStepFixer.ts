@@ -314,7 +314,7 @@ export default class AIStepFixer extends WebviewBase {
       rec => rec.sourceUri.toString() === sourceUri.toString()
     );
 
-    if (!rec && code.length > 1) {
+    if (!rec && code.length >= 1) {
       this.codeRecommendations.push({
         sourceUri,
         recUri: undefined,
@@ -322,6 +322,7 @@ export default class AIStepFixer extends WebviewBase {
         sourceCode,
         currentCodeIndex: 0,
       });
+
       this.updateRecommendationsContext();
     }
 
@@ -383,6 +384,14 @@ export default class AIStepFixer extends WebviewBase {
       'zenml.aiCodeRecommendations',
       this.codeRecommendations
         .filter(rec => rec.recUri)
+        .map(rec => path.posix.basename(rec.recUri?.fsPath || ''))
+    );
+
+    vscode.commands.executeCommand(
+      'setContext',
+      'zenml.multipleAiCodeRecommendations',
+      this.codeRecommendations
+        .filter(rec => rec.recUri && rec.code.length > 1)
         .map(rec => path.posix.basename(rec.recUri?.fsPath || ''))
     );
   }
