@@ -15,9 +15,8 @@ permissions and limitations under the License. -->
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ZenML Chat</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <title>ZenML Chat</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap"
       rel="stylesheet"
@@ -422,7 +421,25 @@ permissions and limitations under the License. -->
         </div>
       </div>
     </div>
+    <!-- <script src="${tailwindUri}"></script> -->
+    <script src="${markedUri}"></script>
+    <script src="${purifyUri}"></script>
     <script src="${jsUri}"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.3.10/purify.min.js"></script>
+    <!-- <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              zenml: '#7a3ef8',
+              gray: '#e7e5e4',
+              mutedText: '#707070',
+            },
+            fontFamily: {
+              'plus-jakarta': ['"Plus Jakarta Sans"', 'sans-serif'],
+            },
+          },
+        },
+      };
+    </script> -->
   </body>
 </html>

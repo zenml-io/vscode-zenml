@@ -41,12 +41,22 @@ export function getWebviewContent(
     vscode.Uri.joinPath(extensionUri, 'resources', 'chat-view', 'chat.js')
   );
 
+  const markedUri = webview.asWebviewUri(
+    vscode.Uri.joinPath(extensionUri, 'node_modules', 'marked', 'marked.min.js')
+  );
+
+  const purifyUri = webview.asWebviewUri(
+    vscode.Uri.joinPath(extensionUri, 'node_modules', 'dompurify', 'dist', 'purify.min.js')
+  );
+
   const chatLogHtml = renderChatLog(messages);
   let treeItemHtml = getTreeHtml();
   let providerDropdownHtml = getProviderDropdownHtml(currentProvider, availableProviders);
   let modelDropdownHtml = getModelDropdownHtml(availableModels);
 
   html = html.replace('${jsUri}', jsUri.toString());
+  html = html.replace('${markedUri}', markedUri.toString());
+  html = html.replace('${purifyUri}', purifyUri.toString());
   html = html.replace('${treeItemHtml}', treeItemHtml);
   html = html.replace('${providerDropdownHtml}', providerDropdownHtml);
   html = html.replace('${modelDropdownHtml}', modelDropdownHtml);
