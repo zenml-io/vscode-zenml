@@ -107,9 +107,10 @@
   window.addEventListener('message', event => {
     const message = event.data;
     switch (message.command) {
-      case 'updateChatLog':
+      case 'updateChatLog': {
         document.getElementById('chatMessages').innerHTML = message.chatLogHtml;
         break;
+      }
     }
   });
 
@@ -189,11 +190,12 @@
   window.addEventListener('message', event => {
     const message = event.data;
     switch (message.command) {
-      case 'updateChatLog':
+      case 'updateChatLog': {
         const sanitizeHtml = DOMPurify.sanitize(message.chatLogHtml);
         document.getElementById('chatMessages').innerHTML = sanitizeHtml;
         addCopyButtonsToAssistantMessages(); // For the potential view refresh command
         break;
+      }
       case 'receiveMessage': {
         if (message.text === 'disableInput') {
           disableInput();
@@ -294,10 +296,11 @@
     let message;
 
     switch (buttonValue) {
-      case 'aboutChat':
+      case 'aboutChat': {
         message = 'What can this chat do?';
         break;
-      case 'summarizeStats':
+      }
+      case 'summarizeStats': {
         message = 'Generate a summary of my stats.';
         context.push('serverContext');
         context.push('environmentContext');
@@ -305,12 +308,15 @@
         context.push('stackContext');
         context.push('stackComponentsContext');
         break;
-      case 'summarizeLogs':
+      }
+      case 'summarizeLogs': {
         message = 'Generate a summary of my logs.';
         context.push('logsContext');
         break;
-      default:
+      }
+      default: {
         break;
+      }
     }
 
     if (message) {
@@ -443,7 +449,7 @@
           e.preventDefault();
           if (!isInputDisabled) {
             const form = document.getElementById('chatForm');
-            const event = new Event('submit', {
+            const event = new CustomEvent('submit', {
               bubbles: true,
               cancelable: true,
             });
