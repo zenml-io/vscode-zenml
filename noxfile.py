@@ -121,6 +121,8 @@ def setup(session: nox.Session) -> None:
     _setup_template_environment(session)
     print(f"DEBUG – Virtual Environment Interpreter: {session.bin}/python")
 
+    build_css(session)
+
 
 @nox.session()
 def tests(session: nox.Session) -> None:
