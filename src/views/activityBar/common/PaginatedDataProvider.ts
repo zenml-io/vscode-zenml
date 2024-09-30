@@ -25,7 +25,7 @@ export class PaginatedDataProvider implements TreeDataProvider<TreeItem> {
   protected _onDidChangeTreeData = new EventEmitter<TreeItem | undefined | null>();
   readonly onDidChangeTreeData: Event<TreeItem | undefined | null> =
     this._onDidChangeTreeData.event;
-  protected pagination: {
+  public pagination: {
     currentPage: number;
     itemsPerPage: number;
     totalItems: number;

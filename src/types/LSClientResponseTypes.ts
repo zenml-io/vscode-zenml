@@ -52,3 +52,21 @@ export interface ActiveStackResponse {
 
 export type SetActiveStackResponse = ActiveStackResponse | ErrorMessageResponse;
 export type GetActiveStackResponse = ActiveStackResponse | ErrorMessageResponse;
+
+/***** Global Config Type *****/
+
+export interface ZenmlGlobalConfigResp {
+  user_id: string;
+  user_email: string;
+  analytics_opt_in: boolean;
+  version: string;
+  active_stack_id: string;
+  active_workspace_name: string;
+  store: ZenmlStoreConfig;
+}
+
+export interface ZenmlStoreConfig {
+  type: string;
+  url: string;
+  api_token?: string;
+}

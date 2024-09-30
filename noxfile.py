@@ -121,6 +121,8 @@ def setup(session: nox.Session) -> None:
     _setup_template_environment(session)
     print(f"DEBUG – Virtual Environment Interpreter: {session.bin}/python")
 
+    build_css(session)
+
 
 @nox.session()
 def tests(session: nox.Session) -> None:
@@ -177,3 +179,24 @@ def update_packages(session: nox.Session) -> None:
     session.install("wheel", "pip-tools")
     _update_pip_packages(session)
     _update_npm_packages(session)
+
+@nox.session
+def build_css(session, watch=False):
+    try:
+        session.log("Installing tailwindcss...")
+        session.install('tailwindcss')
+        
+        session.log("Processing CSS...")
+        cmd = [
+            'npx', 'tailwindcss', 
+            '-i', './resources/chat-view/styles.css', 
+            '-o', './dist/styles.css'
+        ]
+        if watch:
+            cmd.append('--watch')
+        
+        session.run(*cmd, external=True)
+        session.log("CSS processing completed successfully.")
+    except Exception as e:
+        session.log(f"An error occurred during CSS processing: {str(e)}")
+        raise
