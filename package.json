@@ -480,7 +480,7 @@
     "@types/node": "^22.5.4",
     "@types/sinon": "^17.0.3",
     "@types/svgdom": "^0.1.2",
-    "@types/vscode": "^1.92.0",
+    "@types/vscode": "^1.94.0",
     "@types/webpack": "^5.28.5",
     "@typescript-eslint/eslint-plugin": "^6.19.1",
     "@typescript-eslint/parser": "^6.19.1",
