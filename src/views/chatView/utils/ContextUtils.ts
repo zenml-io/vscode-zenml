@@ -22,7 +22,15 @@ import { getPipelineData } from './PipelineUtils';
 import { ComponentDataProvider } from '../../activityBar/componentView/ComponentDataProvider';
 import { EnvironmentDataProvider } from '../../activityBar/environmentView/EnvironmentDataProvider';
 
-type ContextType = 'serverContext' | 'environmentContext' | 'pipelineContext' | 'stackContext' | 'stackComponentsContext' | 'logsContext' | 'pipelineRunContext' | string;
+type ContextType =
+  | 'serverContext'
+  | 'environmentContext'
+  | 'pipelineContext'
+  | 'stackContext'
+  | 'stackComponentsContext'
+  | 'logsContext'
+  | 'pipelineRunContext'
+  | string;
 
 export async function addContext(requestedContext: ContextType[]): Promise<string> {
   let systemMessage = 'Context:\n';
@@ -124,9 +132,7 @@ function getStackData(): string {
     let contextString = stackData
       .map(item => {
         if ('isActive' in item && 'id' in item) {
-          return `Name: ${item.label || 'N/A'}\n` +
-                 `ID: ${item.id}\n` +
-                 `Active: ${item.isActive}`;
+          return `Name: ${item.label || 'N/A'}\n` + `ID: ${item.id}\n` + `Active: ${item.isActive}`;
         }
         return `Name: ${item.label || 'N/A'}`;
       })
@@ -141,7 +147,8 @@ function getStackData(): string {
 async function getLogData(): Promise<any[]> {
   try {
     const lsClient = LSClient.getInstance();
-    const globalConfig = await lsClient.sendLsClientRequest<ZenmlGlobalConfigResp>('getGlobalConfig');
+    const globalConfig =
+      await lsClient.sendLsClientRequest<ZenmlGlobalConfigResp>('getGlobalConfig');
     const apiToken = globalConfig.store.api_token;
     const dashboardUrl = globalConfig.store.url;
 
@@ -208,16 +215,19 @@ async function getPipelineRunLogs(id: string): Promise<any[]> {
     const lsClient = LSClient.getInstance();
     const dagData = await lsClient.sendLsClientRequest<PipelineRunDag>('getPipelineRunDag', [id]);
 
-    const stepData = (await Promise.all(
-      dagData.nodes.map(async (node: DagArtifact | DagStep) => {
-        if (node.type === 'step') {
-          return await lsClient.sendLsClientRequest<Step>('getPipelineRunStep', [node.id]);
-        }
-        return null;
-      })
-    )).filter((step): step is Step => step !== null);
+    const stepData = (
+      await Promise.all(
+        dagData.nodes.map(async (node: DagArtifact | DagStep) => {
+          if (node.type === 'step') {
+            return await lsClient.sendLsClientRequest<Step>('getPipelineRunStep', [node.id]);
+          }
+          return null;
+        })
+      )
+    ).filter((step): step is Step => step !== null);
 
-    const globalConfig = await lsClient.sendLsClientRequest<ZenmlGlobalConfigResp>('getGlobalConfig');
+    const globalConfig =
+      await lsClient.sendLsClientRequest<ZenmlGlobalConfigResp>('getGlobalConfig');
     const apiToken = globalConfig.store.api_token;
     const dashboardUrl = globalConfig.store.url;
 
@@ -238,7 +248,10 @@ async function getPipelineRunLogs(id: string): Promise<any[]> {
 
 type NodeType = 'all' | 'step' | 'artifact';
 
-async function getPipelineRunNodes(nodeType: NodeType, pipelineRunId?: string): Promise<JsonObject[][]> {
+async function getPipelineRunNodes(
+  nodeType: NodeType,
+  pipelineRunId?: string
+): Promise<JsonObject[][]> {
   try {
     const pipelineDataProvider = PipelineDataProvider.getInstance();
     const allPipelineRuns = pipelineDataProvider.getPipelineData();
@@ -249,8 +262,10 @@ async function getPipelineRunNodes(nodeType: NodeType, pipelineRunId?: string): 
     const lsClient = LSClient.getInstance();
 
     const fetchAndFilterNodes = async (pipelineRun: { id: string }): Promise<JsonObject[]> => {
-      const dag = await lsClient.sendLsClientRequest<PipelineRunDag>('getPipelineRunDag', [pipelineRun.id]);
-      
+      const dag = await lsClient.sendLsClientRequest<PipelineRunDag>('getPipelineRunDag', [
+        pipelineRun.id,
+      ]);
+
       const filteredNodes = await Promise.all(
         dag.nodes.map(async (node: DagArtifact | DagStep) => {
           if (nodeType === 'all' || node.type === nodeType) {

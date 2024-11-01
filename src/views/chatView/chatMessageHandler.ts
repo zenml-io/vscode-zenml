@@ -38,7 +38,9 @@ const commandHandlers: Record<string, CommandHandler> = {
     } catch (error) {
       console.error('Error adding message:', error);
       if (error instanceof NetworkError) {
-        chatDataProvider.showInfoMessage('Network error. Please check your connection and try again.');
+        chatDataProvider.showInfoMessage(
+          'Network error. Please check your connection and try again.'
+        );
       } else if (error instanceof ValidationError) {
         chatDataProvider.showInfoMessage('Invalid message format. Please try again.');
       } else {

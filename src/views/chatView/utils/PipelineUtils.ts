@@ -16,9 +16,17 @@ import { TreeItem, ContextItem } from '../../../types/ChatTypes';
 
 const CONTEXT_ITEMS: readonly ContextItem[] = [
   { name: 'Server', value: 'serverContext', title: 'Includes all server metadata with message' },
-  { name: 'Environment', value: 'environmentContext', title: 'Includes all server metadata with message' },
+  {
+    name: 'Environment',
+    value: 'environmentContext',
+    title: 'Includes all server metadata with message',
+  },
   { name: 'Stack', value: 'stackContext', title: 'Includes all stack metadata with message' },
-  { name: 'Stack Components', value: 'stackComponentsContext', title: 'Includes all stack component metadata with message' },
+  {
+    name: 'Stack Components',
+    value: 'stackComponentsContext',
+    title: 'Includes all stack component metadata with message',
+  },
 ] as const;
 
 export function getPipelineData(): { contextString: string; treeItems: TreeItem[] } {
@@ -89,7 +97,7 @@ export function getPaginatedTreeData(): TreeItem[] {
 
 export function getTreeData(): TreeItem[] {
   const paginatedItems = getPaginatedTreeData();
-  
+
   return [
     ...CONTEXT_ITEMS,
     {

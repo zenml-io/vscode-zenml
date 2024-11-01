@@ -12,22 +12,22 @@
 // permissions and limitations under the License.
 
 export class NetworkError extends Error {
-    constructor(message: string) {
-      super(message);
-      this.name = 'NetworkError';
-    }
+  constructor(message: string) {
+    super(message);
+    this.name = 'NetworkError';
   }
+}
 
-  export class ValidationError extends Error {
-    constructor(message: string) {
-      super(message);
-      this.name = 'ValidationError';
-    }
+export class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ValidationError';
   }
+}
 
-  export class StorageError extends Error {
-    constructor(message: string) {
-      super(message);
-      this.name = 'StorageError';
-    }
+export class StorageError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'StorageError';
   }
+}

@@ -42,8 +42,8 @@ export interface TreeItem {
 }
 
 /**
-    * Represents a context item in the tree structure.
-    */
+ * Represents a context item in the tree structure.
+ */
 export interface ContextItem {
   /** The name of the context item. */
   name: string;
@@ -97,7 +97,14 @@ export type AIModel =
  */
 export interface WebviewMessage {
   /** The command to be executed in the webview. */
-  command: 'sendMessage' | 'clearChat' | 'showInfo' | 'updateProvider' | 'updateModel' | 'prevPage' | 'nextPage';
+  command:
+    | 'sendMessage'
+    | 'clearChat'
+    | 'showInfo'
+    | 'updateProvider'
+    | 'updateModel'
+    | 'prevPage'
+    | 'nextPage';
   /** The text content of the message (if applicable). */
   text?: string;
   /** Additional context for the message (if applicable). */
