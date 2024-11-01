@@ -21,6 +21,7 @@ export function getWebviewContent(
   extensionUri: vscode.Uri,
   messages: ChatMessage[],
   currentProvider: string,
+  currentModel: string,
   availableProviders: string[],
   availableModels: string[]
 ): string {
@@ -28,11 +29,11 @@ export function getWebviewContent(
   let html: string;
   try {
     html = fs.readFileSync(htmlPath.fsPath, 'utf8');
-  } catch (err) {
-    if (err instanceof Error) {
-      vscode.window.showErrorMessage(`Failed to load HTML template: ${err.message}`);
+  } catch (error) {
+    if (error instanceof Error) {
+      vscode.window.showErrorMessage(`Failed to load HTML template: ${error.message}`);
     } else {
-      vscode.window.showErrorMessage('Failed to load HTML template due to an unkown error.');
+      vscode.window.showErrorMessage('Failed to load HTML template due to an unknown error.');
     }
     return '';
   }
@@ -49,14 +50,12 @@ export function getWebviewContent(
     vscode.Uri.joinPath(extensionUri, 'node_modules', 'dompurify', 'dist', 'purify.min.js')
   );
 
-  const stylesUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, 'dist', 'styles.css')
-  );
+  const stylesUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'dist', 'styles.css'));
 
   const chatLogHtml = renderChatLog(messages);
   let treeItemHtml = getTreeHtml();
   let providerDropdownHtml = getProviderDropdownHtml(currentProvider, availableProviders);
-  let modelDropdownHtml = getModelDropdownHtml(availableModels);
+  let modelDropdownHtml = getModelDropdownHtml(currentModel, availableModels);
 
   html = html.replace('${jsUri}', jsUri.toString());
   html = html.replace('${markedUri}', markedUri.toString());
@@ -85,9 +84,12 @@ function getProviderDropdownHtml(currentProvider: string, availableProviders: st
   `;
 }
 
-function getModelDropdownHtml(availableModels: string[]): string {
+function getModelDropdownHtml(currentModel: string, availableModels: string[]): string {
   const options = availableModels
-    .map(model => `<option value="${model}">${model}</option>`)
+    .map(
+      model =>
+        `<option value="${model}" ${model === currentModel ? 'selected' : ''}>${model}</option>`
+    )
     .join('');
 
   return `
@@ -104,7 +106,9 @@ export function renderChatLog(
   const renderer: Partial<Renderer> = {
     code({ text, lang, escaped }: Tokens.Code) {
       const formattedCode = text.replace(/\n$/, '') + (escaped ? '' : '\n');
-      return escaped ? `<code>${formattedCode}</code>` : '<pre><code>' + formattedCode + '</code></pre>\n';
+      return escaped
+        ? `<code>${formattedCode}</code>`
+        : '<pre><code>' + formattedCode + '</code></pre>\n';
     },
   };
 

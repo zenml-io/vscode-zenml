@@ -77,6 +77,8 @@
     } else {
       pipelineRunsDropdown.classList.remove('open');
     }
+
+    vscode.postMessage({ command: 'updateProvider', provider: selectedProvider });
   }
 
   function sendMessage(event) {
@@ -218,6 +220,11 @@
         updateModelDropdown(message.models);
         break;
       }
+      case 'updateModel': {
+        localStorage.setItem('selectedModel', message.text);
+        restoreState();
+        break;
+      }
       case 'hideLoader': {
         hideLoader();
         break;
@@ -284,9 +291,6 @@
   document.querySelectorAll('#tree-view input[type="checkbox"]').forEach(checkbox => {
     checkbox.addEventListener('change', saveState);
   });
-
-  // Restore state when page loads
-  document.addEventListener('DOMContentLoaded', restoreState);
 
   function sendSampleMessage() {
     const provider = document.querySelector('#provider-dropdown').value;

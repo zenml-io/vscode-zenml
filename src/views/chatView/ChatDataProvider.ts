@@ -23,7 +23,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
   private messages: ChatMessage[] = [];
   private streamingMessage: ChatMessage | null = null;
-  private currentProvider: string = 'Gemini';
+  private currentProvider: string = 'OpenAI';
   private currentModel: string = this.getAvailableModels()[0];
   private eventBus: EventBus = EventBus.getInstance();
   private _disposables: vscode.Disposable[] = [];
@@ -46,7 +46,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
   ) {
     this._view = webviewView;
     this.configureWebViewOptions(webviewView.webview);
-    this.loadWebviewContent();
+    this.refreshWebview();
 
     const messageListener = async (message: any) => {
       const pipelineDataProvider = PipelineDataProvider.getInstance();
@@ -77,6 +77,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
         this.context.extensionUri,
         this.messages,
         this.currentProvider,
+        this.currentModel,
         this.getAvailableProviders(),
         this.getAvailableModels()
       );
@@ -110,12 +111,18 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
   }
 
   async updateProvider(provider: string) {
+    // Doesn't update if there's no change to avoid infinite loops with the frontend
+    if (this.currentProvider === provider) {
+      return;
+    }
+
     this.currentProvider = provider;
     this.currentModel = this.getAvailableModels()[0];
+    this._view?.webview.postMessage({ command: 'updateModel', text: this.currentModel });
 
     try {
       await initializeTokenJS(this.context, provider);
-      this.loadWebviewContent();
+      this.refreshWebview();
     } catch (error: any) {
       console.error('Error initializing TokenJS:', error);
       vscode.window.showErrorMessage(`Failed to initialize ${provider}: ${error.message}`);
