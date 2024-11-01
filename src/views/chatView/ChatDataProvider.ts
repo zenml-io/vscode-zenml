@@ -33,7 +33,9 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
     initializeTokenJS(this.context, this.currentProvider);
     this.eventBus.addListener(LSP_ZENML_STACK_CHANGED, this.refreshWebviewBound);
     this._disposables.push(
-      new vscode.Disposable(() => this.eventBus.removeListener(LSP_ZENML_STACK_CHANGED, this.refreshWebviewBound))
+      new vscode.Disposable(() =>
+        this.eventBus.removeListener(LSP_ZENML_STACK_CHANGED, this.refreshWebviewBound)
+      )
     );
   }
 
@@ -88,42 +90,11 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
   private getAvailableModels(): string[] {
     switch (this.currentProvider) {
       case 'Gemini':
-        return ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-1.0-pro'];
+        return ['gemini-1.5-pro', 'gemini-1.5-flash'];
       case 'OpenAI':
-        return [
-          'gpt-4o',
-          'gpt-4o-mini',
-          'gpt-4o-2024-05-13',
-          'gpt-4-turbo',
-          'gpt-4-turbo-2024-04-09',
-          'gpt-4-0125-preview',
-          'gpt-4-turbo-preview',
-          'gpt-4-1106-preview',
-          'gpt-4-vision-preview',
-          'gpt-4',
-          'gpt-4-0314',
-          'gpt-4-0613',
-          'gpt-4-32k',
-          'gpt-4-32k-0314',
-          'gpt-4-32k-0613',
-          'gpt-3.5-turbo',
-          'gpt-3.5-turbo-16k',
-          'gpt-3.5-turbo-0301',
-          'gpt-3.5-turbo-0613',
-          'gpt-3.5-turbo-1106',
-          'gpt-3.5-turbo-0125',
-          'gpt-3.5-turbo-16k-0613',
-        ];
+        return ['gpt-4o-mini', 'gpt-3.5-turbo'];
       case 'Anthropic':
-        return [
-          'claude-3-5-sonnet-20240620',
-          'claude-3-opus-20240229',
-          'claude-3-sonnet-20240229',
-          'claude-3-haiku-20240307',
-          'claude-2.1',
-          'claude-2.0',
-          'claude-instant-1.2',
-        ];
+        return ['claude-3-5-sonnet-20240620', 'claude-3-opus-20240229'];
       default:
         return [];
     }
@@ -187,10 +158,11 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
       this.streamingMessage = null;
       this.updateWebviewContent();
       this.sendMessageToWebview('enableInput');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in addMessage:', error);
-      this.sendMessageToWebview(`Error: Unable to get response from ${provider || this.currentProvider}`);
+      this.sendMessageToWebview(`${error}`);
       this.sendMessageToWebview('enableInput');
+      this._view?.webview.postMessage({ command: 'hideLoader' });
     }
   }
 

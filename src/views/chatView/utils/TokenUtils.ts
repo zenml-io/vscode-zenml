@@ -106,14 +106,16 @@ export async function* getChatResponse(
       }
     } catch (streamError) {
       console.error('Streaming error in getChatResponse:', streamError);
-      throw new Error(`Streaming error with ${provider} API: ${streamError instanceof Error ? streamError.message : String(streamError)}`);
+      throw new Error(
+        `Streaming error with ${provider} API: ${streamError instanceof Error ? streamError.message : String(streamError)}`
+      );
     }
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Error in getChatResponse:', error);
     if (error instanceof Error) {
-      throw new Error(`Error with ${provider} API: ${error.message}`);
+      throw new Error(`${error.message}`);
     } else {
-      throw new Error(`Error with ${provider} API: ${String(error)}`);
+      throw new Error(`${provider} API: ${String(error)}`);
     }
   }
 }

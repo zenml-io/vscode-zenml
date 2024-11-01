@@ -540,7 +540,7 @@
     "marked": "^14.1.2",
     "svg-pan-zoom": "github:bumbu/svg-pan-zoom",
     "svgdom": "^0.1.19",
-    "token.js": "^0.4.3",
+    "token.js": "^0.4.5",
     "vscode-languageclient": "^9.0.1"
   }
 }
