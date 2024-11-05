@@ -167,7 +167,9 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
       this.sendMessageToWebview('enableInput');
     } catch (error: any) {
       console.error('Error in addMessage:', error);
-      this.sendMessageToWebview(`${error}`);
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occured.';
+      this.sendMessageToWebview(`${errorMessage}`);
+
       this.sendMessageToWebview('enableInput');
       this._view?.webview.postMessage({ command: 'hideLoader' });
     }
