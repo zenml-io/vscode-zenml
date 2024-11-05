@@ -16,7 +16,7 @@ import { ZenmlGlobalConfigResp } from '../../../types/LSClientResponseTypes';
 import { PipelineRunDag, DagStep, DagArtifact } from '../../../types/PipelineTypes';
 import { JsonObject } from '../../panel/panelView/PanelTreeItem';
 import { StackComponentTreeItem } from '../../activityBar';
-import axios from 'axios';
+import axios, { request } from 'axios';
 import * as vscode from 'vscode';
 import { getPipelineData } from './PipelineUtils';
 import { ComponentDataProvider } from '../../activityBar/componentView/ComponentDataProvider';
@@ -34,6 +34,10 @@ type ContextType =
   | string;
 
 export async function addContext(requestedContext: ContextType[]): Promise<string> {
+  if (!requestedContext?.length) {
+    return 'Context:\nNo context given';
+  }
+
   let systemMessage = 'Context:\n';
   for (let context of requestedContext) {
     if (context.startsWith('Pipeline Run:')) {
