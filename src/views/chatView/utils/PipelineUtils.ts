@@ -33,7 +33,9 @@ export function getPipelineData(): { contextString: string; treeItems: TreeItem[
   try {
     const pipelineRuns = PipelineDataProvider.getInstance().getPipelineRuns();
     let contextString = '';
-    const treeItems: TreeItem[] = pipelineRuns.map(run => {
+    const treeItems: TreeItem[] = [];
+
+    pipelineRuns.forEach(run => {
       const formattedStartTime = format(new Date(run.startTime), 'Pp');
       const formattedEndTime = run.endTime ? format(new Date(run.endTime), 'Pp') : 'N/A';
 
@@ -62,7 +64,7 @@ export function getPipelineData(): { contextString: string; treeItems: TreeItem[
           { name: `<b>python version:</b> ${run.pythonVersion}` },
         ],
       };
-      return treeItem;
+      treeItems.push(treeItem);
     });
 
     return { contextString, treeItems };
