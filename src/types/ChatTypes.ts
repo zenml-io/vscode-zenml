@@ -16,7 +16,7 @@
  */
 export interface ChatMessage {
   /** The role of the message sender (e.g., user, assistant). */
-  role: string;
+  role: 'user' | 'assistant' | 'system';
   /** The content of the message. */
   content: string;
 }
