@@ -19,7 +19,7 @@ const CONTEXT_ITEMS: readonly ContextItem[] = [
   {
     name: 'Environment',
     value: 'environmentContext',
-    title: 'Includes all server metadata with message',
+    title: 'Includes all environment metadata with message',
   },
   { name: 'Stack', value: 'stackContext', title: 'Includes all stack metadata with message' },
   {
