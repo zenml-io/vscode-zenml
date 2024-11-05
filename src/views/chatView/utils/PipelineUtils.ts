@@ -98,15 +98,19 @@ export function getPaginatedTreeData(): TreeItem[] {
 }
 
 export function getTreeData(): TreeItem[] {
-  const paginatedItems = getPaginatedTreeData();
-
-  return [
-    ...CONTEXT_ITEMS,
-    {
-      name: 'Pipeline Runs',
-      value: 'pipelineContext',
-      title: 'Includes all code, logs, and metadata for pipeline runs with message',
-      children: paginatedItems,
-    },
-  ];
+  try {
+    const paginatedItems = getPaginatedTreeData();
+    return [
+      ...CONTEXT_ITEMS,
+      {
+        name: 'Pipeline Runs',
+        value: 'pipelineContext',
+        title: 'Includes all code, logs, and metadata for pipeline runs with message',
+        children: paginatedItems,
+      },
+    ];
+  } catch (error) {
+    console.error('Error fetching tree data: ', error);
+    return [...CONTEXT_ITEMS];
+  }
 }
