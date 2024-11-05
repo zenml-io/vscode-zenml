@@ -63,7 +63,7 @@ export async function* getChatResponse(
   <strong>Key 2-2</strong>
   value 2-2
   
-  To bold words, use <b></b> tags. Do not ever use asterisks for formatting.
+  To bold words, use <strong></strong> tags. Do not ever use asterisks for formatting.
   To write code blocks, use <code></code> tags.
   if there's an explanation at the end, add it like:
 
