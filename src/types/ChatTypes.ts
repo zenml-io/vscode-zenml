@@ -56,41 +56,40 @@ export interface ContextItem {
 }
 
 /**
- * Represents the available AI models.
+ * Represents the available AI models grouped by provider.
+ */
+const OPENAI_MODELS = {
+  GPT4: {
+    DEFAULT: 'gpt-4o-mini',
+  },
+  GPT35: {
+    DEFAULT: 'gpt-3.5-turbo',
+  },
+} as const;
+
+const ANTHROPIC_MODELS = {
+  CLAUDE_SONNET: {
+    DEFAULT: 'claude-3-5-sonnet-20240620',
+  },
+  CLAUDE_OPUS: {
+    DEFAULT: 'claude-3-opus-20240229',
+  },
+} as const;
+
+const GEMINI_MODELS = {
+  GEMINI: {
+    DEFAULT: 'gemini-1.5-pro',
+    FLASH: 'gemini-1.5-flash',
+  },
+} as const;
+
+/**
+ * AIModel is a union type of the nested values from the constants.
  */
 export type AIModel =
-  | 'gemini-1.5-pro'
-  | 'gemini-1.5-flash'
-  | 'gemini-1.0-pro'
-  | 'gpt-4o'
-  | 'gpt-4o-mini'
-  | 'gpt-4o-2024-05-13'
-  | 'gpt-4-turbo'
-  | 'gpt-4-turbo-2024-04-09'
-  | 'gpt-4-0125-preview'
-  | 'gpt-4-turbo-preview'
-  | 'gpt-4-1106-preview'
-  | 'gpt-4-vision-preview'
-  | 'gpt-4'
-  | 'gpt-4-0314'
-  | 'gpt-4-0613'
-  | 'gpt-4-32k'
-  | 'gpt-4-32k-0314'
-  | 'gpt-4-32k-0613'
-  | 'gpt-3.5-turbo'
-  | 'gpt-3.5-turbo-16k'
-  | 'gpt-3.5-turbo-0301'
-  | 'gpt-3.5-turbo-0613'
-  | 'gpt-3.5-turbo-1106'
-  | 'gpt-3.5-turbo-0125'
-  | 'gpt-3.5-turbo-16k-0613'
-  | 'claude-3-5-sonnet-20240620'
-  | 'claude-3-opus-20240229'
-  | 'claude-3-sonnet-20240229'
-  | 'claude-3-haiku-20240307'
-  | 'claude-2.1'
-  | 'claude-2.0'
-  | 'claude-instant-1.2';
+  | (typeof OPENAI_MODELS)[keyof typeof OPENAI_MODELS][keyof (typeof OPENAI_MODELS)[keyof typeof OPENAI_MODELS]]
+  | (typeof ANTHROPIC_MODELS)[keyof typeof ANTHROPIC_MODELS][keyof (typeof ANTHROPIC_MODELS)[keyof typeof ANTHROPIC_MODELS]]
+  | (typeof GEMINI_MODELS)[keyof typeof GEMINI_MODELS][keyof (typeof GEMINI_MODELS)[keyof typeof GEMINI_MODELS]];
 
 /**
  * Represents a message sent to the webview.
