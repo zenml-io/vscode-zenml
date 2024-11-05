@@ -11,23 +11,38 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 
+/**
+ * Custom error for network issues
+ * @param {string} message - The error message
+ */
 export class NetworkError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'NetworkError';
+    Object.setPrototypeOf(this, NetworkError.prototype);
   }
 }
 
+/**
+ * Custom error for validation issues
+ * @param {string} message - The error message
+ */
 export class ValidationError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'ValidationError';
+    Object.setPrototypeOf(this, ValidationError);
   }
 }
 
+/**
+ * Custom error for storage issues relating to the chat history
+ * @param {string} message - The error message
+ */
 export class StorageError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'StorageError';
+    Object.setPrototypeOf(this, StorageError);
   }
 }
