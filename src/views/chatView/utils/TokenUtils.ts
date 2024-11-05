@@ -112,10 +112,9 @@ export async function* getChatResponse(
     }
   } catch (error: any) {
     console.error('Error in getChatResponse:', error);
-    if (error instanceof Error) {
-      throw new Error(`${error.message}`);
-    } else {
-      throw new Error(`${provider} API: ${String(error)}`);
-    }
+    throw new Error(
+      `Error in getChatResponse: ${error instanceof Error ? error.message : `${provider} API: ${String(error)}`}`,
+      { cause: error }
+    );
   }
 }
