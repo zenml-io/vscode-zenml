@@ -21,6 +21,7 @@ import * as vscode from 'vscode';
 import { getPipelineData } from './PipelineUtils';
 import { ComponentDataProvider } from '../../activityBar/componentView/ComponentDataProvider';
 import { EnvironmentDataProvider } from '../../activityBar/environmentView/EnvironmentDataProvider';
+import { error } from 'console';
 
 type ContextType =
   | 'serverContext'
@@ -147,13 +148,21 @@ function getStackData(): string {
 async function getLogData(): Promise<any[]> {
   try {
     const lsClient = LSClient.getInstance();
+
     const globalConfig =
       await lsClient.sendLsClientRequest<ZenmlGlobalConfigResp>('getGlobalConfig');
-    const apiToken = globalConfig.store.api_token;
-    const dashboardUrl = globalConfig.store.url;
+    if (!globalConfig.store) {
+      throw new Error('Global configuration store is undefined');
+    }
 
+    const apiToken = globalConfig.store.api_token;
     if (!apiToken) {
       throw new Error('API Token is not available in global configuration');
+    }
+
+    const dashboardUrl = globalConfig.store.url;
+    if (!dashboardUrl) {
+      throw new Error('Dashboard URL is not available in global configuration');
     }
 
     const pipelineRunSteps = await getPipelineRunNodes('step');
