@@ -32,10 +32,11 @@ export function getWebviewContent(
   } catch (error) {
     if (error instanceof Error) {
       vscode.window.showErrorMessage(`Failed to load HTML template: ${error.message}`);
+      return '<html><body><h1>Failed to load chat interface</h1></body></html>';
     } else {
       vscode.window.showErrorMessage('Failed to load HTML template due to an unknown error.');
+      return '<html><body><h1>Failed to load chat interface</h1></body></html>';
     }
-    return '';
   }
 
   const jsUri = webview.asWebviewUri(
