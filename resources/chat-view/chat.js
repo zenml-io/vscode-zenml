@@ -81,6 +81,39 @@
     vscode.postMessage({ command: 'updateProvider', provider: selectedProvider });
   }
 
+  // Checkbox behavior for children checkboxes under pipeline runs
+  const pipelineRunsBox = document.querySelector('input[type="checkbox"][value="pipelineContext"]');
+  pipelineRunsBox.addEventListener('click', toggleTreeItemBoxes);
+
+  function toggleTreeItemBoxes() {
+    const pipelineRunsBox = document.querySelector(
+      'input[type="checkbox"][value="pipelineContext"]'
+    );
+
+    const pipelineRunBoxes = document.querySelectorAll(
+      'input[type="checkbox"][value*="Pipeline Run:"]'
+    );
+
+    // Condition: If the main checkbox is clicked, all children checkboxes should be checked.
+    if (pipelineRunsBox.checked) {
+      pipelineRunBoxes.forEach(checkbox => (checkbox.checked = true));
+      console.log('checked boxes: ', pipelineRunBoxes);
+    } else {
+      pipelineRunBoxes.forEach(checkbox => (checkbox.checked = false));
+    }
+
+    // Condition: If any of the children checkboxes are unchecked, then the main checkbox should be checked.
+    function updateMainCheckbox() {
+      const anyUnchecked = Array.from(pipelineRunBoxes).some(checkbox => !checkbox.checked);
+      pipelineRunsBox.checked = !anyUnchecked;
+    }
+
+    pipelineRunBoxes.forEach(checkbox => {
+      checkbox.addEventListener('change', updateMainCheckbox);
+    });
+  }
+
+  // Sends a message to the LLM
   function sendMessage(event) {
     event.preventDefault();
     if (isInputDisabled) {
@@ -128,6 +161,7 @@
 
   document.getElementById('clearChat').addEventListener('click', clearChatLog);
 
+  // Adds the message to the UI
   function appendToChat(text, role) {
     const chatMessages = document.getElementById('chatMessages');
     let messageDiv;
@@ -430,16 +464,11 @@
     });
 
     const textarea = document.getElementById('messageInput');
-    const sendButton = document.getElementById('sendMessage');
     const loader = document.getElementById('loader');
     isInputDisabled = false;
 
     function showLoader() {
       loader.classList.add('loader');
-    }
-
-    function hideLoader() {
-      loader.classList.remove('loader');
     }
 
     textarea.addEventListener('keydown', e => {

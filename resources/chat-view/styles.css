@@ -4,233 +4,234 @@
 @tailwind utilities;
 
 body {
-    background-color: var(--vscode-editor-background);
-    color: var(--vscode-editor-foreground);
-  }
+  background-color: var(--vscode-editor-background);
+  color: var(--vscode-editor-foreground);
+}
 
-  ul {
-    color: var(--vscode-editor-foreground);
-  }
+ul {
+  color: var(--vscode-editor-foreground);
+}
 
-  form {
-    display: flex;
-  }
+form {
+  display: flex;
+}
 
-  #chatForm {
-    background: var(--vscode-input-background);
-    border: 1px solid var(--vscode-input-border);
-    border-radius: 0.375rem 0.375rem 0 0;
-  }
+#chatForm {
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 0.375rem 0.375rem 0 0;
+}
 
-  #chatMessages {
-    color: var(--vscode-editor-foreground);
-  }
+#chatMessages {
+  color: var(--vscode-editor-foreground);
+}
 
-  #messageInput {
-    color: var(--vscode-input-foreground);
-    background-color: var(--vscode-input-background);
-  }
+#messageInput {
+  color: var(--vscode-input-foreground);
+  background-color: var(--vscode-input-background);
+}
 
-  .rounded-lg {
-    background-color: var(--vscode-editor-background);
-    color: var(--vscode-editor-foreground);
-  }
+.rounded-lg {
+  background-color: var(--vscode-editor-background);
+  color: var(--vscode-editor-foreground);
+}
 
-  .rounded-lg:hover {
-    background-color: var(--vscode-button-hoverBackground);
-  }
+.rounded-lg:hover {
+  background-color: var(--vscode-button-hoverBackground);
+}
 
-  .hide {
-    display: none;
-  }
+.hide {
+  display: none;
+}
 
-  .tree-view {
-    background-color: var(--vscode-editor-background);
-    color: var(--vscode-editor-foreground);
-    width: 256px;
-    max-height: 300px;
-    overflow: auto;
-    border: 2px var(--vscode-editor-foreground) solid;
-    border-radius: 0.375rem;
-    box-shadow:
-      0 4px 6px -1px rgba(0, 0, 0, 0.1),
-      0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  }
+.tree-view {
+  background-color: var(--vscode-editor-background);
+  color: var(--vscode-editor-foreground);
+  width: 256px;
+  max-height: 300px;
+  overflow: auto;
+  border: 2px var(--vscode-editor-foreground) solid;
+  border-radius: 0.375rem;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
 
-  .tree-item {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-  }
+.tree-item {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
 
-  .tree-item:hover {
-    background-color: var(--vscode-list-background);
-  }
+.tree-item:hover {
+  background-color: var(--vscode-list-background);
+}
 
-  .tree-item-content {
-    display: flex;
-    align-items: center;
-    flex-grow: 1;
-    padding: 2px 8px;
-  }
+.tree-item-content {
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  padding: 2px 8px;
+}
 
-  .tree-item-icon {
-    width: 16px;
-    height: 16px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
+.tree-item-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 
-  .tree-item-name {
-    font-size: 14px;
-    color: var(--vscode-editor-foreground);
-    margin-left: 4px;
-    flex-grow: 1;
-  }
+.tree-item-name {
+  font-size: 14px;
+  color: var(--vscode-editor-foreground);
+  margin-left: 4px;
+  flex-grow: 1;
+}
 
-  .tree-item-children {
-    display: none;
-    width: 100%;
-  }
+.tree-item-children {
+  display: none;
+  width: 100%;
+}
 
-  .tree-item-children.open {
-    display: block;
-  }
+.tree-item-children.open {
+  display: block;
+}
 
-  .tree-item-wrapper {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-  }
+.tree-item-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
 
-  .tree-item-checkbox {
-    width: 16px;
-    height: 16px;
-    margin-left: 8px;
-  }
+.tree-item-checkbox {
+  width: 16px;
+  height: 16px;
+  margin-left: 8px;
+}
 
-  .chatbar-options {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    padding: 0.5rem;
-    background-color: var(--vscode-input-background);
-    border: 1px solid var(--vscode-input-border);
-    border-top: none;
-    border-radius: 0 0 0.375rem 0.375rem;
-  }
+.chatbar-options {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 0.5rem;
+  background-color: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-top: none;
+  border-radius: 0 0 0.375rem 0.375rem;
+}
 
-  .model-dropdown {
-    font-size: 0.75rem;
-    padding: 0.25rem;
-    background-color: var(--vscode-dropdown-background);
-    color: var(--vscode-dropdown-foreground);
-    border: 1px solid var(--vscode-dropdown-border);
-    border-radius: 0.25rem;
-    margin-right: 0.5rem;
-  }
+.model-dropdown {
+  font-size: 0.75rem;
+  padding: 0.25rem;
+  background-color: var(--vscode-dropdown-background);
+  color: var(--vscode-dropdown-foreground);
+  border: 1px solid var(--vscode-dropdown-border);
+  border-radius: 0.25rem;
+  margin-right: 0.5rem;
+}
 
-  .context-button {
-    font-size: 0.75rem;
-    padding: 0.25rem;
-    background-color: var(--vscode-dropdown-background);
-    color: var(--vscode-dropdown-foreground);
-    border: none;
-    border-radius: 0.25rem;
-    cursor: pointer;
-    margin-right: 0.5rem;
-  }
+.context-button {
+  font-size: 0.75rem;
+  padding: 0.25rem;
+  background-color: var(--vscode-dropdown-background);
+  color: var(--vscode-dropdown-foreground);
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  margin-right: 0.5rem;
+}
 
-  .context-button:hover {
-    background-color: var(--vscode-button-hoverBackground);
-  }
+.context-button:hover {
+  background-color: var(--vscode-button-hoverBackground);
+}
 
-  .context-dropdown {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 100%;
-    margin-bottom: 0.25rem;
-    z-index: 10;
-  }
+.context-dropdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  margin-bottom: 0.25rem;
+  z-index: 10;
+}
 
-  #chatMessages h1,
-  #chatMessages h2,
-  #chatMessages h3,
-  #chatMessages h4,
-  #chatMessages h5,
-  #chatMessages h6 {
-    font-weight: bold;
-  }
+#chatMessages h1,
+#chatMessages h2,
+#chatMessages h3,
+#chatMessages h4,
+#chatMessages h5,
+#chatMessages h6 {
+  font-weight: bold;
+}
 
-  #chatMessages pre {
-    padding: 1em;
-    border-radius: 5px;
-  }
+#chatMessages pre {
+  padding: 1em;
+  border-radius: 5px;
+}
 
-  #chatMessages code {
-    padding: 0.2em 0.4em;
-    border-radius: 3px;
-  }
+#chatMessages code {
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+}
 
-  #chatMessages pre code {
-    display: block;
-    background-color: var(--vscode-textCodeBlock-background);
-    color: var(--vscode-editor-foreground);
-    padding: 1em;
-    border-radius: 5px;
-  }
+#chatMessages pre code {
+  display: block;
+  background-color: var(--vscode-textCodeBlock-background);
+  color: var(--vscode-editor-foreground);
+  padding: 1em;
+  border-radius: 5px;
+}
 
-  #chatMessages a {
-    color: var(--vscode-textLink-foreground);
-    text-decoration: none;
-  }
+#chatMessages a {
+  color: var(--vscode-textLink-foreground);
+  text-decoration: none;
+}
 
-  #chatMessages strong {
-    font-weight: bold;
-  }
+#chatMessages strong {
+  font-weight: bold;
+}
 
-  #chatMessages em {
-    font-style: italic;
-  }
+#chatMessages em {
+  font-style: italic;
+}
 
-  .copy-button {
-    position: absolute;
-    bottom: 8px;
-    right: 8px;
-    background-color: var(--vscode-button-background);
-    color: var(--vscode-button-foreground);
-    border: none;
-    border-radius: 4px;
-    padding: 4px 8px;
-    font-size: 12px;
-    cursor: pointer;
-  }
+.copy-button {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
 
-  .copy-button:hover {
-    background-color: var(--vscode-button-hoverBackground);
-  }
+.copy-button:hover {
+  background-color: var(--vscode-button-hoverBackground);
+}
 
-  .assistant {
-    background-color: var(--vscode-input-background);
-    position: relative;
-  }
+.assistant {
+  background-color: var(--vscode-input-background);
+  position: relative;
+}
 
-  .expand span {
-    color: var(--vscode-textLink-foreground);
-  }
+.expand span {
+  color: var(--vscode-textLink-foreground);
+}
 
-  .loader {
-    width: 50px;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    border: 8px solid;
-    border-color: var(--vscode-input-background) var(--vscode-input-foreground);
-    animation: l1 1s infinite;
+.loader {
+  width: 50px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 8px solid;
+  border-color: var(--vscode-input-background) var(--vscode-input-foreground);
+  animation: l1 1s infinite;
+}
+
+@keyframes l1 {
+  to {
+    transform: rotate(0.5turn);
   }
-  @keyframes l1 {
-    to {
-      transform: rotate(0.5turn);
-    }
-  }
+}
