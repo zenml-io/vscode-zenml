@@ -79,6 +79,9 @@
     }
 
     vscode.postMessage({ command: 'updateProvider', provider: selectedProvider });
+
+    // Needs to preserve state for children checkboxes under pipeline runs when switching pages
+    toggleTreeItemBoxes();
   }
 
   // Checkbox behavior for children checkboxes under pipeline runs
@@ -96,10 +99,14 @@
 
     // Condition: If the main checkbox is clicked, all children checkboxes should be checked.
     if (pipelineRunsBox.checked) {
-      pipelineRunBoxes.forEach(checkbox => (checkbox.checked = true));
+      pipelineRunBoxes.forEach(checkbox => {
+        checkbox.checked = true;
+      });
       console.log('checked boxes: ', pipelineRunBoxes);
     } else {
-      pipelineRunBoxes.forEach(checkbox => (checkbox.checked = false));
+      pipelineRunBoxes.forEach(checkbox => {
+        checkbox.checked = false;
+      });
     }
 
     // Condition: If any of the children checkboxes are unchecked, then the main checkbox should be checked.
@@ -107,6 +114,11 @@
       const anyUnchecked = Array.from(pipelineRunBoxes).some(checkbox => !checkbox.checked);
       pipelineRunsBox.checked = !anyUnchecked;
     }
+
+    // Cleans up event listeners before adding new ones
+    pipelineRunBoxes.forEach(checkbox => {
+      checkbox.removeEventListener('change', updateMainCheckbox);
+    });
 
     pipelineRunBoxes.forEach(checkbox => {
       checkbox.addEventListener('change', updateMainCheckbox);
