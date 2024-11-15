@@ -91,7 +91,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
   private getAvailableModels(): string[] {
     switch (this.currentProvider) {
       case 'Gemini':
-        return ['gemini-1.5-pro', 'gemini-1.5-flash'];
+        return ['gemini-1.5-pro', 'gemini-1.5-flash', 'error'];
       case 'OpenAI':
         return ['gpt-4o-mini', 'gpt-3.5-turbo'];
       case 'Anthropic':
@@ -135,6 +135,7 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
 
   async addMessage(message: string, context?: string[], provider?: string, model?: string) {
     this.messages.push({ role: 'user', content: message });
+    this.streamingMessage = null;
     this.updateWebviewContent();
 
     try {
@@ -168,8 +169,9 @@ export class ChatDataProvider implements vscode.WebviewViewProvider {
     } catch (error: any) {
       console.error('Error in addMessage:', error);
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occured.';
+      // Save the error message so it'll still be rendered in subsequent messages
+      this.messages.push({ role: 'assistant', content: errorMessage });
       this.sendMessageToWebview(`${errorMessage}`);
-
       this.sendMessageToWebview('enableInput');
       this._view?.webview.postMessage({ command: 'hideLoader' });
     }

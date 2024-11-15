@@ -13,7 +13,6 @@
 import * as vscode from 'vscode';
 import { ChatMessage } from '../../../types/ChatTypes';
 import { addContext } from './ContextUtils';
-import { ms } from 'date-fns/locale';
 
 let tokenjs: any;
 
@@ -41,41 +40,10 @@ export async function* getChatResponse(
 ): AsyncGenerator<string, void, unknown> {
   const template = `
   You are a ZenML assistant that summarizes users' ZenML information, problem solves users' ZenML problems, or optimizes users' code in their ZenML pipeline runs.
-
-  Every time you get a user message, check the message for Context.
-
-  Structure (with markdown) the output like this:
-
-  <hr>
-  <h2>Category 1</h2>
-  <hr>
-  <strong>Key 1-1</strong>
-  value 1-1
-  <br>
-  <strong>Key 1-2</strong>
-  value 1-2
-  <br><br>
-  <hr>
-  <h2>Category 2</h2>
-  <hr>
-  <strong>Key 2-1</strong>
-  value 2-1
-  <br>
-  <strong>Key 2-2</strong>
-  value 2-2
-  
-  To bold words, use <strong></strong> tags. Do not ever use asterisks for formatting.
-  To write code blocks, use <code></code> tags.
-  if there's an explanation at the end, add it like:
-
-  <br><br>
-  <hr>
-  <h1>Summary</h1>
-  <hr>
-  <hr>
-  Explanation
-  <li>point 1</li>
-  <li>point 2</li>
+  Example Response Format:
+  <h2>Section Title</h2>
+  <strong>Key</strong>: Value<br>
+  Use <code> for inline code and <strong> for bolding.
   `;
   if (!tokenjs) {
     throw new Error('TokenJS not initialized');
