@@ -13,6 +13,7 @@
 import * as vscode from 'vscode';
 import { ChatMessage } from '../../../types/ChatTypes';
 import { addContext } from './ContextUtils';
+import { ms } from 'date-fns/locale';
 
 let tokenjs: any;
 
@@ -87,34 +88,44 @@ export async function* getChatResponse(
     { role: 'system', content: await addContext(context) },
     ...messages,
   ];
-  try {
-    const stream = await tokenjs.chat.completions.create({
-      stream: true,
-      provider: provider.toLowerCase(),
-      model: model,
-      messages: fullMessages.map(msg => ({
-        role: msg.role as 'system' | 'user' | 'assistant',
-        content: msg.content,
-      })),
-    });
 
-    try {
-      for await (const part of stream) {
-        if (part.choices[0]?.delta?.content) {
-          yield part.choices[0].delta.content;
-        }
+  const stream = await tokenjs.chat.completions.create({
+    stream: true,
+    provider: provider.toLowerCase(),
+    model: model,
+    messages: fullMessages.map(msg => ({
+      role: msg.role as 'system' | 'user' | 'assistant',
+      content: msg.content,
+    })),
+  });
+
+  let buffer = '';
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  try {
+    for await (const part of stream) {
+      if (part.choices[0]?.delta?.content) {
+        buffer += part.choices[0].delta.content;
       }
-    } catch (streamError) {
-      console.error('Streaming error in getChatResponse:', streamError);
-      throw new Error(
-        `Streaming error with ${provider} API: ${streamError instanceof Error ? streamError.message : String(streamError)}`
-      );
+
+      // Stream from the buffer continuously
+      while (buffer.length > 0) {
+        yield buffer[0];
+        buffer = buffer.slice(1);
+        await delay(5);
+      }
     }
-  } catch (error: any) {
-    console.error('Error in getChatResponse:', error);
+
+    // Continue emptying the buffer after the stream ends
+    while (buffer.length > 0) {
+      yield buffer[0];
+      buffer = buffer.slice(1);
+      await delay(5);
+    }
+  } catch (streamError) {
+    console.error('Streaming error in getChatResponse:', streamError);
     throw new Error(
-      `Error in getChatResponse: ${error instanceof Error ? error.message : `${provider} API: ${String(error)}`}`,
-      { cause: error }
+      `Streaming error with ${provider} API: ${streamError instanceof Error ? streamError.message : String(streamError)}`
     );
   }
 }
