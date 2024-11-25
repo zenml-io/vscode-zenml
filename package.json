@@ -476,7 +476,7 @@
     "@types/dagre": "^0.7.52",
     "@types/fs-extra": "^11.0.4",
     "@types/hbs": "^4.0.4",
-    "@types/mocha": "^10.0.6",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^22.5.4",
     "@types/sinon": "^17.0.3",
     "@types/svgdom": "^0.1.2",
