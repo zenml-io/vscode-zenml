@@ -153,6 +153,7 @@
               "gemini.gemini-1.5-flash",
               "gemini.gemini-1.0-pro",
               "openai.gpt-4o",
+              "openai.gpt-4",
               "openai.gpt-4o-mini",
               "openai.gpt-4-turbo",
               "openai.gpt-3.5-turbo"
