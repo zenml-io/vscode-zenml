@@ -828,7 +828,7 @@ class StacksWrapper:
         try:
             self.client.delete_stack_component(id, component_type)
 
-            return {"mesage": f"Stack Component {id} successfully deleted"}
+            return {"message": f"Stack Component {id} successfully deleted"}
         except self.ZenMLBaseException as e:
             return {"error": str(e)}
     

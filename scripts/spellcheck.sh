@@ -1,36 +1,39 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-show_help() {
-    echo "Usage: $(basename "$0") [OPTIONS] [CONFIG_PATH]"
-    echo
-    echo "If no config path is provided, the script will look for:"
-    echo "  - .typos.toml in current directory"
-    echo "  - .typos.toml in parent directory"
-    echo "  - If no config is found, will fall back to typos defaults"
-}
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+DEFAULT_CONFIG_PATH="${REPO_ROOT}/.typos.toml"
 
-# Enable help flag
-if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-    show_help
+if [[ "${1:-}" == "-h" ]] || [[ "${1:-}" == "--help" ]]; then
+    echo "This is a wrapper around typos that enforces repository config."
+    echo "For available options, see: typos --help"
     exit 0
 fi
 
-if [ ! -z "$1" ]; then
-    if [ -f "$1" ]; then
-        echo "Using config: $1"
-        typos --config "$1"
-    else
-        echo "Warning: Config file not found at $1"
-        echo "Falling back to typos defaults..."
-        typos
-    fi
-elif [ -f ".typos.toml" ]; then
-    echo "Using config from current directory: .typos.toml"
-    typos --config ".typos.toml"
-elif [ -f "../.typos.toml" ]; then
-    echo "Using config from parent directory: ../.typos.toml"
-    typos --config "../.typos.toml"
-else
-    echo "No config file found, using typos defaults..."
-    typos
+# Error out if the default config is not found
+if [[ ! -f "$DEFAULT_CONFIG_PATH" ]]; then
+    echo "ERROR: Repository config not found at $DEFAULT_CONFIG_PATH"
+    exit 1
 fi
+
+# Remove any -c/--config arguments to prevent override attempts
+args=()
+skip_next=0
+for arg in "$@"; do
+    if ((skip_next)); then
+        skip_next=0
+        continue
+    fi
+    if [[ "$arg" == "--config" ]] || [[ "$arg" == "-c" ]]; then
+        echo "WARNING: Custom config path ignored, using repository config"
+        skip_next=1
+        continue
+    fi
+    if [[ "$arg" == --config=* ]] || [[ "$arg" == -c=* ]]; then
+        echo "WARNING: Custom config path ignored, using repository config"
+        continue
+    fi
+    args+=("$arg")
+done
+
+exec typos --config "$DEFAULT_CONFIG_PATH" "${args[@]+"${args[@]}"}"
