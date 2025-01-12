@@ -2,5 +2,5 @@
 locale = "en-us"
 
 [default.extend-words]
-# Usage example:
+# Ignore list of words. Usage example:
 # teh = "teh"
