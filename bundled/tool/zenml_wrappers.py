@@ -12,6 +12,7 @@
 #  permissions and limitations under the License.
 """This module provides wrappers for ZenML configuration and operations."""
 
+import datetime
 import pathlib
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -26,6 +27,45 @@ from type_hints import (
     ZenmlServerInfoResp,
 )
 from zenml_grapher import Grapher
+
+
+def _serialize_flavor(flavor):
+    """
+    Convert a flavor object to a plain dictionary.
+
+    - If flavor is None, return an empty dict.
+    - Convert the id of the flavor to a string.
+    - Convert the created and updated fields to ISO strings.
+    - Convert the type of the flavor to a string.
+    """
+    if flavor is None:
+        return {}
+    if isinstance(flavor, str):
+        return flavor
+
+    try:
+        flavor_dict = dict(flavor.__dict__)
+    except Exception:
+        return str(flavor)
+
+    if "id" in flavor_dict:
+        # Convert UUID to string
+        flavor_dict["id"] = str(flavor_dict["id"])
+
+    if "type" in flavor_dict:
+        # Convert StackComponentType to string
+        flavor_dict["type"] = str(flavor_dict["type"])
+
+    if "body" in flavor_dict and flavor_dict["body"]:
+        try:
+            body = dict(flavor_dict["body"].__dict__)
+            for key in ["created", "updated"]:
+                if key in body and isinstance(body[key], datetime.datetime):
+                    body[key] = body[key].isoformat()
+            flavor_dict["body"] = body
+        except Exception:
+            flavor_dict["body"] = str(flavor_dict["body"])
+    return flavor_dict
 
 
 class GlobalConfigWrapper:
@@ -576,14 +616,13 @@ class StacksWrapper:
                     for comp_type, components in stack.components.items():
                         comp_type_str = str(comp_type)
                         stack_data["components"][comp_type_str] = []
-
                         for component in components:
                             try:
                                 stack_data["components"][comp_type_str].append(
                                     {
                                         "id": str(component.id),
                                         "name": component.name,
-                                        "flavor": component.flavor,
+                                        "flavor": _serialize_flavor(component.flavor),
                                         "type": str(component.type),
                                     }
                                 )
@@ -597,7 +636,6 @@ class StacksWrapper:
                                         "error": str(e),
                                     }
                                 )
-
                     result.append(stack_data)
                 except Exception as e:
                     result.append(
@@ -607,7 +645,6 @@ class StacksWrapper:
                             "error": str(e),
                         }
                     )
-
             if not result:
                 return [{"message": "No stacks found or all stacks failed to process"}]
 
@@ -863,7 +900,7 @@ class StacksWrapper:
                     {
                         "id": str(item.id),
                         "name": item.name,
-                        "flavor": item.flavor,
+                        "flavor": _serialize_flavor(item.flavor),
                         "type": str(item.type),
                         "config": item.metadata.configuration,
                     }
