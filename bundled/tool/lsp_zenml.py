@@ -25,7 +25,7 @@ import sys
 from functools import wraps
 
 import lsprotocol.types as lsp
-from constants import IS_ZENML_INSTALLED, MAX_ZENML_VERSION, MIN_ZENML_VERSION, TOOL_MODULE_NAME
+from constants import IS_ZENML_INSTALLED, MIN_ZENML_VERSION, TOOL_MODULE_NAME
 from lazy_import import suppress_stdout_temporarily
 from packaging.version import parse as parse_version
 from pygls.server import LanguageServer
@@ -154,39 +154,21 @@ class ZenLanguageServer(LanguageServer):
         return result.stdout.strip()
 
     def check_zenml_version(self) -> dict:
-        """Checks if the installed ZenML version meets the requirements."""
+        """Checks if the installed ZenML version meets the minimum requirement."""
         version_str = self.get_zenml_version()
         installed_version = parse_version(version_str)
-
-        # Check against minimum and maximum supported versions
         if installed_version < parse_version(MIN_ZENML_VERSION):
-            return self._construct_version_validation_response(
-                False,
-                version_str,
-                f"ZenML version {version_str} is below minimum supported version {MIN_ZENML_VERSION}",
-            )
-
-        if installed_version > parse_version(MAX_ZENML_VERSION):
-            return self._construct_version_validation_response(
-                False,
-                version_str,
-                f"ZenML version {version_str} is above maximum supported version {MAX_ZENML_VERSION}",
-            )
+            return self._construct_version_validation_response(False, version_str)
 
         return self._construct_version_validation_response(True, version_str)
 
-    def _construct_version_validation_response(
-        self, meets_requirement, version_str, custom_message=None
-    ):
+    def _construct_version_validation_response(self, meets_requirement, version_str):
         """Constructs a version validation response."""
         if meets_requirement:
             message = "ZenML version requirement is met."
             status = {"message": message, "version": version_str, "is_valid": True}
         else:
-            if custom_message:
-                message = custom_message
-            else:
-                message = f"Supported versions: {MIN_ZENML_VERSION} to {MAX_ZENML_VERSION}. Found version {version_str}."
+            message = f"Supported versions >= {MIN_ZENML_VERSION}. Found version {version_str}."
             status = {"message": message, "version": version_str, "is_valid": False}
 
         self.send_custom_notification("zenml/version", status)
