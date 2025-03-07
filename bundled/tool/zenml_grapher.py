@@ -13,7 +13,9 @@
 """This module contains a tool to mimic LineageGraph output for pipeline runs"""
 
 from typing import Dict, List
+
 from type_hints import GraphEdge, GraphNode, GraphResponse, StepArtifact
+
 
 class Grapher:
     """Quick and dirty implementation of ZenML/LineageGraph to reduce number of api calls"""
@@ -109,23 +111,70 @@ class Grapher:
             step_data = self.run.metadata.steps[step]
             step_id = str(step_data.id)
 
+            # Process inputs
             for artifact in step_data.body.inputs:
-                input_id = str(step_data.body.inputs[artifact].body.artifact.id)
-                self.add_edge(input_id, step_id)
+                try:
+                    # Handle lists in inputs
+                    if isinstance(step_data.body.inputs[artifact], list):
+                        if not step_data.body.inputs[artifact]:  # Skip empty lists
+                            continue
+                        # Take the first item from the list
+                        artifact_version = step_data.body.inputs[artifact][0]
+                        # Try to get id from artifact_version.artifact.id (if available)
+                        if hasattr(artifact_version, "artifact") and hasattr(
+                            artifact_version.artifact, "id"
+                        ):
+                            input_id = str(artifact_version.artifact.id)
+                        # Alternative access pattern
+                        elif hasattr(artifact_version, "id"):
+                            input_id = str(artifact_version.id)
+                        else:
+                            continue
+                    else:
+                        # Original access pattern
+                        input_id = str(step_data.body.inputs[artifact].body.artifact.id)
 
+                    self.add_edge(input_id, step_id)
+                except (AttributeError, TypeError):
+                    continue
+
+            # Process outputs
             for artifact in step_data.body.outputs:
-                output_id = str(step_data.body.outputs[artifact].body.artifact.id)
-                self.add_edge(step_id, output_id)
+                try:
+                    # Handle lists in outputs
+                    if isinstance(step_data.body.outputs[artifact], list):
+                        if not step_data.body.outputs[artifact]:  # Skip empty lists
+                            continue
+                        # Take the first item from the list
+                        artifact_version = step_data.body.outputs[artifact][0]
+                        # Try to get id from artifact_version.artifact.id (if available)
+                        if hasattr(artifact_version, "artifact") and hasattr(
+                            artifact_version.artifact, "id"
+                        ):
+                            output_id = str(artifact_version.artifact.id)
+                        # Alternative access pattern
+                        elif hasattr(artifact_version, "id"):
+                            output_id = str(artifact_version.id)
+                        else:
+                            continue
+                    else:
+                        # Original access pattern
+                        output_id = str(step_data.body.outputs[artifact].body.artifact.id)
 
+                    self.add_edge(step_id, output_id)
+                except (AttributeError, TypeError):
+                    continue
 
     def add_edge(self, v: str, w: str) -> None:
         """Helper method to add an edge to the internal edges list"""
-        self.edges.append({
-            "id": f"{v}_{w}",
-            "source": v,
-            "target": w,
-        })
-        
+        self.edges.append(
+            {
+                "id": f"{v}_{w}",
+                "source": v,
+                "target": w,
+            }
+        )
+
     def to_dict(self) -> GraphResponse:
         """Returns dictionary containing graph data"""
         return {

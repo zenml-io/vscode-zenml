@@ -11,8 +11,8 @@
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
 """
-Utilities for lazy importing and temporary suppression of stdout and logging. 
-Reduces noise when integrating with logging-heavy systems like LSP. 
+Utilities for lazy importing and temporary suppression of stdout and logging.
+Reduces noise when integrating with logging-heavy systems like LSP.
 Useful for quieter module loads and command executions.
 """
 
