@@ -25,16 +25,14 @@ import sys
 from functools import wraps
 
 import lsprotocol.types as lsp
-from constants import IS_ZENML_INSTALLED, MIN_ZENML_VERSION, TOOL_MODULE_NAME
+from constants import IS_ZENML_INSTALLED, MAX_ZENML_VERSION, MIN_ZENML_VERSION, TOOL_MODULE_NAME
 from lazy_import import suppress_stdout_temporarily
 from packaging.version import parse as parse_version
 from pygls.server import LanguageServer
 from zen_watcher import ZenConfigWatcher
 from zenml_client import ZenMLClient
 
-zenml_init_error = {
-    "error": "ZenML is not initialized. Please check ZenML version requirements."
-}
+zenml_init_error = {"error": "ZenML is not initialized. Please check ZenML version requirements."}
 
 
 class ZenLanguageServer(LanguageServer):
@@ -60,9 +58,7 @@ class ZenLanguageServer(LanguageServer):
             if process.returncode == 0:
                 self.show_message_log("✅ ZenML installation check: Successful.")
                 return True
-            self.show_message_log(
-                "❌ ZenML installation check failed.", lsp.MessageType.Error
-            )
+            self.show_message_log("❌ ZenML installation check failed.", lsp.MessageType.Error)
             return False
         except Exception as e:
             self.show_message_log(
@@ -97,9 +93,7 @@ class ZenLanguageServer(LanguageServer):
             # initialize watcher
             self.initialize_global_config_watcher()
         except Exception as e:
-            self.notify_user(
-                f"Failed to initialize ZenML client: {str(e)}", lsp.MessageType.Error
-            )
+            self.notify_user(f"Failed to initialize ZenML client: {str(e)}", lsp.MessageType.Error)
 
     def initialize_global_config_watcher(self):
         """Sets up and starts the Global Configuration Watcher."""
@@ -139,9 +133,7 @@ class ZenLanguageServer(LanguageServer):
 
                 with suppress_stdout_temporarily():
                     if wrapper_name:
-                        wrapper_instance = getattr(
-                            self.zenml_client, wrapper_name, None
-                        )
+                        wrapper_instance = getattr(self.zenml_client, wrapper_name, None)
                         if not wrapper_instance:
                             return {"error": f"Wrapper '{wrapper_name}' not found."}
                         return func(wrapper_instance, *args, **kwargs)
@@ -162,21 +154,39 @@ class ZenLanguageServer(LanguageServer):
         return result.stdout.strip()
 
     def check_zenml_version(self) -> dict:
-        """Checks if the installed ZenML version meets the minimum requirement."""
+        """Checks if the installed ZenML version meets the requirements."""
         version_str = self.get_zenml_version()
         installed_version = parse_version(version_str)
+
+        # Check against minimum and maximum supported versions
         if installed_version < parse_version(MIN_ZENML_VERSION):
-            return self._construct_version_validation_response(False, version_str)
+            return self._construct_version_validation_response(
+                False,
+                version_str,
+                f"ZenML version {version_str} is below minimum supported version {MIN_ZENML_VERSION}",
+            )
+
+        if installed_version > parse_version(MAX_ZENML_VERSION):
+            return self._construct_version_validation_response(
+                False,
+                version_str,
+                f"ZenML version {version_str} is above maximum supported version {MAX_ZENML_VERSION}",
+            )
 
         return self._construct_version_validation_response(True, version_str)
 
-    def _construct_version_validation_response(self, meets_requirement, version_str):
+    def _construct_version_validation_response(
+        self, meets_requirement, version_str, custom_message=None
+    ):
         """Constructs a version validation response."""
         if meets_requirement:
             message = "ZenML version requirement is met."
             status = {"message": message, "version": version_str, "is_valid": True}
         else:
-            message = f"Supported versions >= {MIN_ZENML_VERSION}. Found version {version_str}."
+            if custom_message:
+                message = custom_message
+            else:
+                message = f"Supported versions: {MIN_ZENML_VERSION} to {MAX_ZENML_VERSION}. Found version {version_str}."
             status = {"message": message, "version": version_str, "is_valid": False}
 
         self.send_custom_notification("zenml/version", status)
@@ -185,33 +195,25 @@ class ZenLanguageServer(LanguageServer):
 
     def send_custom_notification(self, method: str, args: dict):
         """Sends a custom notification to the LSP client."""
-        self.show_message_log(
-            f"Sending custom notification: {method} with args: {args}"
-        )
+        self.show_message_log(f"Sending custom notification: {method} with args: {args}")
         self.send_notification(method, args)
 
     def update_python_interpreter(self, interpreter_path):
         """Updates the Python interpreter path and handles errors."""
         try:
             self.python_interpreter = interpreter_path
-            self.show_message_log(
-                f"LSP_Python_Interpreter Updated: {self.python_interpreter}"
-            )
+            self.show_message_log(f"LSP_Python_Interpreter Updated: {self.python_interpreter}")
         # pylint: disable=broad-exception-caught
         except Exception as e:
             self.show_message_log(
                 f"Failed to update Python interpreter: {str(e)}", lsp.MessageType.Error
             )
 
-    def notify_user(
-        self, message: str, msg_type: lsp.MessageType = lsp.MessageType.Info
-    ):
+    def notify_user(self, message: str, msg_type: lsp.MessageType = lsp.MessageType.Info):
         """Logs a message and also notifies the user."""
         self.show_message(message, msg_type)
 
-    def log_to_output(
-        self, message: str, msg_type: lsp.MessageType = lsp.MessageType.Log
-    ) -> None:
+    def log_to_output(self, message: str, msg_type: lsp.MessageType = lsp.MessageType.Log) -> None:
         """Log to output."""
         self.show_message_log(message, msg_type)
 
@@ -277,55 +279,55 @@ class ZenLanguageServer(LanguageServer):
         def copy_stack(wrapper_instance, args):
             """Copies a specified ZenML stack to a new stack."""
             return wrapper_instance.copy_stack(args)
-        
+
         @self.command(f"{TOOL_MODULE_NAME}.registerStack")
         @self.zenml_command(wrapper_name="stacks_wrapper")
         def register_stack(wrapper_instance, args):
             """Registers a new ZenML stack."""
             return wrapper_instance.register_stack(args)
-        
+
         @self.command(f"{TOOL_MODULE_NAME}.updateStack")
         @self.zenml_command(wrapper_name="stacks_wrapper")
         def update_stack(wrapper_instance, args):
             """Updates a specified ZenML stack ."""
             return wrapper_instance.update_stack(args)
-        
+
         @self.command(f"{TOOL_MODULE_NAME}.deleteStack")
         @self.zenml_command(wrapper_name="stacks_wrapper")
         def delete_stack(wrapper_instance, args):
             """Deletes a specified ZenML stack ."""
             return wrapper_instance.delete_stack(args)
-        
+
         @self.command(f"{TOOL_MODULE_NAME}.registerComponent")
         @self.zenml_command(wrapper_name="stacks_wrapper")
         def register_component(wrapper_instance, args):
             """Registers a Zenml stack component"""
             return wrapper_instance.register_component(args)
-        
+
         @self.command(f"{TOOL_MODULE_NAME}.updateComponent")
         @self.zenml_command(wrapper_name="stacks_wrapper")
         def update_component(wrapper_instance, args):
             """Updates a ZenML stack component"""
             return wrapper_instance.update_component(args)
-        
+
         @self.command(f"{TOOL_MODULE_NAME}.deleteComponent")
         @self.zenml_command(wrapper_name="stacks_wrapper")
         def delete_component(wrapper_instance, args):
             """Deletes a specified ZenML stack component"""
             return wrapper_instance.delete_component(args)
-        
+
         @self.command(f"{TOOL_MODULE_NAME}.listComponents")
         @self.zenml_command(wrapper_name="stacks_wrapper")
         def list_components(wrapper_instance, args):
             """Get paginated list of stack components from ZenML"""
             return wrapper_instance.list_components(args)
-        
+
         @self.command(f"{TOOL_MODULE_NAME}.getComponentTypes")
         @self.zenml_command(wrapper_name="stacks_wrapper")
         def get_component_types(wrapper_instance, args):
             """Get list of component types from ZenML"""
             return wrapper_instance.get_component_types()
-        
+
         @self.command(f"{TOOL_MODULE_NAME}.listFlavors")
         @self.zenml_command(wrapper_name="stacks_wrapper")
         def list_flavors(wrapper_instance, args):

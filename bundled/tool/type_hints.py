@@ -10,7 +10,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
-from typing import Any, TypedDict, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TypedDict
 from uuid import UUID
 
 
@@ -18,19 +18,23 @@ class StepArtifactBody(TypedDict):
     type: str
     artifact: Dict[str, str]
 
+
 class StepArtifact(TypedDict):
     id: UUID
     body: StepArtifactBody
+
 
 class GraphNode(TypedDict):
     id: str
     type: str
     data: Dict[str, str]
 
+
 class GraphEdge(TypedDict):
     id: str
     source: str
     target: str
+
 
 class GraphResponse(TypedDict):
     nodes: List[GraphNode]
@@ -39,8 +43,10 @@ class GraphResponse(TypedDict):
     status: str
     version: str
 
+
 class ErrorResponse(TypedDict):
     error: str
+
 
 class RunStepResponse(TypedDict):
     name: str
@@ -57,6 +63,7 @@ class RunStepResponse(TypedDict):
     sourceCode: str
     logsUri: str
 
+
 class RunArtifactResponse(TypedDict):
     name: str
     version: str
@@ -66,6 +73,7 @@ class RunArtifactResponse(TypedDict):
     update: str
     data: Dict[str, str]
     metadata: Dict[str, Any]
+
 
 class ZenmlStoreInfo(TypedDict):
     id: str
@@ -78,14 +86,17 @@ class ZenmlStoreInfo(TypedDict):
     server_url: str
     dashboard_url: str
 
+
 class ZenmlStoreConfig(TypedDict):
     type: str
     url: str
     api_token: Optional[str]
 
+
 class ZenmlServerInfoResp(TypedDict):
     store_info: ZenmlStoreInfo
     store_config: ZenmlStoreConfig
+
 
 class ZenmlGlobalConfigResp(TypedDict):
     user_id: str
@@ -96,6 +107,7 @@ class ZenmlGlobalConfigResp(TypedDict):
     active_workspace_name: str
     store: ZenmlStoreConfig
 
+
 class StackComponent(TypedDict):
     id: str
     name: str
@@ -103,12 +115,14 @@ class StackComponent(TypedDict):
     type: str
     config: Dict[str, Any]
 
+
 class ListComponentsResponse(TypedDict):
     index: int
     max_size: int
     total_pages: int
     total: int
     items: List[StackComponent]
+
 
 class Flavor(TypedDict):
     id: str
@@ -121,6 +135,7 @@ class Flavor(TypedDict):
     connector_type: Optional[str]
     connector_resource_type: Optional[str]
     connector_resource_id_attr: Optional[str]
+
 
 class ListFlavorsResponse(TypedDict):
     index: int
