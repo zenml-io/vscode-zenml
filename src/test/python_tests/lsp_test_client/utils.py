@@ -51,7 +51,7 @@ class PythonFile:
             py_file.write(self.contents)
         return self
 
-    def __exit__(self, typ, value, _tb):
+    def __exit__(self, exc_type, value, _tb):
         """Cleans up and deletes the python file."""
         os.unlink(self.fullpath)
 

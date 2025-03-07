@@ -234,10 +234,10 @@ export class LSClient {
   /**
    * Updates the language client.
    *
-   * @param {LanguageClient} updatedCLient The new language client.
+   * @param {LanguageClient} updatedClient The new language client.
    */
-  public updateClient(updatedCLient: LanguageClient): void {
-    this.client = updatedCLient;
+  public updateClient(updatedClient: LanguageClient): void {
+    this.client = updatedClient;
     this.setupNotificationListeners();
   }
 
