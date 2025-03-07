@@ -111,54 +111,44 @@ class Grapher:
             step_data = self.run.metadata.steps[step]
             step_id = str(step_data.id)
 
-            # Process inputs
             for artifact in step_data.body.inputs:
                 try:
-                    # Handle lists in inputs
                     if isinstance(step_data.body.inputs[artifact], list):
                         if not step_data.body.inputs[artifact]:  # Skip empty lists
                             continue
-                        # Take the first item from the list
                         artifact_version = step_data.body.inputs[artifact][0]
-                        # Try to get id from artifact_version.artifact.id (if available)
                         if hasattr(artifact_version, "artifact") and hasattr(
                             artifact_version.artifact, "id"
                         ):
                             input_id = str(artifact_version.artifact.id)
-                        # Alternative access pattern
                         elif hasattr(artifact_version, "id"):
                             input_id = str(artifact_version.id)
                         else:
                             continue
                     else:
-                        # Original access pattern
+                        # Older access pattern
                         input_id = str(step_data.body.inputs[artifact].body.artifact.id)
 
                     self.add_edge(input_id, step_id)
                 except (AttributeError, TypeError):
                     continue
 
-            # Process outputs
             for artifact in step_data.body.outputs:
                 try:
-                    # Handle lists in outputs
                     if isinstance(step_data.body.outputs[artifact], list):
-                        if not step_data.body.outputs[artifact]:  # Skip empty lists
+                        if not step_data.body.outputs[artifact]:
                             continue
-                        # Take the first item from the list
                         artifact_version = step_data.body.outputs[artifact][0]
-                        # Try to get id from artifact_version.artifact.id (if available)
                         if hasattr(artifact_version, "artifact") and hasattr(
                             artifact_version.artifact, "id"
                         ):
                             output_id = str(artifact_version.artifact.id)
-                        # Alternative access pattern
                         elif hasattr(artifact_version, "id"):
                             output_id = str(artifact_version.id)
                         else:
                             continue
                     else:
-                        # Original access pattern
+                        # Older access pattern
                         output_id = str(step_data.body.outputs[artifact].body.artifact.id)
 
                     self.add_edge(step_id, output_id)
