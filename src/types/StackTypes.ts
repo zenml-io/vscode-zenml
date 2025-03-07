@@ -38,7 +38,7 @@ interface Components {
 interface StackComponent {
   id: string;
   name: string;
-  flavor: Flavor;
+  flavor: string;
   type: string;
   config: { [key: string]: any };
 }
@@ -69,9 +69,6 @@ interface Flavor {
   connector_type: string | null;
   connector_resource_type: string | null;
   connector_resource_id_attr: string | null;
-  created: string | null;
-  updated: string | null;
-  body?: FlavorResponseBody;
 }
 
 interface FlavorListData {
@@ -82,16 +79,6 @@ interface FlavorListData {
   items: Flavor[];
 }
 
-interface FlavorResponseBody {
-  created?: string;
-  updated?: string;
-  user?: string | null;
-  type?: string;
-  integration?: string;
-  source?: string;
-  logo_url?: string;
-}
-
 export type FlavorListResponse = FlavorListData | ErrorMessageResponse | VersionMismatchError;
 
 type ComponentTypes = string[];
@@ -99,12 +86,11 @@ type ComponentTypes = string[];
 export type ComponentTypesResponse = ComponentTypes | VersionMismatchError | ErrorMessageResponse;
 
 export {
-  Components,
-  ComponentsListData,
-  ComponentTypes,
-  Flavor,
-  FlavorResponseBody,
   Stack,
+  Components,
   StackComponent,
   StacksData,
+  ComponentsListData,
+  Flavor,
+  ComponentTypes,
 };

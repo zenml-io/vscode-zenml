@@ -10,12 +10,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import { ExtensionContext, commands } from 'vscode';
+import { componentCommands } from './cmds';
 import { registerCommand } from '../../common/vscodeapi';
 import { ZenExtension } from '../../services/ZenExtension';
+import { ExtensionContext, commands } from 'vscode';
 import { ComponentDataProvider } from '../../views/activityBar/componentView/ComponentDataProvider';
-import { StackComponentTreeItem } from '../../views/activityBar/componentView/ComponentTreeItems';
-import { componentCommands } from './cmds';
+import { StackComponentTreeItem } from '../../views/activityBar';
 
 /**
  * Registers stack component-related commands for the extension.

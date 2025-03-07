@@ -18,7 +18,7 @@ export const MOCK_REST_SERVER_URL = 'https://zenml.example.com';
 export const MOCK_SQL_SERVER_URL = 'sqlite:///path/to/sqlite.db';
 export const MOCK_SERVER_ID = 'test-server';
 export const MOCK_AUTH_SCHEME = 'OAUTH2_PASSWORD_BEARER';
-export const MOCK_ZENML_VERSION = '0.63.0';
+export const MOCK_ZENML_VERSION = '0.55.5';
 export const MOCK_ACCESS_TOKEN = 'valid_token';
 
 export const MOCK_CONTEXT = {

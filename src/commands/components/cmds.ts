@@ -12,13 +12,16 @@
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
 
-import { getFlavor, getFlavorsOfType } from '../../common/api';
-import { traceError, traceInfo } from '../../common/log/logging';
+import ZenMLStatusBar from '../../views/statusBar';
 import { LSClient } from '../../services/LSClient';
-import { ComponentTypesResponse, Flavor } from '../../types/StackTypes';
+import { showInformationMessage } from '../../utils/notifications';
+import Panels from '../../common/panels';
 import { ComponentDataProvider } from '../../views/activityBar/componentView/ComponentDataProvider';
-import { StackComponentTreeItem } from '../../views/activityBar/componentView/ComponentTreeItems';
+import { ComponentTypesResponse, Flavor, FlavorListResponse } from '../../types/StackTypes';
+import { getFlavor, getFlavorsOfType } from '../../common/api';
 import ComponentForm from './ComponentsForm';
+import { StackComponentTreeItem } from '../../views/activityBar';
+import { traceError, traceInfo } from '../../common/log/logging';
 
 /**
  * Refreshes the stack component view.
@@ -87,7 +90,7 @@ const registerComponent = async () => {
 
 const updateComponent = async (node: StackComponentTreeItem) => {
   try {
-    const flavor = await getFlavor(node.component.flavor.name);
+    const flavor = await getFlavor(node.component.flavor);
 
     await ComponentForm.getInstance().updateForm(
       flavor,

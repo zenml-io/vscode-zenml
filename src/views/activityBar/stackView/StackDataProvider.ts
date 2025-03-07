@@ -10,21 +10,22 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import { TreeItem, workspace } from 'vscode';
+import { Event, EventEmitter, TreeDataProvider, TreeItem, window, workspace } from 'vscode';
 import { State } from 'vscode-languageclient';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
 import { Stack, StackComponent, StacksResponse } from '../../../types/StackTypes';
 import {
+  ITEMS_PER_PAGE_OPTIONS,
   LSCLIENT_STATE_CHANGED,
   LSP_ZENML_CLIENT_INITIALIZED,
   LSP_ZENML_STACK_CHANGED,
 } from '../../../utils/constants';
-import { ErrorTreeItem, createAuthErrorItem, createErrorItem } from '../common/ErrorTreeItem';
+import { ErrorTreeItem, createErrorItem, createAuthErrorItem } from '../common/ErrorTreeItem';
 import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
+import { StackComponentTreeItem, StackTreeItem } from './StackTreeItems';
+import { CommandTreeItem } from '../common/PaginationTreeItems';
 import { PaginatedDataProvider } from '../common/PaginatedDataProvider';
-import { StackComponentTreeItem } from '../componentView/ComponentTreeItems';
-import { StackTreeItem } from './StackTreeItems';
 
 export class StackDataProvider extends PaginatedDataProvider {
   private static instance: StackDataProvider | null = null;

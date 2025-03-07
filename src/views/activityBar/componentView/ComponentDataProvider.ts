@@ -10,28 +10,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import * as vscode from 'vscode';
 import { State } from 'vscode-languageclient';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
-import { ComponentsListResponse, StackComponent } from '../../../types/StackTypes';
 import {
   LSCLIENT_STATE_CHANGED,
   LSP_ZENML_CLIENT_INITIALIZED,
   LSP_ZENML_STACK_CHANGED,
 } from '../../../utils/constants';
-import { ErrorTreeItem, createAuthErrorItem, createErrorItem } from '../common/ErrorTreeItem';
+import { ErrorTreeItem, createErrorItem, createAuthErrorItem } from '../common/ErrorTreeItem';
 import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
+import { CommandTreeItem } from '../common/PaginationTreeItems';
+import { ComponentsListResponse, StackComponent } from '../../../types/StackTypes';
+import { StackComponentTreeItem } from '../stackView/StackTreeItems';
 import { PaginatedDataProvider } from '../common/PaginatedDataProvider';
-import {
-  ComponentCategoryTreeItem,
-  ComponentTreeItem,
-  StackComponentTreeItem,
-} from './ComponentTreeItems';
-
-interface TreeItemWithChildren extends vscode.TreeItem {
-  children?: vscode.TreeItem[];
-}
 
 export class ComponentDataProvider extends PaginatedDataProvider {
   private static instance: ComponentDataProvider | null = null;
@@ -105,10 +97,7 @@ export class ComponentDataProvider extends PaginatedDataProvider {
     this._onDidChangeTreeData.fire(undefined);
   }
 
-  private async fetchComponents(
-    page: number = 1,
-    itemsPerPage: number = 10
-  ): Promise<vscode.TreeItem[]> {
+  private async fetchComponents(page: number = 1, itemsPerPage: number = 10) {
     if (!this.zenmlClientReady) {
       return [LOADING_TREE_ITEMS.get('zenmlClient')!];
     }
@@ -145,43 +134,10 @@ export class ComponentDataProvider extends PaginatedDataProvider {
           totalPages: total_pages,
         };
 
-        // Create a map to group components by type
-        const componentsMap = new Map<string, ComponentTreeItem[]>();
-
-        items.forEach((component: StackComponent) => {
-          const componentItem = new StackComponentTreeItem(component);
-          const type = component.type
-            .replace(/_/g, ' ')
-            .replace(/\b\w/g, char => char.toUpperCase());
-
-          if (!componentsMap.has(type)) {
-            componentsMap.set(type, []);
-          }
-
-          componentsMap.get(type)!.push(componentItem);
-        });
-
-        const categoryItems: vscode.TreeItem[] = [];
-        componentsMap.forEach((componentItems, type) => {
-          componentItems.sort((a, b) => a.component.name.localeCompare(b.component.name));
-          let pluralizedType = type;
-          if (type.endsWith('y')) {
-            pluralizedType = type.slice(0, -1) + 'ies';
-          } else {
-            pluralizedType = type + 's';
-          }
-          const displayName = `${pluralizedType} (${componentItems.length})`;
-          categoryItems.push(new ComponentCategoryTreeItem(displayName, componentItems));
-        });
-
-        categoryItems.sort((a, b) => {
-          if (a instanceof ComponentCategoryTreeItem && b instanceof ComponentCategoryTreeItem) {
-            return a.type.localeCompare(b.type);
-          }
-          return 0;
-        });
-
-        return categoryItems;
+        const components = items.map(
+          (component: StackComponent) => new StackComponentTreeItem(component)
+        );
+        return components;
       } else {
         console.error('Unexpected response format:', result);
         return [];

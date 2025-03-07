@@ -55,6 +55,7 @@ class ZenConfigWatcher(FileSystemEventHandler):
                 self.config_path = config_wrapper_instance.get_global_config_file_path()
         except Exception as e:
             self.log_error(f"Failed to retrieve global config file path: {e}")
+        
 
     def process_config_change(self, config_file_path: str):
         """Process the configuration file change."""
@@ -97,10 +98,10 @@ class ZenConfigWatcher(FileSystemEventHandler):
         """
         if event.src_path != self.config_path:
             return
-
+        
         if self._timer is not None:
             self._timer.cancel()
-
+        
         self._timer = Timer(self.debounce_interval, self.process_event, [event])
         self._timer.start()
 

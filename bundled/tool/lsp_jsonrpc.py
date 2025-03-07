@@ -58,22 +58,13 @@ class JsonWriter:
             raise StreamClosedException()
 
         with self._lock:
-            # Add custom JSON serialization to handle datetime objects
-            content = json.dumps(data, default=self._json_serializer)
+            content = json.dumps(data)
             length = len(content.encode("utf-8"))
             self._writer.write(f"{CONTENT_LENGTH}{length}\r\n\r\n{content}")
             # self._writer.write(
             #     f"{CONTENT_LENGTH}{length}\r\n\r\n{content}".encode("utf-8")
             # )
             self._writer.flush()
-
-    def _json_serializer(self, obj):
-        """Custom JSON serializer to handle datetime and other complex objects."""
-        # Handle datetime objects
-        if hasattr(obj, "isoformat"):
-            return obj.isoformat()
-        # Handle other non-serializable objects
-        return str(obj)
 
 
 class JsonReader:

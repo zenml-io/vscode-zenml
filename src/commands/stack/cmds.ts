@@ -11,15 +11,15 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
-import { traceError, traceInfo } from '../../common/log/logging';
+import { StackComponentTreeItem, StackDataProvider, StackTreeItem } from '../../views/activityBar';
+import ZenMLStatusBar from '../../views/statusBar';
+import { getStackDashboardUrl, switchActiveStack } from './utils';
 import { LSClient } from '../../services/LSClient';
 import { showInformationMessage } from '../../utils/notifications';
-import { StackComponentTreeItem } from '../../views/activityBar/componentView/ComponentTreeItems';
-import { StackDataProvider } from '../../views/activityBar/stackView/StackDataProvider';
-import { StackTreeItem } from '../../views/activityBar/stackView/StackTreeItems';
-import ZenMLStatusBar from '../../views/statusBar';
+import Panels from '../../common/panels';
+import { randomUUID } from 'crypto';
 import StackForm from './StackForm';
-import { getStackDashboardUrl, switchActiveStack } from './utils';
+import { traceError, traceInfo } from '../../common/log/logging';
 
 /**
  * Refreshes the stack view.
