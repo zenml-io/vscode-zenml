@@ -247,48 +247,9 @@ export default class DagRenderer extends WebviewBase {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src ${cspSource}; style-src ${cspSource} 'unsafe-inline';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src ${cspSource}; style-src ${cspSource};">
     <link rel="stylesheet" href="${cssUri}">
     <title>DAG Error</title>
-    <style>
-      .error-container {
-        padding: 20px;
-        text-align: center;
-        margin-top: 50px;
-      }
-      .error-icon {
-        font-size: 48px;
-        color: var(--vscode-errorForeground);
-        margin-bottom: 20px;
-      }
-      .error-title {
-        font-size: 20px;
-        font-weight: bold;
-        margin-bottom: 10px;
-      }
-      .error-message {
-        margin-bottom: 20px;
-        color: var(--vscode-errorForeground);
-        padding: 10px;
-        background-color: var(--vscode-inputValidation-errorBackground);
-        border: 1px solid var(--vscode-inputValidation-errorBorder);
-        border-radius: 4px;
-        text-align: left;
-        overflow-wrap: break-word;
-        white-space: pre-wrap;
-      }
-      button {
-        background-color: var(--vscode-button-background);
-        color: var(--vscode-button-foreground);
-        border: none;
-        padding: 8px 16px;
-        cursor: pointer;
-        border-radius: 2px;
-      }
-      button:hover {
-        background-color: var(--vscode-button-hoverBackground);
-      }
-    </style>
 </head>
 <body>
     <div id="update">
