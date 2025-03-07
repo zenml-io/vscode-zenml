@@ -594,29 +594,60 @@ class StacksWrapper:
         except self.ValidationError as e:
             return {"error": "ValidationError", "message": str(e)}
         except self.ZenMLBaseException as e:
-            return [{"error": f"Failed to retrieve stacks: {str(e)}"}]
+            return {"error": f"Failed to retrieve stacks: {str(e)}"}
+        except Exception as e:
+            return {"error": f"Unexpected error: {str(e)}"}
 
     def process_stacks(self, stacks):
         """Process stacks to the desired format."""
-        return [
-            {
-                "id": str(stack.id),
-                "name": stack.name,
-                "components": {
-                    component_type: [
+        try:
+            result = []
+
+            for stack in stacks:
+                try:
+                    stack_data = {"id": str(stack.id), "name": stack.name, "components": {}}
+
+                    for comp_type, components in stack.components.items():
+                        comp_type_str = str(comp_type)
+                        stack_data["components"][comp_type_str] = []
+
+                        for component in components:
+                            try:
+                                stack_data["components"][comp_type_str].append(
+                                    {
+                                        "id": str(component.id),
+                                        "name": component.name,
+                                        "flavor": component.flavor,
+                                        "type": str(component.type),
+                                    }
+                                )
+                            except Exception as e:
+                                stack_data["components"][comp_type_str].append(
+                                    {
+                                        "id": str(getattr(component, "id", "unknown")),
+                                        "name": getattr(
+                                            component, "name", "Error processing component"
+                                        ),
+                                        "error": str(e),
+                                    }
+                                )
+
+                    result.append(stack_data)
+                except Exception as e:
+                    result.append(
                         {
-                            "id": str(component.id),
-                            "name": component.name,
-                            "flavor": component.flavor,
-                            "type": component.type,
+                            "id": str(getattr(stack, "id", "unknown")),
+                            "name": getattr(stack, "name", "Error processing stack"),
+                            "error": str(e),
                         }
-                        for component in components
-                    ]
-                    for component_type, components in stack.components.items()
-                },
-            }
-            for stack in stacks
-        ]
+                    )
+
+            if not result:
+                return [{"message": "No stacks found or all stacks failed to process"}]
+
+            return result
+        except Exception as e:
+            return [{"error": f"Error processing stacks: {str(e)}"}]
 
     def get_active_stack(self) -> dict:
         """Fetches the active ZenML stack.
@@ -862,8 +893,8 @@ class StacksWrapper:
                     {
                         "id": str(item.id),
                         "name": item.name,
-                        "flavor": item.body.flavor,
-                        "type": item.body.type,
+                        "flavor": item.flavor,
+                        "type": str(item.type),
                         "config": item.metadata.configuration,
                     }
                     for item in components.items
