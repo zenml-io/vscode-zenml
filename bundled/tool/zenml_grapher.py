@@ -31,38 +31,75 @@ class Grapher:
 
         for step in self.run.metadata.steps:
             step_data = self.run.metadata.steps[step]
-            self.nodes.append({
-                "id": str(step_data.id),
-                "type": "step",
-                "data": {
-                    "execution_id": str(step_data.id),
-                    "name": step,
-                    "status": step_data.body.status,
-                },
-            })
+            self.nodes.append(
+                {
+                    "id": str(step_data.id),
+                    "type": "step",
+                    "data": {
+                        "execution_id": str(step_data.id),
+                        "name": step,
+                        "status": step_data.body.status,
+                    },
+                }
+            )
             self.add_artifacts_from_list(step_data.body.inputs)
             self.add_artifacts_from_list(step_data.body.outputs)
 
-
     def add_artifacts_from_list(self, dictOfArtifacts: Dict[str, StepArtifact]) -> None:
         """Used to add unique artifacts to the internal nodes list by build_nodes_from_steps"""
-        for artifact in dictOfArtifacts:
-            id = str(dictOfArtifacts[artifact].body.artifact.id)
-            if id in self.artifacts:
+        for artifact_name, artifact_value in dictOfArtifacts.items():
+            try:
+                if isinstance(artifact_value, list):
+                    if not artifact_value:
+                        continue
+
+                    artifact_version = artifact_value[0]
+                    if hasattr(artifact_version, "artifact") and hasattr(
+                        artifact_version.artifact, "id"
+                    ):
+                        artifact_id = str(artifact_version.artifact.id)
+                    elif hasattr(artifact_version, "id"):
+                        artifact_id = str(artifact_version.id)
+                    else:
+                        continue
+
+                    artifact_data = artifact_version
+                    artifact_type = getattr(artifact_data, "type", "Unknown")
+                    execution_id = str(getattr(artifact_data, "id", "Unknown"))
+                else:
+                    if hasattr(artifact_value, "body") and hasattr(artifact_value.body, "artifact"):
+                        artifact_id = str(artifact_value.body.artifact.id)
+                        artifact_type = artifact_value.body.type
+                        execution_id = str(artifact_value.id)
+                    elif hasattr(artifact_value, "artifact") and hasattr(
+                        artifact_value.artifact, "id"
+                    ):
+                        artifact_id = str(artifact_value.artifact.id)
+                        artifact_type = getattr(artifact_value, "type", "Unknown")
+                        execution_id = str(getattr(artifact_value, "id", "Unknown"))
+                    else:
+                        artifact_id = str(artifact_value.id)
+                        artifact_type = getattr(artifact_value, "type", "Unknown")
+                        execution_id = str(artifact_value.id)
+            except (AttributeError, TypeError):
                 continue
 
-            self.artifacts[id] = True
+            if artifact_id in self.artifacts:
+                continue
 
-            self.nodes.append({
-                "type": "artifact",
-                "id": id,
-                "data": {
-                    "name": artifact,
-                    "artifact_type": dictOfArtifacts[artifact].body.type,
-                    "execution_id": str(dictOfArtifacts[artifact].id),
-                },
-            })
+            self.artifacts[artifact_id] = True
 
+            self.nodes.append(
+                {
+                    "type": "artifact",
+                    "id": artifact_id,
+                    "data": {
+                        "name": artifact_name,
+                        "artifact_type": artifact_type,
+                        "execution_id": execution_id,
+                    },
+                }
+            )
 
     def build_edges_from_steps(self) -> None:
         """Builds internal edges list from run steps"""
