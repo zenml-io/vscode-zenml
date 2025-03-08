@@ -10,18 +10,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
+import { ArrayXY, SVG, registerWindow } from '@svgdotjs/svg.js';
+import * as Dagre from 'dagre';
 import fs from 'fs/promises';
 import * as vscode from 'vscode';
-import * as Dagre from 'dagre';
-import { ArrayXY, SVG, registerWindow } from '@svgdotjs/svg.js';
-import { PipelineTreeItem, ServerDataProvider } from '../../views/activityBar';
-import { PipelineRunDag, DagNode } from '../../types/PipelineTypes';
-import { LSClient } from '../../services/LSClient';
-import { ServerStatus } from '../../types/ServerInfoTypes';
-import { JsonObject } from '../../views/panel/panelView/PanelTreeItem';
-import { PanelDataProvider } from '../../views/panel/panelView/PanelDataProvider';
 import Panels from '../../common/panels';
 import WebviewBase from '../../common/WebviewBase';
+import { LSClient } from '../../services/LSClient';
+import { DagNode, PipelineRunDag } from '../../types/PipelineTypes';
+import { ServerStatus } from '../../types/ServerInfoTypes';
+import { PipelineTreeItem, ServerDataProvider } from '../../views/activityBar';
+import { PanelDataProvider } from '../../views/panel/panelView/PanelDataProvider';
+import { JsonObject } from '../../views/panel/panelView/PanelTreeItem';
 
 const ROOT_PATH = ['resources', 'dag-view'];
 const CSS_FILE = 'dag.css';
@@ -197,27 +197,78 @@ export default class DagRenderer extends WebviewBase {
     let dagData: PipelineRunDag;
     try {
       dagData = await client.sendLsClientRequest<PipelineRunDag>('getPipelineRunDag', [node.id]);
+
+      const cssUri = panel.webview.asWebviewUri(this.css);
+      const jsUri = panel.webview.asWebviewUri(this.javaScript);
+      const graph = this.layoutDag(dagData);
+      const svg = await this.drawDag(graph);
+      const updateButton = dagData.status === 'running' || dagData.status === 'initializing';
+      const title = `${dagData.name}`;
+
+      // And set its HTML content
+      panel.webview.html = this.getWebviewContent({
+        svg,
+        cssUri,
+        jsUri,
+        updateButton,
+        title,
+        cspSource: panel.webview.cspSource,
+      });
     } catch (e) {
-      vscode.window.showErrorMessage(`Unable to receive response from Zenml server: ${e}`);
-      return;
+      console.error(`DAG rendering error: ${e}`);
+      const errorMessage = `Failed to render pipeline DAG: ${e instanceof Error ? e.message : String(e)}`;
+
+      // Update the webview with error content instead of leaving it in loading state
+      panel.webview.html = this.getErrorContent({
+        cssUri: panel.webview.asWebviewUri(this.css),
+        jsUri: panel.webview.asWebviewUri(this.javaScript),
+        errorMessage,
+        pipelineName: node.label as string,
+        cspSource: panel.webview.cspSource,
+      });
     }
+  }
 
-    const cssUri = panel.webview.asWebviewUri(this.css);
-    const jsUri = panel.webview.asWebviewUri(this.javaScript);
-    const graph = this.layoutDag(dagData);
-    const svg = await this.drawDag(graph);
-    const updateButton = dagData.status === 'running' || dagData.status === 'initializing';
-    const title = `${dagData.name}`;
-
-    // And set its HTML content
-    panel.webview.html = this.getWebviewContent({
-      svg,
-      cssUri,
-      jsUri,
-      updateButton,
-      title,
-      cspSource: panel.webview.cspSource,
-    });
+  private getErrorContent({
+    cssUri,
+    jsUri,
+    errorMessage,
+    pipelineName,
+    cspSource,
+  }: {
+    cssUri: vscode.Uri;
+    jsUri: vscode.Uri;
+    errorMessage: string;
+    pipelineName: string;
+    cspSource: string;
+  }): string {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src ${cspSource}; style-src ${cspSource};">
+    <link rel="stylesheet" href="${cssUri}">
+    <title>DAG Error</title>
+</head>
+<body>
+    <div id="update">
+      <p>${pipelineName}</p><button id="retry-button">Retry</button>
+    </div>
+    <div class="error-container">
+      <div class="error-icon">⚠️</div>
+      <div class="error-title">Failed to render pipeline DAG</div>
+      <div class="error-message">${errorMessage}</div>
+      <p>There was an error while trying to get the DAG data from the ZenML server. Please check the logs for more details.</p>
+    </div>
+    <script src="${jsUri}"></script>
+    <script>
+      document.getElementById('retry-button').addEventListener('click', () => {
+        vscode.postMessage({ command: 'update' });
+      });
+    </script>
+</body>
+</html>`;
   }
 
   private async loadSvgWindowLib() {

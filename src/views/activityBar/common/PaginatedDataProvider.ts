@@ -13,9 +13,9 @@
 
 import { Event, EventEmitter, TreeDataProvider, TreeItem, window } from 'vscode';
 import { ITEMS_PER_PAGE_OPTIONS } from '../../../utils/constants';
-import { CommandTreeItem } from './PaginationTreeItems';
-import { LoadingTreeItem } from './LoadingTreeItem';
 import { ErrorTreeItem } from './ErrorTreeItem';
+import { LoadingTreeItem } from './LoadingTreeItem';
+import { CommandTreeItem } from './PaginationTreeItems';
 
 /**
  * Provides a base class to other DataProviders that provides all functionality
@@ -116,8 +116,8 @@ export class PaginatedDataProvider implements TreeDataProvider<TreeItem> {
       return this.addPaginationCommands(this.items.slice());
     }
 
-    if ('children' in element && Array.isArray(element.children)) {
-      return element.children;
+    if (element && 'children' in element && element.children) {
+      return Array.isArray(element.children) ? element.children : undefined;
     }
 
     return undefined;

@@ -11,14 +11,18 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
-import { StackComponent } from '../../../types/StackTypes';
+import { TreeItemWithChildren } from '../common/TreeItemWithChildren';
+import {
+  ComponentCategoryTreeItem,
+  StackComponentTreeItem,
+} from '../componentView/ComponentTreeItems';
 
 /**
  * A TreeItem for displaying a stack in the VSCode TreeView.
  * This item can be expanded to show the components of the stack.
  */
-export class StackTreeItem extends vscode.TreeItem {
-  public children: vscode.TreeItem[] | undefined;
+export class StackTreeItem extends vscode.TreeItem implements TreeItemWithChildren {
+  public children?: vscode.TreeItem[];
   public isActive: boolean;
 
   constructor(
@@ -28,31 +32,58 @@ export class StackTreeItem extends vscode.TreeItem {
     isActive?: boolean
   ) {
     super(label, vscode.TreeItemCollapsibleState.Collapsed);
-    this.children = components;
+
+    const groupedComponents = this.groupComponentsByType(components);
+    this.children = groupedComponents;
+
     this.contextValue = 'stack';
     this.isActive = isActive || false;
 
     if (isActive) {
       this.iconPath = new vscode.ThemeIcon('pass-filled', new vscode.ThemeColor('charts.green'));
+    } else {
+      this.iconPath = new vscode.ThemeIcon('archive');
     }
+
+    this.tooltip = new vscode.MarkdownString(
+      `**Stack: ${label}**\n\nID: ${id}\n\nActive: ${isActive ? 'Yes' : 'No'}`
+    );
   }
-}
 
-/**
- * A TreeItem for displaying a stack component in the VSCode TreeView.
- */
-export class StackComponentTreeItem extends vscode.TreeItem {
-  constructor(
-    public component: StackComponent,
-    public stackId?: string
-  ) {
-    super(component.name, vscode.TreeItemCollapsibleState.None);
+  /**
+   * Group components by their type and create component category items
+   */
+  private groupComponentsByType(components: StackComponentTreeItem[]): vscode.TreeItem[] {
+    const groupedByType: { [key: string]: StackComponentTreeItem[] } = {};
 
-    this.tooltip = stackId
-      ? `Type: ${component.type}, Flavor: ${component.flavor}, ID: ${stackId}`
-      : `Type: ${component.type}, Flavor: ${component.flavor}`;
-    this.description = `${component.type} (${component.flavor})`;
-    this.contextValue = 'stackComponent';
-    this.id = stackId ? `${stackId}-${component.id}` : `${component.id}`;
+    for (const component of components) {
+      const type = component.component.type;
+      if (!groupedByType[type]) {
+        groupedByType[type] = [];
+      }
+      groupedByType[type].push(component);
+    }
+
+    return Object.entries(groupedByType).map(([type, items]) => {
+      if (items.length === 1) {
+        const component = items[0];
+
+        const treeItem = new vscode.TreeItem(
+          `${type}: ${component.component.name}`,
+          vscode.TreeItemCollapsibleState.Collapsed
+        ) as TreeItemWithChildren;
+
+        treeItem.contextValue = 'stackComponent';
+        treeItem.iconPath = new vscode.ThemeIcon('package');
+        treeItem.id = component.id;
+        treeItem.tooltip = component.tooltip;
+        treeItem.children = component.children;
+
+        return treeItem;
+      } else {
+        // For multiple components (e.g., in the 'Stack Components' view), use a category
+        return new ComponentCategoryTreeItem(type, items);
+      }
+    });
   }
 }
