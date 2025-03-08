@@ -1,0 +1,6 @@
+[default]
+locale = "en-us"
+
+[default.extend-words]
+# Ignore list of words. Usage example:
+# teh = "teh"

@@ -80,7 +80,7 @@ export default class StackForm extends WebviewBase {
    * Opens a webview panel with a form to update a specified stack
    * @param {string} id The id of the specified stack
    * @param {string} name The current name of the specified stack
-   * @param {object} components The component settings of the sepcified stack
+   * @param {object} components The component settings of the specified stack
    */
   public async updateForm(id: string, name: string, components: { [type: string]: string }) {
     const panel = await this.display();

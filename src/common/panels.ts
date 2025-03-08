@@ -86,7 +86,7 @@ export default class Panels {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Secuirty-Policy" content="default-src 'none';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none';">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Loading</title>
     <style>
