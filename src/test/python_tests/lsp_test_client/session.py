@@ -81,7 +81,7 @@ class LspSession(MethodDispatcher):
         self._thread_pool.submit(self._reader.listen, self._endpoint.consume)
         return self
 
-    def __exit__(self, typ, value, _tb):
+    def __exit__(self, exc_type, value, _tb):
         self.shutdown(True)
         try:
             self._sub.terminate()

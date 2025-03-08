@@ -68,6 +68,16 @@ npm run test
 - **VSCode Debug Console**: Utilize the debug console in the VSCode development window for troubleshooting and inspecting values.
 - **Extension Host Logs**: Review the extension host logs for runtime errors or unexpected behavior.
 
+### Spellchecking
+
+The project uses [typos](https://github.com/crate-ci/typos) for spellchecking with a standardized configuration. Run the spellcheck script with the following command:
+
+```bash
+./scripts/spellcheck.sh
+```
+
+The script automatically uses the repository's default config file `.typos.toml` in the root of the repository. Custom configurations are not supported to ensure consistent spell checking across all contributions. All arguments passed to the script (except `-c/--config`) are forwarded directly to `typos`.
+
 ## Contributing Changes
 
 1. **Create a Branch**: Make your changes in a new git branch based on the `develop` branch.
