@@ -78,6 +78,32 @@ The project uses [typos](https://github.com/crate-ci/typos) for spellchecking wi
 
 The script automatically uses the repository's default config file `.typos.toml` in the root of the repository. Custom configurations are not supported to ensure consistent spell checking across all contributions. All arguments passed to the script (except `-c/--config`) are forwarded directly to `typos`.
 
+### Formatting and Linting
+
+We use automatic formatting and linting tools to keep our code consistent.
+
+#### Quick Commands
+
+| Task              | Command               | What it does                                         |
+| ----------------- | --------------------- | ---------------------------------------------------- |
+| Format everything | `./scripts/format.sh` | Formats all Python, TypeScript, JSON, and YAML files |
+| Lint everything   | `./scripts/lint.sh`   | Checks all files for style/quality issues            |
+
+#### Individual Tools
+
+- **Python**: `ruff` for formatting/linting, `mypy` for type checking
+- **TypeScript/JSON**: `prettier` for formatting, `eslint` for linting
+- **YAML**: `yamlfix` for formatting and checking
+
+#### NPM Scripts
+
+For frontend code only:
+
+- `npm run format` - Format TypeScript and JSON files
+- `npm run lint` - Lint TypeScript files
+
+Please run these commands before submitting your PR.
+
 ## Contributing Changes
 
 1. **Create a Branch**: Make your changes in a new git branch based on the `develop` branch.
