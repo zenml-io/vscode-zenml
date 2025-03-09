@@ -10,6 +10,9 @@ from typing import List
 
 import nox  # pylint: disable=import-error
 
+PYTHON_DIRS = ["./bundled/tool", "./src/test/python_tests", "noxfile.py"]
+EXCLUDE_PATTERN = "--exclude __init__.py"
+
 
 def _install_bundle(session: nox.Session) -> None:
     session.install(
@@ -80,13 +83,8 @@ def _update_npm_packages(session: nox.Session) -> None:
             package_json["devDependencies"][package] = latest
 
     # Ensure engine matches the package
-    if (
-        package_json["engines"]["vscode"]
-        != package_json["devDependencies"]["@types/vscode"]
-    ):
-        print(
-            "Please check VS Code engine version and @types/vscode version in package.json."
-        )
+    if package_json["engines"]["vscode"] != package_json["devDependencies"]["@types/vscode"]:
+        print("Please check VS Code engine version and @types/vscode version in package.json.")
 
     new_package_json = json.dumps(package_json, indent=4)
     # JSON dumps uses \n for line ending on all platforms by default
@@ -129,13 +127,19 @@ def tests(session: nox.Session) -> None:
     session.run("pytest", "src/test/python_tests")
 
 
+def _run_ruff_on_all_dirs(session, command, *args):
+    """Run a ruff command on all Python directories."""
+    for directory in PYTHON_DIRS:
+        session.run("ruff", command, *args, directory)
+
+
 @nox.session()
 def lint(session: nox.Session) -> None:
     """Runs linter and formatter checks on python files."""
-    session.install("-r", "./requirements.txt")
-    session.install("-r", "src/test/python_tests/requirements.txt")
+    session.install("-r", "./requirements.txt", "-r", "src/test/python_tests/requirements.txt")
+    session.install("pylint", "ruff")
 
-    session.install("pylint")
+    # Pylint checks
     session.run("pylint", "-d", "W0511", "./bundled/tool")
     session.run(
         "pylint",
@@ -146,19 +150,19 @@ def lint(session: nox.Session) -> None:
     )
     session.run("pylint", "-d", "W0511", "noxfile.py")
 
-    # check formatting using black
-    session.install("black")
-    session.run("black", "--check", "./bundled/tool")
-    session.run("black", "--check", "./src/test/python_tests")
-    session.run("black", "--check", "noxfile.py")
+    # Ruff checks
+    _run_ruff_on_all_dirs(session, "check")
 
-    # check import sorting using isort
-    session.install("isort")
-    session.run("isort", "--check", "./bundled/tool")
-    session.run("isort", "--check", "./src/test/python_tests")
-    session.run("isort", "--check", "noxfile.py")
+    # Unused imports and variables
+    for directory in PYTHON_DIRS:
+        session.run(
+            "ruff", "check", "--select", "F401,F841", EXCLUDE_PATTERN, "--isolated", directory
+        )
 
-    # check typescript code
+    # Check formatting
+    _run_ruff_on_all_dirs(session, "format", "--check")
+
+    # Check typescript
     session.run("npm", "run", "lint", external=True)
 
 
@@ -169,6 +173,36 @@ def build_package(session: nox.Session) -> None:
     _setup_template_environment(session)
     session.run("npm", "install", external=True)
     session.run("npm", "run", "vsce-package", external=True)
+
+
+@nox.session()
+def format(session: nox.Session) -> None:
+    """Formats python files."""
+    session.install("-r", "./requirements.txt", "-r", "src/test/python_tests/requirements.txt")
+    session.install("ruff")
+
+    # Remove unused imports and variables
+    for directory in PYTHON_DIRS:
+        session.run(
+            "ruff",
+            "check",
+            "--select",
+            "F401,F841",
+            "--fix",
+            EXCLUDE_PATTERN,
+            "--isolated",
+            directory,
+        )
+
+    # Sort imports
+    for directory in PYTHON_DIRS:
+        session.run("ruff", "check", "--select", "I", "--fix", "--ignore", "D", directory)
+
+    # Format code
+    _run_ruff_on_all_dirs(session, "format")
+
+    # Format TypeScript
+    session.run("npm", "run", "format", external=True)
 
 
 @nox.session()

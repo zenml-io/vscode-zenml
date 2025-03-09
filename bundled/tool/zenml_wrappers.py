@@ -771,7 +771,8 @@ class StacksWrapper:
         """Updates a specified ZenML Stack.
 
         Args:
-            args (list): List containing the id of the stack being updated, the new name, and the chosen components.
+            args (list): List containing the id of the stack being updated, the new name,
+                         and the chosen components.
         Returns:
             Dictionary containing a message relevant to whether the action succeeded or failed
         """
@@ -813,7 +814,8 @@ class StacksWrapper:
         """Registers a new ZenML stack component.
 
         Args:
-            args (list): List containing the component type, flavor used, name, and configuration of the desired new component.
+            args (list): List containing the component type, flavor used, name,
+                         and configuration of the desired new component.
         Returns:
             Dictionary containing a message relevant to whether the action succeeded or failed
         """
@@ -830,7 +832,8 @@ class StacksWrapper:
         """Updates a specified ZenML stack component.
 
         Args:
-            args (list): List containing the id, component type, new name, and desired configuration of the desired component.
+            args (list): List containing the id, component type, new name, and desired
+                         configuration of the desired component.
         Returns:
             Dictionary containing a message relevant to whether the action succeeded or failed
         """
@@ -872,9 +875,11 @@ class StacksWrapper:
         """Lists stack components in a paginated way.
 
         Args:
-            args (list): List containing the page, maximum items per page, and an optional type filter used to retrieve expected components.
+            args (list): List containing the page, maximum items per page, and an optional
+                         type filter used to retrieve expected components.
         Returns:
-            A Dictionary containing the paginated results or an error message specifying why the action failed.
+            A Dictionary containing the paginated results or an error message
+            specifying why the action failed.
         """
         if len(args) < 2:
             return {"error": "Insufficient arguments provided."}
@@ -914,7 +919,8 @@ class StacksWrapper:
         """Gets a list of all component types.
 
         Returns:
-            A list of component types or a dictionary containing an error message specifying why the action failed.
+            A list of component types or a dictionary containing an error message
+            specifying why the action failed.
         """
         try:
             return self.StackComponentType.values()
@@ -927,9 +933,11 @@ class StacksWrapper:
         """Lists stack component flavors in a paginated way.
 
         Args:
-            args (list): List containing page, max items per page, and an optional component type filter used to retrieve expected component flavors.
+            args (list): List containing page, max items per page, and an optional component type
+            filter used to retrieve expected component flavors.
         Returns:
-            A Dictionary containing the paginated results or an error message specifying why the action failed.
+            A Dictionary containing the paginated results or an error message specifying why the
+            action failed.
         """
         if len(args) < 2:
             return {"error": "Insufficient arguments provided."}

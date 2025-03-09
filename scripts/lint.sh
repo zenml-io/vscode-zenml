@@ -3,20 +3,28 @@ set -euxo pipefail
 
 cd "$(dirname "$0")/.." || exit
 printf "Working directory: %s\n" "$(pwd)"
-# Set PYTHONPATH to include bundled/tool
+# set PYTHONPATH to include bundled/tool
 PYTHONPATH="${PYTHONPATH-}:$(pwd)/bundled/tool"
 export PYTHONPATH
 
-# Lint Python files with ruff
+PYTHON_SRC="bundled/tool"
+
 echo "Linting Python files..."
-ruff check bundled/tool || { echo "Linting Python files failed"; exit 1; }
+ruff check $PYTHON_SRC
 
-# Type check Python files with mypy
-echo "Type checking Python files with mypy..."
-mypy bundled/tool || { echo "Type checking Python files with mypy failed"; exit 1; }
+echo "Checking for unused imports and variables..."
+ruff check $PYTHON_SRC --select F401,F841 --exclude "__init__.py" --isolated
 
-# Lint YAML files with yamlfix
-echo "Checking YAML files with yamlfix..."
-yamlfix .github/workflows/*.yml --check || { echo "Linting YAML files failed"; exit 1; }
+echo "Checking Python formatting..."
+ruff format $PYTHON_SRC --check
+
+echo "Type checking python files with mypy..."
+mypy $PYTHON_SRC
+
+echo "Linting TypeScript files with eslint..."
+npm run lint
+
+echo "Checking yaml files with yamlfix..."
+yamlfix .github/workflows/*.yml --check
 
 unset PYTHONPATH

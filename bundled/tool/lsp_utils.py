@@ -12,6 +12,7 @@
 #  permissions and limitations under the License.
 
 """Utility functions and classes for use with running tools over LSP."""
+
 from __future__ import annotations
 
 import contextlib

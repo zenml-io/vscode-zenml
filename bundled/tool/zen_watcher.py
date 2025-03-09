@@ -16,6 +16,7 @@ ZenML Global Configuration Watcher.
 This module contains ZenConfigWatcher, a class that watches for changes
 in the ZenML global configuration file and triggers notifications accordingly.
 """
+
 import os
 from threading import Timer
 from typing import Any, Optional

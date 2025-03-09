@@ -1,6 +1,3 @@
-autoflake
-black
-isort
 mypy
 ruff
 yamlfix
