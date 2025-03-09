@@ -482,8 +482,8 @@
     "@types/svgdom": "^0.1.2",
     "@types/vscode": "^1.92.0",
     "@types/webpack": "^5.28.5",
-    "@typescript-eslint/eslint-plugin": "^6.19.1",
-    "@typescript-eslint/parser": "^6.19.1",
+    "@typescript-eslint/eslint-plugin": "^8.26.0",
+    "@typescript-eslint/parser": "^8.26.0",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
     "@vscode/vsce": "^2.24.0",
@@ -500,12 +500,12 @@
   "dependencies": {
     "@svgdotjs/svg.js": "^3.2.4",
     "@vscode/python-extension": "^1.0.5",
-    "axios": "^1.8.1",
+    "axios": "^1.8.2",
     "dagre": "^0.8.5",
     "fs-extra": "^11.2.0",
     "hbs": "^4.2.0",
     "svg-pan-zoom": "github:bumbu/svg-pan-zoom",
-    "svgdom": "^0.1.19",
+    "svgdom": "^0.1.20",
     "vscode-languageclient": "^9.0.1"
   }
 }
