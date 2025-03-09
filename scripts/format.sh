@@ -1,16 +1,21 @@
 #!/bin/bash
 set -euxo pipefail
 
-# Source directory for Python tool
+# source directory for python tool
 python_src="bundled/tool"
 
 echo "Formatting Python files in bundled/tool..."
-find $python_src -name "*.py" -not -path "*/.mypy_cache/*" -print0 | xargs -0 autoflake --in-place --remove-all-unused-imports
-find $python_src -name "*.py" -not -path "*/.mypy_cache/*" -print0 | xargs -0 isort --
-find $python_src -name "*.py" -not -path "*/.mypy_cache/*" -print0 | xargs -0 black --line-length 100 --
+# autoflake replacement: removes unused imports and variables
+ruff check $python_src --select F401,F841 --fix --exclude "__init__.py" --isolated
+
+# isort replacement: sorts imports
+ruff check $python_src --select I --fix --ignore D
+
+# black replacement: formats code
+ruff format $python_src
 
 echo "Formatting TypeScript files..."
-npx prettier --ignore-path .gitignore --write "**/*.+(ts|json)"
+npm run format
 
 echo "Formatting YAML files..."
 find .github -name "*.yml" -print0 | xargs -0 yamlfix --
