@@ -11,6 +11,7 @@
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
 """Implementation of tool support over LSP."""
+
 from __future__ import annotations
 
 import json
@@ -92,7 +93,8 @@ async def initialize(params: lsp.InitializeParams) -> None:
         if settings is not None:
             _update_workspace_settings(settings)
             log_to_output(
-                f"Settings used to run Server:\r\n{json.dumps(settings, indent=4, ensure_ascii=False)}\r\n"
+                f"Settings used to run Server:\r\n"
+                f"{json.dumps(settings, indent=4, ensure_ascii=False)}\r\n"
             )
 
     log_to_output(
