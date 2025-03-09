@@ -505,7 +505,7 @@
     "fs-extra": "^11.2.0",
     "hbs": "^4.2.0",
     "svg-pan-zoom": "github:bumbu/svg-pan-zoom",
-    "svgdom": "^0.1.19",
+    "svgdom": "^0.1.20",
     "vscode-languageclient": "^9.0.1"
   }
 }
