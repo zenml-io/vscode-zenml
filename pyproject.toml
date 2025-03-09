@@ -1,0 +1,33 @@
+[tool.ruff]
+# Same as Black.
+line-length = 100
+indent-width = 4
+
+exclude = [
+    ".git",
+    ".mypy_cache",
+    ".ruff_cache",
+    "dist",
+    "node_modules",
+    "venv",
+    ".venv",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint]
+# Enable flake8-bugbear rules
+select = ["E", "F", "B", "I"]
+ignore = []
+fixable = ["ALL"]  # Allow autofix for all enabled rules.
+unfixable = []
+
+[tool.ruff.lint.isort]
+known-first-party = ["zenml"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]

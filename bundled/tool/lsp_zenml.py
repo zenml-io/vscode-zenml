@@ -18,7 +18,6 @@ such as checking ZenML installation, verifying version compatibility, and
 updating Python interpreter paths.
 """
 
-
 import asyncio
 import subprocess
 import sys

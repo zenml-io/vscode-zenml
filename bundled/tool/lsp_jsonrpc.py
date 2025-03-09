@@ -13,7 +13,6 @@
 
 """Light-weight JSON-RPC over standard IO."""
 
-
 import atexit
 import io
 import json
