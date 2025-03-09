@@ -12,19 +12,60 @@
 #  permissions and limitations under the License.
 """This module provides wrappers for ZenML configuration and operations."""
 
+import datetime
 import pathlib
-from typing import Any, Tuple, Union, List, Optional, Dict
-from zenml_grapher import Grapher
+from typing import Any, Dict, List, Optional, Tuple, Union
+
 from type_hints import (
-    GraphResponse, 
-    ErrorResponse, 
-    RunStepResponse, 
-    RunArtifactResponse, 
-    ZenmlServerInfoResp, 
-    ZenmlGlobalConfigResp,
+    ErrorResponse,
+    GraphResponse,
     ListComponentsResponse,
-    ListFlavorsResponse
+    ListFlavorsResponse,
+    RunArtifactResponse,
+    RunStepResponse,
+    ZenmlGlobalConfigResp,
+    ZenmlServerInfoResp,
 )
+from zenml_grapher import Grapher
+
+
+def _serialize_flavor(flavor):
+    """
+    Convert a flavor object to a plain dictionary.
+
+    - If flavor is None, return an empty dict.
+    - Convert the id of the flavor to a string.
+    - Convert the created and updated fields to ISO strings.
+    - Convert the type of the flavor to a string.
+    """
+    if flavor is None:
+        return {}
+    if isinstance(flavor, str):
+        return flavor
+
+    try:
+        flavor_dict = dict(flavor.__dict__)
+    except Exception:
+        return str(flavor)
+
+    if "id" in flavor_dict:
+        # Convert UUID to string
+        flavor_dict["id"] = str(flavor_dict["id"])
+
+    if "type" in flavor_dict:
+        # Convert StackComponentType to string
+        flavor_dict["type"] = str(flavor_dict["type"])
+
+    if "body" in flavor_dict and flavor_dict["body"]:
+        try:
+            body = dict(flavor_dict["body"].__dict__)
+            for key in ["created", "updated"]:
+                if key in body and isinstance(body[key], datetime.datetime):
+                    body[key] = body[key].isoformat()
+            flavor_dict["body"] = body
+        except Exception:
+            flavor_dict["body"] = str(flavor_dict["body"])
+    return flavor_dict
 
 
 class GlobalConfigWrapper:
@@ -57,9 +98,7 @@ class GlobalConfigWrapper:
     def RestZenStoreConfiguration(self):
         """Returns the RestZenStoreConfiguration class for store configuration."""
         # pylint: disable=not-callable
-        return self.lazy_import(
-            "zenml.zen_stores.rest_zen_store", "RestZenStoreConfiguration"
-        )
+        return self.lazy_import("zenml.zen_stores.rest_zen_store", "RestZenStoreConfiguration")
 
     def get_global_config_directory_path(self) -> str:
         """Get the global configuration directory path.
@@ -132,8 +171,8 @@ class GlobalConfigWrapper:
             "store": {
                 "type": store_data.type,
                 "url": store_data.url,
-                "api_token": store_data.api_token if hasattr(store_data, "api_token") else None
-            }
+                "api_token": store_data.api_token if hasattr(store_data, "api_token") else None,
+            },
         }
 
 
@@ -162,7 +201,8 @@ class ZenServerWrapper:
     def ServerDeploymentNotFoundError(self):
         """Returns the ZenML ServerDeploymentNotFoundError class."""
         return self.lazy_import(
-            "zenml.zen_server.deploy.exceptions", "ServerDeploymentNotFoundError"
+            "zenml.zen_server.deploy.exceptions",
+            "ServerDeploymentNotFoundError",
         )
 
     @property
@@ -200,12 +240,10 @@ class ZenServerWrapper:
 
         # Handle both 'store' and 'store_configuration' depending on version
         store_attr_name = (
-            "store_configuration"
-            if hasattr(self.gc, "store_configuration")
-            else "store"
+            "store_configuration" if hasattr(self.gc, "store_configuration") else "store"
         )
         store_config = getattr(self.gc, store_attr_name)
-        
+
         return {
             "storeInfo": {
                 "id": str(store_info.id),
@@ -217,12 +255,12 @@ class ZenServerWrapper:
                 "auth_scheme": store_info.auth_scheme,
                 "server_url": store_info.server_url,
                 "dashboard_url": store_info.dashboard_url,
-            }, 
+            },
             "storeConfig": {
                 "type": store_config.type,
                 "url": store_config.url,
-                "api_token": store_config.api_token if hasattr(store_config, "api_token") else None
-            }
+                "api_token": store_config.api_token if hasattr(store_config, "api_token") else None,
+            },
         }
 
     def connect(self, args, **kwargs) -> dict:
@@ -242,9 +280,7 @@ class ZenServerWrapper:
         try:
             # pylint: disable=not-callable
             access_token = self.web_login(url=url, verify_ssl=verify_ssl)
-            self._config_wrapper.set_store_configuration(
-                remote_url=url, access_token=access_token
-            )
+            self._config_wrapper.set_store_configuration(remote_url=url, access_token=access_token)
             return {"message": "Connected successfully.", "access_token": access_token}
         except self.AuthorizationException as e:
             return {"error": f"Authorization failed: {str(e)}"}
@@ -260,9 +296,7 @@ class ZenServerWrapper:
         try:
             # Adjust for changes from 'store' to 'store_configuration'
             store_attr_name = (
-                "store_configuration"
-                if hasattr(self.gc, "store_configuration")
-                else "store"
+                "store_configuration" if hasattr(self.gc, "store_configuration") else "store"
             )
             url = getattr(self.gc, store_attr_name).url
             store_type = self.BaseZenStore.get_store_type(url)
@@ -330,21 +364,15 @@ class PipelineRunsWrapper:
                     "status": run.body.status,
                     "stackName": run.body.stack.name,
                     "startTime": (
-                        run.metadata.start_time.isoformat()
-                        if run.metadata.start_time
-                        else None
+                        run.metadata.start_time.isoformat() if run.metadata.start_time else None
                     ),
                     "endTime": (
-                        run.metadata.end_time.isoformat()
-                        if run.metadata.end_time
-                        else None
+                        run.metadata.end_time.isoformat() if run.metadata.end_time else None
                     ),
                     "os": run.metadata.client_environment.get("os", "Unknown OS"),
                     "osVersion": run.metadata.client_environment.get(
                         "os_version",
-                        run.metadata.client_environment.get(
-                            "mac_version", "Unknown Version"
-                        ),
+                        run.metadata.client_environment.get("mac_version", "Unknown Version"),
                     ),
                     "pythonVersion": run.metadata.client_environment.get(
                         "python_version", "Unknown"
@@ -397,32 +425,22 @@ class PipelineRunsWrapper:
                 "status": run.body.status,
                 "stackName": run.body.stack.name,
                 "startTime": (
-                    run.metadata.start_time.isoformat()
-                    if run.metadata.start_time
-                    else None
+                    run.metadata.start_time.isoformat() if run.metadata.start_time else None
                 ),
-                "endTime": (
-                    run.metadata.end_time.isoformat() if run.metadata.end_time else None
-                ),
+                "endTime": (run.metadata.end_time.isoformat() if run.metadata.end_time else None),
                 "os": run.metadata.client_environment.get("os", "Unknown OS"),
                 "osVersion": run.metadata.client_environment.get(
                     "os_version",
-                    run.metadata.client_environment.get(
-                        "mac_version", "Unknown Version"
-                    ),
+                    run.metadata.client_environment.get("mac_version", "Unknown Version"),
                 ),
-                "pythonVersion": run.metadata.client_environment.get(
-                    "python_version", "Unknown"
-                ),
+                "pythonVersion": run.metadata.client_environment.get("python_version", "Unknown"),
             }
 
             return run_data
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve pipeline run: {str(e)}"}
 
-    def get_pipeline_run_graph(
-        self, args: Tuple[str]
-    ) -> Union[GraphResponse, ErrorResponse]:
+    def get_pipeline_run_graph(self, args: Tuple[str]) -> Union[GraphResponse, ErrorResponse]:
         """Gets a ZenML pipeline run step DAG.
 
         Args:
@@ -451,9 +469,7 @@ class PipelineRunsWrapper:
         try:
             step_run_id = args[0]
             step = self.client.get_run_step(step_run_id, hydrate=True)
-            run = self.client.get_pipeline_run(
-                step.metadata.pipeline_run_id, hydrate=True
-            )
+            run = self.client.get_pipeline_run(step.metadata.pipeline_run_id, hydrate=True)
 
             step_data = {
                 "name": step.name,
@@ -464,15 +480,9 @@ class PipelineRunsWrapper:
                     "email": step.body.user.name,
                 },
                 "startTime": (
-                    step.metadata.start_time.isoformat()
-                    if step.metadata.start_time
-                    else None
+                    step.metadata.start_time.isoformat() if step.metadata.start_time else None
                 ),
-                "endTime": (
-                    step.metadata.end_time.isoformat()
-                    if step.metadata.end_time
-                    else None
-                ),
+                "endTime": (step.metadata.end_time.isoformat() if step.metadata.end_time else None),
                 "duration": (
                     str(step.metadata.end_time - step.metadata.start_time)
                     if step.metadata.end_time and step.metadata.start_time
@@ -492,9 +502,7 @@ class PipelineRunsWrapper:
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve pipeline run step: {str(e)}"}
 
-    def get_run_artifact(
-        self, args: Tuple[str]
-    ) -> Union[RunArtifactResponse, ErrorResponse]:
+    def get_run_artifact(self, args: Tuple[str]) -> Union[RunArtifactResponse, ErrorResponse]:
         """Gets a ZenML pipeline run artifact.
 
         Args:
@@ -562,7 +570,7 @@ class StacksWrapper:
     def StackComponentValidationError(self):
         """Returns the ZenML StackComponentValidationError class."""
         return self.lazy_import("zenml.exceptions", "StackComponentValidationError")
-    
+
     @property
     def StackComponentType(self):
         """Returns the ZenML StackComponentType enum."""
@@ -579,9 +587,7 @@ class StacksWrapper:
             return {"error": "Insufficient arguments provided."}
         page, max_size = args
         try:
-            stacks_page = self.client.list_stacks(
-                page=page, size=max_size, hydrate=True
-            )
+            stacks_page = self.client.list_stacks(page=page, size=max_size, hydrate=True)
             stacks_data = self.process_stacks(stacks_page.items)
 
             return {
@@ -594,29 +600,57 @@ class StacksWrapper:
         except self.ValidationError as e:
             return {"error": "ValidationError", "message": str(e)}
         except self.ZenMLBaseException as e:
-            return [{"error": f"Failed to retrieve stacks: {str(e)}"}]
+            return {"error": f"Failed to retrieve stacks: {str(e)}"}
+        except Exception as e:
+            return {"error": f"Unexpected error: {str(e)}"}
 
     def process_stacks(self, stacks):
         """Process stacks to the desired format."""
-        return [
-            {
-                "id": str(stack.id),
-                "name": stack.name,
-                "components": {
-                    component_type: [
+        try:
+            result = []
+
+            for stack in stacks:
+                try:
+                    stack_data = {"id": str(stack.id), "name": stack.name, "components": {}}
+
+                    for comp_type, components in stack.components.items():
+                        comp_type_str = str(comp_type)
+                        stack_data["components"][comp_type_str] = []
+                        for component in components:
+                            try:
+                                stack_data["components"][comp_type_str].append(
+                                    {
+                                        "id": str(component.id),
+                                        "name": component.name,
+                                        "flavor": _serialize_flavor(component.flavor),
+                                        "type": str(component.type),
+                                    }
+                                )
+                            except Exception as e:
+                                stack_data["components"][comp_type_str].append(
+                                    {
+                                        "id": str(getattr(component, "id", "unknown")),
+                                        "name": getattr(
+                                            component, "name", "Error processing component"
+                                        ),
+                                        "error": str(e),
+                                    }
+                                )
+                    result.append(stack_data)
+                except Exception as e:
+                    result.append(
                         {
-                            "id": str(component.id),
-                            "name": component.name,
-                            "flavor": component.flavor,
-                            "type": component.type,
+                            "id": str(getattr(stack, "id", "unknown")),
+                            "name": getattr(stack, "name", "Error processing stack"),
+                            "error": str(e),
                         }
-                        for component in components
-                    ]
-                    for component_type, components in stack.components.items()
-                },
-            }
-            for stack in stacks
-        ]
+                    )
+            if not result:
+                return [{"message": "No stacks found or all stacks failed to process"}]
+
+            return result
+        except Exception as e:
+            return [{"error": f"Error processing stacks: {str(e)}"}]
 
     def get_active_stack(self) -> dict:
         """Fetches the active ZenML stack.
@@ -694,23 +728,17 @@ class StacksWrapper:
         target_stack_name = args[1]
 
         if not source_stack_name_or_id or not target_stack_name:
-            return {
-                "error": "Both source stack name/id and target stack name are required"
-            }
+            return {"error": "Both source stack name/id and target stack name are required"}
 
         try:
-            stack_to_copy = self.client.get_stack(
-                name_id_or_prefix=source_stack_name_or_id
-            )
+            stack_to_copy = self.client.get_stack(name_id_or_prefix=source_stack_name_or_id)
             component_mapping = {
                 c_type: [c.id for c in components][0]
                 for c_type, components in stack_to_copy.components.items()
                 if components
             }
 
-            self.client.create_stack(
-                name=target_stack_name, components=component_mapping
-            )
+            self.client.create_stack(name=target_stack_name, components=component_mapping)
             return {
                 "message": (
                     f"Stack `{source_stack_name_or_id}` successfully copied "
@@ -722,7 +750,7 @@ class StacksWrapper:
             self.StackComponentValidationError,
         ) as e:
             return {"error": str(e)}
-    
+
     def register_stack(self, args: Tuple[str, Dict[str, str]]) -> Dict[str, str]:
         """Registers a new ZenML Stack.
 
@@ -738,12 +766,13 @@ class StacksWrapper:
             return {"message": f"Stack {name} successfully registered"}
         except self.ZenMLBaseException as e:
             return {"error": str(e)}
-        
+
     def update_stack(self, args: Tuple[str, str, Dict[str, List[str]]]) -> Dict[str, str]:
         """Updates a specified ZenML Stack.
 
         Args:
-            args (list): List containing the id of the stack being updated, the new name, and the chosen components.
+            args (list): List containing the id of the stack being updated, the new name,
+                         and the chosen components.
         Returns:
             Dictionary containing a message relevant to whether the action succeeded or failed
         """
@@ -754,12 +783,16 @@ class StacksWrapper:
             if old.name == name:
                 self.client.update_stack(name_id_or_prefix=id, component_updates=components)
             else:
-                self.client.update_stack(name_id_or_prefix=id, name=name, component_updates=components)
-                
+                self.client.update_stack(
+                    name_id_or_prefix=id,
+                    name=name,
+                    component_updates=components,
+                )
+
             return {"message": f"Stack {name} successfully updated."}
         except self.ZenMLBaseException as e:
             return {"error": str(e)}
-        
+
     def delete_stack(self, args: Tuple[str]) -> Dict[str, str]:
         """Deletes a specified ZenML stack.
 
@@ -776,45 +809,49 @@ class StacksWrapper:
             return {"message": f"Stack {id} successfully deleted."}
         except self.ZenMLBaseException as e:
             return {"error": str(e)}
-        
+
     def register_component(self, args: Tuple[str, str, str, Dict[str, str]]) -> Dict[str, str]:
         """Registers a new ZenML stack component.
 
         Args:
-            args (list): List containing the component type, flavor used, name, and configuration of the desired new component.
+            args (list): List containing the component type, flavor used, name,
+                         and configuration of the desired new component.
         Returns:
             Dictionary containing a message relevant to whether the action succeeded or failed
         """
         [component_type, flavor, name, configuration] = args
-        
+
         try:
             self.client.create_stack_component(name, flavor, component_type, configuration)
 
             return {"message": f"Stack Component {name} successfully registered"}
         except self.ZenMLBaseException as e:
             return {"error": str(e)}
-        
+
     def update_component(self, args: Tuple[str, str, str, Dict[str, str]]) -> Dict[str, str]:
         """Updates a specified ZenML stack component.
 
         Args:
-            args (list): List containing the id, component type, new name, and desired configuration of the desired component.
+            args (list): List containing the id, component type, new name, and desired
+                         configuration of the desired component.
         Returns:
             Dictionary containing a message relevant to whether the action succeeded or failed
         """
         [id, component_type, name, configuration] = args
-        
+
         try:
             old = self.client.get_stack_component(component_type, id)
 
             new_name = None if old.name == name else name
 
-            self.client.update_stack_component(id, component_type, name=new_name, configuration=configuration)
+            self.client.update_stack_component(
+                id, component_type, name=new_name, configuration=configuration
+            )
 
             return {"message": f"Stack Component {name} successfully updated"}
         except self.ZenMLBaseException as e:
             return {"error": str(e)}
-        
+
     def delete_component(self, args: Tuple[str, str]) -> Dict[str, str]:
         """Deletes a specified ZenML stack component.
 
@@ -831,18 +868,22 @@ class StacksWrapper:
             return {"message": f"Stack Component {id} successfully deleted"}
         except self.ZenMLBaseException as e:
             return {"error": str(e)}
-    
-    def list_components(self, args: Tuple[int, int, Union[str, None]]) -> Union[ListComponentsResponse,ErrorResponse]:
+
+    def list_components(
+        self, args: Tuple[int, int, Union[str, None]]
+    ) -> Union[ListComponentsResponse, ErrorResponse]:
         """Lists stack components in a paginated way.
-        
+
         Args:
-            args (list): List containing the page, maximum items per page, and an optional type filter used to retrieve expected components.
+            args (list): List containing the page, maximum items per page, and an optional
+                         type filter used to retrieve expected components.
         Returns:
-            A Dictionary containing the paginated results or an error message specifying why the action failed.
+            A Dictionary containing the paginated results or an error message
+            specifying why the action failed.
         """
         if len(args) < 2:
             return {"error": "Insufficient arguments provided."}
-        
+
         page = args[0]
         max_size = args[1]
         filter = None
@@ -851,7 +892,9 @@ class StacksWrapper:
             filter = args[2]
 
         try:
-            components = self.client.list_stack_components(page=page, size=max_size, type=filter, hydrate=True)
+            components = self.client.list_stack_components(
+                page=page, size=max_size, type=filter, hydrate=True
+            )
 
             return {
                 "index": components.index,
@@ -862,8 +905,8 @@ class StacksWrapper:
                     {
                         "id": str(item.id),
                         "name": item.name,
-                        "flavor": item.body.flavor,
-                        "type": item.body.type,
+                        "flavor": _serialize_flavor(item.flavor),
+                        "type": str(item.type),
                         "config": item.metadata.configuration,
                     }
                     for item in components.items
@@ -876,24 +919,29 @@ class StacksWrapper:
         """Gets a list of all component types.
 
         Returns:
-            A list of component types or a dictionary containing an error message specifying why the action failed.
+            A list of component types or a dictionary containing an error message
+            specifying why the action failed.
         """
         try:
             return self.StackComponentType.values()
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve list of component types: {str(e)}"}
-    
-    def list_flavors(self, args: Tuple[int, int, Optional[str]]) -> Union[ListFlavorsResponse, ErrorResponse]:
+
+    def list_flavors(
+        self, args: Tuple[int, int, Optional[str]]
+    ) -> Union[ListFlavorsResponse, ErrorResponse]:
         """Lists stack component flavors in a paginated way.
-        
+
         Args:
-            args (list): List containing page, max items per page, and an optional component type filter used to retrieve expected component flavors.
+            args (list): List containing page, max items per page, and an optional component type
+            filter used to retrieve expected component flavors.
         Returns:
-            A Dictionary containing the paginated results or an error message specifying why the action failed.
+            A Dictionary containing the paginated results or an error message specifying why the
+            action failed.
         """
         if len(args) < 2:
             return {"error": "Insufficient arguments provided."}
-        
+
         page = args[0]
         max_size = args[1]
         filter = None
@@ -920,8 +968,9 @@ class StacksWrapper:
                         "connector_type": flavor.metadata.connector_type,
                         "connector_resource_type": flavor.metadata.connector_resource_type,
                         "connector_resource_id_attr": flavor.metadata.connector_resource_id_attr,
-                    } for flavor in flavors.items
-                ]
+                    }
+                    for flavor in flavors.items
+                ],
             }
 
         except self.ZenMLBaseException as e:

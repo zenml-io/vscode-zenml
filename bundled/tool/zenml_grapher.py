@@ -13,7 +13,9 @@
 """This module contains a tool to mimic LineageGraph output for pipeline runs"""
 
 from typing import Dict, List
+
 from type_hints import GraphEdge, GraphNode, GraphResponse, StepArtifact
+
 
 class Grapher:
     """Quick and dirty implementation of ZenML/LineageGraph to reduce number of api calls"""
@@ -31,38 +33,75 @@ class Grapher:
 
         for step in self.run.metadata.steps:
             step_data = self.run.metadata.steps[step]
-            self.nodes.append({
-                "id": str(step_data.id),
-                "type": "step",
-                "data": {
-                    "execution_id": str(step_data.id),
-                    "name": step,
-                    "status": step_data.body.status,
-                },
-            })
+            self.nodes.append(
+                {
+                    "id": str(step_data.id),
+                    "type": "step",
+                    "data": {
+                        "execution_id": str(step_data.id),
+                        "name": step,
+                        "status": step_data.body.status,
+                    },
+                }
+            )
             self.add_artifacts_from_list(step_data.body.inputs)
             self.add_artifacts_from_list(step_data.body.outputs)
 
-
     def add_artifacts_from_list(self, dictOfArtifacts: Dict[str, StepArtifact]) -> None:
         """Used to add unique artifacts to the internal nodes list by build_nodes_from_steps"""
-        for artifact in dictOfArtifacts:
-            id = str(dictOfArtifacts[artifact].body.artifact.id)
-            if id in self.artifacts:
+        for artifact_name, artifact_value in dictOfArtifacts.items():
+            try:
+                if isinstance(artifact_value, list):
+                    if not artifact_value:
+                        continue
+
+                    artifact_version = artifact_value[0]
+                    if hasattr(artifact_version, "artifact") and hasattr(
+                        artifact_version.artifact, "id"
+                    ):
+                        artifact_id = str(artifact_version.artifact.id)
+                    elif hasattr(artifact_version, "id"):
+                        artifact_id = str(artifact_version.id)
+                    else:
+                        continue
+
+                    artifact_data = artifact_version
+                    artifact_type = getattr(artifact_data, "type", "Unknown")
+                    execution_id = str(getattr(artifact_data, "id", "Unknown"))
+                else:
+                    if hasattr(artifact_value, "body") and hasattr(artifact_value.body, "artifact"):
+                        artifact_id = str(artifact_value.body.artifact.id)
+                        artifact_type = artifact_value.body.type
+                        execution_id = str(artifact_value.id)
+                    elif hasattr(artifact_value, "artifact") and hasattr(
+                        artifact_value.artifact, "id"
+                    ):
+                        artifact_id = str(artifact_value.artifact.id)
+                        artifact_type = getattr(artifact_value, "type", "Unknown")
+                        execution_id = str(getattr(artifact_value, "id", "Unknown"))
+                    else:
+                        artifact_id = str(artifact_value.id)
+                        artifact_type = getattr(artifact_value, "type", "Unknown")
+                        execution_id = str(artifact_value.id)
+            except (AttributeError, TypeError):
                 continue
 
-            self.artifacts[id] = True
+            if artifact_id in self.artifacts:
+                continue
 
-            self.nodes.append({
-                "type": "artifact",
-                "id": id,
-                "data": {
-                    "name": artifact,
-                    "artifact_type": dictOfArtifacts[artifact].body.type,
-                    "execution_id": str(dictOfArtifacts[artifact].id),
-                },
-            })
+            self.artifacts[artifact_id] = True
 
+            self.nodes.append(
+                {
+                    "type": "artifact",
+                    "id": artifact_id,
+                    "data": {
+                        "name": artifact_name,
+                        "artifact_type": artifact_type,
+                        "execution_id": execution_id,
+                    },
+                }
+            )
 
     def build_edges_from_steps(self) -> None:
         """Builds internal edges list from run steps"""
@@ -73,22 +112,59 @@ class Grapher:
             step_id = str(step_data.id)
 
             for artifact in step_data.body.inputs:
-                input_id = str(step_data.body.inputs[artifact].body.artifact.id)
-                self.add_edge(input_id, step_id)
+                try:
+                    if isinstance(step_data.body.inputs[artifact], list):
+                        if not step_data.body.inputs[artifact]:  # Skip empty lists
+                            continue
+                        artifact_version = step_data.body.inputs[artifact][0]
+                        if hasattr(artifact_version, "artifact") and hasattr(
+                            artifact_version.artifact, "id"
+                        ):
+                            input_id = str(artifact_version.artifact.id)
+                        elif hasattr(artifact_version, "id"):
+                            input_id = str(artifact_version.id)
+                        else:
+                            continue
+                    else:
+                        # Older access pattern
+                        input_id = str(step_data.body.inputs[artifact].body.artifact.id)
+
+                    self.add_edge(input_id, step_id)
+                except (AttributeError, TypeError):
+                    continue
 
             for artifact in step_data.body.outputs:
-                output_id = str(step_data.body.outputs[artifact].body.artifact.id)
-                self.add_edge(step_id, output_id)
+                try:
+                    if isinstance(step_data.body.outputs[artifact], list):
+                        if not step_data.body.outputs[artifact]:
+                            continue
+                        artifact_version = step_data.body.outputs[artifact][0]
+                        if hasattr(artifact_version, "artifact") and hasattr(
+                            artifact_version.artifact, "id"
+                        ):
+                            output_id = str(artifact_version.artifact.id)
+                        elif hasattr(artifact_version, "id"):
+                            output_id = str(artifact_version.id)
+                        else:
+                            continue
+                    else:
+                        # Older access pattern
+                        output_id = str(step_data.body.outputs[artifact].body.artifact.id)
 
+                    self.add_edge(step_id, output_id)
+                except (AttributeError, TypeError):
+                    continue
 
     def add_edge(self, v: str, w: str) -> None:
         """Helper method to add an edge to the internal edges list"""
-        self.edges.append({
-            "id": f"{v}_{w}",
-            "source": v,
-            "target": w,
-        })
-        
+        self.edges.append(
+            {
+                "id": f"{v}_{w}",
+                "source": v,
+                "target": w,
+            }
+        )
+
     def to_dict(self) -> GraphResponse:
         """Returns dictionary containing graph data"""
         return {
