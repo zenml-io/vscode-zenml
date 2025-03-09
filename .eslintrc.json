@@ -14,11 +14,10 @@
         "format": ["camelCase", "PascalCase"]
       }
     ],
-    "@typescript-eslint/semi": "warn",
+    "semi": ["warn", "always"],
     "curly": "warn",
     "eqeqeq": "warn",
-    "no-throw-literal": "warn",
-    "semi": "off"
+    "no-throw-literal": "warn"
   },
   "ignorePatterns": ["out", "dist", "**/*.d.ts"]
 }
