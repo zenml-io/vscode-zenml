@@ -17,6 +17,7 @@ import * as vscode from 'vscode';
 import { registerPipelineCommands } from '../commands/pipelines/registry';
 import { registerServerCommands } from '../commands/server/registry';
 import { registerStackCommands } from '../commands/stack/registry';
+import { registerSecretsCommands } from '../commands/secrets/registry';
 import { EXTENSION_ROOT_DIR } from '../common/constants';
 import { registerLogger, traceLog, traceVerbose } from '../common/log/logging';
 import {
@@ -43,7 +44,7 @@ import { toggleCommands } from '../utils/global';
 import { PanelDataProvider } from '../views/panel/panelView/PanelDataProvider';
 import { ComponentDataProvider } from '../views/activityBar/componentView/ComponentDataProvider';
 import { registerComponentCommands } from '../commands/components/registry';
-
+import { registerChatCommands } from '../commands/chat/registry';
 export interface IServerInfo {
   name: string;
   module: string;
@@ -73,6 +74,8 @@ export class ZenExtension {
     registerStackCommands,
     registerComponentCommands,
     registerPipelineCommands,
+    registerSecretsCommands,
+    registerChatCommands,
   ];
 
   /**

@@ -50,7 +50,7 @@
     "compile": "webpack",
     "compile-tests": "tsc -p . --outDir out",
     "deploy": "vsce publish",
-    "format": "prettier --ignore-path .gitignore --write \"**/*.+(ts|json)\"",
+    "format": "prettier --ignore-path .gitignore --write \"**/*.+(ts|json|js|html)\"",
     "format-check": "prettier --ignore-path .gitignore --check \"**/*.+(ts|json)\"",
     "install": "pip install -r requirements.txt --target bundled/libs",
     "lint": "eslint src --ext ts",
@@ -281,6 +281,12 @@
         "category": "ZenML Pipeline Runs"
       },
       {
+        "command": "zenml.openChat",
+        "title": "Open ZenML Chat View",
+        "icon": "$(comment-discussion)",
+        "category": "ZenML Chat"
+      },
+      {
         "command": "zenml.refreshEnvironmentView",
         "title": "Refresh Environment View",
         "icon": "$(refresh)",
@@ -297,6 +303,12 @@
         "title": "Restart LSP Server",
         "icon": "$(debug-restart)",
         "category": "ZenML Environment"
+      },
+      {
+        "command": "zenml.registerLLMAPIKey",
+        "title": "Register/Change LLM API Key",
+        "icon": "$(comment-discussion)",
+        "category": "ZenML Secrets"
       }
     ],
     "viewsContainers": {
@@ -341,6 +353,11 @@
           "id": "zenmlEnvironmentView",
           "name": "Environment",
           "icon": "$(server-environment)"
+        },
+        {
+          "id": "zenmlAPIView",
+          "name": "Chatbot",
+          "type": "webview"
         }
       ],
       "zenmlPanel": [
@@ -411,6 +428,11 @@
           "when": "environmentCommandsRegistered && view == zenmlEnvironmentView",
           "command": "zenml.restartLspServer",
           "group": "navigation"
+        },
+        {
+          "when": "view == zenmlAPIView",
+          "command": "zenml.registerLLMAPIKey",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
@@ -465,6 +487,11 @@
           "group": "inline@1"
         },
         {
+          "when": "view == chatPanelView",
+          "command": "zenml.openChat",
+          "group": "navigation"
+        },
+        {
           "when": "environmentCommandsRegistered && view == zenmlEnvironmentView && viewItem == interpreter",
           "command": "zenml.setPythonInterpreter",
           "group": "inline"
@@ -487,10 +514,13 @@
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
     "@vscode/vsce": "^2.24.0",
+    "autoprefixer": "^10.4.20",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
+    "postcss": "^8.4.47",
     "prettier": "^3.2.5",
     "sinon": "^17.0.1",
+    "tailwindcss": "^3.4.13",
     "ts-loader": "^9.5.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
@@ -502,10 +532,15 @@
     "@vscode/python-extension": "^1.0.5",
     "axios": "^1.7.7",
     "dagre": "^0.8.5",
+    "date-fns": "^4.1.0",
+    "dompurify": "^3.1.7",
     "fs-extra": "^11.2.0",
     "hbs": "^4.2.0",
+    "ky": "^1.7.1",
+    "marked": "^14.1.2",
     "svg-pan-zoom": "github:bumbu/svg-pan-zoom",
     "svgdom": "^0.1.19",
+    "token.js": "^0.4.5",
     "vscode-languageclient": "^9.0.1"
   }
 }

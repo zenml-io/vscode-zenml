@@ -34,12 +34,24 @@ export class PipelineDataProvider extends PaginatedDataProvider {
   private static instance: PipelineDataProvider | null = null;
   private eventBus = EventBus.getInstance();
   private zenmlClientReady = false;
+  private pipelineData: PipelineTreeItem[] = [];
+  private pipelineRuns: PipelineRun[] = [];
 
   constructor() {
     super();
     this.items = [LOADING_TREE_ITEMS.get('pipelineRuns')!];
     this.viewName = 'PipelineRuns';
     this.subscribeToEvents();
+  }
+
+  /**
+   * Retrieves the pipeline runs data.
+   * Returns a copy of the pipeline runs array to prevent external modifications.
+   *
+   * @returns {PipelineRun[]} A copy of the pipeline runs array.
+   */
+  public getPipelineRuns(): PipelineRun[] {
+    return [...this.pipelineRuns];
   }
 
   /**
@@ -137,6 +149,7 @@ export class PipelineDataProvider extends PaginatedDataProvider {
 
       if ('runs' in result) {
         const { runs, total, total_pages, current_page, items_per_page } = result;
+        this.pipelineRuns = runs;
 
         this.pagination = {
           currentPage: current_page,
@@ -145,7 +158,7 @@ export class PipelineDataProvider extends PaginatedDataProvider {
           totalPages: total_pages,
         };
 
-        return runs.map((run: PipelineRun) => {
+        this.pipelineData = runs.map((run: PipelineRun) => {
           const formattedStartTime = new Date(run.startTime).toLocaleString();
           const formattedEndTime = run.endTime ? new Date(run.endTime).toLocaleString() : 'N/A';
 
@@ -160,6 +173,8 @@ export class PipelineDataProvider extends PaginatedDataProvider {
 
           return new PipelineTreeItem(run, run.id, children);
         });
+
+        return this.pipelineData;
       } else {
         console.error(`Unexpected response format:`, result);
         return [];
@@ -173,5 +188,9 @@ export class PipelineDataProvider extends PaginatedDataProvider {
         ),
       ];
     }
+  }
+
+  public getPipelineData(): PipelineTreeItem[] {
+    return this.pipelineData;
   }
 }

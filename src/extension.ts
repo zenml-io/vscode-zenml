@@ -16,6 +16,7 @@ import { LSClient } from './services/LSClient';
 import { ZenExtension } from './services/ZenExtension';
 import { refreshUIComponents } from './utils/refresh';
 import { EnvironmentDataProvider } from './views/activityBar/environmentView/EnvironmentDataProvider';
+import { APIWebviewViewProvider } from './views/activityBar/APIView/APIWebviewViewProvider';
 import { registerEnvironmentCommands } from './commands/environment/registry';
 import { LSP_ZENML_CLIENT_INITIALIZED } from './utils/constants';
 import { toggleCommands } from './utils/global';
@@ -40,6 +41,11 @@ export async function activate(context: vscode.ExtensionContext) {
     treeDataProvider: EnvironmentDataProvider.getInstance(),
   });
   registerEnvironmentCommands(context);
+
+  const apiWebviewProvider = new APIWebviewViewProvider(context);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider('zenmlAPIView', apiWebviewProvider)
+  );
 
   await ZenExtension.activate(context, lsClient);
 
