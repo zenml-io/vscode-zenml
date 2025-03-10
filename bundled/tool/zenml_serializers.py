@@ -16,6 +16,7 @@ import datetime
 import functools
 import json
 import uuid
+from typing import Any, Dict
 
 
 def serialize_flavor(flavor):
@@ -34,7 +35,7 @@ def serialize_flavor(flavor):
         return flavor
 
     try:
-        base_dict = {}
+        base_dict: Dict[str, Any] = {}
         if hasattr(flavor, "id"):
             base_dict["id"] = str(flavor.id)
         if hasattr(flavor, "name"):
