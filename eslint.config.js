@@ -9,13 +9,13 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
-// permissions and limitations under the License.
-import eslint from '@eslint/js';
-import prettierConfig from 'eslint-config-prettier';
-import prettier from 'eslint-plugin-prettier';
-import tseslint from 'typescript-eslint';
 
-export default tseslint.config(
+const eslint = require('@eslint/js');
+const prettierConfig = require('eslint-config-prettier');
+const prettier = require('eslint-plugin-prettier');
+const tseslint = require('typescript-eslint');
+
+module.exports = tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   prettierConfig,
