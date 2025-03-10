@@ -40,11 +40,8 @@ export default tseslint.config(
       curly: 'warn',
       eqeqeq: 'warn',
       'no-throw-literal': 'warn',
-
       // TypeScript specific rules
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unsafe-function-type': 'off',
-      '@typescript-eslint/consistent-type-definitions': 'off',
+      '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': 'warn',
       'prefer-const': 'warn',
       '@typescript-eslint/naming-convention': [
@@ -54,7 +51,9 @@ export default tseslint.config(
           format: ['camelCase', 'PascalCase'],
         },
       ],
-
+      // Disable rules
+      '@typescript-eslint/no-unsafe-function-type': 'off',
+      '@typescript-eslint/consistent-type-definitions': 'off',
       // Prettier rules
       'prettier/prettier': 'warn',
     },
