@@ -502,7 +502,7 @@
     "@vscode/python-extension": "^1.0.5",
     "axios": "^1.8.2",
     "dagre": "^0.8.5",
-    "fs-extra": "^11.2.0",
+    "fs-extra": "^11.3.0",
     "hbs": "^4.2.0",
     "svg-pan-zoom": "github:bumbu/svg-pan-zoom",
     "svgdom": "^0.1.20",
