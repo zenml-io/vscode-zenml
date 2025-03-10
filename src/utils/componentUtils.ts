@@ -35,22 +35,26 @@ export function formatFlavorTooltip(flavor: Flavor | string): string {
     lines.push(`&nbsp;&nbsp;integration: ${flavor.body.integration}`);
   }
 
-  if (flavor.body?.type) {
-    lines.push(`&nbsp;&nbsp;type: ${flavor.body.type}`);
+  if (flavor.type) {
+    lines.push(`&nbsp;&nbsp;type: ${flavor.type}`);
   }
 
-  if (flavor.body?.created) {
-    lines.push(`&nbsp;&nbsp;created: ${flavor.body.created}`);
+  const created = flavor.created || flavor.body?.created;
+  if (created) {
+    lines.push(`&nbsp;&nbsp;created: ${created}`);
   }
 
-  if (flavor.body?.updated) {
-    lines.push(`&nbsp;&nbsp;updated: ${flavor.body.updated}`);
+  const updated = flavor.updated || flavor.body?.updated;
+  if (updated) {
+    lines.push(`&nbsp;&nbsp;updated: ${updated}`);
   }
 
-  // Add source but only show the class name
-  if (flavor.body?.source) {
-    const className = flavor.body.source.split('.').pop() || flavor.body.source;
-    lines.push(`&nbsp;&nbsp;source: ${className}`);
+  const sourceFromConfigSchema = flavor.config_schema?.title;
+  const sourceFromBody = flavor.body?.source?.split('.').pop() || flavor.body?.source;
+  const source = sourceFromConfigSchema || sourceFromBody;
+
+  if (source) {
+    lines.push(`&nbsp;&nbsp;source: ${source}`);
   }
 
   // Join with line breaks + spaces for proper markdown rendering
