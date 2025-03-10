@@ -11,7 +11,7 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 import * as assert from 'assert';
-import sinon from 'sinon';
+import * as sinon from 'sinon';
 import * as vscode from 'vscode';
 import * as extension from '../../extension';
 import { EventBus } from '../../services/EventBus';

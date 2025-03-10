@@ -12,7 +12,7 @@
 // permissions and limitations under the License.
 import { ArrayXY, SVG, registerWindow } from '@svgdotjs/svg.js';
 import * as Dagre from 'dagre';
-import fs from 'fs/promises';
+import * as fs from 'fs/promises';
 import * as vscode from 'vscode';
 import Panels from '../../common/panels';
 import WebviewBase from '../../common/WebviewBase';

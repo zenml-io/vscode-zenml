@@ -10,10 +10,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import assert from 'assert';
-import sinon from 'sinon';
-import { MockEventBus } from '../__mocks__/MockEventBus';
+import * as assert from 'assert';
+import * as sinon from 'sinon';
 import { LSCLIENT_READY } from '../../../utils/constants';
+import { MockEventBus } from '../__mocks__/MockEventBus';
 
 suite('MockEventBus and Event Handling', () => {
   let eventBus: MockEventBus;

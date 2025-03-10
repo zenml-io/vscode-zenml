@@ -10,12 +10,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import { StackDataProvider } from '../../../views/activityBar';
-import { ServerDataProvider } from '../../../views/activityBar';
+import * as sinon from 'sinon';
 import { ServerStatus, ZenServerDetails } from '../../../types/ServerInfoTypes';
 import { INITIAL_ZENML_SERVER_STATUS } from '../../../utils/constants';
+import { ServerDataProvider, StackDataProvider } from '../../../views/activityBar';
 import ZenMLStatusBar from '../../../views/statusBar';
-import sinon from 'sinon';
 
 export class MockZenMLStatusBar extends ZenMLStatusBar {
   public refreshActiveStack = sinon.stub().resolves();
