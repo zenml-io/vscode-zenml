@@ -2,7 +2,7 @@
 
 'use strict';
 
-const path = require('path');
+import path from 'path';
 
 //@ts-check
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
