@@ -20,12 +20,13 @@ import uuid
 
 def serialize_flavor(flavor):
     """
-    Convert a flavor object to a plain dictionary.
+    Convert a flavor object to a plain dictionary while preserving the expected structure.
 
     - If flavor is None, return an empty dict.
     - Convert the id of the flavor to a string.
     - Convert the created and updated fields to ISO strings.
     - Convert the type of the flavor to a string.
+    - Maintains the structure expected by the TypeScript client.
     """
     if flavor is None:
         return {}
@@ -33,28 +34,52 @@ def serialize_flavor(flavor):
         return flavor
 
     try:
-        flavor_dict = dict(flavor.__dict__)
+        base_dict = {}
+        if hasattr(flavor, "id"):
+            base_dict["id"] = str(flavor.id)
+        if hasattr(flavor, "name"):
+            base_dict["name"] = flavor.name
+        if hasattr(flavor, "type"):
+            base_dict["type"] = str(flavor.type)
+
+        for attr in [
+            "logo_url",
+            "config_schema",
+            "docs_url",
+            "sdk_docs_url",
+            "connector_type",
+            "connector_resource_type",
+            "connector_resource_id_attr",
+        ]:
+            if hasattr(flavor, attr):
+                base_dict[attr] = getattr(flavor, attr)
+
+        if hasattr(flavor, "body") and flavor.body:
+            body = {}
+            body_obj = flavor.body
+
+            for attr in ["type", "integration", "source", "logo_url", "user"]:
+                if hasattr(body_obj, attr):
+                    body[attr] = getattr(body_obj, attr)
+
+            for key in ["created", "updated"]:
+                if hasattr(body_obj, key):
+                    val = getattr(body_obj, key)
+                    if isinstance(val, datetime.datetime):
+                        body[key] = val.isoformat()
+                    else:
+                        body[key] = val
+
+            base_dict["body"] = body
+
+            # Copy datetime properties to top level for backwards compatibility
+            for key in ["created", "updated"]:
+                if key in body:
+                    base_dict[key] = body[key]
+
+        return base_dict
     except Exception:
         return str(flavor)
-
-    if "id" in flavor_dict:
-        # Convert UUID to string
-        flavor_dict["id"] = str(flavor_dict["id"])
-
-    if "type" in flavor_dict:
-        # Convert StackComponentType to string
-        flavor_dict["type"] = str(flavor_dict["type"])
-
-    if "body" in flavor_dict and flavor_dict["body"]:
-        try:
-            body = dict(flavor_dict["body"].__dict__)
-            for key in ["created", "updated"]:
-                if key in body and isinstance(body[key], datetime.datetime):
-                    body[key] = body[key].isoformat()
-            flavor_dict["body"] = body
-        except Exception:
-            flavor_dict["body"] = str(flavor_dict["body"])
-    return flavor_dict
 
 
 def serialize_object(obj):
