@@ -59,7 +59,9 @@ class JsonWriter:
         with self._lock:
             content = json.dumps(data)
             length = len(content.encode("utf-8"))
-            self._writer.write(f"{CONTENT_LENGTH}{length}\r\n\r\n{content}".encode("utf-8"))
+            # Make sure we're writing a string, not bytes, to the TextIOWrapper
+            message = f"{CONTENT_LENGTH}{length}\r\n\r\n{content}"
+            self._writer.write(message)
             self._writer.flush()
 
 
