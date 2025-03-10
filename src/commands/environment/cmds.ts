@@ -8,16 +8,19 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
 import { ProgressLocation, commands, window } from 'vscode';
 import { getInterpreterFromWorkspaceSettings } from '../../common/settings';
-import { EnvironmentDataProvider } from '../../views/activityBar/environmentView/EnvironmentDataProvider';
-import { LSP_ZENML_CLIENT_INITIALIZED, PYTOOL_MODULE } from '../../utils/constants';
-import { LSClient } from '../../services/LSClient';
 import { EventBus } from '../../services/EventBus';
-import { REFRESH_ENVIRONMENT_VIEW } from '../../utils/constants';
+import { LSClient } from '../../services/LSClient';
+import {
+  LSP_ZENML_CLIENT_INITIALIZED,
+  PYTOOL_MODULE,
+  REFRESH_ENVIRONMENT_VIEW,
+} from '../../utils/constants';
+import { EnvironmentDataProvider } from '../../views/activityBar/environmentView/EnvironmentDataProvider';
 
 /**
  * Set the Python interpreter for the current workspace.

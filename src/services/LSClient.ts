@@ -8,7 +8,7 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import { ProgressLocation, commands, window } from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
@@ -128,7 +128,7 @@ export class LSClient {
             title: 'ZenML config change detected',
             cancellable: false,
           },
-          async progress => {
+          async () => {
             await this.stopLanguageClient();
             await updateServerUrlAndToken(url, api_token);
             this.restartLSPServerDebounced();
@@ -206,8 +206,8 @@ export class LSClient {
   private handleKnownErrors<T = VersionMismatchError>(error: any): T {
     let errorType = 'Error';
     let serverVersion = 'N/A';
-    let errorMessage = error.message;
     let newErrorMessage = '';
+    const errorMessage = error.message;
     const versionRegex = /\b\d+\.\d+\.\d+\b/;
 
     if (errorMessage.includes('ValidationError')) {

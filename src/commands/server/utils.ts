@@ -8,13 +8,13 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
-import { ServerStatus, ZenServerDetails } from '../../types/ServerInfoTypes';
 import { LSClient } from '../../services/LSClient';
-import { INITIAL_ZENML_SERVER_STATUS, PYTOOL_MODULE } from '../../utils/constants';
 import { ServerStatusInfoResponse } from '../../types/LSClientResponseTypes';
+import { ServerStatus, ZenServerDetails } from '../../types/ServerInfoTypes';
+import { INITIAL_ZENML_SERVER_STATUS } from '../../utils/constants';
 import { ErrorTreeItem, createErrorItem } from '../../views/activityBar/common/ErrorTreeItem';
 
 /**

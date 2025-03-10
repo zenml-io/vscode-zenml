@@ -8,7 +8,7 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
 import { State } from 'vscode-languageclient';
@@ -28,10 +28,6 @@ import {
   ComponentTreeItem,
   StackComponentTreeItem,
 } from './ComponentTreeItems';
-
-interface TreeItemWithChildren extends vscode.TreeItem {
-  children?: vscode.TreeItem[];
-}
 
 export class ComponentDataProvider extends PaginatedDataProvider {
   private static instance: ComponentDataProvider | null = null;

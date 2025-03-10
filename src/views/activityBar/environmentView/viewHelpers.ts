@@ -8,17 +8,17 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import { TreeItemCollapsibleState } from 'vscode';
-import { EnvironmentItem } from './EnvironmentItem';
+import { State } from 'vscode-languageclient';
 import { getInterpreterDetails, resolveInterpreter } from '../../../common/python';
 import { getWorkspaceSettings } from '../../../common/settings';
-import { PYTOOL_MODULE } from '../../../utils/constants';
 import { getProjectRoot } from '../../../common/utilities';
 import { LSClient } from '../../../services/LSClient';
-import { State } from 'vscode-languageclient';
 import { LSNotificationIsZenMLInstalled } from '../../../types/LSNotificationTypes';
+import { PYTOOL_MODULE } from '../../../utils/constants';
+import { EnvironmentItem } from './EnvironmentItem';
 
 /**
  * Creates the LSP client item for the environment view.

@@ -8,24 +8,23 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
+import * as assert from 'assert';
 import * as sinon from 'sinon';
 import * as vscode from 'vscode';
-import assert from 'assert';
 import { EventBus } from '../../../services/EventBus';
 import { ZenServerDetails } from '../../../types/ServerInfoTypes';
-import { MOCK_REST_SERVER_DETAILS } from '../__mocks__/constants';
-import { MockLSClient } from '../__mocks__/MockLSClient';
-import { MockEventBus } from '../__mocks__/MockEventBus';
 import { LSCLIENT_READY, LSP_ZENML_SERVER_CHANGED } from '../../../utils/constants';
+import { MOCK_REST_SERVER_DETAILS } from '../__mocks__/constants';
+import { MockEventBus } from '../__mocks__/MockEventBus';
+import { MockLSClient } from '../__mocks__/MockLSClient';
 
 suite('Server Configuration Update Flow Tests', () => {
   let sandbox: sinon.SinonSandbox;
-  let mockEventBus = new MockEventBus();
   let mockLSClientInstance: MockLSClient;
-  let mockLSClient: any;
   let refreshUIComponentsStub: sinon.SinonStub;
+  const mockEventBus = new MockEventBus();
 
   setup(() => {
     sandbox = sinon.createSandbox();
@@ -34,7 +33,6 @@ suite('Server Configuration Update Flow Tests', () => {
 
     // Mock LSClient
     mockLSClientInstance = new MockLSClient(mockEventBus);
-    mockLSClient = mockLSClientInstance.getLanguageClient();
     sandbox.stub(mockLSClientInstance, 'startLanguageClient').resolves();
 
     // Mock EventBus

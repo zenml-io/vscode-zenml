@@ -8,15 +8,15 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
+import * as vscode from 'vscode';
 import { LSClient } from '../../services/LSClient';
 import { showErrorMessage, showInformationMessage } from '../../utils/notifications';
 import { PipelineTreeItem } from '../../views/activityBar';
 import { PipelineDataProvider } from '../../views/activityBar/pipelineView/PipelineDataProvider';
-import * as vscode from 'vscode';
-import { getPipelineRunDashboardUrl } from './utils';
 import DagRenderer from './DagRender';
+import { getPipelineRunDashboardUrl } from './utils';
 
 /**
  * Triggers a refresh of the pipeline view within the UI components.

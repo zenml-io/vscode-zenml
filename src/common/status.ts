@@ -8,12 +8,12 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
-import { LanguageStatusItem, Disposable, l10n, LanguageStatusSeverity } from 'vscode';
-import { createLanguageStatusItem } from './vscodeapi';
+import { Disposable, l10n, LanguageStatusItem, LanguageStatusSeverity } from 'vscode';
 import { Command } from 'vscode-languageclient';
 import { getDocumentSelector } from './utilities';
+import { createLanguageStatusItem } from './vscodeapi';
 
 let _status: LanguageStatusItem | undefined;
 export function registerLanguageStatusItem(id: string, name: string, command: string): Disposable {

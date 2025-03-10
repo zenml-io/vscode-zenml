@@ -8,16 +8,16 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-import * as vscode from 'vscode';
-import WebviewBase from '../../common/WebviewBase';
 import { handlebars } from 'hbs';
-import Panels from '../../common/panels';
-import { Flavor } from '../../types/StackTypes';
-import { LSClient } from '../../services/LSClient';
+import * as vscode from 'vscode';
 import { traceError, traceInfo } from '../../common/log/logging';
+import Panels from '../../common/panels';
+import WebviewBase from '../../common/WebviewBase';
+import { LSClient } from '../../services/LSClient';
+import { Flavor } from '../../types/StackTypes';
 import { ComponentDataProvider } from '../../views/activityBar/componentView/ComponentDataProvider';
 
 const ROOT_PATH = ['resources', 'components-form'];
