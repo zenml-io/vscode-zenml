@@ -2,7 +2,7 @@
 
 'use strict';
 
-const path = require('path');
+import path from 'path';
 
 //@ts-check
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
@@ -56,4 +56,4 @@ const dagWebviewConfig = {
   },
 };
 
-module.exports = [extensionConfig, dagWebviewConfig];
+export default [extensionConfig, dagWebviewConfig];
