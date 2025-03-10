@@ -8,7 +8,7 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 import { MockEventBus } from './MockEventBus';
 import { MOCK_ACCESS_TOKEN, MOCK_REST_SERVER_DETAILS, MOCK_REST_SERVER_URL } from './constants';
 

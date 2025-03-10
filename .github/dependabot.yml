@@ -6,13 +6,11 @@
 version: 2
 updates:
   - package-ecosystem: npm
-    directory: / # Location of package manifests
+    directory: /  # Location of package manifests
     schedule:
       interval: weekly
     groups:
       dependencies:
         patterns:
-          - '*' # This will group all dependencies together
-        update-types:
-          - 'minor'
-          - 'patch'
+          - '*'  # This will group all dependencies together
+        update-types: [minor, patch]

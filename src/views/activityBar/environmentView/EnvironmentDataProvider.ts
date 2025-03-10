@@ -8,26 +8,26 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import { EventEmitter, TreeDataProvider, TreeItem } from 'vscode';
 import { State } from 'vscode-languageclient';
 import { EventBus } from '../../../services/EventBus';
+import { LSNotificationIsZenMLInstalled } from '../../../types/LSNotificationTypes';
 import {
   LSCLIENT_STATE_CHANGED,
   LSP_IS_ZENML_INSTALLED,
-  REFRESH_ENVIRONMENT_VIEW,
   LSP_ZENML_CLIENT_INITIALIZED,
+  REFRESH_ENVIRONMENT_VIEW,
 } from '../../../utils/constants';
 import { EnvironmentItem } from './EnvironmentItem';
 import {
   createInterpreterDetails,
   createLSClientItem,
   createWorkspaceSettingsItems,
-  createZenMLInstallationItem,
   createZenMLClientStatusItem,
+  createZenMLInstallationItem,
 } from './viewHelpers';
-import { LSNotificationIsZenMLInstalled } from '../../../types/LSNotificationTypes';
 
 export class EnvironmentDataProvider implements TreeDataProvider<TreeItem> {
   private static instance: EnvironmentDataProvider | null = null;
