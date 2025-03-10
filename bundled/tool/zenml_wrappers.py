@@ -15,11 +15,6 @@
 import pathlib
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from _serializers import (
-    serialize_flavor,
-    serialize_object,
-    serialize_response,
-)
 from type_hints import (
     ErrorResponse,
     GraphResponse,
@@ -31,6 +26,11 @@ from type_hints import (
     ZenmlServerInfoResp,
 )
 from zenml_grapher import Grapher
+from zenml_serializers import (
+    serialize_flavor,
+    serialize_object,
+    serialize_response,
+)
 
 
 class GlobalConfigWrapper:
