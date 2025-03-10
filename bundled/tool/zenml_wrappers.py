@@ -12,10 +12,14 @@
 #  permissions and limitations under the License.
 """This module provides wrappers for ZenML configuration and operations."""
 
-import datetime
 import pathlib
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+from _serializers import (
+    serialize_flavor,
+    serialize_object,
+    serialize_response,
+)
 from type_hints import (
     ErrorResponse,
     GraphResponse,
@@ -27,45 +31,6 @@ from type_hints import (
     ZenmlServerInfoResp,
 )
 from zenml_grapher import Grapher
-
-
-def _serialize_flavor(flavor):
-    """
-    Convert a flavor object to a plain dictionary.
-
-    - If flavor is None, return an empty dict.
-    - Convert the id of the flavor to a string.
-    - Convert the created and updated fields to ISO strings.
-    - Convert the type of the flavor to a string.
-    """
-    if flavor is None:
-        return {}
-    if isinstance(flavor, str):
-        return flavor
-
-    try:
-        flavor_dict = dict(flavor.__dict__)
-    except Exception:
-        return str(flavor)
-
-    if "id" in flavor_dict:
-        # Convert UUID to string
-        flavor_dict["id"] = str(flavor_dict["id"])
-
-    if "type" in flavor_dict:
-        # Convert StackComponentType to string
-        flavor_dict["type"] = str(flavor_dict["type"])
-
-    if "body" in flavor_dict and flavor_dict["body"]:
-        try:
-            body = dict(flavor_dict["body"].__dict__)
-            for key in ["created", "updated"]:
-                if key in body and isinstance(body[key], datetime.datetime):
-                    body[key] = body[key].isoformat()
-            flavor_dict["body"] = body
-        except Exception:
-            flavor_dict["body"] = str(flavor_dict["body"])
-    return flavor_dict
 
 
 class GlobalConfigWrapper:
@@ -581,6 +546,7 @@ class StacksWrapper:
         """Returns the ZenKeyError class."""
         return self.lazy_import("zenml.exceptions", "ZenKeyError")
 
+    @serialize_response
     def fetch_stacks(self, args):
         """Fetches all ZenML stacks and components with pagination."""
         if len(args) < 2:
@@ -611,7 +577,9 @@ class StacksWrapper:
 
             for stack in stacks:
                 try:
-                    stack_data = {"id": str(stack.id), "name": stack.name, "components": {}}
+                    stack_data = serialize_object(stack)
+                    if "components" not in stack_data:
+                        stack_data["components"] = {}
 
                     for comp_type, components in stack.components.items():
                         comp_type_str = str(comp_type)
@@ -622,7 +590,7 @@ class StacksWrapper:
                                     {
                                         "id": str(component.id),
                                         "name": component.name,
-                                        "flavor": _serialize_flavor(component.flavor),
+                                        "flavor": serialize_flavor(component.flavor),
                                         "type": str(component.type),
                                     }
                                 )
@@ -652,6 +620,7 @@ class StacksWrapper:
         except Exception as e:
             return [{"error": f"Error processing stacks: {str(e)}"}]
 
+    @serialize_response
     def get_active_stack(self) -> dict:
         """Fetches the active ZenML stack.
 
@@ -660,13 +629,14 @@ class StacksWrapper:
         """
         try:
             active_stack = self.client.active_stack_model
-            return {
-                "id": str(active_stack.id),
-                "name": active_stack.name,
-            }
+            if active_stack:
+                stack_data = serialize_object(active_stack)
+                return stack_data
+            return {"message": "No active stack found"}
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve active stack: {str(e)}"}
 
+    @serialize_response
     def set_active_stack(self, args) -> dict:
         """Sets the active ZenML stack.
 
@@ -691,6 +661,7 @@ class StacksWrapper:
         except KeyError as err:
             return {"error": str(err)}
 
+    @serialize_response
     def rename_stack(self, args) -> dict:
         """Renames a specified ZenML stack.
 
@@ -716,6 +687,7 @@ class StacksWrapper:
         except (KeyError, self.IllegalOperationError) as err:
             return {"error": str(err)}
 
+    @serialize_response
     def copy_stack(self, args) -> dict:
         """Copies a specified ZenML stack to a new stack.
 
@@ -751,6 +723,7 @@ class StacksWrapper:
         ) as e:
             return {"error": str(e)}
 
+    @serialize_response
     def register_stack(self, args: Tuple[str, Dict[str, str]]) -> Dict[str, str]:
         """Registers a new ZenML Stack.
 
@@ -767,6 +740,7 @@ class StacksWrapper:
         except self.ZenMLBaseException as e:
             return {"error": str(e)}
 
+    @serialize_response
     def update_stack(self, args: Tuple[str, str, Dict[str, List[str]]]) -> Dict[str, str]:
         """Updates a specified ZenML Stack.
 
@@ -793,6 +767,7 @@ class StacksWrapper:
         except self.ZenMLBaseException as e:
             return {"error": str(e)}
 
+    @serialize_response
     def delete_stack(self, args: Tuple[str]) -> Dict[str, str]:
         """Deletes a specified ZenML stack.
 
@@ -810,6 +785,7 @@ class StacksWrapper:
         except self.ZenMLBaseException as e:
             return {"error": str(e)}
 
+    @serialize_response
     def register_component(self, args: Tuple[str, str, str, Dict[str, str]]) -> Dict[str, str]:
         """Registers a new ZenML stack component.
 
@@ -828,6 +804,7 @@ class StacksWrapper:
         except self.ZenMLBaseException as e:
             return {"error": str(e)}
 
+    @serialize_response
     def update_component(self, args: Tuple[str, str, str, Dict[str, str]]) -> Dict[str, str]:
         """Updates a specified ZenML stack component.
 
@@ -852,6 +829,7 @@ class StacksWrapper:
         except self.ZenMLBaseException as e:
             return {"error": str(e)}
 
+    @serialize_response
     def delete_component(self, args: Tuple[str, str]) -> Dict[str, str]:
         """Deletes a specified ZenML stack component.
 
@@ -869,6 +847,7 @@ class StacksWrapper:
         except self.ZenMLBaseException as e:
             return {"error": str(e)}
 
+    @serialize_response
     def list_components(
         self, args: Tuple[int, int, Union[str, None]]
     ) -> Union[ListComponentsResponse, ErrorResponse]:
@@ -905,7 +884,7 @@ class StacksWrapper:
                     {
                         "id": str(item.id),
                         "name": item.name,
-                        "flavor": _serialize_flavor(item.flavor),
+                        "flavor": serialize_flavor(item.flavor),
                         "type": str(item.type),
                         "config": item.metadata.configuration,
                     }
@@ -915,6 +894,7 @@ class StacksWrapper:
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve list of stack components: {str(e)}"}
 
+    @serialize_response
     def get_component_types(self) -> Union[List[str], ErrorResponse]:
         """Gets a list of all component types.
 
@@ -927,6 +907,7 @@ class StacksWrapper:
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve list of component types: {str(e)}"}
 
+    @serialize_response
     def list_flavors(
         self, args: Tuple[int, int, Optional[str]]
     ) -> Union[ListFlavorsResponse, ErrorResponse]:
