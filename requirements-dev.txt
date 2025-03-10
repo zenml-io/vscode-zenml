@@ -3,3 +3,4 @@ ruff
 yamlfix
 PyYAML
 types-PyYAML
+debugpy
