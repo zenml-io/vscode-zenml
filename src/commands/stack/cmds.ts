@@ -150,7 +150,12 @@ const setActiveStack = async (node: StackTreeItem): Promise<void> => {
       try {
         const result = await switchActiveStack(node.id);
         if (result) {
-          const { name } = result;
+          const { id, name } = result;
+
+          StackDataProvider.getInstance().updateActiveStack(id);
+          const statusBar = ZenMLStatusBar.getInstance();
+          await statusBar.refreshActiveStack();
+
           showInformationMessage(`Active stack set to: ${name}`);
         }
       } catch (error) {
