@@ -10,12 +10,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import { StackDataProvider, StackTreeItem } from '../../views/activityBar';
-import { stackCommands } from './cmds';
+import { ExtensionContext, commands } from 'vscode';
 import { registerCommand } from '../../common/vscodeapi';
 import { ZenExtension } from '../../services/ZenExtension';
-import { ExtensionContext, commands, window } from 'vscode';
-import { node } from 'webpack';
+import { StackDataProvider, StackTreeItem } from '../../views/activityBar';
+import { stackCommands } from './cmds';
 
 /**
  * Registers stack-related commands for the extension.

@@ -178,7 +178,8 @@ export class StackDataProvider extends PaginatedDataProvider {
    * @returns {StackTreeItem} A `StackTreeItem` object representing the stack and its components.
    */
   private convertToStackTreeItem(stack: Stack, isActive: boolean): StackTreeItem {
-    const componentTreeItems = Object.entries(stack.components).flatMap(([type, componentsArray]) =>
+    // the first arg to flatMap is the type of the component (skipped -- not needed here)
+    const componentTreeItems = Object.entries(stack.components).flatMap(([, componentsArray]) =>
       componentsArray.map(
         (component: StackComponent) => new StackComponentTreeItem(component, stack.id)
       )

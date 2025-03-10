@@ -29,10 +29,6 @@ import {
   StackComponentTreeItem,
 } from './ComponentTreeItems';
 
-interface TreeItemWithChildren extends vscode.TreeItem {
-  children?: vscode.TreeItem[];
-}
-
 export class ComponentDataProvider extends PaginatedDataProvider {
   private static instance: ComponentDataProvider | null = null;
   private eventBus = EventBus.getInstance();

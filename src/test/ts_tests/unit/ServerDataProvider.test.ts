@@ -15,26 +15,24 @@ import * as sinon from 'sinon';
 import { serverUtils } from '../../../commands/server/utils';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
+import { ServerStatus } from '../../../types/ServerInfoTypes';
 import { ServerDataProvider } from '../../../views/activityBar';
-import { MockLSClient } from '../__mocks__/MockLSClient';
+import { LOADING_TREE_ITEMS } from '../../../views/activityBar/common/LoadingTreeItem';
 import { MOCK_REST_SERVER_STATUS, MOCK_SQL_SERVER_STATUS } from '../__mocks__/constants';
 import { MockEventBus } from '../__mocks__/MockEventBus';
-import { ServerStatus } from '../../../types/ServerInfoTypes';
-import { LOADING_TREE_ITEMS } from '../../../views/activityBar/common/LoadingTreeItem';
+import { MockLSClient } from '../__mocks__/MockLSClient';
 
 suite('ServerDataProvider Tests', () => {
   let sandbox: sinon.SinonSandbox;
   let mockEventBus: MockEventBus;
   let serverDataProvider: ServerDataProvider;
   let mockLSClientInstance: any;
-  let mockLSClient: any;
 
   setup(() => {
     sandbox = sinon.createSandbox();
     serverDataProvider = ServerDataProvider.getInstance();
     mockEventBus = new MockEventBus();
     mockLSClientInstance = MockLSClient.getInstance(mockEventBus);
-    mockLSClient = mockLSClientInstance.getLanguageClient();
     sandbox.stub(LSClient, 'getInstance').returns(mockLSClientInstance);
     sandbox.stub(EventBus, 'getInstance').returns(mockEventBus);
     sandbox.stub(mockLSClientInstance, 'startLanguageClient').resolves();

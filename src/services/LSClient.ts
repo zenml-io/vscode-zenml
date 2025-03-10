@@ -128,7 +128,7 @@ export class LSClient {
             title: 'ZenML config change detected',
             cancellable: false,
           },
-          async progress => {
+          async () => {
             await this.stopLanguageClient();
             await updateServerUrlAndToken(url, api_token);
             this.restartLSPServerDebounced();
@@ -206,8 +206,8 @@ export class LSClient {
   private handleKnownErrors<T = VersionMismatchError>(error: any): T {
     let errorType = 'Error';
     let serverVersion = 'N/A';
-    let errorMessage = error.message;
     let newErrorMessage = '';
+    const errorMessage = error.message;
     const versionRegex = /\b\d+\.\d+\.\d+\b/;
 
     if (errorMessage.includes('ValidationError')) {

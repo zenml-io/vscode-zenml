@@ -93,7 +93,7 @@ export class MockLSClient {
       case `serverInfo`:
         return Promise.resolve(MOCK_REST_SERVER_DETAILS);
 
-      case `renameStack`:
+      case `renameStack`: {
         const [renameStackId, newStackName] = args;
         if (renameStackId && newStackName) {
           return Promise.resolve({
@@ -102,8 +102,9 @@ export class MockLSClient {
         } else {
           return Promise.resolve({ error: 'Failed to rename stack' });
         }
+      }
 
-      case `copyStack`:
+      case `copyStack`: {
         const [copyStackId, copyNewStackName] = args;
         if (copyStackId && copyNewStackName) {
           return Promise.resolve({
@@ -112,15 +113,16 @@ export class MockLSClient {
         } else {
           return Promise.resolve({ error: 'Failed to copy stack' });
         }
+      }
 
-      case `switchActiveStack`:
+      case `switchActiveStack`: {
         const [stackNameOrId] = args;
         if (stackNameOrId) {
           return Promise.resolve({ message: `Active stack set to: ${stackNameOrId}` });
         } else {
           return Promise.resolve({ error: 'Failed to set active stack' });
         }
-
+      }
       default:
         return Promise.reject(new Error(`Unmocked command: ${command}`));
     }

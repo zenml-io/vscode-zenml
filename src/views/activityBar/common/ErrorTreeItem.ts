@@ -60,10 +60,10 @@ export const createErrorItem = (error: any): TreeItem[] => {
  */
 export const createAuthErrorItem = (errorMessage: string): ErrorTreeItem[] => {
   const parts = errorMessage.split(':').map(part => part.trim());
-  let [generalError, detailedError, actionSuggestion] = ['', '', ''];
+  let [, detailedError, actionSuggestion] = ['', '', ''];
 
   if (parts.length > 2) {
-    generalError = parts[0]; // "Failed to retrieve pipeline runs"
+    // generalError = parts[0]; // "Failed to retrieve pipeline runs" – commented out (unused for now)
     detailedError = `${parts[1]}: ${(parts[2].split('.')[0] || '').trim()}`; // "Authentication error: error decoding access token"
     actionSuggestion = (parts[2].split('. ')[1] || '').trim(); // "You may need to rerun zenml connect"
   }

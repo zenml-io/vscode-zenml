@@ -31,7 +31,7 @@ const refreshStackView = async () => {
       title: 'Refreshing Stack View...',
       cancellable: false,
     },
-    async progress => {
+    async () => {
       await StackDataProvider.getInstance().refresh();
     }
   );
@@ -49,7 +49,7 @@ const refreshActiveStack = async () => {
       title: 'Refreshing Active Stack...',
       cancellable: false,
     },
-    async progress => {
+    async () => {
       await statusBar.refreshActiveStack();
     }
   );
@@ -112,7 +112,7 @@ const copyStack = async (node: StackTreeItem) => {
       title: 'Copying Stack...',
       cancellable: false,
     },
-    async progress => {
+    async () => {
       try {
         const lsClient = LSClient.getInstance();
         const result = await lsClient.sendLsClientRequest('copyStack', [node.id, newStackName]);
@@ -150,7 +150,7 @@ const setActiveStack = async (node: StackTreeItem): Promise<void> => {
       try {
         const result = await switchActiveStack(node.id);
         if (result) {
-          const { id, name } = result;
+          const { name } = result;
           showInformationMessage(`Active stack set to: ${name}`);
         }
       } catch (error) {

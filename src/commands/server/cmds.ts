@@ -42,7 +42,7 @@ const connectServer = async (): Promise<boolean> => {
         title: 'Connecting to ZenML server...',
         cancellable: true,
       },
-      async progress => {
+      async () => {
         try {
           const lsClient = LSClient.getInstance();
           const result = await lsClient.sendLsClientRequest<ConnectServerResponse>('connect', [
@@ -81,7 +81,7 @@ const disconnectServer = async (): Promise<void> => {
       title: 'Disconnecting from ZenML server...',
       cancellable: true,
     },
-    async progress => {
+    async () => {
       try {
         const lsClient = LSClient.getInstance();
         const result = await lsClient.sendLsClientRequest<GenericLSClientResponse>('disconnect');

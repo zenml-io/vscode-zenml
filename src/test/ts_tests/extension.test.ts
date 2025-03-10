@@ -23,8 +23,8 @@ suite('Extension Activation Test Suite', () => {
   let sandbox: sinon.SinonSandbox;
   let contextMock: any;
   let initializeSpy: sinon.SinonSpy;
-  let mockEventBus = new MockEventBus();
   let lsClient: LSClient;
+  const mockEventBus = new MockEventBus();
 
   setup(() => {
     sandbox = sinon.createSandbox();

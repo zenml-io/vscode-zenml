@@ -11,10 +11,9 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 
-/* eslint-disable @typescript-eslint/naming-convention */
+import { PythonExtension, ResolvedEnvironment } from '@vscode/python-extension';
 import { commands, Disposable, Event, EventEmitter, Uri } from 'vscode';
 import { traceError, traceLog } from './log/logging';
-import { PythonExtension, ResolvedEnvironment } from '@vscode/python-extension';
 export interface IInterpreterDetails {
   path?: string[];
   resource?: Uri;

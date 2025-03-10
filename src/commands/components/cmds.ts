@@ -31,7 +31,7 @@ const refreshComponentView = async () => {
         title: 'Refreshing Component View...',
         cancellable: false,
       },
-      async progress => {
+      async () => {
         await ComponentDataProvider.getInstance().refresh();
       }
     );

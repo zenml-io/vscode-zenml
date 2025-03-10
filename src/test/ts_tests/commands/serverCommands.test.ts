@@ -26,16 +26,14 @@ suite('Server Commands Tests', () => {
   let sandbox: sinon.SinonSandbox;
   let showErrorMessageStub: sinon.SinonStub;
   let mockLSClient: any;
-  let mockEventBus = new MockEventBus();
-  let emitSpy: sinon.SinonSpy;
   let configurationMock: any;
   let showInputBoxStub: sinon.SinonStub;
   let refreshUIComponentsStub: sinon.SinonStub;
+  const mockEventBus = new MockEventBus();
 
   setup(() => {
     sandbox = sinon.createSandbox();
     mockLSClient = new MockLSClient(mockEventBus);
-    emitSpy = sandbox.spy(mockEventBus, 'emit');
     sandbox.stub(LSClient, 'getInstance').returns(mockLSClient);
     sandbox.stub(EventBus, 'getInstance').returns(mockEventBus);
     showInputBoxStub = sandbox.stub(vscode.window, 'showInputBox');

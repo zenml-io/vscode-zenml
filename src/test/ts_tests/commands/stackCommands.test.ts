@@ -14,14 +14,14 @@ import * as assert from 'assert';
 import sinon from 'sinon';
 import * as vscode from 'vscode';
 import { stackCommands } from '../../../commands/stack/cmds';
-import ZenMLStatusBar from '../../../views/statusBar';
+import stackUtils from '../../../commands/stack/utils';
+import { EventBus } from '../../../services/EventBus';
+import { LSClient } from '../../../services/LSClient';
+import * as globalUtils from '../../../utils/global';
 import { StackDataProvider, StackTreeItem } from '../../../views/activityBar';
+import ZenMLStatusBar from '../../../views/statusBar';
 import { MockEventBus } from '../__mocks__/MockEventBus';
 import { MockLSClient } from '../__mocks__/MockLSClient';
-import { LSClient } from '../../../services/LSClient';
-import { EventBus } from '../../../services/EventBus';
-import * as globalUtils from '../../../utils/global';
-import stackUtils from '../../../commands/stack/utils';
 import { MockStackDataProvider, MockZenMLStatusBar } from '../__mocks__/MockViewProviders';
 
 suite('Stack Commands Test Suite', () => {
@@ -33,7 +33,6 @@ suite('Stack Commands Test Suite', () => {
   let mockStackDataProvider: MockStackDataProvider;
   let mockStatusBar: MockZenMLStatusBar;
   let switchActiveStackStub: sinon.SinonStub;
-  let setActiveStackStub: sinon.SinonStub;
 
   setup(() => {
     sandbox = sinon.createSandbox();
@@ -59,15 +58,6 @@ suite('Stack Commands Test Suite', () => {
       .callsFake(async (stackNameOrId: string) => {
         console.log('switchActiveStack stub called with', stackNameOrId);
         return Promise.resolve({ id: stackNameOrId, name: `MockStackName` });
-      });
-
-    setActiveStackStub = sandbox
-      .stub(stackCommands, 'setActiveStack')
-      .callsFake(async (node: StackTreeItem) => {
-        await switchActiveStackStub(node.id);
-        showInformationMessageStub(`Active stack set to: ${node.label}`);
-        await mockStatusBar.refreshActiveStack();
-        await mockStackDataProvider.refresh();
       });
 
     sandbox.stub(vscode.window, 'withProgress').callsFake(async (options, task) => {

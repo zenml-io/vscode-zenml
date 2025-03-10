@@ -13,17 +13,13 @@
 import {
   ConfigurationChangeEvent,
   ConfigurationScope,
-  ConfigurationTarget,
   WorkspaceConfiguration,
   WorkspaceFolder,
-  workspace,
 } from 'vscode';
-import { getInterpreterDetails } from './python';
-import { getConfiguration, getWorkspaceFolders } from './vscodeapi';
-import path from 'path';
-import * as fs from 'fs';
 import { PYTOOL_MODULE } from '../utils/constants';
+import { getInterpreterDetails } from './python';
 import { getProjectRoot } from './utilities';
+import { getConfiguration, getWorkspaceFolders } from './vscodeapi';
 
 export interface ISettings {
   cwd: string;

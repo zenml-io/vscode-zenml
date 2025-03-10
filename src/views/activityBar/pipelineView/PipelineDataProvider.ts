@@ -10,22 +10,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import { EventEmitter, TreeDataProvider, TreeItem, window } from 'vscode';
+import { TreeItem } from 'vscode';
 import { State } from 'vscode-languageclient';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
 import { PipelineRun, PipelineRunsResponse } from '../../../types/PipelineTypes';
 import {
-  ITEMS_PER_PAGE_OPTIONS,
   LSCLIENT_STATE_CHANGED,
   LSP_ZENML_CLIENT_INITIALIZED,
   LSP_ZENML_STACK_CHANGED,
 } from '../../../utils/constants';
-import { ErrorTreeItem, createErrorItem, createAuthErrorItem } from '../common/ErrorTreeItem';
+import { ErrorTreeItem, createAuthErrorItem, createErrorItem } from '../common/ErrorTreeItem';
 import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
-import { PipelineRunTreeItem, PipelineTreeItem } from './PipelineTreeItems';
-import { CommandTreeItem } from '../common/PaginationTreeItems';
 import { PaginatedDataProvider } from '../common/PaginatedDataProvider';
+import { PipelineRunTreeItem, PipelineTreeItem } from './PipelineTreeItems';
 
 /**
  * Provides data for the pipeline run tree view, displaying detailed information about each pipeline run.
