@@ -10,10 +10,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
-import path from 'path';
-import { ThemeColor, ThemeIcon, TreeItem, TreeItemCollapsibleState } from 'vscode';
+import * as path from 'path';
+import { ThemeColor, ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri } from 'vscode';
 
 export class EnvironmentItem extends TreeItem {
+  pythonLogo = path.join(__dirname, '..', 'resources', 'python.png');
+  zenmlLogo = path.join(__dirname, '..', 'resources', 'logo.png');
+
   constructor(
     public readonly label: string,
     public readonly description?: string,
@@ -32,7 +35,9 @@ export class EnvironmentItem extends TreeItem {
    * @param label The label of the tree item.
    * @returns The icon for the tree item.
    */
-  private determineIcon(label: string): { light: string; dark: string } | ThemeIcon | undefined {
+  private determineIcon(
+    label: string
+  ): string | Uri | { light: Uri; dark: Uri } | ThemeIcon | undefined {
     if (this.customIcon) {
       switch (this.customIcon) {
         case 'check':
@@ -57,17 +62,15 @@ export class EnvironmentItem extends TreeItem {
       case 'Python Version':
       case 'Path':
       case 'EnvType':
-        const pythonLogo = path.join(__dirname, '..', 'resources', 'python.png');
         return {
-          light: pythonLogo,
-          dark: pythonLogo,
+          light: Uri.file(this.pythonLogo),
+          dark: Uri.file(this.pythonLogo),
         };
       case 'ZenML Local':
       case 'ZenML Client':
-        const zenmlLogo = path.join(__dirname, '..', 'resources', 'logo.png');
         return {
-          light: zenmlLogo,
-          dark: zenmlLogo,
+          light: Uri.file(this.zenmlLogo),
+          dark: Uri.file(this.zenmlLogo),
         };
       default:
         return undefined;
