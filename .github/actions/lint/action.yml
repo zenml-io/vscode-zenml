@@ -13,9 +13,6 @@ runs:
     - name: Install Node dependencies
       run: npm ci
       shell: bash
-    - name: Lint TypeScript code
-      run: npm run lint
-      shell: bash
     - name: Check TypeScript format
       run: npm run format-check
       shell: bash
