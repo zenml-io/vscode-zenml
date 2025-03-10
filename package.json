@@ -7,7 +7,6 @@
   "icon": "resources/extension-logo.png",
   "preview": false,
   "license": "Apache-2.0",
-  "type": "module",
   "categories": [
     "Machine Learning",
     "Visualization"
