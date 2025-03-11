@@ -2,12 +2,6 @@
 name: Test VSCode Extension Release
 on:
   workflow_dispatch:
-    inputs:
-      dry_run:
-        description: Run in dry-run mode (no actual publishing)
-        required: true
-        default: true
-        type: boolean
 jobs:
   test-release:
     runs-on: ubuntu-latest
@@ -50,10 +44,8 @@ jobs:
 
           # Simulate publishing without actually publishing
           echo -e "\nSimulating publication process:"
-          if [ "${{ inputs.dry_run }}" = "true" ]; then
-            echo "This would publish version ${{ steps.get_version.outputs.version }} to the VS Code Marketplace"
-            echo "Command that would be used: npx @vscode/vsce publish"
-          fi
+          echo "This would publish version ${{ steps.get_version.outputs.version }} to the VS Code Marketplace"
+          echo "Command that would be used: npx @vscode/vsce publish"
       - name: Generate Changelog
         run: |
           # Get the latest tag
