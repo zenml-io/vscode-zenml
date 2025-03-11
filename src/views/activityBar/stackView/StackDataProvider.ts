@@ -10,7 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
-import { TreeItem, workspace } from 'vscode';
+import { ThemeColor, ThemeIcon, TreeItem, workspace } from 'vscode';
 import { State } from 'vscode-languageclient';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
@@ -169,6 +169,37 @@ export class StackDataProvider extends PaginatedDataProvider {
   private isActiveStack(stackId: string): boolean {
     const activeStackId = workspace.getConfiguration('zenml').get<string>('activeStackId');
     return stackId === activeStackId;
+  }
+
+  /**
+   * Updates the active stack status in the tree view without refetching all stacks.
+   * This is more efficient than a full refresh when only the active stack changes.
+   *
+   * @param {string} activeStackId The ID of the newly active stack.
+   */
+  public updateActiveStack(activeStackId: string): void {
+    // Skip full refresh if there are no items yet
+    if (!this.items || this.items.length === 0 || !(this.items[0] instanceof StackTreeItem)) {
+      return;
+    }
+
+    this.items.forEach(item => {
+      if (item instanceof StackTreeItem) {
+        const wasActive = item.isActive;
+        item.isActive = item.id === activeStackId;
+
+        // Update icon if active state changed
+        if (wasActive !== item.isActive) {
+          if (item.isActive) {
+            item.iconPath = new ThemeIcon('pass-filled', new ThemeColor('charts.green'));
+          } else {
+            item.iconPath = new ThemeIcon('archive');
+          }
+          // Fire change event only for this item
+          this._onDidChangeTreeData.fire(item);
+        }
+      }
+    });
   }
 
   /**

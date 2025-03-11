@@ -81,13 +81,16 @@ export default class ZenMLStatusBar {
    * Attempts to retrieve the current active stack name and updates the status bar item accordingly.
    */
   public async refreshActiveStack(): Promise<void> {
-    this.statusBarItem.text = `$(loading~spin) Loading...`;
+    this.statusBarItem.text = `Loading...`;
     this.statusBarItem.show();
 
     try {
       const activeStack = await getActiveStack();
       this.activeStackId = activeStack?.id || '';
       this.activeStack = activeStack?.name || 'default';
+      if (this.activeStackId) {
+        StackDataProvider.getInstance().updateActiveStack(this.activeStackId);
+      }
     } catch (error) {
       console.error('Failed to fetch active ZenML stack:', error);
       this.activeStack = 'Error';
@@ -162,11 +165,23 @@ export default class ZenMLStatusBar {
 
       const stackId = otherStacks.find(stack => stack.label === selectedStack.label)?.id;
       if (stackId) {
-        await switchActiveStack(stackId);
-        await StackDataProvider.getInstance().refresh();
-        this.activeStackId = stackId;
-        this.activeStack = selectedStack.label;
-        this.statusBarItem.text = `⛩ ${selectedStack.label}`;
+        try {
+          await switchActiveStack(stackId);
+          await StackDataProvider.getInstance().updateActiveStack(stackId);
+          this.activeStackId = stackId;
+          this.activeStack = selectedStack.label;
+          this.statusBarItem.text = `⛩ ${selectedStack.label}`;
+          window.showInformationMessage(`Successfully switched to stack: ${selectedStack.label}`);
+        } catch (error) {
+          window.showErrorMessage(
+            `Failed to switch stack: ${error instanceof Error ? error.message : String(error)}`
+          );
+
+          // Revert status bar text to previous stack
+          this.statusBarItem.text = `⛩ ${this.activeStack}`;
+        }
+      } else {
+        window.showErrorMessage('Failed to find stack ID for the selected stack.');
       }
     }
 
