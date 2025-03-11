@@ -165,11 +165,23 @@ export default class ZenMLStatusBar {
 
       const stackId = otherStacks.find(stack => stack.label === selectedStack.label)?.id;
       if (stackId) {
-        await switchActiveStack(stackId);
-        await StackDataProvider.getInstance().refresh();
-        this.activeStackId = stackId;
-        this.activeStack = selectedStack.label;
-        this.statusBarItem.text = `⛩ ${selectedStack.label}`;
+        try {
+          await switchActiveStack(stackId);
+          await StackDataProvider.getInstance().updateActiveStack(stackId);
+          this.activeStackId = stackId;
+          this.activeStack = selectedStack.label;
+          this.statusBarItem.text = `⛩ ${selectedStack.label}`;
+          window.showInformationMessage(`Successfully switched to stack: ${selectedStack.label}`);
+        } catch (error) {
+          window.showErrorMessage(
+            `Failed to switch stack: ${error instanceof Error ? error.message : String(error)}`
+          );
+
+          // Revert status bar text to previous stack
+          this.statusBarItem.text = `⛩ ${this.activeStack}`;
+        }
+      } else {
+        window.showErrorMessage('Failed to find stack ID for the selected stack.');
       }
     }
 
