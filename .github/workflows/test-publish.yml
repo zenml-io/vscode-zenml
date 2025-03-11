@@ -8,16 +8,15 @@ on:
         required: true
         default: true
         type: boolean
-      version:
-        description: Version to test (e.g. 0.0.12)
-        required: true
-        type: string
 jobs:
   test-release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+      - name: Get Extension Version
+        id: get_version
+        run: echo "version=$(jq -r .version package.json)" >> $GITHUB_OUTPUT
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
@@ -52,7 +51,7 @@ jobs:
           # Simulate publishing without actually publishing
           echo -e "\nSimulating publication process:"
           if [ "${{ inputs.dry_run }}" = "true" ]; then
-            echo "This would publish version $(jq -r '.version' package.json) to the VS Code Marketplace"
+            echo "This would publish version ${{ steps.get_version.outputs.version }} to the VS Code Marketplace"
             echo "Command that would be used: npx @vscode/vsce publish"
           fi
       - name: Generate Changelog
@@ -72,19 +71,19 @@ jobs:
           echo "==========================="
       - name: Prepare Release Notes
         run: |
-          echo "## Test Release for version ${{ inputs.version }}" > RELEASE_NOTES.md
+          echo "## Test Release for version ${{ steps.get_version.outputs.version }}" > RELEASE_NOTES.md
           echo "" >> RELEASE_NOTES.md
-          echo "This is a test release for version ${{ inputs.version }}. This release was generated via the test-publish workflow." >> RELEASE_NOTES.md
+          echo "This is a test release for version ${{ steps.get_version.outputs.version }}. This release was generated via the test-publish workflow." >> RELEASE_NOTES.md
           echo "" >> RELEASE_NOTES.md
           echo "### Changes included in this version:" >> RELEASE_NOTES.md
-          cat CHANGELOG.md | grep -A 100 "## \[${{ inputs.version }}\]" | sed -n '/##/,/##/p' | sed '$d' >> RELEASE_NOTES.md
+          cat CHANGELOG.md | grep -A 100 "## \[${{ steps.get_version.outputs.version }}\]" | sed -n '/##/,/##/p' | sed '$d' >> RELEASE_NOTES.md
           echo "=== RELEASE NOTES PREVIEW ==="
           cat RELEASE_NOTES.md
           echo "=============================="
       - name: Upload Extension Package
         uses: actions/upload-artifact@v4
         with:
-          name: zenml-vscode-${{ inputs.version }}
+          name: zenml-vscode-${{ steps.get_version.outputs.version }}
           path: zenml.vsix
           retention-days: 7
       - name: Upload Changelog
@@ -105,5 +104,5 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
           echo "1. Download the extension package from the workflow artifacts" >> $GITHUB_STEP_SUMMARY
-          echo "2. Install and test the extension in VS Code using: `code --install-extension zenml.vsix`" >> $GITHUB_STEP_SUMMARY
+          echo "2. Install and test the extension in VS Code using: \`code --install-extension zenml.vsix\`" >> $GITHUB_STEP_SUMMARY
           echo "3. If everything looks good, proceed with the actual release" >> $GITHUB_STEP_SUMMARY
