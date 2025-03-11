@@ -61,7 +61,9 @@ export class StackDataProvider extends PaginatedDataProvider {
       }
       this.refresh();
       this.eventBus.off(LSP_ZENML_STACK_CHANGED, () => this.refresh());
-      this.eventBus.on(LSP_ZENML_STACK_CHANGED, () => this.refresh());
+      this.eventBus.on(LSP_ZENML_STACK_CHANGED, (activeStackId: string) => {
+        this.updateActiveStack(activeStackId);
+      });
     });
   }
 
