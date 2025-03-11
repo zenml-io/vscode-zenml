@@ -81,16 +81,13 @@ export default class ZenMLStatusBar {
    * Attempts to retrieve the current active stack name and updates the status bar item accordingly.
    */
   public async refreshActiveStack(): Promise<void> {
-    this.statusBarItem.text = `Loading...`;
+    this.statusBarItem.text = `$(loading~spin) Loading...`;
     this.statusBarItem.show();
 
     try {
       const activeStack = await getActiveStack();
       this.activeStackId = activeStack?.id || '';
       this.activeStack = activeStack?.name || 'default';
-      if (this.activeStackId) {
-        StackDataProvider.getInstance().updateActiveStack(this.activeStackId);
-      }
     } catch (error) {
       console.error('Failed to fetch active ZenML stack:', error);
       this.activeStack = 'Error';
