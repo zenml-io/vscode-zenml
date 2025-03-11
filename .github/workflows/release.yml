@@ -8,33 +8,78 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+      - name: Get Extension Version
+        id: get_version
+        run: echo "version=$(jq -r .version package.json)" >> $GITHUB_OUTPUT
       - name: Install Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
           node-version: 20.x
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Run headless tests
+        uses: coactions/setup-xvfb@v1
+        with:
+          run: npm test
       - name: Build Extension
         run: npm run package
       - name: Package Extension
         run: npm run vsce-package
+      - name: Verify Package
+        run: |
+          echo "=== VSIX Package Verification ==="
+          # List contents of the VSIX package
+          echo "Listing package contents:"
+          npx @vscode/vsce ls
+
+          # Validate the package.json
+          echo -e "\nValidating package.json:"
+          if jq -e '.name and .publisher and .version and .engines.vscode' package.json > /dev/null; then
+            echo "✅ package.json contains all required fields"
+          else
+            echo "❌ package.json is missing required fields"
+            exit 1
+          fi
       - name: Publish Extension
         if: success() && startsWith(github.ref, 'refs/tags/')
-        run: npm run deploy
+        run: npx @vscode/vsce publish
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
-      - name: Generate Changelog
+      - name: Generate Changelog for Release Notes
+        if: success() && startsWith(github.ref, 'refs/tags/')
+        id: changelog
+        run: |
+          # Get the version from package.json for changelog extraction
+          VERSION="${{ steps.get_version.outputs.version }}"
+
+          # Create changelog file for the GitHub release
+          echo "## Release $VERSION" > RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+
+          # Extract this version's section from CHANGELOG.md
+          cat CHANGELOG.md | grep -A 100 "## \[$VERSION\]" | sed -n '/##/,/##/p' | sed '$d' >> RELEASE_NOTES.md
+          echo "=== RELEASE NOTES ==="
+          cat RELEASE_NOTES.md
+          echo "===================="
+      - name: Create GitHub Release Assets
         if: success() && startsWith(github.ref, 'refs/tags/')
         run: |
-          git log $(git describe --tags --abbrev=0)..HEAD --oneline > CHANGELOG.txt
-          cat CHANGELOG.txt
-      - name: Create GitHub Release
+          # Create release assets directory
+          mkdir -p release-assets
+
+          # Copy the VSIX package
+          cp zenml.vsix release-assets/
+
+          # Create a VERSION file
+          echo "${{ steps.get_version.outputs.version }}" > release-assets/VERSION
+      - name: Update GitHub Release
         if: success() && startsWith(github.ref, 'refs/tags/')
         uses: ncipollo/release-action@v1
         with:
           artifacts: zenml.vsix
-          bodyFile: CHANGELOG.txt
+          bodyFile: RELEASE_NOTES.md
+          allowUpdates: true
           tag: ${{ github.ref_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
