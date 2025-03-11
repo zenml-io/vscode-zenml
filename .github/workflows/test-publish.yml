@@ -25,8 +25,10 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Run tests
-        run: npm run test
+      - name: Run headless tests
+        uses: coactions/setup-xvfb@v1
+        with:
+          run: npm test
       - name: Build Extension
         run: npm run package
       - name: Package Extension
