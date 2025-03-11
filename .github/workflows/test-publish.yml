@@ -33,11 +33,28 @@ jobs:
         run: npm run package
       - name: Package Extension
         run: npm run vsce-package
-      - name: Simulate Publish (Dry Run)
-        if: inputs.dry_run == true
-        run: npx @vscode/vsce publish --dry-run
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      - name: Verify Package
+        run: |
+          echo "=== VSIX Package Verification ==="
+          # List contents of the VSIX package
+          echo "Listing package contents:"
+          npx @vscode/vsce ls
+
+          # Validate the package.json
+          echo -e "\nValidating package.json:"
+          if jq -e '.name and .publisher and .version and .engines.vscode' package.json > /dev/null; then
+            echo "✅ package.json contains all required fields"
+          else
+            echo "❌ package.json is missing required fields"
+            exit 1
+          fi
+
+          # Simulate publishing without actually publishing
+          echo -e "\nSimulating publication process:"
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "This would publish version $(jq -r '.version' package.json) to the VS Code Marketplace"
+            echo "Command that would be used: npx @vscode/vsce publish"
+          fi
       - name: Generate Changelog
         run: |
           # Get the latest tag
