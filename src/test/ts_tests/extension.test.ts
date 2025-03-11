@@ -8,10 +8,10 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import * as assert from 'assert';
-import sinon from 'sinon';
+import * as sinon from 'sinon';
 import * as vscode from 'vscode';
 import * as extension from '../../extension';
 import { EventBus } from '../../services/EventBus';
@@ -23,8 +23,8 @@ suite('Extension Activation Test Suite', () => {
   let sandbox: sinon.SinonSandbox;
   let contextMock: any;
   let initializeSpy: sinon.SinonSpy;
-  let mockEventBus = new MockEventBus();
   let lsClient: LSClient;
+  const mockEventBus = new MockEventBus();
 
   setup(() => {
     sandbox = sinon.createSandbox();

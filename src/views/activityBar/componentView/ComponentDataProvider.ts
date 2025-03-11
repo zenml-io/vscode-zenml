@@ -8,18 +8,14 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
 import { State } from 'vscode-languageclient';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
 import { ComponentsListResponse, StackComponent } from '../../../types/StackTypes';
-import {
-  LSCLIENT_STATE_CHANGED,
-  LSP_ZENML_CLIENT_INITIALIZED,
-  LSP_ZENML_STACK_CHANGED,
-} from '../../../utils/constants';
+import { LSCLIENT_STATE_CHANGED, LSP_ZENML_CLIENT_INITIALIZED } from '../../../utils/constants';
 import { ErrorTreeItem, createAuthErrorItem, createErrorItem } from '../common/ErrorTreeItem';
 import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
 import { PaginatedDataProvider } from '../common/PaginatedDataProvider';
@@ -28,10 +24,6 @@ import {
   ComponentTreeItem,
   StackComponentTreeItem,
 } from './ComponentTreeItems';
-
-interface TreeItemWithChildren extends vscode.TreeItem {
-  children?: vscode.TreeItem[];
-}
 
 export class ComponentDataProvider extends PaginatedDataProvider {
   private static instance: ComponentDataProvider | null = null;
@@ -67,8 +59,6 @@ export class ComponentDataProvider extends PaginatedDataProvider {
         return;
       }
       this.refresh();
-      this.eventBus.off(LSP_ZENML_STACK_CHANGED, () => this.refresh());
-      this.eventBus.on(LSP_ZENML_STACK_CHANGED, () => this.refresh());
     });
   }
 

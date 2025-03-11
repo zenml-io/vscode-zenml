@@ -8,24 +8,18 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
-import { EventEmitter, TreeDataProvider, TreeItem, window } from 'vscode';
+import { TreeItem } from 'vscode';
 import { State } from 'vscode-languageclient';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
 import { PipelineRun, PipelineRunsResponse } from '../../../types/PipelineTypes';
-import {
-  ITEMS_PER_PAGE_OPTIONS,
-  LSCLIENT_STATE_CHANGED,
-  LSP_ZENML_CLIENT_INITIALIZED,
-  LSP_ZENML_STACK_CHANGED,
-} from '../../../utils/constants';
-import { ErrorTreeItem, createErrorItem, createAuthErrorItem } from '../common/ErrorTreeItem';
+import { LSCLIENT_STATE_CHANGED, LSP_ZENML_CLIENT_INITIALIZED } from '../../../utils/constants';
+import { ErrorTreeItem, createAuthErrorItem, createErrorItem } from '../common/ErrorTreeItem';
 import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
-import { PipelineRunTreeItem, PipelineTreeItem } from './PipelineTreeItems';
-import { CommandTreeItem } from '../common/PaginationTreeItems';
 import { PaginatedDataProvider } from '../common/PaginatedDataProvider';
+import { PipelineRunTreeItem, PipelineTreeItem } from './PipelineTreeItems';
 
 /**
  * Provides data for the pipeline run tree view, displaying detailed information about each pipeline run.
@@ -65,8 +59,6 @@ export class PipelineDataProvider extends PaginatedDataProvider {
       }
 
       this.refresh();
-      this.eventBus.off(LSP_ZENML_STACK_CHANGED, () => this.refresh());
-      this.eventBus.on(LSP_ZENML_STACK_CHANGED, () => this.refresh());
     });
   }
 

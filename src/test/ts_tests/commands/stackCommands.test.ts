@@ -8,20 +8,20 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import * as assert from 'assert';
-import sinon from 'sinon';
+import * as sinon from 'sinon';
 import * as vscode from 'vscode';
 import { stackCommands } from '../../../commands/stack/cmds';
-import ZenMLStatusBar from '../../../views/statusBar';
+import stackUtils from '../../../commands/stack/utils';
+import { EventBus } from '../../../services/EventBus';
+import { LSClient } from '../../../services/LSClient';
+import * as globalUtils from '../../../utils/global';
 import { StackDataProvider, StackTreeItem } from '../../../views/activityBar';
+import ZenMLStatusBar from '../../../views/statusBar';
 import { MockEventBus } from '../__mocks__/MockEventBus';
 import { MockLSClient } from '../__mocks__/MockLSClient';
-import { LSClient } from '../../../services/LSClient';
-import { EventBus } from '../../../services/EventBus';
-import * as globalUtils from '../../../utils/global';
-import stackUtils from '../../../commands/stack/utils';
 import { MockStackDataProvider, MockZenMLStatusBar } from '../__mocks__/MockViewProviders';
 
 suite('Stack Commands Test Suite', () => {
@@ -33,7 +33,7 @@ suite('Stack Commands Test Suite', () => {
   let mockStackDataProvider: MockStackDataProvider;
   let mockStatusBar: MockZenMLStatusBar;
   let switchActiveStackStub: sinon.SinonStub;
-  let setActiveStackStub: sinon.SinonStub;
+  let setActiveStackStub: sinon.SinonStub; // eslint-disable-line @typescript-eslint/no-unused-vars
 
   setup(() => {
     sandbox = sinon.createSandbox();

@@ -8,7 +8,7 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import * as assert from 'assert';
 import * as sinon from 'sinon';
@@ -26,16 +26,14 @@ suite('Server Commands Tests', () => {
   let sandbox: sinon.SinonSandbox;
   let showErrorMessageStub: sinon.SinonStub;
   let mockLSClient: any;
-  let mockEventBus = new MockEventBus();
-  let emitSpy: sinon.SinonSpy;
   let configurationMock: any;
   let showInputBoxStub: sinon.SinonStub;
   let refreshUIComponentsStub: sinon.SinonStub;
+  const mockEventBus = new MockEventBus();
 
   setup(() => {
     sandbox = sinon.createSandbox();
     mockLSClient = new MockLSClient(mockEventBus);
-    emitSpy = sandbox.spy(mockEventBus, 'emit');
     sandbox.stub(LSClient, 'getInstance').returns(mockLSClient);
     sandbox.stub(EventBus, 'getInstance').returns(mockEventBus);
     showInputBoxStub = sandbox.stub(vscode.window, 'showInputBox');

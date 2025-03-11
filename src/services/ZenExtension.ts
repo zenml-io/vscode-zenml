@@ -8,12 +8,13 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
+import { registerComponentCommands } from '../commands/components/registry';
 import { registerPipelineCommands } from '../commands/pipelines/registry';
 import { registerServerCommands } from '../commands/server/registry';
 import { registerStackCommands } from '../commands/stack/registry';
@@ -35,14 +36,13 @@ import {
   onDidChangeConfiguration,
   registerCommand,
 } from '../common/vscodeapi';
+import { toggleCommands } from '../utils/global';
 import { refreshUIComponents } from '../utils/refresh';
 import { PipelineDataProvider, ServerDataProvider, StackDataProvider } from '../views/activityBar';
+import { ComponentDataProvider } from '../views/activityBar/componentView/ComponentDataProvider';
+import { PanelDataProvider } from '../views/panel/panelView/PanelDataProvider';
 import ZenMLStatusBar from '../views/statusBar';
 import { LSClient } from './LSClient';
-import { toggleCommands } from '../utils/global';
-import { PanelDataProvider } from '../views/panel/panelView/PanelDataProvider';
-import { ComponentDataProvider } from '../views/activityBar/componentView/ComponentDataProvider';
-import { registerComponentCommands } from '../commands/components/registry';
 
 export interface IServerInfo {
   name: string;

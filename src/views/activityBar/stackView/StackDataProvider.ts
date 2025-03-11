@@ -8,9 +8,9 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
-import { TreeItem, workspace } from 'vscode';
+import { ThemeColor, ThemeIcon, TreeItem, workspace } from 'vscode';
 import { State } from 'vscode-languageclient';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
@@ -172,13 +172,45 @@ export class StackDataProvider extends PaginatedDataProvider {
   }
 
   /**
+   * Updates the active stack status in the tree view without refetching all stacks.
+   * This is more efficient than a full refresh when only the active stack changes.
+   *
+   * @param {string} activeStackId The ID of the newly active stack.
+   */
+  public updateActiveStack(activeStackId: string): void {
+    // Skip full refresh if there are no items yet
+    if (!this.items || this.items.length === 0 || !(this.items[0] instanceof StackTreeItem)) {
+      return;
+    }
+
+    this.items.forEach(item => {
+      if (item instanceof StackTreeItem) {
+        const wasActive = item.isActive;
+        item.isActive = item.id === activeStackId;
+
+        // Update icon if active state changed
+        if (wasActive !== item.isActive) {
+          if (item.isActive) {
+            item.iconPath = new ThemeIcon('pass-filled', new ThemeColor('charts.green'));
+          } else {
+            item.iconPath = new ThemeIcon('archive');
+          }
+          // Fire change event only for this item
+          this._onDidChangeTreeData.fire(item);
+        }
+      }
+    });
+  }
+
+  /**
    * Transforms a stack from the API into a `StackTreeItem` with component sub-items.
    *
    * @param {any} stack - The stack object fetched from the API.
    * @returns {StackTreeItem} A `StackTreeItem` object representing the stack and its components.
    */
   private convertToStackTreeItem(stack: Stack, isActive: boolean): StackTreeItem {
-    const componentTreeItems = Object.entries(stack.components).flatMap(([type, componentsArray]) =>
+    // the first arg to flatMap is the type of the component (skipped -- not needed here)
+    const componentTreeItems = Object.entries(stack.components).flatMap(([, componentsArray]) =>
       componentsArray.map(
         (component: StackComponent) => new StackComponentTreeItem(component, stack.id)
       )
