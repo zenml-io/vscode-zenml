@@ -25,7 +25,7 @@
     "development tools"
   ],
   "engines": {
-    "vscode": "^1.86.0"
+    "vscode": "^1.98.0"
   },
   "activationEvents": [
     "onStartupFinished",
@@ -49,7 +49,7 @@
   "scripts": {
     "compile": "webpack",
     "compile-tests": "tsc -p . --outDir out",
-    "deploy": "vsce publish",
+    "deploy": "npx @vscode/vsce publish",
     "format": "prettier --ignore-path .gitignore --write \"**/*.+(ts|json)\"",
     "format-check": "prettier --ignore-path .gitignore --check \"**/*.+(ts|json)\"",
     "install": "pip install -r requirements.txt --target bundled/libs",
@@ -57,7 +57,7 @@
     "package": "webpack --mode production --devtool source-map --config ./webpack.config.mjs",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "test": "vscode-test",
-    "vsce-package": "vsce package -o zenml.vsix",
+    "vsce-package": "npx @vscode/vsce package -o zenml.vsix",
     "vscode:prepublish": "npm run package",
     "watch": "webpack --watch",
     "watch-tests": "tsc -p . -w --outDir out"
