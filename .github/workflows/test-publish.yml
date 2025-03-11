@@ -63,12 +63,21 @@ jobs:
           echo "==========================="
       - name: Prepare Release Notes
         run: |
-          echo "## Test Release for version ${{ steps.get_version.outputs.version }}" > RELEASE_NOTES.md
-          echo "" >> RELEASE_NOTES.md
-          echo "This is a test release for version ${{ steps.get_version.outputs.version }}. This release was generated via the test-publish workflow." >> RELEASE_NOTES.md
-          echo "" >> RELEASE_NOTES.md
-          echo "### Changes included in this version:" >> RELEASE_NOTES.md
-          cat CHANGELOG.md | grep -A 100 "## \[${{ steps.get_version.outputs.version }}\]" | sed -n '/##/,/##/p' | sed '$d' >> RELEASE_NOTES.md
+          VERSION="${{ steps.get_version.outputs.version }}"
+
+          # Create header for release notes
+          cat > RELEASE_NOTES.md << EOF
+          ## Test Release for version ${VERSION}
+
+          This is a test release for version ${VERSION}. This release was generated via the test-publish workflow.
+
+          ### Changes included in this version:
+          EOF
+
+          # Extract just the current version section from CHANGELOG.md
+          sed -n "/## \[${VERSION}\]/,/## \[/p" CHANGELOG.md | sed '$d' >> RELEASE_NOTES.md
+
+          # Preview the release notes
           echo "=== RELEASE NOTES PREVIEW ==="
           cat RELEASE_NOTES.md
           echo "=============================="
