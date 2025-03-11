@@ -15,11 +15,7 @@ import { State } from 'vscode-languageclient';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
 import { ComponentsListResponse, StackComponent } from '../../../types/StackTypes';
-import {
-  LSCLIENT_STATE_CHANGED,
-  LSP_ZENML_CLIENT_INITIALIZED,
-  LSP_ZENML_STACK_CHANGED,
-} from '../../../utils/constants';
+import { LSCLIENT_STATE_CHANGED, LSP_ZENML_CLIENT_INITIALIZED } from '../../../utils/constants';
 import { ErrorTreeItem, createAuthErrorItem, createErrorItem } from '../common/ErrorTreeItem';
 import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
 import { PaginatedDataProvider } from '../common/PaginatedDataProvider';
@@ -63,8 +59,6 @@ export class ComponentDataProvider extends PaginatedDataProvider {
         return;
       }
       this.refresh();
-      this.eventBus.off(LSP_ZENML_STACK_CHANGED, () => this.refresh());
-      this.eventBus.on(LSP_ZENML_STACK_CHANGED, () => this.refresh());
     });
   }
 
