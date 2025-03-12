@@ -1,62 +1,98 @@
-# Release Process
+# Release Process Guide
 
-This document describes the process of publishing releases for our VS Code extension and provides an explanation of the GitHub Actions workflow file.
+This document describes the process for testing and releasing new versions of the ZenML VSCode extension.
 
-## Overview
+## Testing Releases
 
-The release process is automated using GitHub Actions. When a new release is created on GitHub, it triggers the release workflow defined in `.github/workflows/release.yml`. The workflow performs the following steps:
+Before publishing a new version of the extension, you should test the release process to ensure everything works correctly. We have a dedicated GitHub Actions workflow for this purpose.
 
-1. Checks out the repository.
-2. Installs Node.js and the required dependencies.
-3. Builds the extension using webpack.
-4. Packages the extension into a `.vsix` file.
-5. Publishes the extension to the Visual Studio Code Marketplace.
-6. Generates a changelog based on the commit messages.
-7. Creates a GitHub release with the packaged extension file as an artifact and the changelog.
+### Using the Test Workflow
 
-## Prerequisites
+1. **Prepare your changes**
 
-Before creating a release, ensure that:
+   - Update the version in `package.json`
+   - Update `CHANGELOG.md` with the new version and changes
+   - Commit these changes to your branch
 
-- The extension is properly configured and builds successfully.
-- The Personal Access Token (PAT) is set as a repository secret named `VSCE_PAT`.
+2. **Run the test workflow**
 
-## Creating a Release
+   - Go to the Actions tab in the GitHub repository
+   - Select "Test VSCode Extension Release" workflow
+   - Click "Run workflow"
+   - Select the branch containing your changes
+   - Click "Run workflow" again
 
-To create a new release:
+3. **Review the workflow output**
 
-1. Go to the GitHub repository page.
-2. Click on the "Releases" tab.
-3. Click on the "Draft a new release" button.
-4. Enter the tag version for the release (e.g., `v1.0.0`).
-5. Set the release title and description.
-6. Choose the appropriate release type (e.g., pre-release or stable release).
-7. Click on the "Publish release" button.
+   - Check that all steps completed successfully
+   - Verify the package content and validation passed
+   - Review the generated changelog and release notes
 
-Creating the release will trigger the release workflow automatically.
+4. **Test the extension locally**
+   - Download the VSIX artifact from the workflow run
+   - Install it in VS Code using: `code --install-extension zenml.vsix`
+   - Test that all features work as expected
 
-## Workflow File Explanation
+### How the Test Workflow Works
 
-The release workflow is defined in `.github/workflows/release.yml`. Here's an explanation of each step in the workflow:
+The test workflow (`.github/workflows/test-publish.yml`) performs these steps:
 
-1. **Checkout Repository**: This step checks out the repository using the `actions/checkout@v2` action.
+1. **Build and Package**
 
-2. **Install Node.js**: This step sets up Node.js using the `actions/setup-node@v2` action. It specifies the Node.js version and enables caching of npm dependencies.
+   - Builds the extension source code
+   - Packages it into a VSIX file
+   - Runs the test suite
 
-3. **Install dependencies**: This step runs `npm ci` to install the project dependencies.
+2. **Validate**
 
-4. **Build Extension**: This step runs `npm run package` to build the extension using webpack.
+   - Verifies the package content
+   - Validates required fields in package.json
+   - Simulates the publishing process without actually publishing
 
-5. **Package Extension**: This step runs `npm run vsce-package` to package the extension into a `.vsix` file named `zenml.vsix`.
+3. **Generate Documentation**
 
-6. **Publish Extension**: This step runs `npm run deploy` to publish the extension to the Visual Studio Code Marketplace. It uses the `VSCE_PAT` secret for authentication. This step only runs if the previous steps succeeded and the workflow was triggered by a new tag push.
+   - Creates a changelog from git history since the last tag
+   - Extracts the current version's information from CHANGELOG.md
 
-7. **Generate Changelog**: This step generates a changelog by running `git log` to retrieve the commit messages between the latest tag and the current commit. The changelog is saved in a file named `CHANGELOG.txt`. This step only runs if the previous steps succeeded and the workflow was triggered by a new tag push.
+4. **Upload Artifacts**
+   - Makes the VSIX package available for download
+   - Provides the generated changelog and release notes for review
 
-8. **Create GitHub Release**: This step uses the `ncipollo/release-action@v1` action to create a GitHub release. It attaches the `zenml.vsix` file as an artifact, includes the changelog, and sets the release tag based on the pushed tag. This step only runs if the previous steps succeeded and the workflow was triggered by a new tag push.
+## Publishing a Release
 
-## Conclusion
+Once you've tested the release and everything looks good, you can publish it:
 
-The provided GitHub Actions workflow automates the publishing of the ZenML VSCode extension. The workflow ensures that the extension is built, packaged, published to the marketplace, and a GitHub release is created with the necessary artifacts and changelog.
+1. **Tag the Release**
 
-Remember to keep the extension code up to date, maintain the required dependencies, and test the extension thoroughly before creating a release.
+   ```bash
+   git tag -a v0.0.x -m "Version 0.0.x"
+   git push origin v0.0.x
+   ```
+
+2. **Create a GitHub Release**
+   - Go to the Releases page in the GitHub repository
+   - Click "Draft a new release"
+   - Select the tag you just pushed
+   - Title the release "Version 0.0.x"
+   - The release workflow will automatically:
+     - Publish the extension to the VS Code Marketplace
+     - Attach the VSIX file to the GitHub release
+     - Use the content from CHANGELOG.md as release notes
+
+### Release Workflow Details
+
+The release workflow (`.github/workflows/release.yml`) is triggered when a GitHub release is created. It:
+
+1. Builds and packages the extension
+2. Runs tests to ensure quality
+3. Publishes the extension to the VS Code Marketplace
+4. Updates the GitHub release with artifacts and release notes
+
+## Troubleshooting
+
+If you encounter issues during the release process:
+
+- **Build failures**: Check the logs for specific error messages
+- **Test failures**: Run tests locally to debug before retrying
+- **Publication issues**: Verify the VSCE_PAT secret is valid in the repository settings
+- **Version conflicts**: Ensure the version in package.json matches your tag
