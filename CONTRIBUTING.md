@@ -129,6 +129,15 @@ git push origin feature/your-feature-name
 - You can also run the `scripts/clear_and_compile.sh` script, which will delete the cache, `dist` folder, and recompile automatically.
 - Check the [ZenML documentation](https://docs.zenml.io) and [GitHub issues](https://github.com/zenml-io/zenml/issues) for common problems and solutions.
 
+## Release Process
+
+For maintainers who need to publish new versions of the extension, please refer to our detailed [Release Process Guide](./RELEASE.md). This document covers:
+
+- Testing release workflows before publishing
+- Creating and tagging new releases
+- Publishing to the VS Code Marketplace
+- Troubleshooting common release issues
+
 ### Additional Resources
 
 - [ZenML VSCode Extension Repository](https://github.com/zenml-io/vscode-zenml)
