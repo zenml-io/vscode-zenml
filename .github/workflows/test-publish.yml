@@ -68,7 +68,6 @@ jobs:
           # Create header for release notes
           cat > RELEASE_NOTES.md << EOF
           ## Test Release for version ${VERSION}
-
           This is a test release for version ${VERSION}. This release was generated via the test-publish workflow.
 
           ### Changes included in this version:
