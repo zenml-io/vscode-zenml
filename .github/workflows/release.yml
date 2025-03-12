@@ -51,34 +51,30 @@ jobs:
         if: success() && startsWith(github.ref, 'refs/tags/')
         id: changelog
         run: |
-          # Get the version from package.json for changelog extraction
           VERSION="${{ steps.get_version.outputs.version }}"
 
-          # Create changelog file for the GitHub release
-          echo "## Release $VERSION" > RELEASE_NOTES.md
-          echo "" >> RELEASE_NOTES.md
+          # Create header for release notes
+          cat > RELEASE_NOTES.md << EOF
+          ## Release $VERSION
 
-          # Extract this version's section from CHANGELOG.md
-          cat CHANGELOG.md | grep -A 100 "## \[$VERSION\]" | sed -n '/##/,/##/p' | sed '$d' >> RELEASE_NOTES.md
+          EOF
+
+          # Extract just the current version section from CHANGELOG.md
+          sed -n "/## \[${VERSION}\]/,/## \[/p" CHANGELOG.md | sed '$d' >> RELEASE_NOTES.md
+
           echo "=== RELEASE NOTES ==="
           cat RELEASE_NOTES.md
           echo "===================="
       - name: Create GitHub Release Assets
         if: success() && startsWith(github.ref, 'refs/tags/')
         run: |
-          # Create release assets directory
-          mkdir -p release-assets
-
-          # Copy the VSIX package
-          cp zenml.vsix release-assets/
-
-          # Create a VERSION file
-          echo "${{ steps.get_version.outputs.version }}" > release-assets/VERSION
+          # Create a VERSION file that can be included in the release
+          echo "${{ steps.get_version.outputs.version }}" > VERSION
       - name: Update GitHub Release
         if: success() && startsWith(github.ref, 'refs/tags/')
         uses: ncipollo/release-action@v1
         with:
-          artifacts: zenml.vsix
+          artifacts: 'zenml.vsix,VERSION'
           bodyFile: RELEASE_NOTES.md
           allowUpdates: true
           tag: ${{ github.ref_name }}
