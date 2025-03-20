@@ -97,6 +97,48 @@ export function isServerStatus(obj: any): obj is ServerStatus {
   return 'isConnected' in obj && 'url' in obj;
 }
 
+/**
+ * Extracts the base URL (schema + hostname) from a full URL
+ *
+ * @param {string} url - The full URL to extract the base from
+ * @returns {string} - Just the schema and hostname portion of the URL
+ */
+export function getBaseUrl(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    return `${urlObj.protocol}//${urlObj.host}`;
+  } catch (error) {
+    console.error('Error extracting base URL:', error);
+    return url;
+  }
+}
+
+/**
+ * Appends workspace and project information to a base URL
+ *
+ * @param {string} baseUrl - The base URL to append to
+ * @param {ServerStatus} status - The server status containing workspace and project information
+ * @param {string} suffix - The suffix to append to the URL
+ * @returns {string} - The URL with workspace and project or the original base URL if no workspace or project is available
+ */
+export function addWorkspaceAndProjectToUrl(
+  baseUrl: string,
+  status: ServerStatus,
+  suffix: string = ''
+): string {
+  if (status.workspace_name && status.project_name) {
+    return `${baseUrl}/workspaces/${status.workspace_name}/projects/${status.project_name}${suffix}`;
+  } else if (status.workspace_id && status.project_id) {
+    return `${baseUrl}/workspaces/${status.workspace_id}/projects/${status.project_id}${suffix}`;
+  } else if (status.workspace_name) {
+    return `${baseUrl}/workspaces/${status.workspace_name}${suffix}`;
+  } else if (status.workspace_id) {
+    return `${baseUrl}/workspaces/${status.workspace_id}${suffix}`;
+  }
+
+  return `${baseUrl}${suffix}`;
+}
+
 export const serverUtils = {
   promptAndStoreServerUrl,
   checkServerStatus,
