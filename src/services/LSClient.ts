@@ -121,6 +121,7 @@ export class LSClient {
 
       const currentServerUrl = getZenMLServerUrl();
       const { url, api_token } = details;
+
       if (currentServerUrl !== url) {
         window.withProgress(
           {

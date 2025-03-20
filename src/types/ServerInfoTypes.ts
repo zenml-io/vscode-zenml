@@ -26,6 +26,13 @@ export interface ServerStatus {
   debug?: boolean;
   id?: string;
   username?: string | null;
+
+  // Added for ZenML 0.80.0 support:
+  workspace_id?: string;
+  workspace_name?: string;
+  project_id?: string;
+  project_name?: string;
+  organization_id?: string;
 }
 
 /************************************************************************************************
@@ -56,6 +63,15 @@ export interface ZenServerStoreInfo {
   base_url?: string;
   metadata?: any;
   dashboard_url: string;
+
+  // Added for ZenML 0.80.0 support:
+  workspace_id?: string;
+  workspace_name?: string;
+  project_id?: string;
+  project_name?: string;
+  organization_id?: string;
+  active_workspace_id?: string;
+  active_project_id?: string;
 }
 
 /************************************************************************************************
