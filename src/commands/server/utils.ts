@@ -84,12 +84,37 @@ function createServerStatusFromDetails(details: ZenServerDetails): ServerStatus 
         ? 'N/A'
         : storeConfig.url;
 
+  const {
+    workspace_id,
+    workspace_name,
+    project_id,
+    project_name,
+    organization_id,
+    active_workspace_id,
+    active_project_id,
+  } = storeInfo;
+
+  console.log(`Dashboard URL: ${dashboardUrl}`);
+  console.log(
+    `Workspace ID: ${workspace_id || 'not set'}, Active workspace ID: ${active_workspace_id || 'not set'}`
+  );
+  console.log(
+    `Project ID: ${project_id || 'not set'}, Active project ID: ${active_project_id || 'not set'}`
+  );
+
   return {
     ...storeInfo,
     isConnected: storeConfig?.type === 'rest',
     url: storeConfig?.url ?? 'unknown',
     store_type: storeConfig?.type ?? 'unknown',
     dashboard_url: dashboardUrl,
+
+    // include active workspace and project IDs if available (for ZenML 0.80.0+)
+    workspace_id: active_workspace_id || workspace_id,
+    workspace_name,
+    project_id: active_project_id || project_id,
+    project_name,
+    organization_id,
   };
 }
 
