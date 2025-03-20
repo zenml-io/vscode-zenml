@@ -82,6 +82,22 @@ export class ServerTreeItem extends TreeItem {
     if (this.serverStatus.username) {
       children.push(new ServerDetailTreeItem('Username', this.serverStatus.username, 'account'));
     }
+
+    // Show workspace and project information if available (for ZenML 0.80.0+)
+    if (this.serverStatus.workspace_id || this.serverStatus.workspace_name) {
+      const wsName = this.serverStatus.workspace_name || 'Unknown';
+      const wsId = this.serverStatus.workspace_id || 'Unknown';
+      children.push(
+        new ServerDetailTreeItem('Workspace', `${wsName} (ID: ${wsId})`, 'organization')
+      );
+    }
+
+    if (this.serverStatus.project_id || this.serverStatus.project_name) {
+      const projName = this.serverStatus.project_name || 'Unknown';
+      const projId = this.serverStatus.project_id || 'Unknown';
+      children.push(new ServerDetailTreeItem('Project', `${projName} (ID: ${projId})`, 'project'));
+    }
+
     if (this.serverStatus.debug !== undefined) {
       children.push(
         new ServerDetailTreeItem('Debug', this.serverStatus.debug ? 'true' : 'false', 'bug')
