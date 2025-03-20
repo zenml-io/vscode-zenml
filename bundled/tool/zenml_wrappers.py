@@ -20,6 +20,8 @@ from type_hints import (
     GraphResponse,
     ListComponentsResponse,
     ListFlavorsResponse,
+    ListProjectsResponse,
+    ListWorkspacesResponse,
     RunArtifactResponse,
     RunStepResponse,
     ZenmlGlobalConfigResp,
@@ -144,13 +146,14 @@ class GlobalConfigWrapper:
 class ZenServerWrapper:
     """Wrapper class for Zen Server management."""
 
-    def __init__(self, config_wrapper):
+    def __init__(self, config_wrapper, projects_wrapper):
         """Initializes ZenServerWrapper with a configuration wrapper."""
         # pylint: disable=wrong-import-position,import-error
         from lazy_import import lazy_import
 
         self.lazy_import = lazy_import
         self._config_wrapper = config_wrapper
+        self._projects_wrapper = projects_wrapper
 
     @property
     def gc(self):
@@ -191,6 +194,11 @@ class ZenServerWrapper:
         return self.lazy_import("zenml.zen_server.deploy.deployer", "ServerDeployer")
 
     @property
+    def ZenMLProClient(self):
+        """Returns the ZenML Pro client class."""
+        return self.lazy_import("zenml.login.pro.client", "ZenMLProClient")
+
+    @property
     def get_active_deployment(self):
         """Returns the function to get the active ZenML server deployment."""
         return self.lazy_import("zenml.zen_server.utils", "get_active_deployment")
@@ -209,6 +217,23 @@ class ZenServerWrapper:
         )
         store_config = getattr(self.gc, store_attr_name)
 
+        # ZenML Pro attributes
+        organization_id = store_info.metadata.get("organization_id")
+        organization_name = store_info.metadata.get("organization_name")
+        active_workspace_id = store_info.metadata.get("workspace_id")
+        workspace_name = store_info.metadata.get("workspace_name")
+
+        # Get active project
+        active_project_id = None
+        project_name = None
+
+        active_project = self._projects_wrapper.get_active_project()
+        # get_active_project uses @serialize_response, which returns a dict
+        if active_project and not active_project.get("error"):
+            if isinstance(active_project, dict):
+                active_project_id = active_project.get("id")
+                project_name = active_project.get("name")
+
         return {
             "storeInfo": {
                 "id": str(store_info.id),
@@ -220,6 +245,13 @@ class ZenServerWrapper:
                 "auth_scheme": store_info.auth_scheme,
                 "server_url": store_info.server_url,
                 "dashboard_url": store_info.dashboard_url,
+                # Add workspace, project and organization info for ZenML 0.80.0+ support
+                "workspace_id": active_workspace_id,
+                "workspace_name": workspace_name,
+                "project_id": active_project_id,
+                "project_name": project_name,
+                "organization_id": organization_id,
+                "organization_name": organization_name,
             },
             "storeConfig": {
                 "type": store_config.type,
@@ -503,6 +535,181 @@ class PipelineRunsWrapper:
 
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve pipeline run artifact: {str(e)}"}
+
+
+class WorkspacesWrapper:
+    """Wrapper class for Workspace management."""
+
+    def __init__(self, client, config_wrapper):
+        """Initializes WorkspacesWrapper with a ZenML client."""
+        # pylint: disable=wrong-import-position,import-error
+        from lazy_import import lazy_import
+
+        self.lazy_import = lazy_import
+        self.client = client
+        self._config_wrapper = config_wrapper
+
+    @property
+    def gc(self):
+        """Returns the ZenML global configuration."""
+        return self._config_wrapper.gc
+
+    @property
+    def ZenMLBaseException(self):
+        """Returns the ZenML ZenMLBaseException class."""
+        return self.lazy_import("zenml.exceptions", "ZenMLBaseException")
+
+    @property
+    def ZenMLProClient(self):
+        """Returns the ZenMLProClient class."""
+        return self.lazy_import("zenml.login.pro.client", "ZenMLProClient")
+
+    @serialize_response
+    def list_workspaces(self, args) -> Union[ListWorkspacesResponse, ErrorResponse]:
+        """Lists workspaces from ZenML Pro.
+
+        Args:
+            args: A tuple containing (page, size)
+
+        Returns:
+            A dictionary containing workspaces or an error message.
+        """
+        try:
+            store_info = self.gc.zen_store.get_store_info()
+            pro_api_url = store_info.get("pro_api_url")
+
+            # Initialize Pro client for workspace access
+            pro_client = self.ZenMLProClient(url=pro_api_url)
+
+            page = args[0] if len(args) > 0 else 0
+            size = args[1] if len(args) > 1 else 10
+
+            workspaces = pro_client.workspace.list(offset=page * size, limit=size)
+
+            # Process workspaces
+            workspaces_data = [
+                {
+                    "id": str(workspace.id),
+                    "name": workspace.name,
+                    "description": workspace.description,
+                    "display_name": workspace.display_name,
+                    "organization_id": str(workspace.organization.id),
+                    "organization_name": workspace.organization.name,
+                }
+                for workspace in workspaces
+            ]
+
+            return {
+                "workspaces": workspaces_data,
+                "total": len(workspaces_data),  # This is an approximation
+                "total_pages": 1,  # This is an approximation
+                "current_page": page,
+                "items_per_page": size,
+            }
+        except Exception as e:
+            return {"error": f"Failed to list workspaces: {str(e)}"}
+
+    @serialize_response
+    def get_active_workspace(self) -> Union[Dict[str, str], ErrorResponse]:
+        """Gets the active workspace for the current user.
+
+        Returns:
+            A dictionary containing the active workspace information or an error message.
+        """
+        try:
+            # Initialize Pro client for workspace access
+            store_info = self.gc.zen_store.get_store_info()
+            pro_api_url = store_info.get("pro_api_url")
+
+            pro_client = self.ZenMLProClient(url=pro_api_url)
+
+            # Get the first workspace as the active one
+            workspaces = pro_client.workspace.list(limit=1)
+            if not workspaces or len(workspaces) == 0:
+                return {"error": "No workspaces found"}
+
+            workspace = workspaces[0]
+            return {
+                "id": str(workspace.id),
+                "name": workspace.name,
+                "organization_id": str(workspace.organization_id),
+            }
+        except Exception as e:
+            return {"error": f"Failed to get active workspace: {str(e)}"}
+
+
+class ProjectsWrapper:
+    """Wrapper class for Project management."""
+
+    def __init__(self, client):
+        """Initializes ProjectsWrapper with a ZenML client."""
+        # pylint: disable=wrong-import-position,import-error
+        from lazy_import import lazy_import
+
+        self.lazy_import = lazy_import
+        self.client = client
+
+    @property
+    def ZenMLBaseException(self):
+        """Returns the ZenML ZenMLBaseException class."""
+        return self.lazy_import("zenml.exceptions", "ZenMLBaseException")
+
+    @serialize_response
+    def list_projects(self, args) -> Union[ListProjectsResponse, ErrorResponse]:
+        """Lists projects from ZenML.
+
+        Args:
+            args: A tuple containing (page, size)
+
+        Returns:
+            A dictionary containing projects or an error message.
+        """
+        try:
+            page = args[0] if len(args) > 0 else 0
+            size = args[1] if len(args) > 1 else 10
+
+            projects = self.client.list_projects(page=page, size=size)
+
+            projects_data = [
+                {
+                    "id": str(project.id),
+                    "name": project.name,
+                    "display_name": project.body.display_name,
+                    "created": project.body.created.isoformat(),
+                    "updated": project.body.updated.isoformat(),
+                }
+                for project in projects.items
+            ]
+
+            return {
+                "projects": projects_data,
+                "total": projects.total,
+                "total_pages": projects.total_pages,
+                "current_page": page,
+                "items_per_page": size,
+            }
+        except Exception as e:
+            return {"error": f"Failed to list projects: {str(e)}"}
+
+    @serialize_response
+    def get_active_project(self) -> Union[Dict[str, str], ErrorResponse]:
+        """Gets the active project for the current user.
+
+        Returns:
+            A dictionary containing the active project information or an error message.
+        """
+        try:
+            active_project = self.client.active_project
+
+            return {
+                "id": str(active_project.id),
+                "name": active_project.name,
+                "display_name": active_project.body.display_name,
+                "created": active_project.body.created.isoformat(),
+                "updated": active_project.body.updated.isoformat(),
+            }
+        except Exception as e:
+            return {"error": f"Failed to get active project: {str(e)}"}
 
 
 class StacksWrapper:
