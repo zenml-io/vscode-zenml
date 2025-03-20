@@ -149,6 +149,7 @@ class Workspace(TypedDict):
     id: str
     name: str
     description: Optional[str]
+    display_name: Optional[str]
     organization_id: str
     organization_name: str
 
@@ -256,7 +257,7 @@ class ListProjectsResponse(TypedDict):
 # }
 
 
-# example Workspace object (e.g. one of the items in the raw list_workspaces response):
+# example Workspace object (e.g. one of the items in the raw pro_client.workspace.list response):
 # {
 #   "id": "41597a83-72bc-4252-82e8-e90cde0ebe9a",
 #   "name": "80",
