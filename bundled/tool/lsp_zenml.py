@@ -350,3 +350,27 @@ class ZenLanguageServer(LanguageServer):
         def get_run_dag(wrapper_instance, args):
             """Gets graph data for a specified ZenML pipeline run"""
             return wrapper_instance.get_pipeline_run_graph(args)
+
+        @self.command(f"{TOOL_MODULE_NAME}.listWorkspaces")
+        @self.zenml_command(wrapper_name="workspaces_wrapper")
+        def list_workspaces(wrapper_instance, args):
+            """Lists workspaces from ZenML Pro"""
+            return wrapper_instance.list_workspaces(args)
+
+        @self.command(f"{TOOL_MODULE_NAME}.getActiveWorkspace")
+        @self.zenml_command(wrapper_name="workspaces_wrapper")
+        def get_active_workspace(wrapper_instance, *args, **kwargs):
+            """Gets the active workspace for the current user"""
+            return wrapper_instance.get_active_workspace()
+
+        @self.command(f"{TOOL_MODULE_NAME}.listProjects")
+        @self.zenml_command(wrapper_name="projects_wrapper")
+        def list_projects(wrapper_instance, args):
+            """Lists projects from ZenML"""
+            return wrapper_instance.list_projects(args)
+
+        @self.command(f"{TOOL_MODULE_NAME}.getActiveProject")
+        @self.zenml_command(wrapper_name="projects_wrapper")
+        def get_active_project(wrapper_instance, *args, **kwargs):
+            """Gets the active project for the current user"""
+            return wrapper_instance.get_active_project()
