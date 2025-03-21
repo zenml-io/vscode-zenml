@@ -10,12 +10,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
+import * as vscode from 'vscode';
 import { TreeItem } from 'vscode';
 import { State } from 'vscode-languageclient';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
 import { PipelineRun, PipelineRunsResponse } from '../../../types/PipelineTypes';
-import { LSCLIENT_STATE_CHANGED, LSP_ZENML_CLIENT_INITIALIZED } from '../../../utils/constants';
+import {
+  LSCLIENT_STATE_CHANGED,
+  LSP_ZENML_CLIENT_INITIALIZED,
+  LSP_ZENML_PROJECT_CHANGED,
+} from '../../../utils/constants';
 import { ErrorTreeItem, createAuthErrorItem, createErrorItem } from '../common/ErrorTreeItem';
 import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
 import { PaginatedDataProvider } from '../common/PaginatedDataProvider';
@@ -59,6 +64,10 @@ export class PipelineDataProvider extends PaginatedDataProvider {
       }
 
       this.refresh();
+      this.eventBus.off(LSP_ZENML_PROJECT_CHANGED, () => this.refresh());
+      this.eventBus.on(LSP_ZENML_PROJECT_CHANGED, (projectName: string) =>
+        this.refresh(projectName)
+      );
     });
   }
 
@@ -79,14 +88,14 @@ export class PipelineDataProvider extends PaginatedDataProvider {
    *
    * @returns A promise resolving to void.
    */
-  public async refresh(): Promise<void> {
+  public async refresh(projectName?: string): Promise<void> {
     this.items = [LOADING_TREE_ITEMS.get('pipelineRuns')!];
     this._onDidChangeTreeData.fire(undefined);
     const page = this.pagination.currentPage;
     const itemsPerPage = this.pagination.itemsPerPage;
 
     try {
-      const newPipelineData = await this.fetchPipelineRuns(page, itemsPerPage);
+      const newPipelineData = await this.fetchPipelineRuns(page, itemsPerPage, projectName);
       this.items = newPipelineData;
     } catch (error: any) {
       this.items = createErrorItem(error);
@@ -100,7 +109,11 @@ export class PipelineDataProvider extends PaginatedDataProvider {
    *
    * @returns A promise resolving to an array of PipelineTreeItems representing fetched pipeline runs.
    */
-  async fetchPipelineRuns(page: number = 1, itemsPerPage: number = 20): Promise<TreeItem[]> {
+  async fetchPipelineRuns(
+    page: number = 1,
+    itemsPerPage: number = 20,
+    projectName?: string
+  ): Promise<TreeItem[]> {
     if (!this.zenmlClientReady) {
       return [LOADING_TREE_ITEMS.get('zenmlClient')!];
     }
@@ -109,6 +122,7 @@ export class PipelineDataProvider extends PaginatedDataProvider {
       const result = await lsClient.sendLsClientRequest<PipelineRunsResponse>('getPipelineRuns', [
         page,
         itemsPerPage,
+        projectName,
       ]);
 
       if (Array.isArray(result) && result.length === 1 && 'error' in result[0]) {
@@ -136,6 +150,14 @@ export class PipelineDataProvider extends PaginatedDataProvider {
           totalItems: total,
           totalPages: total_pages,
         };
+
+        if (runs.length === 0) {
+          const noRunsItem = new TreeItem('No pipeline runs found for this project');
+          noRunsItem.contextValue = 'noRuns';
+          noRunsItem.iconPath = new vscode.ThemeIcon('info');
+          noRunsItem.tooltip = 'Run a pipeline in this project to see it listed here';
+          return [noRunsItem];
+        }
 
         return runs.map((run: PipelineRun) => {
           const formattedStartTime = new Date(run.startTime).toLocaleString();
