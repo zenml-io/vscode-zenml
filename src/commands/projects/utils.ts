@@ -11,7 +11,6 @@
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
-import { workspace } from 'vscode';
 import { EventBus } from '../../services/EventBus';
 import { LSClient } from '../../services/LSClient';
 import {
@@ -29,18 +28,16 @@ import { buildWorkspaceProjectUrl, getBaseUrl, isServerStatus } from '../server/
  * @param {string} projectId - The ID of the project to set as active.
  * @returns {Promise<Project | undefined>} - A promise that resolves to the project.
  */
-export async function switchActiveProject(projectId: string): Promise<Project | undefined> {
+export async function switchActiveProject(projectName: string): Promise<Project | undefined> {
   const lsClient = LSClient.getInstance();
   const result = await lsClient.sendLsClientRequest<SetActiveProjectResponse>('setActiveProject', [
-    projectId,
+    projectName,
   ]);
 
   if (result && !('error' in result)) {
-    // Store the active project ID in workspace settings
-    await workspace.getConfiguration('zenml').update('activeProjectId', projectId, true);
+    await vscode.workspace.getConfiguration('zenml').update('activeProjectName', projectName, true);
 
-    // Emit event to notify listeners about the project change
-    EventBus.getInstance().emit(LSP_ZENML_PROJECT_CHANGED, projectId);
+    EventBus.getInstance().emit(LSP_ZENML_PROJECT_CHANGED, projectName);
 
     return result;
   }
@@ -77,7 +74,7 @@ export const getActiveProject = async (): Promise<{ id: string; name: string } |
  * @returns {Promise<void>} A promise that resolves when the project information has been successfully stored.
  */
 export const storeActiveProject = async (projectName: string): Promise<void> => {
-  const config = workspace.getConfiguration('zenml');
+  const config = vscode.workspace.getConfiguration('zenml');
   await config.update('activeProjectName', projectName, vscode.ConfigurationTarget.Global);
 };
 
@@ -87,7 +84,7 @@ export const storeActiveProject = async (projectName: string): Promise<void> => 
  * @returns {string | undefined} The active project name.
  */
 export const getActiveProjectNameFromConfig = (): string | undefined => {
-  const config = workspace.getConfiguration('zenml');
+  const config = vscode.workspace.getConfiguration('zenml');
   return config.get<string>('activeProjectName');
 };
 
@@ -105,9 +102,17 @@ export function getProjectDashboardUrl(projectName: string): string | undefined 
   }
 
   const baseUrl = getBaseUrl(serverStatus.dashboard_url);
-  const suffix = `/projects/${projectName}`;
+  const suffix = `/projects/${projectName}/pipelines`;
 
   const url = buildWorkspaceProjectUrl(baseUrl, serverStatus, suffix);
 
   return url;
 }
+
+export const projectUtils = {
+  switchActiveProject,
+  getActiveProject,
+  storeActiveProject,
+  getActiveProjectNameFromConfig,
+  getProjectDashboardUrl,
+};

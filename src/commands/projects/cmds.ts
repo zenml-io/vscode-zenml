@@ -11,7 +11,7 @@
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
-import { showInformationMessage } from '../../utils/notifications';
+import { showErrorMessage, showInformationMessage } from '../../utils/notifications';
 import { ProjectDataProvider } from '../../views/activityBar/projectView/ProjectDataProvider';
 import { ProjectTreeItem } from '../../views/activityBar/projectView/ProjectTreeItems';
 import ZenMLStatusBar from '../../views/statusBar';
@@ -66,17 +66,17 @@ const setActiveProject = async (node: ProjectTreeItem): Promise<void> => {
     },
     async () => {
       try {
-        const result = await switchActiveProject(node.project.id);
+        const result = await switchActiveProject(node.name);
         if (result) {
-          ProjectDataProvider.getInstance().updateActiveProject(node.project.id);
+          ProjectDataProvider.getInstance().updateActiveProject(node.name);
           const statusBar = ZenMLStatusBar.getInstance();
           await statusBar.refresh();
 
-          showInformationMessage(`Active project set to: ${node.project.name}`);
+          showInformationMessage(`Active project set to: ${node.name}`);
         }
       } catch (error) {
         console.log(error);
-        vscode.window.showErrorMessage(`Failed to set active project: ${error}`);
+        showErrorMessage(`Failed to set active project: ${error}`);
       }
     }
   );
