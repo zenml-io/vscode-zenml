@@ -87,7 +87,6 @@ const goToPipelineUrl = (node: PipelineTreeItem): void => {
       const parsedUrl = vscode.Uri.parse(url);
 
       vscode.env.openExternal(parsedUrl);
-      vscode.window.showInformationMessage(`Opening: ${url}`);
     } catch (error) {
       console.log(error);
       vscode.window.showErrorMessage(`Failed to open pipeline run URL: ${error}`);
