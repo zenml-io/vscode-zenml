@@ -199,10 +199,6 @@ export class LSClient {
       console.error(`${command}: LSClient is not ready yet.`);
       return { error: 'LSClient is not ready yet.' } as T;
     }
-    if (!this.isZenMLReady) {
-      console.error(`${command}: ZenML Client is not initialized yet.`);
-      return { error: 'ZenML Client is not initialized.' } as T;
-    }
     try {
       const result = await this.client.sendRequest('workspace/executeCommand', {
         command: `${PYTOOL_MODULE}.${command}`,

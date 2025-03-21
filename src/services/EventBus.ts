@@ -17,6 +17,7 @@ export class EventBus extends EventEmitter {
 
   constructor() {
     super();
+    this.setMaxListeners(20);
   }
 
   /**
@@ -29,5 +30,20 @@ export class EventBus extends EventEmitter {
       EventBus.instance = new EventBus();
     }
     return EventBus.instance;
+  }
+
+  /**
+   * Cleans up event listeners for a specific event and handler.
+   * This is important to prevent memory leaks and MaxListenersExceededWarnings.
+   *
+   * @param {string} event - The event name to clean up
+   * @param {Function} [handler] - Optional specific handler to remove
+   */
+  public cleanupEventListener(event: string, handler?: (...args: any[]) => void): void {
+    if (handler) {
+      this.off(event, handler);
+    } else {
+      this.removeAllListeners(event);
+    }
   }
 }
