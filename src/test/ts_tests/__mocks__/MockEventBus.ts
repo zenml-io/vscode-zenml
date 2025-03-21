@@ -18,6 +18,8 @@ export class MockEventBus extends EventEmitter {
 
   constructor() {
     super();
+    this.setMaxListeners(20);
+
     this.on('lsClientReady', (isReady: boolean) => {
       this.lsClientReady = isReady;
     });
@@ -40,6 +42,21 @@ export class MockEventBus extends EventEmitter {
    */
   public clearAllHandlers() {
     this.removeAllListeners();
+  }
+
+  /**
+   * Cleans up event listeners for a specific event and handler.
+   * This is important to prevent memory leaks and MaxListenersExceededWarnings.
+   *
+   * @param {string} event - The event name to clean up
+   * @param {Function} [handler] - Optional specific handler to remove
+   */
+  public cleanupEventListener(event: string, handler?: (...args: any[]) => void): void {
+    if (handler) {
+      this.off(event, handler);
+    } else {
+      this.removeAllListeners(event);
+    }
   }
 
   /**
