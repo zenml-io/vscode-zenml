@@ -16,6 +16,7 @@ import * as vscode from 'vscode';
 
 import { registerComponentCommands } from '../commands/components/registry';
 import { registerPipelineCommands } from '../commands/pipelines/registry';
+import { registerProjectCommands } from '../commands/projects/registry';
 import { registerServerCommands } from '../commands/server/registry';
 import { registerStackCommands } from '../commands/stack/registry';
 import { EXTENSION_ROOT_DIR } from '../common/constants';
@@ -38,7 +39,7 @@ import {
 } from '../common/vscodeapi';
 import { toggleCommands } from '../utils/global';
 import { refreshUIComponents } from '../utils/refresh';
-import { PipelineDataProvider, ServerDataProvider, StackDataProvider } from '../views/activityBar';
+import { PipelineDataProvider, ProjectDataProvider, ServerDataProvider, StackDataProvider } from '../views/activityBar';
 import { ComponentDataProvider } from '../views/activityBar/componentView/ComponentDataProvider';
 import { PanelDataProvider } from '../views/panel/panelView/PanelDataProvider';
 import ZenMLStatusBar from '../views/statusBar';
@@ -65,6 +66,7 @@ export class ZenExtension {
     ['zenmlStackView', StackDataProvider.getInstance()],
     ['zenmlComponentView', ComponentDataProvider.getInstance()],
     ['zenmlPipelineView', PipelineDataProvider.getInstance()],
+    ['zenmlProjectView', ProjectDataProvider.getInstance()],
     ['zenmlPanelView', PanelDataProvider.getInstance()],
   ]);
 
@@ -73,6 +75,7 @@ export class ZenExtension {
     registerStackCommands,
     registerComponentCommands,
     registerPipelineCommands,
+    registerProjectCommands,
   ];
 
   /**
