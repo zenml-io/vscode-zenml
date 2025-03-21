@@ -19,7 +19,6 @@ import {
   INITIAL_ZENML_SERVER_STATUS,
   LSCLIENT_STATE_CHANGED,
   LSP_ZENML_CLIENT_INITIALIZED,
-  REFRESH_SERVER_STATUS,
   SERVER_STATUS_UPDATED,
 } from '../../../utils/constants';
 import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
@@ -42,6 +41,9 @@ export class ServerDataProvider implements TreeDataProvider<TreeItem> {
    * Subscribes to relevant events to trigger a refresh of the tree view.
    */
   public subscribeToEvents(): void {
+    this.eventBus.off(LSCLIENT_STATE_CHANGED, () => this.refresh());
+    this.eventBus.off(LSP_ZENML_CLIENT_INITIALIZED, () => this.refresh());
+
     this.eventBus.on(LSCLIENT_STATE_CHANGED, (newState: State) => {
       if (newState === State.Running) {
         this.refresh();
@@ -58,10 +60,7 @@ export class ServerDataProvider implements TreeDataProvider<TreeItem> {
         this._onDidChangeTreeData.fire(undefined);
         return;
       }
-
       this.refresh();
-      this.eventBus.off(REFRESH_SERVER_STATUS, async () => await this.refresh());
-      this.eventBus.on(REFRESH_SERVER_STATUS, async () => await this.refresh());
     });
   }
 
