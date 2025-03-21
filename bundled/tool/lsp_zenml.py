@@ -374,3 +374,19 @@ class ZenLanguageServer(LanguageServer):
         def get_active_project(wrapper_instance, *args, **kwargs):
             """Gets the active project for the current user"""
             return wrapper_instance.get_active_project()
+
+        @self.command(f"{TOOL_MODULE_NAME}.setActiveProject")
+        @self.zenml_command(wrapper_name="projects_wrapper")
+        def set_active_project(wrapper_instance, args):
+            """Sets the active project for the current user"""
+            result = wrapper_instance.set_active_project(args)
+            if not isinstance(result, dict) or "error" not in result:
+                # Only send notification if successful
+                self.send_custom_notification("zenml/projectChanged", result["id"])
+            return result
+
+        @self.command(f"{TOOL_MODULE_NAME}.getProjectByName")
+        @self.zenml_command(wrapper_name="projects_wrapper")
+        def get_project_by_name(wrapper_instance, args):
+            """Gets a project by name"""
+            return wrapper_instance.get_project_by_name(args[0])
