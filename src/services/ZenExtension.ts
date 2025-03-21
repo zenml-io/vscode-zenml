@@ -39,7 +39,12 @@ import {
 } from '../common/vscodeapi';
 import { toggleCommands } from '../utils/global';
 import { refreshUIComponents } from '../utils/refresh';
-import { PipelineDataProvider, ProjectDataProvider, ServerDataProvider, StackDataProvider } from '../views/activityBar';
+import {
+  PipelineDataProvider,
+  ProjectDataProvider,
+  ServerDataProvider,
+  StackDataProvider,
+} from '../views/activityBar';
 import { ComponentDataProvider } from '../views/activityBar/componentView/ComponentDataProvider';
 import { PanelDataProvider } from '../views/panel/panelView/PanelDataProvider';
 import ZenMLStatusBar from '../views/statusBar';
