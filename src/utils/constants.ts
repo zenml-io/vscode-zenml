@@ -26,6 +26,7 @@ export const LSP_IS_ZENML_INSTALLED = 'zenml/isInstalled';
 export const LSP_ZENML_CLIENT_INITIALIZED = 'zenml/clientInitialized';
 export const LSP_ZENML_SERVER_CHANGED = 'zenml/serverChanged';
 export const LSP_ZENML_STACK_CHANGED = 'zenml/stackChanged';
+export const LSP_ZENML_PROJECT_CHANGED = 'zenml/projectChanged';
 export const LSP_ZENML_REQUIREMENTS_NOT_MET = 'zenml/requirementsNotMet';
 
 // EventBus emitted events
