@@ -221,18 +221,18 @@ class ZenServerWrapper:
         organization_id = store_info.metadata.get("organization_id")
         organization_name = store_info.metadata.get("organization_name")
         active_workspace_id = store_info.metadata.get("workspace_id")
-        workspace_name = store_info.metadata.get("workspace_name")
+        active_workspace_name = store_info.metadata.get("workspace_name")
 
         # Get active project
         active_project_id = None
-        project_name = None
+        active_project_name = None
 
         active_project = self._projects_wrapper.get_active_project()
         # get_active_project uses @serialize_response, which returns a dict
         if active_project and not active_project.get("error"):
             if isinstance(active_project, dict):
                 active_project_id = active_project.get("id")
-                project_name = active_project.get("name")
+                active_project_name = active_project.get("name")
 
         return {
             "storeInfo": {
@@ -246,10 +246,10 @@ class ZenServerWrapper:
                 "server_url": store_info.server_url,
                 "dashboard_url": store_info.dashboard_url,
                 # Add workspace, project and organization info for ZenML 0.80.0+ support
-                "workspace_id": active_workspace_id,
-                "workspace_name": workspace_name,
-                "project_id": active_project_id,
-                "project_name": project_name,
+                "active_workspace_id": active_workspace_id,
+                "active_workspace_name": active_workspace_name,
+                "active_project_id": active_project_id,
+                "active_project_name": active_project_name,
                 "organization_id": organization_id,
                 "organization_name": organization_name,
             },
@@ -350,9 +350,15 @@ class PipelineRunsWrapper:
         """
         page = args[0]
         max_size = args[1]
+        project_name = args[2]
+
         try:
             runs_page = self.client.list_pipeline_runs(
-                sort_by="desc:updated", page=page, size=max_size, hydrate=True
+                sort_by="desc:updated",
+                page=page,
+                size=max_size,
+                hydrate=True,
+                project=project_name,
             )
             runs_data = [
                 {
@@ -710,6 +716,58 @@ class ProjectsWrapper:
             }
         except Exception as e:
             return {"error": f"Failed to get active project: {str(e)}"}
+
+    @serialize_response
+    def set_active_project(self, args) -> Union[Dict[str, Any], ErrorResponse]:
+        """Sets the active project for the current user.
+
+        Args:
+            args: A tuple containing the project ID to set as active
+
+        Returns:
+            A dictionary containing the active project information or an error message.
+        """
+        try:
+            project_id = args[0]
+
+            # Use client to set the active project
+            self.client.set_active_project(project_id)
+
+            # Get the updated active project
+            active_project = self.client.active_project
+
+            return {
+                "id": str(active_project.id),
+                "name": active_project.name,
+                "display_name": active_project.body.display_name,
+                "created": active_project.body.created.isoformat(),
+                "updated": active_project.body.updated.isoformat(),
+            }
+        except Exception as e:
+            return {"error": f"Failed to set active project: {str(e)}"}
+
+    @serialize_response
+    def get_project_by_name(self, project_name: str) -> Union[Dict[str, str], ErrorResponse]:
+        """Gets a project by name.
+
+        Args:
+            project_name: The name of the project to get
+
+        Returns:
+            A dictionary containing the project information or an error message.
+        """
+        try:
+            project = self.client.get_project(project_name)
+
+            return {
+                "id": str(project.id),
+                "name": project.name,
+                "display_name": project.body.display_name,
+                "created": project.body.created.isoformat(),
+                "updated": project.body.updated.isoformat(),
+            }
+        except Exception as e:
+            return {"error": f"Failed to get project by name: {str(e)}"}
 
 
 class StacksWrapper:
