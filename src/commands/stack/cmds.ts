@@ -171,15 +171,13 @@ const setActiveStack = async (node: StackTreeItem): Promise<void> => {
  *
  * @param {StackTreeItem} node The stack to open.
  */
-const goToStackUrl = (node: StackTreeItem) => {
+const goToStackUrl = (node: StackTreeItem): void => {
   const url = getStackDashboardUrl(node.id);
 
   if (url) {
     try {
       const parsedUrl = vscode.Uri.parse(url);
-
       vscode.env.openExternal(parsedUrl);
-      vscode.window.showInformationMessage(`Opening: ${url}`);
     } catch (error) {
       console.log(error);
       vscode.window.showErrorMessage(`Failed to open stack URL: ${error}`);

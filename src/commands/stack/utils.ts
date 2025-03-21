@@ -96,7 +96,6 @@ export const getActiveStackIdFromConfig = (): string | undefined => {
  */
 export const getStackDashboardUrl = (id: string): string => {
   const serverStatus = ServerDataProvider.getInstance().getCurrentStatus();
-
   if (!isServerStatus(serverStatus) || serverStatus.deployment_type === 'other') {
     return '';
   }

@@ -49,7 +49,7 @@ export async function promptAndStoreServerUrl(): Promise<string | undefined> {
  */
 export async function checkServerStatus(): Promise<ServerStatus | ErrorTreeItem[]> {
   const lsClient = LSClient.getInstance();
-  // For debugging
+
   if (!lsClient.clientReady) {
     return INITIAL_ZENML_SERVER_STATUS;
   }
