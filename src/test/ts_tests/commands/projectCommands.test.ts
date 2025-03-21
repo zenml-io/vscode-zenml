@@ -143,8 +143,12 @@ suite('Project Commands Test Suite', () => {
 
     const fakeProjectNode = new ProjectTreeItem(mockProject, 'mock-project-id', false);
 
+    // '/projects' alone causes 404:
+    // {serverUrl}/workspaces/ws1/projects/first-project → 404
+    // {serverUrl}/workspaces/ws1/projects/first-project/pipelines → works
+    // we can remove '/pipelines' from the expected URL once '/projects' reroutes to it by default
     const expectedUrl =
-      'http://mocked-dashboard.zenml.io/workspaces/mock-workspace/projects/mock-project';
+      'http://mocked-dashboard.zenml.io/workspaces/mock-workspace/projects/mock-project/pipelines';
 
     const openExternalStub = sandbox.stub(vscode.env, 'openExternal');
     projectCommands.goToProjectUrl(fakeProjectNode);
