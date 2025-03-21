@@ -32,8 +32,7 @@ export default class ZenMLStatusBar {
   private serverStatus = { isConnected: false, serverUrl: '' };
   private activeStack: string = '$(loading~spin) Loading...';
   private activeStackId: string = '';
-  private activeProject: string = '';
-  private activeProjectId: string = '';
+  private activeProjectName: string = '';
   private isLoadingStack: boolean = false;
   private isLoadingProject: boolean = false;
   private eventBus = EventBus.getInstance();
@@ -62,6 +61,12 @@ export default class ZenMLStatusBar {
    * @returns void
    */
   private subscribeToEvents(): void {
+    this.eventBus.off(LSP_ZENML_STACK_CHANGED, () => this.refreshActiveStack());
+    this.eventBus.off(LSP_ZENML_PROJECT_CHANGED, () => this.refreshActiveProject());
+    this.eventBus.off(SERVER_STATUS_UPDATED, () =>
+      this.updateStatusBarItem(this.serverStatus.isConnected)
+    );
+
     this.eventBus.on(LSP_ZENML_STACK_CHANGED, async () => {
       await this.refreshActiveStack();
     });
@@ -122,13 +127,10 @@ export default class ZenMLStatusBar {
 
     try {
       const activeProject = await getActiveProject();
-      this.activeProjectId = activeProject?.id || '';
-      this.activeProject = activeProject?.name || '(not set)';
-      console.log('StatusBar activeProject', this.activeProject);
-      console.log('StatusBar activeProjectId', this.activeProjectId);
+      this.activeProjectName = activeProject?.name || '(not set)';
     } catch (error) {
       console.error('Failed to fetch active ZenML project:', error);
-      this.activeProject = 'Error';
+      this.activeProjectName = 'Error';
     } finally {
       this.isLoadingProject = false;
     }
@@ -152,15 +154,17 @@ export default class ZenMLStatusBar {
     if (this.isLoadingStack || this.isLoadingProject) {
       this.statusBarItem.text = `$(loading~spin) Loading...`;
     } else {
-      this.statusBarItem.text = `⛩ ${this.activeProject}/${this.activeStack}`;
+      if (this.activeProjectName) {
+        this.statusBarItem.text = `⛩ ${this.activeProjectName} | ${this.activeStack}`;
+      } else {
+        this.statusBarItem.text = `⛩ ${this.activeStack}`;
+      }
     }
 
     const serverStatusText = isConnected ? 'Connected ✅' : 'Disconnected';
-    let tooltipText = `Server Status: ${serverStatusText}\nActive Stack: ${this.activeStack}`;
-
-    if (this.activeProject) {
-      tooltipText += `\nActive Project: ${this.activeProject}`;
-    }
+    let tooltipText = `Server Status: ${serverStatusText}`;
+    tooltipText += `\nActive Project: ${this.activeProjectName ? this.activeProjectName : '(not set)'}`;
+    tooltipText += `\nActive Stack: ${this.activeStack}`;
 
     tooltipText += '\n(click to switch stacks)';
     this.statusBarItem.tooltip = tooltipText;
@@ -248,8 +252,8 @@ export default class ZenMLStatusBar {
 
       let tooltipText = `Server Status: ${serverStatusText}\nActive Stack: ${this.activeStack}`;
 
-      if (this.activeProject) {
-        tooltipText += `\nActive Project: ${this.activeProject}`;
+      if (this.activeProjectName) {
+        tooltipText += `\nActive Project: ${this.activeProjectName}`;
       }
 
       tooltipText += '\n(click to switch stacks)';
