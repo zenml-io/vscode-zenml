@@ -11,9 +11,8 @@
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-/**
- * Interface representing a ZenML Project.
- */
+import { ErrorMessageResponse, VersionMismatchError } from './LSClientResponseTypes';
+
 export interface Project {
   id: string;
   name: string;
@@ -22,10 +21,7 @@ export interface Project {
   updated?: string;
 }
 
-/**
- * Interface representing a ZenML Projects response with pagination.
- */
-export interface ProjectsResponse {
+export interface ProjectsData {
   projects: Project[];
   total: number;
   total_pages: number;
@@ -38,3 +34,5 @@ export interface GetProjectByNameResponse {
   name: string;
   display_name?: string;
 }
+
+export type ProjectsResponse = ProjectsData | ErrorMessageResponse | VersionMismatchError;
