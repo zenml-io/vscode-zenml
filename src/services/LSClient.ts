@@ -12,6 +12,7 @@
 // permissions and limitations under the License.
 import { ProgressLocation, commands, window } from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
+import { storeActiveProject } from '../commands/projects/utils';
 import { storeActiveStack } from '../commands/stack/utils';
 import { GenericLSClientResponse, VersionMismatchError } from '../types/LSClientResponseTypes';
 import { LSNotificationIsZenMLInstalled } from '../types/LSNotificationTypes';
@@ -20,6 +21,7 @@ import {
   LSCLIENT_READY,
   LSP_IS_ZENML_INSTALLED,
   LSP_ZENML_CLIENT_INITIALIZED,
+  LSP_ZENML_PROJECT_CHANGED,
   LSP_ZENML_SERVER_CHANGED,
   LSP_ZENML_STACK_CHANGED,
   PYTOOL_MODULE,
@@ -54,6 +56,7 @@ export class LSClient {
     if (this.client) {
       this.client.onNotification(LSP_ZENML_SERVER_CHANGED, this.handleServerChanged.bind(this));
       this.client.onNotification(LSP_ZENML_STACK_CHANGED, this.handleStackChanged.bind(this));
+      this.client.onNotification(LSP_ZENML_PROJECT_CHANGED, this.handleProjectChanged.bind(this));
       this.client.onNotification(LSP_IS_ZENML_INSTALLED, this.handleZenMLInstalled.bind(this));
       this.client.onNotification(LSP_ZENML_CLIENT_INITIALIZED, this.handleZenMLReady.bind(this));
     }
@@ -167,6 +170,18 @@ export class LSClient {
     console.log(`Received ${LSP_ZENML_STACK_CHANGED} notification:`, activeStackId);
     await storeActiveStack(activeStackId);
     this.eventBus.emit(LSP_ZENML_STACK_CHANGED, activeStackId);
+  }
+
+  /**
+   * Handles the zenml/projectChanged notification.
+   *
+   * @param projectIdOrName The id  of the active project.
+   * @returns A promise resolving to void.
+   */
+  public async handleProjectChanged(projectName: string): Promise<void> {
+    console.log(`Received ${LSP_ZENML_PROJECT_CHANGED} notification:`, projectName);
+    await storeActiveProject(projectName);
+    this.eventBus.emit(LSP_ZENML_PROJECT_CHANGED, projectName);
   }
 
   /**
