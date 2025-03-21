@@ -17,12 +17,17 @@ import { stackCommands } from '../../../commands/stack/cmds';
 import stackUtils from '../../../commands/stack/utils';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
+import { INITIAL_ZENML_SERVER_STATUS } from '../../../utils/constants';
 import * as globalUtils from '../../../utils/global';
-import { StackDataProvider, StackTreeItem } from '../../../views/activityBar';
+import { ServerDataProvider, StackDataProvider, StackTreeItem } from '../../../views/activityBar';
 import ZenMLStatusBar from '../../../views/statusBar';
 import { MockEventBus } from '../__mocks__/MockEventBus';
 import { MockLSClient } from '../__mocks__/MockLSClient';
-import { MockStackDataProvider, MockZenMLStatusBar } from '../__mocks__/MockViewProviders';
+import {
+  MockServerDataProvider,
+  MockStackDataProvider,
+  MockZenMLStatusBar,
+} from '../__mocks__/MockViewProviders';
 
 suite('Stack Commands Test Suite', () => {
   let sandbox: sinon.SinonSandbox;
@@ -31,6 +36,7 @@ suite('Stack Commands Test Suite', () => {
   let mockLSClient: any;
   let mockEventBus: any;
   let mockStackDataProvider: MockStackDataProvider;
+  let mockServerDataProvider: MockServerDataProvider;
   let mockStatusBar: MockZenMLStatusBar;
   let switchActiveStackStub: sinon.SinonStub;
   let setActiveStackStub: sinon.SinonStub; // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -40,11 +46,13 @@ suite('Stack Commands Test Suite', () => {
     mockEventBus = new MockEventBus();
     mockLSClient = new MockLSClient(mockEventBus);
     mockStackDataProvider = new MockStackDataProvider();
+    mockServerDataProvider = new MockServerDataProvider();
     mockStatusBar = new MockZenMLStatusBar();
     const stubbedServerUrl = 'http://mocked-server.com';
 
     // Stub classes to return mock instances
     sandbox.stub(StackDataProvider, 'getInstance').returns(mockStackDataProvider);
+    sandbox.stub(ServerDataProvider, 'getInstance').returns(mockServerDataProvider);
     sandbox.stub(ZenMLStatusBar, 'getInstance').returns(mockStatusBar);
     sandbox.stub(LSClient, 'getInstance').returns(mockLSClient);
     sandbox.stub(EventBus, 'getInstance').returns(mockEventBus);
@@ -67,7 +75,7 @@ suite('Stack Commands Test Suite', () => {
         await switchActiveStackStub(node.id);
         showInformationMessageStub(`Active stack set to: ${node.label}`);
         await mockStatusBar.refreshActiveStack();
-        await mockStackDataProvider.refresh();
+        await mockStackDataProvider.updateActiveStack();
       });
 
     sandbox.stub(vscode.window, 'withProgress').callsFake(async (options, task) => {
@@ -82,6 +90,10 @@ suite('Stack Commands Test Suite', () => {
   teardown(() => {
     sandbox.restore();
     mockEventBus.clearAllHandlers();
+
+    const eventBus = EventBus.getInstance();
+    eventBus.cleanupEventListener('lsClientStateChanged');
+    eventBus.cleanupEventListener('zenml/clientInitialized');
   });
 
   test('renameStack successfully renames a stack', async () => {
@@ -109,29 +121,34 @@ suite('Stack Commands Test Suite', () => {
     );
   });
 
-  test('goToStackUrl opens the correct URL and shows an information message', () => {
+  test('goToStackUrl opens the correct URL', async () => {
     const stackId = 'stack-id-123';
-    const expectedUrl = stackUtils.getStackDashboardUrl(stackId);
+
+    const mockServerProvider = new MockServerDataProvider();
+    mockServerProvider.currentServerStatus = {
+      ...INITIAL_ZENML_SERVER_STATUS,
+      isConnected: true,
+      url: 'http://mocked-server.com',
+      dashboard_url: 'http://mocked-dashboard.zenml.io',
+      deployment_type: 'cloud',
+      active_workspace_id: 'mock-workspace-id',
+      active_workspace_name: 'mock-workspace',
+    };
+
+    const expectedUrl =
+      'http://mocked-dashboard.zenml.io/workspaces/mock-workspace/stacks/stack-id-123/configuration';
 
     const openExternalStub = sandbox.stub(vscode.env, 'openExternal');
-
-    stackCommands.goToStackUrl({ label: 'Stack', id: stackId } as any);
+    await stackCommands.goToStackUrl({ label: 'Stack', id: stackId } as any);
 
     assert.strictEqual(openExternalStub.calledOnce, true, 'openExternal should be called once');
+
+    // Get the actual URL that was passed
+    const actualUrl = openExternalStub.args[0][0].toString();
     assert.strictEqual(
-      openExternalStub.args[0][0].toString(),
+      actualUrl,
       expectedUrl,
-      'Correct URL should be passed to openExternal'
-    );
-    assert.strictEqual(
-      showInformationMessageStub.calledOnce,
-      true,
-      'showInformationMessage should be called once'
-    );
-    assert.strictEqual(
-      showInformationMessageStub.args[0][0],
-      `Opening: ${expectedUrl}`,
-      'Correct information message should be shown'
+      `Incorrect URL: expected ${expectedUrl}, got ${actualUrl}`
     );
   });
 
@@ -153,7 +170,7 @@ suite('Stack Commands Test Suite', () => {
     sinon.assert.calledOnce(switchActiveStackStub);
     sinon.assert.calledOnce(showInformationMessageStub);
     sinon.assert.calledWith(showInformationMessageStub, `Active stack set to: MockStackName`);
-    sinon.assert.calledOnce(mockStackDataProvider.refresh);
+    sinon.assert.calledOnce(mockStackDataProvider.updateActiveStack);
     sinon.assert.calledOnce(mockStatusBar.refreshActiveStack);
   });
 });
