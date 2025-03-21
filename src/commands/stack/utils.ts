@@ -15,7 +15,7 @@ import { LSClient } from '../../services/LSClient';
 import { GetActiveStackResponse, SetActiveStackResponse } from '../../types/LSClientResponseTypes';
 import { showErrorMessage } from '../../utils/notifications';
 import { ServerDataProvider } from '../../views/activityBar';
-import { addWorkspaceAndProjectToUrl, getBaseUrl, isServerStatus } from '../server/utils';
+import { buildWorkspaceProjectUrl, getBaseUrl, isServerStatus } from '../server/utils';
 
 /**
  * Switches the active ZenML stack to the specified stack name.
@@ -78,6 +78,11 @@ export const storeActiveStack = async (id: string): Promise<void> => {
   await config.update('activeStackId', id, vscode.ConfigurationTarget.Global);
 };
 
+/**
+ * Gets the active stack id from the global configuration.
+ *
+ * @returns {string | undefined} The active stack id.
+ */
 export const getActiveStackIdFromConfig = (): string | undefined => {
   const config = vscode.workspace.getConfiguration('zenml');
   return config.get<string>('activeStackId');
@@ -99,7 +104,7 @@ export const getStackDashboardUrl = (id: string): string => {
   const baseUrl = getBaseUrl(serverStatus.dashboard_url);
   const suffix = `/stacks/${id}/configuration`;
 
-  const url = addWorkspaceAndProjectToUrl(baseUrl, serverStatus, suffix);
+  const url = buildWorkspaceProjectUrl(baseUrl, serverStatus, suffix);
 
   return url;
 };
