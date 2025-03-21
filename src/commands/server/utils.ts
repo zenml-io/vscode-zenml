@@ -85,22 +85,12 @@ function createServerStatusFromDetails(details: ZenServerDetails): ServerStatus 
         : storeConfig.url;
 
   const {
-    workspace_id,
-    workspace_name,
-    project_id,
-    project_name,
     organization_id,
     active_workspace_id,
+    active_workspace_name,
     active_project_id,
+    active_project_name,
   } = storeInfo;
-
-  console.log(`Dashboard URL: ${dashboardUrl}`);
-  console.log(
-    `Workspace ID: ${workspace_id || 'not set'}, Active workspace ID: ${active_workspace_id || 'not set'}`
-  );
-  console.log(
-    `Project ID: ${project_id || 'not set'}, Active project ID: ${active_project_id || 'not set'}`
-  );
 
   return {
     ...storeInfo,
@@ -109,11 +99,11 @@ function createServerStatusFromDetails(details: ZenServerDetails): ServerStatus 
     store_type: storeConfig?.type ?? 'unknown',
     dashboard_url: dashboardUrl,
 
-    // include active workspace and project IDs if available (for ZenML 0.80.0+)
-    workspace_id: active_workspace_id || workspace_id,
-    workspace_name,
-    project_id: active_project_id || project_id,
-    project_name,
+    // include active workspace and project IDs for ZenML 0.80.0+
+    active_workspace_id,
+    active_workspace_name,
+    active_project_id,
+    active_project_name,
     organization_id,
   };
 }
@@ -146,22 +136,23 @@ export function getBaseUrl(url: string): string {
  * @param {string} suffix - The suffix to append to the URL
  * @returns {string} - The URL with workspace and project or the original base URL if no workspace or project is available
  */
-export function addWorkspaceAndProjectToUrl(
+export function buildWorkspaceProjectUrl(
   baseUrl: string,
   status: ServerStatus,
   suffix: string = ''
 ): string {
-  if (status.workspace_name && status.project_name) {
-    return `${baseUrl}/workspaces/${status.workspace_name}/projects/${status.project_name}${suffix}`;
-  } else if (status.workspace_id && status.project_id) {
-    return `${baseUrl}/workspaces/${status.workspace_id}/projects/${status.project_id}${suffix}`;
-  } else if (status.workspace_name) {
-    return `${baseUrl}/workspaces/${status.workspace_name}${suffix}`;
-  } else if (status.workspace_id) {
-    return `${baseUrl}/workspaces/${status.workspace_id}${suffix}`;
-  }
+  const isProjectUrl = suffix.includes('/projects/');
+  const workspace = status.active_workspace_name || status.active_workspace_id;
+  const project = status.active_project_name || status.active_project_id;
 
-  return `${baseUrl}${suffix}`;
+  if (workspace) {
+    let url = `${baseUrl}/workspaces/${workspace}`;
+    if (project && !isProjectUrl) {
+      url += `/projects/${project}`;
+    }
+    return url + suffix;
+  }
+  return baseUrl + suffix;
 }
 
 export const serverUtils = {
