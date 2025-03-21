@@ -48,7 +48,7 @@ export class ProjectTreeItem extends vscode.TreeItem implements TreeItemWithChil
     if (isActive) {
       this.iconPath = new vscode.ThemeIcon('pass-filled', new vscode.ThemeColor('charts.green'));
     } else {
-      this.iconPath = new vscode.ThemeIcon('symbol-variable');
+      this.iconPath = new vscode.ThemeIcon('symbol-method');
     }
 
     this.id = this.project.id;

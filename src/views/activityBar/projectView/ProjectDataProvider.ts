@@ -62,8 +62,8 @@ export class ProjectDataProvider extends PaginatedDataProvider {
 
       this.refresh();
       this.eventBus.off(LSP_ZENML_PROJECT_CHANGED, () => this.refresh());
-      this.eventBus.on(LSP_ZENML_PROJECT_CHANGED, (activeProjectId: string) => {
-        this.updateActiveProject(activeProjectId);
+      this.eventBus.on(LSP_ZENML_PROJECT_CHANGED, (activeProjectName: string) => {
+        this.updateActiveProject(activeProjectName);
       });
     });
   }
@@ -145,6 +145,15 @@ export class ProjectDataProvider extends PaginatedDataProvider {
           totalPages: total_pages,
         };
 
+        if (projects.length === 0) {
+          const noProjectsItem = new TreeItem(
+            'No projects found for this workspace. Register a project to see it listed here.'
+          );
+          noProjectsItem.contextValue = 'noProjects';
+          noProjectsItem.iconPath = new ThemeIcon('info');
+          return [noProjectsItem];
+        }
+
         return projects.map(
           (project: Project) =>
             new ProjectTreeItem(project, project.name, this.isActiveProject(project.name))
@@ -222,7 +231,7 @@ export class ProjectDataProvider extends PaginatedDataProvider {
           if (item.isActive) {
             item.iconPath = new ThemeIcon('pass-filled', new ThemeColor('charts.green'));
           } else {
-            item.iconPath = new ThemeIcon('symbol-variable');
+            item.iconPath = new ThemeIcon('symbol-method');
           }
 
           // Update the children items to reflect the new active status
