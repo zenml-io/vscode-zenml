@@ -137,6 +137,11 @@
           "type": "string",
           "default": "",
           "description": "Active stack id for the ZenML server"
+        },
+        "zenml.activeProjectName": {
+          "type": "string",
+          "default": "",
+          "description": "Active project name for the ZenML server"
         }
       }
     },
@@ -150,6 +155,30 @@
         "command": "zenml-python.restart",
         "title": "Restart LSP Server",
         "category": "ZenML"
+      },
+      {
+        "command": "zenml.setProjectItemsPerPage",
+        "title": "Set Projects Per Page",
+        "icon": "$(layers)",
+        "category": "ZenML Projects"
+      },
+      {
+        "command": "zenml.refreshProjectView",
+        "title": "Refresh Project View",
+        "icon": "$(refresh)",
+        "category": "ZenML Projects"
+      },
+      {
+        "command": "zenml.setActiveProject",
+        "title": "Set Active Project",
+        "icon": "$(check)",
+        "category": "ZenML Projects"
+      },
+      {
+        "command": "zenml.goToProjectUrl",
+        "title": "Go to URL",
+        "icon": "$(globe)",
+        "category": "ZenML Projects"
       },
       {
         "command": "zenml.connectServer",
@@ -328,6 +357,11 @@
           "icon": "$(layers)"
         },
         {
+          "id": "zenmlProjectView",
+          "name": "Projects",
+          "icon": "$(symbol-variable)"
+        },
+        {
           "id": "zenmlComponentView",
           "name": "Stack Components",
           "icon": "$(extensions)"
@@ -366,6 +400,16 @@
           "when": "serverCommandsRegistered && view == zenmlServerView",
           "command": "zenml.refreshServerStatus",
           "group": "navigation"
+        },
+        {
+          "when": "projectCommandsRegistered && view == zenmlProjectView",
+          "command": "zenml.setProjectItemsPerPage",
+          "group": "navigation@1"
+        },
+        {
+          "when": "projectCommandsRegistered && view == zenmlProjectView",
+          "command": "zenml.refreshProjectView",
+          "group": "navigation@2"
         },
         {
           "when": "stackCommandsRegistered && view == zenmlStackView",
@@ -414,6 +458,16 @@
         }
       ],
       "view/item/context": [
+        {
+          "when": "projectCommandsRegistered && view == zenmlProjectView && viewItem == project",
+          "command": "zenml.setActiveProject",
+          "group": "inline@1"
+        },
+        {
+          "when": "projectCommandsRegistered && view == zenmlProjectView && viewItem == project",
+          "command": "zenml.goToProjectUrl",
+          "group": "inline@2"
+        },
         {
           "when": "stackCommandsRegistered && view == zenmlStackView && viewItem == stack",
           "command": "zenml.setActiveStack",
