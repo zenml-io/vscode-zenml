@@ -84,17 +84,17 @@ export class ServerTreeItem extends TreeItem {
     }
 
     // Show workspace and project information if available (for ZenML 0.80.0+)
-    if (this.serverStatus.workspace_id || this.serverStatus.workspace_name) {
-      const wsName = this.serverStatus.workspace_name || 'Unknown';
-      const wsId = this.serverStatus.workspace_id || 'Unknown';
+    if (this.serverStatus.active_workspace_id || this.serverStatus.active_workspace_name) {
+      const wsName = this.serverStatus.active_workspace_name || 'Unknown';
+      const wsId = this.serverStatus.active_workspace_id || 'Unknown';
       children.push(
         new ServerDetailTreeItem('Workspace', `${wsName} (ID: ${wsId})`, 'organization')
       );
     }
 
-    if (this.serverStatus.project_id || this.serverStatus.project_name) {
-      const projName = this.serverStatus.project_name || 'Unknown';
-      const projId = this.serverStatus.project_id || 'Unknown';
+    if (this.serverStatus.active_project_id || this.serverStatus.active_project_name) {
+      const projName = this.serverStatus.active_project_name || 'Unknown';
+      const projId = this.serverStatus.active_project_id || 'Unknown';
       children.push(new ServerDetailTreeItem('Project', `${projName} (ID: ${projId})`, 'project'));
     }
 
