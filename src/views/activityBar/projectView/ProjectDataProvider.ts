@@ -50,6 +50,16 @@ export class ProjectDataProvider extends PaginatedDataProvider {
   }
 
   /**
+   * Triggers the loading state for a given entity.
+   *
+   * @param {string} entity The entity to trigger the loading state for.
+   */
+  private triggerLoadingState = (entity: string) => {
+    this.items = [LOADING_TREE_ITEMS.get(entity)!];
+    this._onDidChangeTreeData.fire(undefined);
+  };
+
+  /**
    * Handles the change in the project.
    *
    * @param {string} projectName The new project name.
@@ -85,16 +95,6 @@ export class ProjectDataProvider extends PaginatedDataProvider {
       this.eventBus.off(LSP_ZENML_PROJECT_CHANGED, this.projectChangeHandler);
       this.eventBus.on(LSP_ZENML_PROJECT_CHANGED, this.projectChangeHandler);
     }
-  };
-
-  /**
-   * Triggers the loading state for a given entity.
-   *
-   * @param {string} entity The entity to trigger the loading state for.
-   */
-  private triggerLoadingState = (entity: string) => {
-    this.items = [LOADING_TREE_ITEMS.get(entity)!];
-    this._onDidChangeTreeData.fire(undefined);
   };
 
   /**

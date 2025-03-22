@@ -42,6 +42,18 @@ export class PipelineDataProvider extends PaginatedDataProvider {
   }
 
   /**
+   * Retrieves the singleton instance of ServerDataProvider.
+   *
+   * @returns {PipelineDataProvider} The singleton instance.
+   */
+  public static getInstance(): PipelineDataProvider {
+    if (!PipelineDataProvider.instance) {
+      PipelineDataProvider.instance = new PipelineDataProvider();
+    }
+    return PipelineDataProvider.instance;
+  }
+
+  /**
    * Subscribes to relevant events to trigger a refresh of the tree view.
    */
   public subscribeToEvents(): void {
@@ -51,6 +63,16 @@ export class PipelineDataProvider extends PaginatedDataProvider {
     this.eventBus.on(LSCLIENT_STATE_CHANGED, this.lsClientStateChangeHandler);
     this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, this.zenmlClientStateChangeHandler);
   }
+
+  /**
+   * Triggers the loading state for a given entity.
+   *
+   * @param {string} entity The entity to trigger the loading state for.
+   */
+  private triggerLoadingState = (entity: string) => {
+    this.items = [LOADING_TREE_ITEMS.get(entity)!];
+    this._onDidChangeTreeData.fire(undefined);
+  };
 
   /**
    * Handles the change in the project.
@@ -89,28 +111,6 @@ export class PipelineDataProvider extends PaginatedDataProvider {
       this.eventBus.on(LSP_ZENML_PROJECT_CHANGED, this.projectChangeHandler);
     }
   };
-
-  /**
-   * Triggers the loading state for a given entity.
-   *
-   * @param {string} entity The entity to trigger the loading state for.
-   */
-  private triggerLoadingState = (entity: string) => {
-    this.items = [LOADING_TREE_ITEMS.get(entity)!];
-    this._onDidChangeTreeData.fire(undefined);
-  };
-
-  /**
-   * Retrieves the singleton instance of ServerDataProvider.
-   *
-   * @returns {PipelineDataProvider} The singleton instance.
-   */
-  public static getInstance(): PipelineDataProvider {
-    if (!PipelineDataProvider.instance) {
-      PipelineDataProvider.instance = new PipelineDataProvider();
-    }
-    return PipelineDataProvider.instance;
-  }
 
   /**
    * Refreshes the "Pipeline Runs" view by fetching the latest pipeline run data and updating the view.

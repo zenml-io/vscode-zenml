@@ -73,35 +73,34 @@ export class EnvironmentDataProvider implements TreeDataProvider<TreeItem> {
    *
    * @param {State} status The new LSP client state.
    */
-  private lsClientStateChangeHandler(status: State) {
+  private lsClientStateChangeHandler = (status: State) => {
     this.lsClientStatus = status;
     if (status !== State.Running) {
       this.zenmlClientReady = false;
       this.zenmlInstallationStatus = null;
-      this.refresh();
     }
     this.refresh();
-  }
+  };
 
   /**
    * Handles the change in the ZenML client state.
    *
    * @param {boolean} isReady The new ZenML client state.
    */
-  private zenmlClientStateChangeHandler(isReady: boolean) {
+  private zenmlClientStateChangeHandler = (isReady: boolean) => {
     this.zenmlClientReady = isReady;
     this.refresh();
-  }
+  };
 
   /**
    * Handles the change in the ZenML installation status.
    *
    * @param {LSNotificationIsZenMLInstalled} params The new ZenML installation status.
    */
-  private zenmlInstallationStateChangeHandler(params: LSNotificationIsZenMLInstalled) {
+  private zenmlInstallationStateChangeHandler = (params: LSNotificationIsZenMLInstalled) => {
     this.zenmlInstallationStatus = params;
     this.refresh();
-  }
+  };
 
   /**
    * Refreshes the "Environment" view by fetching the latest environment data and updating the view.

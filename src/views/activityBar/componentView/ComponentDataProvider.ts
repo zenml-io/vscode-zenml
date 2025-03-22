@@ -49,6 +49,16 @@ export class ComponentDataProvider extends PaginatedDataProvider {
   }
 
   /**
+   * Triggers the loading state for a given entity.
+   *
+   * @param {string} entity The entity to trigger the loading state for.
+   */
+  private triggerLoadingState = (entity: string) => {
+    this.items = [LOADING_TREE_ITEMS.get(entity)!];
+    this._onDidChangeTreeData.fire(undefined);
+  };
+
+  /**
    * Handles the change in the LSP client state.
    *
    * @param {State} status The new LSP client state.
@@ -73,16 +83,6 @@ export class ComponentDataProvider extends PaginatedDataProvider {
     } else {
       this.refresh();
     }
-  };
-
-  /**
-   * Triggers the loading state for a given entity.
-   *
-   * @param {string} entity The entity to trigger the loading state for.
-   */
-  private triggerLoadingState = (entity: string) => {
-    this.items = [LOADING_TREE_ITEMS.get(entity)!];
-    this._onDidChangeTreeData.fire(undefined);
   };
 
   /**

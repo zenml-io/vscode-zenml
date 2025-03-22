@@ -40,6 +40,18 @@ export class StackDataProvider extends PaginatedDataProvider {
   }
 
   /**
+   * Retrieves the singleton instance of StackDataProvider.
+   *
+   * @returns {StackDataProvider} The singleton instance.
+   */
+  public static getInstance(): StackDataProvider {
+    if (!StackDataProvider.instance) {
+      StackDataProvider.instance = new StackDataProvider();
+    }
+    return StackDataProvider.instance;
+  }
+
+  /**
    * Subscribes to relevant events to trigger a refresh of the tree view.
    */
   public subscribeToEvents(): void {
@@ -49,6 +61,16 @@ export class StackDataProvider extends PaginatedDataProvider {
     this.eventBus.on(LSCLIENT_STATE_CHANGED, this.lsClientStateChangeHandler);
     this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, this.zenmlClientStateChangeHandler);
   }
+
+  /**
+   * Triggers the loading state for a given entity.
+   *
+   * @param {string} entity The entity to trigger the loading state for.
+   */
+  private triggerLoadingState = (entity: string) => {
+    this.items = [LOADING_TREE_ITEMS.get(entity)!];
+    this._onDidChangeTreeData.fire(undefined);
+  };
 
   /**
    * Handles the change in the LSP client state.
@@ -80,16 +102,6 @@ export class StackDataProvider extends PaginatedDataProvider {
   };
 
   /**
-   * Triggers the loading state for a given entity.
-   *
-   * @param {string} entity The entity to trigger the loading state for.
-   */
-  private triggerLoadingState = (entity: string) => {
-    this.items = [LOADING_TREE_ITEMS.get(entity)!];
-    this._onDidChangeTreeData.fire(undefined);
-  };
-
-  /**
    * Handles the change in the active stack.
    *
    * @param {string} activeStackId The ID of the newly active stack.
@@ -99,25 +111,12 @@ export class StackDataProvider extends PaginatedDataProvider {
   };
 
   /**
-   * Retrieves the singleton instance of StackDataProvider.
-   *
-   * @returns {StackDataProvider} The singleton instance.
-   */
-  public static getInstance(): StackDataProvider {
-    if (!StackDataProvider.instance) {
-      StackDataProvider.instance = new StackDataProvider();
-    }
-    return StackDataProvider.instance;
-  }
-
-  /**
    * Refreshes the tree view data by refetching stacks and triggering the onDidChangeTreeData event.
    *
    * @returns {Promise<void>} A promise that resolves when the tree view data has been refreshed.
    */
   public async refresh(): Promise<void> {
-    this.items = [LOADING_TREE_ITEMS.get('stacks')!];
-    this._onDidChangeTreeData.fire(undefined);
+    this.triggerLoadingState('stacks');
 
     const page = this.pagination.currentPage;
     const itemsPerPage = this.pagination.itemsPerPage;

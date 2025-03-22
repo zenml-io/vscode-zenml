@@ -99,6 +99,8 @@ const goToProjectUrl = (node: ProjectTreeItem) => {
       console.log(error);
       vscode.window.showErrorMessage(`Failed to open project URL: ${error}`);
     }
+  } else {
+    vscode.window.showErrorMessage(`Could not determine URL for project: ${node.project.name}`);
   }
 };
 
