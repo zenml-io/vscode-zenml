@@ -716,8 +716,10 @@ class ProjectsWrapper:
                 "current_page": page,
                 "items_per_page": size,
             }
-        except Exception as e:
+        except self.ZenMLBaseException as e:
             return {"error": f"Failed to list projects: {str(e)}"}
+        except Exception as e:
+            return {"error": f"Unexpected error listing projects: {str(e)}"}
 
     @serialize_response
     def get_active_project(self) -> Union[Dict[str, str], ErrorResponse]:
@@ -736,8 +738,10 @@ class ProjectsWrapper:
                 "created": active_project.body.created.isoformat(),
                 "updated": active_project.body.updated.isoformat(),
             }
-        except Exception as e:
+        except self.ZenMLBaseException as e:
             return {"error": f"Failed to get active project: {str(e)}"}
+        except Exception as e:
+            return {"error": f"Unexpected error getting active project: {str(e)}"}
 
     @serialize_response
     def set_active_project(self, args) -> Union[Dict[str, Any], ErrorResponse]:
@@ -750,12 +754,13 @@ class ProjectsWrapper:
             A dictionary containing the active project information or an error message.
         """
         try:
+            if not args or len(args) < 1:
+                return {"error": "Project ID is required"}
+
             project_id = args[0]
 
-            # Use client to set the active project
             self.client.set_active_project(project_id)
 
-            # Get the updated active project
             active_project = self.client.active_project
 
             return {
@@ -765,8 +770,10 @@ class ProjectsWrapper:
                 "created": active_project.body.created.isoformat(),
                 "updated": active_project.body.updated.isoformat(),
             }
-        except Exception as e:
+        except self.ZenMLBaseException as e:
             return {"error": f"Failed to set active project: {str(e)}"}
+        except Exception as e:
+            return {"error": f"Unexpected error setting active project: {str(e)}"}
 
     @serialize_response
     def get_project_by_name(self, project_name: str) -> Union[Dict[str, str], ErrorResponse]:
