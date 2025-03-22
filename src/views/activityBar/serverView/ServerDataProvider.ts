@@ -41,27 +41,48 @@ export class ServerDataProvider implements TreeDataProvider<TreeItem> {
    * Subscribes to relevant events to trigger a refresh of the tree view.
    */
   public subscribeToEvents(): void {
-    this.eventBus.off(LSCLIENT_STATE_CHANGED, () => this.refresh());
-    this.eventBus.off(LSP_ZENML_CLIENT_INITIALIZED, () => this.refresh());
+    this.eventBus.off(LSCLIENT_STATE_CHANGED, this.lsClientStateChangeHandler);
+    this.eventBus.off(LSP_ZENML_CLIENT_INITIALIZED, this.zenmlClientStateChangeHandler);
 
-    this.eventBus.on(LSCLIENT_STATE_CHANGED, (newState: State) => {
-      if (newState === State.Running) {
-        this.refresh();
-      } else {
-        this.currentStatus = [LOADING_TREE_ITEMS.get('lsClient')!];
-        this._onDidChangeTreeData.fire(undefined);
-      }
-    });
+    this.eventBus.on(LSCLIENT_STATE_CHANGED, this.lsClientStateChangeHandler);
+    this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, this.zenmlClientStateChangeHandler);
+  }
 
-    this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, (isInitialized: boolean) => {
-      this.zenmlClientReady = isInitialized;
-      if (!isInitialized) {
-        this.currentStatus = [LOADING_TREE_ITEMS.get('zenmlClient')!];
-        this._onDidChangeTreeData.fire(undefined);
-        return;
-      }
+  /**
+   * Handles the change in the LSP client state.
+   *
+   * @param {State} status The new LSP client state.
+   */
+  private lsClientStateChangeHandler(status: State) {
+    if (status !== State.Running) {
+      this.triggerLoadingState('lsClient');
+    } else {
       this.refresh();
-    });
+    }
+  }
+
+  /**
+   * Handles the change in the ZenML client state.
+   *
+   * @param {boolean} isInitialized The new ZenML client state.
+   */
+  private zenmlClientStateChangeHandler(isInitialized: boolean) {
+    this.zenmlClientReady = isInitialized;
+    if (!isInitialized) {
+      this.triggerLoadingState('zenmlClient');
+    } else {
+      this.refresh();
+    }
+  }
+
+  /**
+   * Triggers the loading state for a given entity.
+   *
+   * @param {string} entity The entity to trigger the loading state for.
+   */
+  private triggerLoadingState(entity: string) {
+    this.currentStatus = [LOADING_TREE_ITEMS.get(entity)!];
+    this._onDidChangeTreeData.fire(undefined);
   }
 
   /**
