@@ -156,6 +156,27 @@ class ListFlavorsResponse(TypedDict):
     items: List[Flavor]
 
 
+class PipelineRun(TypedDict):
+    id: str
+    name: str
+    status: str
+    stackName: str
+    startTime: Optional[str]
+    endTime: Optional[str]
+    os: Optional[str]
+    osVersion: Optional[str]
+    pythonVersion: Optional[str]
+
+
+class ListPipelineRunsResponse(TypedDict):
+    runs: List[PipelineRun]
+    total: int
+    total_pages: int
+    current_page: int
+    items_per_page: int
+    project_name: Optional[str]
+
+
 class Workspace(TypedDict):
     id: str
     name: str
