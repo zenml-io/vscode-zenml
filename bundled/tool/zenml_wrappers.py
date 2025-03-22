@@ -247,11 +247,11 @@ class ZenServerWrapper:
                 "server_url": store_info.server_url,
                 "dashboard_url": store_info.dashboard_url,
                 # Add workspace, project and organization info for ZenML 0.80.0+ support
-                "active_workspace_id": active_workspace_id,
+                "active_workspace_id": str(active_workspace_id),
                 "active_workspace_name": active_workspace_name,
-                "active_project_id": active_project_id,
+                "active_project_id": str(active_project_id),
                 "active_project_name": active_project_name,
-                "organization_id": organization_id,
+                "organization_id": str(organization_id),
                 "organization_name": organization_name,
             },
             "storeConfig": {
