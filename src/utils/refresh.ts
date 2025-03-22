@@ -11,7 +11,12 @@
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import { ZenServerDetails } from '../types/ServerInfoTypes';
-import { PipelineDataProvider, ServerDataProvider, StackDataProvider } from '../views/activityBar';
+import {
+  PipelineDataProvider,
+  ProjectDataProvider,
+  ServerDataProvider,
+  StackDataProvider,
+} from '../views/activityBar';
 import ZenMLStatusBar from '../views/statusBar';
 
 // Type definition for a refresh function that takes a global configuration object
@@ -105,7 +110,8 @@ export async function refreshUIComponents(): Promise<void> {
   await ServerDataProvider.getInstance().refresh();
   await StackDataProvider.getInstance().refresh();
   await PipelineDataProvider.getInstance().refresh();
-  await ZenMLStatusBar.getInstance().refreshActiveStack();
+  await ProjectDataProvider.getInstance().refresh();
+  await ZenMLStatusBar.getInstance().refresh();
 }
 
 export const refreshUtils = {
