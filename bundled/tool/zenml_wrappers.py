@@ -575,7 +575,7 @@ class WorkspacesWrapper:
         """Lists workspaces from ZenML Pro.
 
         Args:
-            args: A tuple containing (page, size)
+            args: A tuple containing (offset, limit)
 
         Returns:
             A dictionary containing workspaces or an error message.
@@ -587,12 +587,11 @@ class WorkspacesWrapper:
             # Initialize Pro client for workspace access
             pro_client = self.ZenMLProClient(url=pro_api_url)
 
-            page = args[0] if len(args) > 0 else 0
-            size = args[1] if len(args) > 1 else 10
+            offset = args[0] if len(args) > 0 else 0
+            limit = args[1] if len(args) > 1 else 10
 
-            workspaces = pro_client.workspace.list(offset=page * size, limit=size)
+            workspaces = pro_client.workspace.list(offset=offset, limit=limit)
 
-            # Process workspaces
             workspaces_data = [
                 {
                     "id": str(workspace.id),
@@ -601,16 +600,20 @@ class WorkspacesWrapper:
                     "display_name": workspace.display_name,
                     "organization_id": str(workspace.organization.id),
                     "organization_name": workspace.organization.name,
+                    "status": workspace.status,
+                    "zenml_version": workspace.version,
+                    "zenml_server_url": workspace.url,
+                    "dashboard_url": workspace.dashboard_url,
+                    "dashboard_organization_url": workspace.dashboard_organization_url,
                 }
                 for workspace in workspaces
             ]
 
             return {
                 "workspaces": workspaces_data,
-                "total": len(workspaces_data),  # This is an approximation
-                "total_pages": 1,  # This is an approximation
-                "current_page": page,
-                "items_per_page": size,
+                "total": len(workspaces_data),
+                "offset": offset,
+                "limit": limit,
             }
         except Exception as e:
             return {"error": f"Failed to list workspaces: {str(e)}"}
