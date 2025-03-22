@@ -224,10 +224,8 @@ class ZenServerWrapper:
         active_workspace_id = store_info.metadata.get("workspace_id")
         active_workspace_name = store_info.metadata.get("workspace_name")
 
-        # Get active project
         active_project_id = None
         active_project_name = None
-
         active_project = self._projects_wrapper.get_active_project()
         # get_active_project uses @serialize_response, which returns a dict
         if active_project and not active_project.get("error"):
@@ -247,11 +245,11 @@ class ZenServerWrapper:
                 "server_url": store_info.server_url,
                 "dashboard_url": store_info.dashboard_url,
                 # Add workspace, project and organization info for ZenML 0.80.0+ support
-                "active_workspace_id": str(active_workspace_id),
+                "active_workspace_id": str(active_workspace_id) if active_workspace_id else None,
                 "active_workspace_name": active_workspace_name,
-                "active_project_id": str(active_project_id),
+                "active_project_id": str(active_project_id) if active_project_id else None,
                 "active_project_name": active_project_name,
-                "organization_id": str(organization_id),
+                "organization_id": str(organization_id) if organization_id else None,
                 "organization_name": organization_name,
             },
             "storeConfig": {
@@ -661,8 +659,10 @@ class WorkspacesWrapper:
                 "name": workspace.name,
                 "organization_id": str(workspace.organization_id),
             }
-        except Exception as e:
+        except self.ZenMLBaseException as e:
             return {"error": f"Failed to get active workspace: {str(e)}"}
+        except Exception as e:
+            return {"error": f"Unexpected error getting active workspace: {str(e)}"}
 
 
 class ProjectsWrapper:
@@ -795,8 +795,10 @@ class ProjectsWrapper:
                 "created": project.body.created.isoformat(),
                 "updated": project.body.updated.isoformat(),
             }
-        except Exception as e:
+        except self.ZenMLBaseException as e:
             return {"error": f"Failed to get project by name: {str(e)}"}
+        except Exception as e:
+            return {"error": f"Unexpected error getting project by name: {str(e)}"}
 
 
 class StacksWrapper:
