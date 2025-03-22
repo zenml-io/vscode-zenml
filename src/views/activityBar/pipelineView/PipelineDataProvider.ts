@@ -162,7 +162,7 @@ export class PipelineDataProvider extends PaginatedDataProvider {
       }
 
       if (!result || 'error' in result) {
-        if (result.message && result.message.includes('No project')) {
+        if (result?.message && result.message.includes('No project')) {
           return createErrorItem({
             errorType: 'RuntimeError',
             message: 'No project found. Register a project to see it listed here.',
