@@ -41,26 +41,49 @@ export class ComponentDataProvider extends PaginatedDataProvider {
    * Subscribes to relevant events to trigger a refresh of the tree view.
    */
   public subscribeToEvents(): void {
-    this.eventBus.on(LSCLIENT_STATE_CHANGED, (newState: State) => {
-      if (newState === State.Running) {
-        this.refresh();
-      } else {
-        this.items = [LOADING_TREE_ITEMS.get('lsClient')!];
-        this._onDidChangeTreeData.fire(undefined);
-      }
-    });
+    this.eventBus.off(LSCLIENT_STATE_CHANGED, this.lsClientStateChangeHandler);
+    this.eventBus.off(LSP_ZENML_CLIENT_INITIALIZED, this.zenmlClientStateChangeHandler);
 
-    this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, (isInitialized: boolean) => {
-      this.zenmlClientReady = isInitialized;
-
-      if (!isInitialized) {
-        this.items = [LOADING_TREE_ITEMS.get('components')!];
-        this._onDidChangeTreeData.fire(undefined);
-        return;
-      }
-      this.refresh();
-    });
+    this.eventBus.on(LSCLIENT_STATE_CHANGED, this.lsClientStateChangeHandler);
+    this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, this.zenmlClientStateChangeHandler);
   }
+
+  /**
+   * Handles the change in the LSP client state.
+   *
+   * @param {State} status The new LSP client state.
+   */
+  private lsClientStateChangeHandler = (status: State) => {
+    if (status === State.Running) {
+      this.refresh();
+    } else {
+      this.triggerLoadingState('lsClient');
+    }
+  };
+
+  /**
+   * Handles the change in the ZenML client state.
+   *
+   * @param {boolean} isInitialized The new ZenML client state.
+   */
+  private zenmlClientStateChangeHandler = (isInitialized: boolean) => {
+    this.zenmlClientReady = isInitialized;
+    if (!isInitialized) {
+      this.triggerLoadingState('components');
+    } else {
+      this.refresh();
+    }
+  };
+
+  /**
+   * Triggers the loading state for a given entity.
+   *
+   * @param {string} entity The entity to trigger the loading state for.
+   */
+  private triggerLoadingState = (entity: string) => {
+    this.items = [LOADING_TREE_ITEMS.get(entity)!];
+    this._onDidChangeTreeData.fire(undefined);
+  };
 
   /**
    * Retrieves the singleton instance of ComponentDataProvider
@@ -77,10 +100,11 @@ export class ComponentDataProvider extends PaginatedDataProvider {
 
   /**
    * Refreshes the view.
+   *
+   * @returns {Promise<void>} A promise that resolves when the view is refreshed.
    */
   public async refresh(): Promise<void> {
-    this.items = [LOADING_TREE_ITEMS.get('components')!];
-    this._onDidChangeTreeData.fire(undefined);
+    this.triggerLoadingState('components');
 
     const page = this.pagination.currentPage;
     const itemsPerPage = this.pagination.itemsPerPage;
@@ -95,6 +119,13 @@ export class ComponentDataProvider extends PaginatedDataProvider {
     this._onDidChangeTreeData.fire(undefined);
   }
 
+  /**
+   * Fetches the components from the ZenML server.
+   *
+   * @param {number} page The page number to fetch.
+   * @param {number} itemsPerPage The number of items per page to fetch.
+   * @returns {Promise<vscode.TreeItem[]>} The components.
+   */
   private async fetchComponents(
     page: number = 1,
     itemsPerPage: number = 10
@@ -135,7 +166,6 @@ export class ComponentDataProvider extends PaginatedDataProvider {
           totalPages: total_pages,
         };
 
-        // Create a map to group components by type
         const componentsMap = new Map<string, ComponentTreeItem[]>();
 
         items.forEach((component: StackComponent) => {
