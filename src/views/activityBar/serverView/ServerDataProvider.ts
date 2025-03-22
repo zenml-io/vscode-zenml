@@ -91,10 +91,10 @@ export class ServerDataProvider implements TreeDataProvider<TreeItem> {
    * @returns {ServerDataProvider} The singleton instance.
    */
   public static getInstance(): ServerDataProvider {
-    if (!this.instance) {
-      this.instance = new ServerDataProvider();
+    if (!ServerDataProvider.instance) {
+      ServerDataProvider.instance = new ServerDataProvider();
     }
-    return this.instance;
+    return ServerDataProvider.instance;
   }
 
   /**

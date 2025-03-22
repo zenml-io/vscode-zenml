@@ -104,10 +104,10 @@ export class StackDataProvider extends PaginatedDataProvider {
    * @returns {StackDataProvider} The singleton instance.
    */
   public static getInstance(): StackDataProvider {
-    if (!this.instance) {
-      this.instance = new StackDataProvider();
+    if (!StackDataProvider.instance) {
+      StackDataProvider.instance = new StackDataProvider();
     }
-    return this.instance;
+    return StackDataProvider.instance;
   }
 
   /**

@@ -62,10 +62,10 @@ export class EnvironmentDataProvider implements TreeDataProvider<TreeItem> {
    * @returns {EnvironmentDataProvider} The singleton instance.
    */
   public static getInstance(): EnvironmentDataProvider {
-    if (!this.instance) {
-      this.instance = new EnvironmentDataProvider();
+    if (!EnvironmentDataProvider.instance) {
+      EnvironmentDataProvider.instance = new EnvironmentDataProvider();
     }
-    return this.instance;
+    return EnvironmentDataProvider.instance;
   }
 
   /**

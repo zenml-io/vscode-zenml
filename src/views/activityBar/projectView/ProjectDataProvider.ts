@@ -103,10 +103,10 @@ export class ProjectDataProvider extends PaginatedDataProvider {
    * @returns {ProjectDataProvider} The singleton instance.
    */
   public static getInstance(): ProjectDataProvider {
-    if (!this.instance) {
-      this.instance = new ProjectDataProvider();
+    if (!ProjectDataProvider.instance) {
+      ProjectDataProvider.instance = new ProjectDataProvider();
     }
-    return this.instance;
+    return ProjectDataProvider.instance;
   }
 
   /**

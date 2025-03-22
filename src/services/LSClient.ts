@@ -268,9 +268,9 @@ export class LSClient {
    * @returns {LSClient} The singleton instance.
    */
   public static getInstance(): LSClient {
-    if (!this.instance) {
-      this.instance = new LSClient();
+    if (!LSClient.instance) {
+      LSClient.instance = new LSClient();
     }
-    return this.instance;
+    return LSClient.instance;
   }
 }
