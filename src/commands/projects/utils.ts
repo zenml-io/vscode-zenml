@@ -25,7 +25,7 @@ import { buildWorkspaceProjectUrl, getBaseUrl, isServerStatus } from '../server/
 /**
  * Sets the active project and emits an event for the project change.
  *
- * @param {string} projectId - The ID of the project to set as active.
+ * @param {string} projectName - The name of the project to set as active.
  * @returns {Promise<Project | undefined>} - A promise that resolves to the project.
  */
 export async function switchActiveProject(projectName: string): Promise<Project | undefined> {
@@ -70,7 +70,7 @@ export const getActiveProject = async (): Promise<{ id: string; name: string } |
 /**
  * Stores the specified ZenML project id in the global configuration.
  *
- * @param {string} id - The id of the ZenML project to be stored.
+ * @param {string} projectName - The name of the ZenML project to be stored.
  * @returns {Promise<void>} A promise that resolves when the project information has been successfully stored.
  */
 export const storeActiveProject = async (projectName: string): Promise<void> => {
