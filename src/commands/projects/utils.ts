@@ -92,9 +92,13 @@ export const getActiveProjectNameFromConfig = (): string | undefined => {
  * Constructs the dashboard URL for a project.
  *
  * @param {string} projectName - The name of the project.
- * @returns {string | undefined} - The dashboard URL for the project.
+ * @returns {string} - The dashboard URL for the project.
  */
-export function getProjectDashboardUrl(projectName: string): string | undefined {
+export function getProjectDashboardUrl(projectName: string): string {
+  if (!projectName) {
+    return '';
+  }
+
   const serverStatus = ServerDataProvider.getInstance().getCurrentStatus();
 
   if (!isServerStatus(serverStatus) || serverStatus.deployment_type === 'other') {

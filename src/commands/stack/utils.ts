@@ -95,6 +95,10 @@ export const getActiveStackIdFromConfig = (): string | undefined => {
  * @returns {string} - The URL corresponding to the pipeline in the ZenML Dashboard
  */
 export const getStackDashboardUrl = (id: string): string => {
+  if (!id) {
+    return '';
+  }
+
   const serverStatus = ServerDataProvider.getInstance().getCurrentStatus();
   if (!isServerStatus(serverStatus) || serverStatus.deployment_type === 'other') {
     return '';

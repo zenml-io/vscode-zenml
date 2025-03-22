@@ -21,6 +21,10 @@ import { buildWorkspaceProjectUrl, getBaseUrl, isServerStatus } from '../server/
  * @returns {string} - The URL corresponding to the pipeline run in the ZenML Dashboard
  */
 export const getPipelineRunDashboardUrl = (id: string): string => {
+  if (!id) {
+    return '';
+  }
+
   const status = ServerDataProvider.getInstance().getCurrentStatus();
 
   if (!isServerStatus(status) || status.deployment_type === 'other') {
