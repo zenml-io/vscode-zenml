@@ -20,6 +20,7 @@ from type_hints import (
     GraphResponse,
     ListComponentsResponse,
     ListFlavorsResponse,
+    ListPipelineRunsResponse,
     ListProjectsResponse,
     ListWorkspacesResponse,
     RunArtifactResponse,
@@ -342,24 +343,40 @@ class PipelineRunsWrapper:
         """Returns the ZenML ZenMLBaseException class."""
         return self.lazy_import("zenml.exceptions", "ZenMLBaseException")
 
-    def fetch_pipeline_runs(self, args):
-        """Fetches all ZenML pipeline runs.
+    @serialize_response
+    def fetch_pipeline_runs(self, args) -> Union[ListPipelineRunsResponse, ErrorResponse]:
+        """Fetches ZenML pipeline runs with optional project filtering.
+
+        Args:
+            args (list): List containing:
+                - page (int): The page number to fetch
+                - max_size (int): Maximum items per page
+                - project_name (str, optional): Filter runs by project name
 
         Returns:
-            list: List of dictionaries containing pipeline run data.
+            dict: Dictionary containing pipeline run data or error information.
         """
+        if len(args) < 2:
+            return {"error": "Not enough arguments provided. Required: page, max_size"}
+
         page = args[0]
         max_size = args[1]
-        project_name = args[2]
+
+        project_name = args[2] if len(args) > 2 else None
 
         try:
-            runs_page = self.client.list_pipeline_runs(
-                sort_by="desc:updated",
-                page=page,
-                size=max_size,
-                hydrate=True,
-                project=project_name,
-            )
+            query_params = {
+                "sort_by": "desc:updated",
+                "page": page,
+                "size": max_size,
+                "hydrate": True,
+            }
+
+            if project_name:
+                query_params["project"] = project_name
+
+            runs_page = self.client.list_pipeline_runs(**query_params)
+
             runs_data = [
                 {
                     "id": str(run.id),
@@ -390,6 +407,7 @@ class PipelineRunsWrapper:
                 "total_pages": runs_page.total_pages,
                 "current_page": page,
                 "items_per_page": max_size,
+                "project_name": project_name,
             }
         except self.ValidationError as e:
             return {"error": "ValidationError", "message": str(e)}
@@ -686,6 +704,7 @@ class ProjectsWrapper:
                     "display_name": project.body.display_name,
                     "created": project.body.created.isoformat(),
                     "updated": project.body.updated.isoformat(),
+                    "metadata": project.metadata,
                 }
                 for project in projects.items
             ]
