@@ -45,31 +45,60 @@ export class PipelineDataProvider extends PaginatedDataProvider {
    * Subscribes to relevant events to trigger a refresh of the tree view.
    */
   public subscribeToEvents(): void {
-    this.eventBus.on(LSCLIENT_STATE_CHANGED, (newState: State) => {
-      if (newState === State.Running) {
-        this.refresh();
-      } else {
-        this.items = [LOADING_TREE_ITEMS.get('lsClient')!];
-        this._onDidChangeTreeData.fire(undefined);
-      }
-    });
+    this.eventBus.off(LSCLIENT_STATE_CHANGED, this.lsClientStateChangeHandler);
+    this.eventBus.off(LSP_ZENML_CLIENT_INITIALIZED, this.zenmlClientStateChangeHandler);
 
-    this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, (isInitialized: boolean) => {
-      this.zenmlClientReady = isInitialized;
-
-      if (!isInitialized) {
-        this.items = [LOADING_TREE_ITEMS.get('pipelineRuns')!];
-        this._onDidChangeTreeData.fire(undefined);
-        return;
-      }
-
-      this.refresh();
-      this.eventBus.off(LSP_ZENML_PROJECT_CHANGED, () => this.refresh());
-      this.eventBus.on(LSP_ZENML_PROJECT_CHANGED, (projectName: string) =>
-        this.refresh(projectName)
-      );
-    });
+    this.eventBus.on(LSCLIENT_STATE_CHANGED, this.lsClientStateChangeHandler);
+    this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, this.zenmlClientStateChangeHandler);
   }
+
+  /**
+   * Handles the change in the project.
+   *
+   * @param {string} projectName The new project name.
+   */
+  private projectChangeHandler = (projectName?: string) => {
+    this.refresh(projectName);
+  };
+
+  /**
+   * Handles the change in the LSP client state.
+   *
+   * @param {State} status The new LSP client state.
+   */
+  private lsClientStateChangeHandler = (status: State) => {
+    if (status !== State.Running) {
+      this.triggerLoadingState('lsClient');
+    }
+    this.refresh();
+  };
+
+  /**
+   * Handles the change in the ZenML client state.
+   *
+   * @param {boolean} isInitialized The new ZenML client state.
+   */
+  private zenmlClientStateChangeHandler = (isInitialized: boolean) => {
+    this.zenmlClientReady = isInitialized;
+    if (!isInitialized) {
+      this.triggerLoadingState('pipelineRuns');
+    } else {
+      this.refresh();
+
+      this.eventBus.off(LSP_ZENML_PROJECT_CHANGED, this.projectChangeHandler);
+      this.eventBus.on(LSP_ZENML_PROJECT_CHANGED, this.projectChangeHandler);
+    }
+  };
+
+  /**
+   * Triggers the loading state for a given entity.
+   *
+   * @param {string} entity The entity to trigger the loading state for.
+   */
+  private triggerLoadingState = (entity: string) => {
+    this.items = [LOADING_TREE_ITEMS.get(entity)!];
+    this._onDidChangeTreeData.fire(undefined);
+  };
 
   /**
    * Retrieves the singleton instance of ServerDataProvider.
