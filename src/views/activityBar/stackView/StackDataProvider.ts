@@ -28,6 +28,7 @@ import { StackTreeItem } from './StackTreeItems';
 
 export class StackDataProvider extends PaginatedDataProvider {
   private static instance: StackDataProvider | null = null;
+
   private eventBus = EventBus.getInstance();
   private zenmlClientReady = false;
 
@@ -42,33 +43,63 @@ export class StackDataProvider extends PaginatedDataProvider {
    * Subscribes to relevant events to trigger a refresh of the tree view.
    */
   public subscribeToEvents(): void {
-    this.eventBus.on(LSCLIENT_STATE_CHANGED, (newState: State) => {
-      if (newState === State.Running) {
-        this.refresh();
-      } else {
-        this.items = [LOADING_TREE_ITEMS.get('lsClient')!];
-        this._onDidChangeTreeData.fire(undefined);
-      }
-    });
+    this.eventBus.off(LSCLIENT_STATE_CHANGED, this.lsClientStateChangeHandler);
+    this.eventBus.off(LSP_ZENML_CLIENT_INITIALIZED, this.zenmlClientStateChangeHandler);
 
-    this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, (isInitialized: boolean) => {
-      this.zenmlClientReady = isInitialized;
-
-      if (!isInitialized) {
-        this.items = [LOADING_TREE_ITEMS.get('stacks')!];
-        this._onDidChangeTreeData.fire(undefined);
-        return;
-      }
-      this.refresh();
-      this.eventBus.off(LSP_ZENML_STACK_CHANGED, () => this.refresh());
-      this.eventBus.on(LSP_ZENML_STACK_CHANGED, (activeStackId: string) => {
-        this.updateActiveStack(activeStackId);
-      });
-    });
+    this.eventBus.on(LSCLIENT_STATE_CHANGED, this.lsClientStateChangeHandler);
+    this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, this.zenmlClientStateChangeHandler);
   }
 
   /**
-   * Retrieves the singleton instance of ServerDataProvider.
+   * Handles the change in the LSP client state.
+   *
+   * @param {State} status The new LSP client state.
+   */
+  private lsClientStateChangeHandler = (status: State) => {
+    if (status !== State.Running) {
+      this.triggerLoadingState('lsClient');
+    }
+    this.refresh();
+  };
+
+  /**
+   * Handles the change in the ZenML client state.
+   *
+   * @param {boolean} isInitialized The new ZenML client state.
+   */
+  private zenmlClientStateChangeHandler = (isInitialized: boolean) => {
+    this.zenmlClientReady = isInitialized;
+    if (!isInitialized) {
+      this.triggerLoadingState('stacks');
+    } else {
+      this.refresh();
+
+      this.eventBus.off(LSP_ZENML_STACK_CHANGED, this.stackChangeHandler);
+      this.eventBus.on(LSP_ZENML_STACK_CHANGED, this.stackChangeHandler);
+    }
+  };
+
+  /**
+   * Triggers the loading state for a given entity.
+   *
+   * @param {string} entity The entity to trigger the loading state for.
+   */
+  private triggerLoadingState = (entity: string) => {
+    this.items = [LOADING_TREE_ITEMS.get(entity)!];
+    this._onDidChangeTreeData.fire(undefined);
+  };
+
+  /**
+   * Handles the change in the active stack.
+   *
+   * @param {string} activeStackId The ID of the newly active stack.
+   */
+  private stackChangeHandler = (activeStackId: string) => {
+    this.updateActiveStack(activeStackId);
+  };
+
+  /**
+   * Retrieves the singleton instance of StackDataProvider.
    *
    * @returns {StackDataProvider} The singleton instance.
    */
