@@ -35,6 +35,11 @@ export interface ServerStatus {
   organization_id?: string;
 }
 
+export interface StatusBarServerStatus {
+  isConnected: boolean;
+  serverUrl: string;
+}
+
 /************************************************************************************************
  * This is the object returned by the @LSP_SERVER.command(zenml.serverInfo")
  ************************************************************************************************/
