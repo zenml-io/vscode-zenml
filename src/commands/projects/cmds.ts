@@ -76,7 +76,8 @@ const setActiveProject = async (node: ProjectTreeItem): Promise<void> => {
         }
       } catch (error) {
         console.log(error);
-        showErrorMessage(`Failed to set active project: ${error}`);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        showErrorMessage(`Failed to set active project: ${errorMessage}`);
       }
     }
   );

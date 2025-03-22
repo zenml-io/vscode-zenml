@@ -26,25 +26,18 @@ export const registerProjectCommands = (context: ExtensionContext) => {
   const projectDataProvider = ProjectDataProvider.getInstance();
   try {
     const registeredCommands = [
-      registerCommand(
-        'zenml.setProjectItemsPerPage',
-        async () => await projectDataProvider.updateItemsPerPage()
+      registerCommand('zenml.setProjectItemsPerPage', async () =>
+        projectDataProvider.updateItemsPerPage()
       ),
-      registerCommand(
-        'zenml.refreshProjectView',
-        async () => await projectCommands.refreshProjectView()
+      registerCommand('zenml.refreshProjectView', async () => projectCommands.refreshProjectView()),
+      registerCommand('zenml.refreshActiveProject', async () =>
+        projectCommands.refreshActiveProject()
       ),
-      registerCommand(
-        'zenml.refreshActiveProject',
-        async () => await projectCommands.refreshActiveProject()
+      registerCommand('zenml.setActiveProject', async (node: ProjectTreeItem) =>
+        projectCommands.setActiveProject(node)
       ),
-      registerCommand(
-        'zenml.setActiveProject',
-        async (node: ProjectTreeItem) => await projectCommands.setActiveProject(node)
-      ),
-      registerCommand(
-        'zenml.goToProjectUrl',
-        async (node: ProjectTreeItem) => await projectCommands.goToProjectUrl(node)
+      registerCommand('zenml.goToProjectUrl', (node: ProjectTreeItem) =>
+        projectCommands.goToProjectUrl(node)
       ),
       registerCommand('zenml.nextProjectPage', async () => projectDataProvider.goToNextPage()),
       registerCommand('zenml.previousProjectPage', async () =>

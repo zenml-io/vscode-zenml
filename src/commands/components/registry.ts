@@ -26,33 +26,22 @@ export const registerComponentCommands = (context: ExtensionContext) => {
   const componentDataProvider = ComponentDataProvider.getInstance();
   try {
     const registeredCommands = [
-      registerCommand(
-        'zenml.setComponentItemsPerPage',
-        async () => await componentDataProvider.updateItemsPerPage()
+      registerCommand('zenml.setComponentItemsPerPage', async () =>
+        componentDataProvider.updateItemsPerPage()
       ),
-      registerCommand(
-        'zenml.refreshComponentView',
-        async () => await componentCommands.refreshComponentView()
+      registerCommand('zenml.refreshComponentView', async () =>
+        componentCommands.refreshComponentView()
       ),
-      registerCommand(
-        'zenml.registerComponent',
-        async () => await componentCommands.registerComponent()
+      registerCommand('zenml.registerComponent', async () => componentCommands.registerComponent()),
+      registerCommand('zenml.updateComponent', async (node: StackComponentTreeItem) =>
+        componentCommands.updateComponent(node)
       ),
-      registerCommand(
-        'zenml.updateComponent',
-        async (node: StackComponentTreeItem) => await componentCommands.updateComponent(node)
+      registerCommand('zenml.deleteComponent', async (node: StackComponentTreeItem) =>
+        componentCommands.deleteComponent(node)
       ),
-      registerCommand(
-        'zenml.deleteComponent',
-        async (node: StackComponentTreeItem) => await componentCommands.deleteComponent(node)
-      ),
-      registerCommand(
-        'zenml.nextComponentPage',
-        async () => await componentDataProvider.goToNextPage()
-      ),
-      registerCommand(
-        'zenml.previousComponentPage',
-        async () => await componentDataProvider.goToPreviousPage()
+      registerCommand('zenml.nextComponentPage', async () => componentDataProvider.goToNextPage()),
+      registerCommand('zenml.previousComponentPage', async () =>
+        componentDataProvider.goToPreviousPage()
       ),
     ];
 
