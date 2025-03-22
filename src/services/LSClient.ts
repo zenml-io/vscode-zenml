@@ -174,7 +174,7 @@ export class LSClient {
   /**
    * Handles the zenml/projectChanged notification.
    *
-   * @param projectIdOrName The id  of the active project.
+   * @param projectName The name of the active project.
    * @returns A promise resolving to void.
    */
   public handleProjectChanged = async (projectName: string): Promise<void> => {

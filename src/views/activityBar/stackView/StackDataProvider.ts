@@ -80,8 +80,9 @@ export class StackDataProvider extends PaginatedDataProvider {
   private lsClientStateChangeHandler = (status: State) => {
     if (status !== State.Running) {
       this.triggerLoadingState('lsClient');
+    } else {
+      this.refresh();
     }
-    this.refresh();
   };
 
   /**
