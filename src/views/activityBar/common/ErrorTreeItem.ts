@@ -44,8 +44,7 @@ export class VersionMismatchTreeItem extends ErrorTreeItem {
  */
 export const createErrorItem = (error: any): TreeItem[] => {
   const errorItems: TreeItem[] = [];
-  console.log('Creating error item', error);
-  if (error.clientVersion || error.serverVersion) {
+  if (error.clientVersion || (error.serverVersion && error.serverVersion !== 'N/A')) {
     errorItems.push(new VersionMismatchTreeItem(error.clientVersion, error.serverVersion));
   }
   errorItems.push(new ErrorTreeItem(error.errorType || 'Error', error.message));

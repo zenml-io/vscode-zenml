@@ -12,7 +12,7 @@
 // permissions and limitations under the License.
 
 import { ServerDataProvider } from '../../views/activityBar';
-import { isServerStatus } from '../server/utils';
+import { buildWorkspaceProjectUrl, getBaseUrl, isServerStatus } from '../server/utils';
 
 /**
  * Gets the Dashboard URL for the corresponding ZenML pipeline run
@@ -21,15 +21,22 @@ import { isServerStatus } from '../server/utils';
  * @returns {string} - The URL corresponding to the pipeline run in the ZenML Dashboard
  */
 export const getPipelineRunDashboardUrl = (id: string): string => {
+  if (!id) {
+    return '';
+  }
+
   const status = ServerDataProvider.getInstance().getCurrentStatus();
 
   if (!isServerStatus(status) || status.deployment_type === 'other') {
     return '';
   }
 
-  const currentServerUrl = status.dashboard_url;
+  const baseUrl = getBaseUrl(status.dashboard_url);
+  const suffix = `/runs/${id}?tab=overview`;
 
-  return `${currentServerUrl}/runs/${id}`;
+  const url = buildWorkspaceProjectUrl(baseUrl, status, suffix);
+
+  return url;
 };
 
 const pipelineUtils = {

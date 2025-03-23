@@ -8,12 +8,12 @@ The ZenML VSCode extension seamlessly integrates with [ZenML](https://github.com
 
 ## Features
 
-- **Server, Stacks, and Pipeline Runs Views**: Interact directly with ML stacks, pipeline runs, and server configurations from the Activity Bar.
-- **DAG Visualization for Pipeline Runs**: Explore Directed Acyclic Graphs for each pipeline view directly directly on the Activity Bar.
+- **Server, Projects, Stacks, and Pipeline Runs Views**: Interact directly with ML stacks, pipeline runs, and server configurations from the Activity Bar.
+- **Project Management**: Explore, switch between, and manage your ZenML projects directly from the Activity Bar.
+- **DAG Visualization for Pipeline Runs**: Explore Directed Acyclic Graphs for each pipeline view directly on the Activity Bar.
 - **Python Tool Integration**: Utilizes a Language Server Protocol (LSP) server for real-time synchronization with the ZenML environment.
 - **Real-Time Configuration Monitoring**: Leverages `watchdog` to dynamically update configurations, keeping the extension in sync with your ZenML setup.
-- **Status Bar**: Display the current stack name and connection status. You can
-  also change your active stack from the status bar.
+- **Status Bar**: View your active stack, project, and connection status at a glance. You can also quickly switch between stacks or projects directly from the status bar.
 
 ## Getting Started
 
@@ -27,6 +27,7 @@ this extension and your Python version needs to be 3.8 or greater.
 ## Using ZenML in VSCode
 
 - **Manage Server Connections**: Connect or disconnect from ZenML servers and refresh server status.
+- **Project Operations**: Browse available projects, view project details, set active projects, and refresh project information.
 - **Stack Operations**: View stack details, register, update, delete, copy, or set active stacks directly from VSCode.
 - **Stack Component Operations**: View stack component details, register, update, or delete stack components directly from VSCode.
 - **Pipeline Runs**: Monitor and manage pipeline runs, including deleting runs from the system and rendering DAGs.
@@ -48,7 +49,7 @@ this extension and your Python version needs to be 3.8 or greater.
 ## Requirements
 
 - **ZenML Installation:** ZenML needs to be installed in the local Python environment associated with the Python interpreter selected in the current VS Code workspace. This extension interacts directly with your ZenML environment, so ensuring that ZenML is installed and properly configured is essential.
-- **ZenML Version**: This extension is fully compatible with ZenML versions 0.63.0 through 0.75.0. While newer versions may work, they haven't been officially tested. If you encounter any issues with newer versions, please report them.
+- **ZenML Version**: This extension is compatible with ZenML version 0.80.0 or newer. While it may work with different versions, we recommend keeping your ZenML up to date for the best experience.
 - **Python Version**: Python 3.8 or greater is required for the operation of the LSP server, which is a part of this extension.
 
 ## Feedback and Contributions

@@ -23,18 +23,13 @@ import { environmentCommands } from './cmds';
 export const registerEnvironmentCommands = (context: ExtensionContext) => {
   try {
     const registeredCommands = [
-      registerCommand(
-        'zenml.setPythonInterpreter',
-        async () => await environmentCommands.setPythonInterpreter()
+      registerCommand('zenml.setPythonInterpreter', async () =>
+        environmentCommands.setPythonInterpreter()
       ),
-      registerCommand(
-        'zenml.refreshEnvironmentView',
-        async () => await environmentCommands.refreshEnvironmentView()
+      registerCommand('zenml.refreshEnvironmentView', async () =>
+        environmentCommands.refreshEnvironmentView()
       ),
-      registerCommand(
-        'zenml.restartLspServer',
-        async () => await environmentCommands.restartLSPServer()
-      ),
+      registerCommand('zenml.restartLspServer', async () => environmentCommands.restartLSPServer()),
     ];
 
     registeredCommands.forEach(cmd => {

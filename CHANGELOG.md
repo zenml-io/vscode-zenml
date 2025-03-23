@@ -2,6 +2,36 @@
 
 All notable changes to the "zenml-vscode" extension will be documented in this file.
 
+## [0.0.13] - 2025-03-23
+
+### Added
+
+- Migrated to ZenML v0.80.0 from v0.75.0
+- Introduced Project View in the Activity Bar with switching capabilities and context menu
+- Added comprehensive project management with commands to set, refresh, and navigate projects
+- Added project switching support to the status bar
+- Enhanced Pipeline Runs view with steps, configuration, and model tree items
+
+### Fixed
+
+- Url construction for Server & Dashboard, Pipeline Runs, and Stacks
+- ANSI color handling in JSON-RPC communications
+- Removed extraneous notifications when opening URLs
+
+### Changed
+
+- Improved logo design in Activity Bar
+- Adopted ZenML's "Workspace" → "Project" terminology change
+- Updated URL structure for ZenML dashboard integration
+- Improved view loading performance by cleaning up event listeners
+- Enhanced error messaging in tree views
+
+### Dependencies
+
+- Updated ZenML minimum version requirement to 0.80.0
+- Downgraded VS Code engine requirement from ^1.98.0 to ^1.93.0 for Cursor IDE compatibility
+- Minor version upgrades: axios (1.8.2 to 1.8.4), typescript-eslint (8.26.0 to 8.26.1), and @vscode/vsce (2.19.0 to 2.20.0)
+
 ## [0.0.12] - 2025-03-11
 
 ### Added

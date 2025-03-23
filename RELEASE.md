@@ -65,8 +65,8 @@ Once you've tested the release and everything looks good, you can publish it:
 1. **Tag the Release**
 
    ```bash
-   git tag -a v0.0.x -m "Version 0.0.x"
-   git push origin v0.0.x
+   git tag -a 0.0.x -m "Version 0.0.x"
+   git push origin 0.0.x
    ```
 
 2. **Create a GitHub Release**

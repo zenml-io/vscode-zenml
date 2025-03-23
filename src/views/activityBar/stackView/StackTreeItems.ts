@@ -40,9 +40,9 @@ export class StackTreeItem extends vscode.TreeItem implements TreeItemWithChildr
     this.isActive = isActive || false;
 
     if (isActive) {
-      this.iconPath = new vscode.ThemeIcon('pass-filled', new vscode.ThemeColor('charts.green'));
+      this.iconPath = new vscode.ThemeIcon('layers-active', new vscode.ThemeColor('charts.green'));
     } else {
-      this.iconPath = new vscode.ThemeIcon('archive');
+      this.iconPath = new vscode.ThemeIcon('layers');
     }
 
     this.tooltip = new vscode.MarkdownString(

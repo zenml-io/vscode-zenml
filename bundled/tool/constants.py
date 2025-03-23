@@ -15,8 +15,7 @@
 
 TOOL_MODULE_NAME = "zenml-python"
 TOOL_DISPLAY_NAME = "ZenML"
-MIN_ZENML_VERSION = "0.63.0"
-MAX_ZENML_VERSION = "0.75.0"
+MIN_ZENML_VERSION = "0.80.0"
 
 """Constants for ZenML Notifications and Events"""
 
@@ -24,4 +23,5 @@ IS_ZENML_INSTALLED = "zenml/isInstalled"
 ZENML_CLIENT_INITIALIZED = "zenml/clientInitialized"
 ZENML_SERVER_CHANGED = "zenml/serverChanged"
 ZENML_STACK_CHANGED = "zenml/stackChanged"
+ZENML_PROJECT_CHANGED = "zenml/projectChanged"
 ZENML_REQUIREMENTS_NOT_MET = "zenml/requirementsNotMet"

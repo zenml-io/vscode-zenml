@@ -350,3 +350,43 @@ class ZenLanguageServer(LanguageServer):
         def get_run_dag(wrapper_instance, args):
             """Gets graph data for a specified ZenML pipeline run"""
             return wrapper_instance.get_pipeline_run_graph(args)
+
+        @self.command(f"{TOOL_MODULE_NAME}.listWorkspaces")
+        @self.zenml_command(wrapper_name="workspaces_wrapper")
+        def list_workspaces(wrapper_instance, args):
+            """Lists workspaces from ZenML Pro"""
+            return wrapper_instance.list_workspaces(args)
+
+        @self.command(f"{TOOL_MODULE_NAME}.getActiveWorkspace")
+        @self.zenml_command(wrapper_name="workspaces_wrapper")
+        def get_active_workspace(wrapper_instance, *args, **kwargs):
+            """Gets the active workspace for the current user"""
+            return wrapper_instance.get_active_workspace()
+
+        @self.command(f"{TOOL_MODULE_NAME}.listProjects")
+        @self.zenml_command(wrapper_name="projects_wrapper")
+        def list_projects(wrapper_instance, args):
+            """Lists projects from ZenML"""
+            return wrapper_instance.list_projects(args)
+
+        @self.command(f"{TOOL_MODULE_NAME}.getActiveProject")
+        @self.zenml_command(wrapper_name="projects_wrapper")
+        def get_active_project(wrapper_instance, *args, **kwargs):
+            """Gets the active project for the current user"""
+            return wrapper_instance.get_active_project()
+
+        @self.command(f"{TOOL_MODULE_NAME}.setActiveProject")
+        @self.zenml_command(wrapper_name="projects_wrapper")
+        def set_active_project(wrapper_instance, args):
+            """Sets the active project for the current user"""
+            result = wrapper_instance.set_active_project(args)
+            if not isinstance(result, dict) or "error" not in result:
+                # Only send notification if successful
+                self.send_custom_notification("zenml/projectChanged", result["id"])
+            return result
+
+        @self.command(f"{TOOL_MODULE_NAME}.getProjectByName")
+        @self.zenml_command(wrapper_name="projects_wrapper")
+        def get_project_by_name(wrapper_instance, args):
+            """Gets a project by name"""
+            return wrapper_instance.get_project_by_name(args[0])

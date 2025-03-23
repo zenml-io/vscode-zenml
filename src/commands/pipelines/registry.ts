@@ -26,21 +26,17 @@ export const registerPipelineCommands = (context: ExtensionContext) => {
 
   try {
     const registeredCommands = [
-      registerCommand(
-        'zenml.refreshPipelineView',
-        async () => await pipelineCommands.refreshPipelineView()
+      registerCommand('zenml.refreshPipelineView', async () =>
+        pipelineCommands.refreshPipelineView()
       ),
-      registerCommand(
-        'zenml.deletePipelineRun',
-        async (node: PipelineTreeItem) => await pipelineCommands.deletePipelineRun(node)
+      registerCommand('zenml.deletePipelineRun', async (node: PipelineTreeItem) =>
+        pipelineCommands.deletePipelineRun(node)
       ),
-      registerCommand(
-        'zenml.goToPipelineUrl',
-        async (node: PipelineTreeItem) => await pipelineCommands.goToPipelineUrl(node)
+      registerCommand('zenml.goToPipelineUrl', async (node: PipelineTreeItem) =>
+        pipelineCommands.goToPipelineUrl(node)
       ),
-      registerCommand(
-        'zenml.renderDag',
-        async (node: PipelineTreeItem) => await pipelineCommands.renderDag(node)
+      registerCommand('zenml.renderDag', async (node: PipelineTreeItem) =>
+        pipelineCommands.renderDag(node)
       ),
       registerCommand('zenml.nextPipelineRunsPage', async () =>
         pipelineDataProvider.goToNextPage()
@@ -48,9 +44,8 @@ export const registerPipelineCommands = (context: ExtensionContext) => {
       registerCommand('zenml.previousPipelineRunsPage', async () =>
         pipelineDataProvider.goToPreviousPage()
       ),
-      registerCommand(
-        'zenml.setPipelineRunsPerPage',
-        async () => await pipelineDataProvider.updateItemsPerPage()
+      registerCommand('zenml.setPipelineRunsPerPage', async () =>
+        pipelineDataProvider.updateItemsPerPage()
       ),
     ];
 

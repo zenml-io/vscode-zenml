@@ -32,9 +32,8 @@ export class PipelineTreeItem extends vscode.TreeItem {
         ? vscode.TreeItemCollapsibleState.None
         : vscode.TreeItemCollapsibleState.Collapsed
     );
-    this.tooltip = `${run.name} - Status: ${run.status}`;
-    this.description = `status: ${run.status}`;
-    this.iconPath = new vscode.ThemeIcon(PIPELINE_RUN_STATUS_ICONS[run.status]);
+    this.tooltip = '';
+    this.iconPath = PIPELINE_RUN_STATUS_ICONS[run.status];
     this.children = children;
   }
 
@@ -43,15 +42,18 @@ export class PipelineTreeItem extends vscode.TreeItem {
 
 /**
  * Represents details of a Pipeline Run Tree Item in the VS Code tree view.
- * Displays the stack name for the run, its start time, end time, machine details and Python version.
+ * Displays the stack name for the run, its start time, end time, machine details, Python version, and more.
  */
 export class PipelineRunTreeItem extends vscode.TreeItem {
+  public children?: PipelineRunTreeItem[];
+
   constructor(
     public readonly label: string,
-    public readonly description: string
+    public readonly description: string,
+    collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None
   ) {
-    super(label, vscode.TreeItemCollapsibleState.None);
-    this.tooltip = `${label}: ${description}`;
+    super(label, collapsibleState);
+    this.tooltip = '';
   }
 
   contextValue = 'pipelineRunDetail';

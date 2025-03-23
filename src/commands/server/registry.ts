@@ -23,14 +23,10 @@ import { serverCommands } from './cmds';
 export const registerServerCommands = (context: ExtensionContext) => {
   try {
     const registeredCommands = [
-      registerCommand('zenml.connectServer', async () => await serverCommands.connectServer()),
-      registerCommand(
-        'zenml.disconnectServer',
-        async () => await serverCommands.disconnectServer()
-      ),
-      registerCommand(
-        'zenml.refreshServerStatus',
-        async () => await serverCommands.refreshServerStatus()
+      registerCommand('zenml.connectServer', async () => serverCommands.connectServer()),
+      registerCommand('zenml.disconnectServer', async () => serverCommands.disconnectServer()),
+      registerCommand('zenml.refreshServerStatus', async () =>
+        serverCommands.refreshServerStatus()
       ),
     ];
 

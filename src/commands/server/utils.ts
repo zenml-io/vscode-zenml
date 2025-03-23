@@ -49,7 +49,7 @@ export async function promptAndStoreServerUrl(): Promise<string | undefined> {
  */
 export async function checkServerStatus(): Promise<ServerStatus | ErrorTreeItem[]> {
   const lsClient = LSClient.getInstance();
-  // For debugging
+
   if (!lsClient.clientReady) {
     return INITIAL_ZENML_SERVER_STATUS;
   }
@@ -84,17 +84,75 @@ function createServerStatusFromDetails(details: ZenServerDetails): ServerStatus 
         ? 'N/A'
         : storeConfig.url;
 
+  const {
+    organization_id,
+    active_workspace_id,
+    active_workspace_name,
+    active_project_id,
+    active_project_name,
+  } = storeInfo;
+
   return {
     ...storeInfo,
     isConnected: storeConfig?.type === 'rest',
     url: storeConfig?.url ?? 'unknown',
     store_type: storeConfig?.type ?? 'unknown',
     dashboard_url: dashboardUrl,
+
+    // include active workspace and project IDs for ZenML 0.80.0+
+    active_workspace_id,
+    active_workspace_name,
+    active_project_id,
+    active_project_name,
+    organization_id,
   };
 }
 
 export function isServerStatus(obj: any): obj is ServerStatus {
   return 'isConnected' in obj && 'url' in obj;
+}
+
+/**
+ * Extracts the base URL (schema + hostname) from a full URL
+ *
+ * @param {string} url - The full URL to extract the base from
+ * @returns {string} - Just the schema and hostname portion of the URL
+ */
+export function getBaseUrl(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    return `${urlObj.protocol}//${urlObj.host}`;
+  } catch (error) {
+    console.error('Error extracting base URL:', error);
+    return url;
+  }
+}
+
+/**
+ * Appends workspace and project information to a base URL
+ *
+ * @param {string} baseUrl - The base URL to append to
+ * @param {ServerStatus} status - The server status containing workspace and project information
+ * @param {string} suffix - The suffix to append to the URL
+ * @returns {string} - The URL with workspace and project or the original base URL if no workspace or project is available
+ */
+export function buildWorkspaceProjectUrl(
+  baseUrl: string,
+  status: ServerStatus,
+  suffix: string = ''
+): string {
+  const isProjectUrl = suffix.includes('/projects/');
+  const workspace = status.active_workspace_name || status.active_workspace_id;
+  const project = status.active_project_name || status.active_project_id;
+
+  if (workspace) {
+    let url = `${baseUrl}/workspaces/${workspace}`;
+    if (project && !isProjectUrl) {
+      url += `/projects/${project}`;
+    }
+    return url + suffix;
+  }
+  return baseUrl + suffix;
 }
 
 export const serverUtils = {

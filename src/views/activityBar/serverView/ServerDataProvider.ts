@@ -19,7 +19,6 @@ import {
   INITIAL_ZENML_SERVER_STATUS,
   LSCLIENT_STATE_CHANGED,
   LSP_ZENML_CLIENT_INITIALIZED,
-  REFRESH_SERVER_STATUS,
   SERVER_STATUS_UPDATED,
 } from '../../../utils/constants';
 import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
@@ -42,27 +41,11 @@ export class ServerDataProvider implements TreeDataProvider<TreeItem> {
    * Subscribes to relevant events to trigger a refresh of the tree view.
    */
   public subscribeToEvents(): void {
-    this.eventBus.on(LSCLIENT_STATE_CHANGED, (newState: State) => {
-      if (newState === State.Running) {
-        this.refresh();
-      } else {
-        this.currentStatus = [LOADING_TREE_ITEMS.get('lsClient')!];
-        this._onDidChangeTreeData.fire(undefined);
-      }
-    });
+    this.eventBus.off(LSCLIENT_STATE_CHANGED, this.lsClientStateChangeHandler);
+    this.eventBus.off(LSP_ZENML_CLIENT_INITIALIZED, this.zenmlClientStateChangeHandler);
 
-    this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, (isInitialized: boolean) => {
-      this.zenmlClientReady = isInitialized;
-      if (!isInitialized) {
-        this.currentStatus = [LOADING_TREE_ITEMS.get('zenmlClient')!];
-        this._onDidChangeTreeData.fire(undefined);
-        return;
-      }
-
-      this.refresh();
-      this.eventBus.off(REFRESH_SERVER_STATUS, async () => await this.refresh());
-      this.eventBus.on(REFRESH_SERVER_STATUS, async () => await this.refresh());
-    });
+    this.eventBus.on(LSCLIENT_STATE_CHANGED, this.lsClientStateChangeHandler);
+    this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, this.zenmlClientStateChangeHandler);
   }
 
   /**
@@ -71,11 +54,48 @@ export class ServerDataProvider implements TreeDataProvider<TreeItem> {
    * @returns {ServerDataProvider} The singleton instance.
    */
   public static getInstance(): ServerDataProvider {
-    if (!this.instance) {
-      this.instance = new ServerDataProvider();
+    if (!ServerDataProvider.instance) {
+      ServerDataProvider.instance = new ServerDataProvider();
     }
-    return this.instance;
+    return ServerDataProvider.instance;
   }
+
+  /**
+   * Triggers the loading state for a given entity.
+   *
+   * @param {string} entity The entity to trigger the loading state for.
+   */
+  private triggerLoadingState = (entity: string) => {
+    this.currentStatus = [LOADING_TREE_ITEMS.get(entity)!];
+    this._onDidChangeTreeData.fire(undefined);
+  };
+
+  /**
+   * Handles the change in the LSP client state.
+   *
+   * @param {State} status The new LSP client state.
+   */
+  private lsClientStateChangeHandler = (status: State) => {
+    if (status !== State.Running) {
+      this.triggerLoadingState('lsClient');
+    } else {
+      this.refresh();
+    }
+  };
+
+  /**
+   * Handles the change in the ZenML client state.
+   *
+   * @param {boolean} isInitialized The new ZenML client state.
+   */
+  private zenmlClientStateChangeHandler = (isInitialized: boolean) => {
+    this.zenmlClientReady = isInitialized;
+    if (!isInitialized) {
+      this.triggerLoadingState('zenmlClient');
+    } else {
+      this.refresh();
+    }
+  };
 
   /**
    * Updates the server status to the provided status (used for tests).
@@ -93,12 +113,10 @@ export class ServerDataProvider implements TreeDataProvider<TreeItem> {
    * @returns {Promise<void>} A promise resolving to void.
    */
   public async refresh(): Promise<void> {
-    this.currentStatus = [LOADING_TREE_ITEMS.get('server')!];
-    this._onDidChangeTreeData.fire(undefined);
+    this.triggerLoadingState('server');
 
     if (!this.zenmlClientReady) {
-      this.currentStatus = [LOADING_TREE_ITEMS.get('zenmlClient')!];
-      this._onDidChangeTreeData.fire(undefined);
+      this.triggerLoadingState('zenmlClient');
       return;
     }
 

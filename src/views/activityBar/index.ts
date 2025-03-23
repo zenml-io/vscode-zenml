@@ -4,3 +4,5 @@ export * from './serverView/ServerDataProvider';
 export * from './stackView/StackTreeItems';
 export * from './pipelineView/PipelineDataProvider';
 export * from './pipelineView/PipelineTreeItems';
+export * from './projectView/ProjectDataProvider';
+export * from './projectView/ProjectTreeItems';

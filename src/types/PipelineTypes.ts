@@ -13,12 +13,37 @@
 
 import { ErrorMessageResponse, VersionMismatchError } from './LSClientResponseTypes';
 
-interface PipelineRunsData {
+export interface PipelineRunsData {
   runs: PipelineRun[];
   total: number;
   total_pages: number;
   current_page: number;
   items_per_page: number;
+}
+
+export interface PipelineRunStep {
+  status: string;
+  start_time?: string;
+  end_time?: string;
+  id?: string;
+}
+
+export interface PipelineRunConfig {
+  enable_cache?: boolean;
+  enable_artifact_metadata?: boolean;
+  enable_artifact_visualization?: boolean;
+  enable_step_logs?: boolean;
+  name?: string;
+  model?: PipelineModel;
+}
+
+export interface PipelineModel {
+  name: string;
+  description?: string;
+  tags?: string[];
+  version?: string;
+  save_models_to_registry?: boolean;
+  license?: string;
 }
 
 export interface PipelineRun {
@@ -28,9 +53,11 @@ export interface PipelineRun {
   stackName: string;
   startTime: string;
   endTime: string;
-  os: string;
-  osVersion: string;
-  pythonVersion: string;
+  pipelineName: string;
+  config?: PipelineRunConfig;
+  steps?: {
+    [stepName: string]: PipelineRunStep;
+  };
 }
 
 export interface DagStep {

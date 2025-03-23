@@ -28,6 +28,7 @@ import { StackTreeItem } from './StackTreeItems';
 
 export class StackDataProvider extends PaginatedDataProvider {
   private static instance: StackDataProvider | null = null;
+
   private eventBus = EventBus.getInstance();
   private zenmlClientReady = false;
 
@@ -39,45 +40,76 @@ export class StackDataProvider extends PaginatedDataProvider {
   }
 
   /**
-   * Subscribes to relevant events to trigger a refresh of the tree view.
-   */
-  public subscribeToEvents(): void {
-    this.eventBus.on(LSCLIENT_STATE_CHANGED, (newState: State) => {
-      if (newState === State.Running) {
-        this.refresh();
-      } else {
-        this.items = [LOADING_TREE_ITEMS.get('lsClient')!];
-        this._onDidChangeTreeData.fire(undefined);
-      }
-    });
-
-    this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, (isInitialized: boolean) => {
-      this.zenmlClientReady = isInitialized;
-
-      if (!isInitialized) {
-        this.items = [LOADING_TREE_ITEMS.get('stacks')!];
-        this._onDidChangeTreeData.fire(undefined);
-        return;
-      }
-      this.refresh();
-      this.eventBus.off(LSP_ZENML_STACK_CHANGED, () => this.refresh());
-      this.eventBus.on(LSP_ZENML_STACK_CHANGED, (activeStackId: string) => {
-        this.updateActiveStack(activeStackId);
-      });
-    });
-  }
-
-  /**
-   * Retrieves the singleton instance of ServerDataProvider.
+   * Retrieves the singleton instance of StackDataProvider.
    *
    * @returns {StackDataProvider} The singleton instance.
    */
   public static getInstance(): StackDataProvider {
-    if (!this.instance) {
-      this.instance = new StackDataProvider();
+    if (!StackDataProvider.instance) {
+      StackDataProvider.instance = new StackDataProvider();
     }
-    return this.instance;
+    return StackDataProvider.instance;
   }
+
+  /**
+   * Subscribes to relevant events to trigger a refresh of the tree view.
+   */
+  public subscribeToEvents(): void {
+    this.eventBus.off(LSCLIENT_STATE_CHANGED, this.lsClientStateChangeHandler);
+    this.eventBus.off(LSP_ZENML_CLIENT_INITIALIZED, this.zenmlClientStateChangeHandler);
+
+    this.eventBus.on(LSCLIENT_STATE_CHANGED, this.lsClientStateChangeHandler);
+    this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, this.zenmlClientStateChangeHandler);
+  }
+
+  /**
+   * Triggers the loading state for a given entity.
+   *
+   * @param {string} entity The entity to trigger the loading state for.
+   */
+  private triggerLoadingState = (entity: string) => {
+    this.items = [LOADING_TREE_ITEMS.get(entity)!];
+    this._onDidChangeTreeData.fire(undefined);
+  };
+
+  /**
+   * Handles the change in the LSP client state.
+   *
+   * @param {State} status The new LSP client state.
+   */
+  private lsClientStateChangeHandler = (status: State) => {
+    if (status !== State.Running) {
+      this.triggerLoadingState('lsClient');
+    } else {
+      this.refresh();
+    }
+  };
+
+  /**
+   * Handles the change in the ZenML client state.
+   *
+   * @param {boolean} isInitialized The new ZenML client state.
+   */
+  private zenmlClientStateChangeHandler = (isInitialized: boolean) => {
+    this.zenmlClientReady = isInitialized;
+    if (!isInitialized) {
+      this.triggerLoadingState('stacks');
+    } else {
+      this.refresh();
+
+      this.eventBus.off(LSP_ZENML_STACK_CHANGED, this.stackChangeHandler);
+      this.eventBus.on(LSP_ZENML_STACK_CHANGED, this.stackChangeHandler);
+    }
+  };
+
+  /**
+   * Handles the change in the active stack.
+   *
+   * @param {string} activeStackId The ID of the newly active stack.
+   */
+  private stackChangeHandler = (activeStackId: string) => {
+    this.updateActiveStack(activeStackId);
+  };
 
   /**
    * Refreshes the tree view data by refetching stacks and triggering the onDidChangeTreeData event.
@@ -85,8 +117,7 @@ export class StackDataProvider extends PaginatedDataProvider {
    * @returns {Promise<void>} A promise that resolves when the tree view data has been refreshed.
    */
   public async refresh(): Promise<void> {
-    this.items = [LOADING_TREE_ITEMS.get('stacks')!];
-    this._onDidChangeTreeData.fire(undefined);
+    this.triggerLoadingState('stacks');
 
     const page = this.pagination.currentPage;
     const itemsPerPage = this.pagination.itemsPerPage;
@@ -193,9 +224,9 @@ export class StackDataProvider extends PaginatedDataProvider {
         // Update icon if active state changed
         if (wasActive !== item.isActive) {
           if (item.isActive) {
-            item.iconPath = new ThemeIcon('pass-filled', new ThemeColor('charts.green'));
+            item.iconPath = new ThemeIcon('layers-active', new ThemeColor('charts.green'));
           } else {
-            item.iconPath = new ThemeIcon('archive');
+            item.iconPath = new ThemeIcon('layers');
           }
           // Fire change event only for this item
           this._onDidChangeTreeData.fire(item);

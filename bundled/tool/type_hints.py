@@ -10,8 +10,19 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
-from typing import Any, Dict, List, Optional, TypedDict
+from typing import Any, Dict, List, Optional, Set, Tuple, TypedDict, Union
 from uuid import UUID
+
+MetadataType = Union[
+    str,
+    int,
+    float,
+    bool,
+    Dict[Any, Any],
+    List[Any],
+    Set[Any],
+    Tuple[Any, ...],
+]
 
 
 class StepArtifactBody(TypedDict):
@@ -143,3 +154,62 @@ class ListFlavorsResponse(TypedDict):
     total_pages: int
     total: int
     items: List[Flavor]
+
+
+class PipelineRun(TypedDict):
+    id: str
+    name: str
+    status: str
+    stackName: str
+    pipelineName: str
+    startTime: Optional[str]
+    endTime: Optional[str]
+    config: Optional[Dict[str, Any]]
+    steps: Optional[Dict[str, Any]]
+
+
+class ListPipelineRunsResponse(TypedDict):
+    runs: List[PipelineRun]
+    total: int
+    total_pages: int
+    current_page: int
+    items_per_page: int
+    project_name: Optional[str]
+
+
+class Workspace(TypedDict):
+    id: str
+    name: str
+    description: Optional[str]
+    display_name: Optional[str]
+    organization_id: str
+    organization_name: str
+    status: str
+    zenml_version: str
+    zenml_server_url: str
+    dashboard_url: str
+    dashboard_organization_url: str
+
+
+class ListWorkspacesResponse(TypedDict):
+    workspaces: List[Workspace]
+    total: int
+    offset: int
+    limit: int
+
+
+class Project(TypedDict):
+    id: str
+    name: str
+    display_name: Optional[str]
+    created: Optional[str]
+    updated: Optional[str]
+    metadata: Optional[MetadataType]
+
+
+class ListProjectsResponse(TypedDict):
+    projects: List[Project]
+    total: int
+    total_pages: int
+    current_page: int
+    items_per_page: int

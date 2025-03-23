@@ -22,18 +22,25 @@ class ZenMLClient:
         server interactions, stacks, and pipeline runs.
         """
         # pylint: disable=wrong-import-position,import-error
-        from lazy_import import lazy_import
+        from lazy_import import lazy_import, suppress_stdout_temporarily
         from zenml_wrappers import (
             GlobalConfigWrapper,
             PipelineRunsWrapper,
+            ProjectsWrapper,
             StacksWrapper,
+            WorkspacesWrapper,
             ZenServerWrapper,
         )
 
-        self.client = lazy_import("zenml.client", "Client")()
+        # Suppress colorful warnings during client initialization
+        with suppress_stdout_temporarily():
+            self.client = lazy_import("zenml.client", "Client")()
+
         # initialize zenml library wrappers
         self.config_wrapper = GlobalConfigWrapper()
-        self.zen_server_wrapper = ZenServerWrapper(self.config_wrapper)
         self.stacks_wrapper = StacksWrapper(self.client)
         self.pipeline_runs_wrapper = PipelineRunsWrapper(self.client)
+        self.workspaces_wrapper = WorkspacesWrapper(self.client, self.config_wrapper)
+        self.projects_wrapper = ProjectsWrapper(self.client)
+        self.zen_server_wrapper = ZenServerWrapper(self.config_wrapper, self.projects_wrapper)
         self.initialized = True

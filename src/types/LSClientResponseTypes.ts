@@ -52,3 +52,15 @@ export interface ActiveStackResponse {
 
 export type SetActiveStackResponse = ActiveStackResponse | ErrorMessageResponse;
 export type GetActiveStackResponse = ActiveStackResponse | ErrorMessageResponse;
+
+/***** Project Response Types *****/
+export interface ActiveProjectResponse {
+  id: string;
+  name: string;
+  display_name?: string;
+  created?: string;
+  updated?: string;
+}
+
+export type SetActiveProjectResponse = ActiveProjectResponse | ErrorMessageResponse;
+export type GetActiveProjectResponse = ActiveProjectResponse | ErrorMessageResponse;
