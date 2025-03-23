@@ -161,11 +161,11 @@ class PipelineRun(TypedDict):
     name: str
     status: str
     stackName: str
+    pipelineName: str
     startTime: Optional[str]
     endTime: Optional[str]
-    os: Optional[str]
-    osVersion: Optional[str]
-    pythonVersion: Optional[str]
+    config: Optional[Dict[str, Any]]
+    steps: Optional[Dict[str, Any]]
 
 
 class ListPipelineRunsResponse(TypedDict):
