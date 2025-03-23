@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
+import { ThemeColor, ThemeIcon } from 'vscode';
 import { ServerStatus } from '../types/ServerInfoTypes';
 
 export const PYTOOL_MODULE = 'zenml-python';
@@ -52,10 +53,10 @@ export const INITIAL_ZENML_SERVER_STATUS: ServerStatus = {
   username: null,
 };
 
-export const PIPELINE_RUN_STATUS_ICONS: Record<string, string> = {
-  initializing: 'loading~spin',
-  failed: 'error',
-  completed: 'check',
-  running: 'clock',
-  cached: 'history',
+export const PIPELINE_RUN_STATUS_ICONS: Record<string, ThemeIcon> = {
+  initializing: new ThemeIcon('loading~spin'),
+  failed: new ThemeIcon('error', new ThemeColor('charts.red')),
+  completed: new ThemeIcon('check', new ThemeColor('charts.green')),
+  running: new ThemeIcon('clock', new ThemeColor('charts.orange')),
+  cached: new ThemeIcon('history', new ThemeColor('charts.yellow')),
 };
