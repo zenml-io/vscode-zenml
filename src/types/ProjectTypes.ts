@@ -13,12 +13,17 @@
 
 import { ErrorMessageResponse, VersionMismatchError } from './LSClientResponseTypes';
 
+export interface MetadataType {
+  [key: string]: string | number | boolean | object | string[] | number[] | boolean[] | object[];
+}
+
 export interface Project {
   id: string;
   name: string;
   display_name?: string;
   created?: string;
   updated?: string;
+  metadata?: MetadataType;
 }
 
 export interface ProjectsData {
