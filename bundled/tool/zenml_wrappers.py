@@ -10,7 +10,16 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
-"""This module provides wrappers for ZenML configuration and operations."""
+"""This module provides wrappers for ZenML configuration and operations.
+
+The file is organized into sections for each wrapper class:
+1. GlobalConfigWrapper - Configuration management
+2. ZenServerWrapper - Server management
+3. PipelineRunsWrapper - Pipeline run operations
+4. WorkspacesWrapper - Workspace management for ZenML Pro
+5. ProjectsWrapper - Project management
+6. StacksWrapper - Stack management
+"""
 
 import pathlib
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -36,6 +45,9 @@ from zenml_serializers import (
 )
 
 
+# =============================================================================
+# 1. GlobalConfigWrapper
+# =============================================================================
 class GlobalConfigWrapper:
     """Wrapper class for global configuration management."""
 
@@ -144,6 +156,9 @@ class GlobalConfigWrapper:
         }
 
 
+# =============================================================================
+# 2. ZenServerWrapper
+# =============================================================================
 class ZenServerWrapper:
     """Wrapper class for Zen Server management."""
 
@@ -320,6 +335,9 @@ class ZenServerWrapper:
             return {"error": f"Failed to disconnect: {str(e)}"}
 
 
+# =============================================================================
+# 3. PipelineRunsWrapper
+# =============================================================================
 class PipelineRunsWrapper:
     """Wrapper for interacting with ZenML pipeline runs."""
 
@@ -607,6 +625,9 @@ class PipelineRunsWrapper:
             return {"error": f"Failed to retrieve pipeline run artifact: {str(e)}"}
 
 
+# =============================================================================
+# 4. WorkspacesWrapper
+# =============================================================================
 class WorkspacesWrapper:
     """Wrapper class for Workspace management."""
 
@@ -713,6 +734,9 @@ class WorkspacesWrapper:
             return {"error": f"Unexpected error getting active workspace: {str(e)}"}
 
 
+# =============================================================================
+# 5. ProjectsWrapper
+# =============================================================================
 class ProjectsWrapper:
     """Wrapper class for Project management."""
 
@@ -849,6 +873,9 @@ class ProjectsWrapper:
             return {"error": f"Unexpected error getting project by name: {str(e)}"}
 
 
+# =============================================================================
+# 6. StacksWrapper
+# =============================================================================
 class StacksWrapper:
     """Wrapper class for Stacks management."""
 
