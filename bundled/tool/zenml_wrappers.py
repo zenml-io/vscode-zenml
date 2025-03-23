@@ -375,29 +375,77 @@ class PipelineRunsWrapper:
 
             runs_page = self.client.list_pipeline_runs(**query_params)
 
-            runs_data = [
-                {
+            runs_data = []
+            for run in runs_page.items:
+                run_data = {
                     "id": str(run.id),
-                    "name": run.body.pipeline.name,
-                    "status": run.body.status,
-                    "stackName": run.body.stack.name,
-                    "startTime": (
-                        run.metadata.start_time.isoformat() if run.metadata.start_time else None
-                    ),
-                    "endTime": (
-                        run.metadata.end_time.isoformat() if run.metadata.end_time else None
-                    ),
-                    "os": run.metadata.client_environment.get("os", "Unknown OS"),
-                    "osVersion": run.metadata.client_environment.get(
-                        "os_version",
-                        run.metadata.client_environment.get("mac_version", "Unknown Version"),
-                    ),
-                    "pythonVersion": run.metadata.client_environment.get(
-                        "python_version", "Unknown"
-                    ),
+                    "name": run.name,
+                    "status": str(run.body.status),
+                    "stackName": run.stack.name,
+                    "pipelineName": run.pipeline.name,
+                    "startTime": (run.start_time.isoformat() if run.start_time else None),
+                    "endTime": (run.end_time.isoformat() if run.end_time else None),
                 }
-                for run in runs_page.items
-            ]
+
+                if hasattr(run, "config") and run.config:
+                    run_data["config"] = {
+                        "enable_cache": run.config.enable_cache,
+                        "enable_artifact_metadata": run.config.enable_artifact_metadata,
+                        "enable_artifact_visualization": run.config.enable_artifact_visualization,
+                        "enable_step_logs": run.config.enable_step_logs,
+                    }
+
+                    if hasattr(run.config, "model") and run.config.model:
+                        run_data["config"]["model"] = {
+                            "name": run.config.model.name,
+                            "description": run.config.model.description,
+                            "tags": run.config.model.tags,
+                            "version": run.config.model.version,
+                            "save_models_to_registry": run.config.model.save_models_to_registry,
+                            "license": run.config.model.license,
+                        }
+
+                if hasattr(run, "steps") and run.steps:
+                    steps_data = {}
+                    for step_name, step_info in run.steps.items():
+                        step_data = {}
+
+                        if hasattr(step_info, "body"):
+                            if hasattr(step_info.body, "status"):
+                                status = step_info.body.status
+                                if hasattr(status, "_value_"):
+                                    step_data["status"] = status._value_
+                                else:
+                                    step_data["status"] = str(status)
+
+                            if hasattr(step_info.body, "start_time"):
+                                step_data["start_time"] = (
+                                    step_info.body.start_time.isoformat()
+                                    if step_info.body.start_time
+                                    else None
+                                )
+
+                            if hasattr(step_info.body, "end_time"):
+                                step_data["end_time"] = (
+                                    step_info.body.end_time.isoformat()
+                                    if step_info.body.end_time
+                                    else None
+                                )
+
+                            if hasattr(step_info, "id"):
+                                step_data["id"] = str(step_info.id)
+                        elif isinstance(step_info, dict):
+                            step_data["status"] = step_info.get("status", "unknown")
+                            step_data["start_time"] = step_info.get("start_time")
+                            step_data["end_time"] = step_info.get("end_time")
+                        else:
+                            step_data["status"] = str(getattr(step_info, "status", "unknown"))
+
+                        steps_data[step_name] = step_data
+
+                    run_data["steps"] = steps_data
+
+                runs_data.append(run_data)
 
             return {
                 "runs": runs_data,
