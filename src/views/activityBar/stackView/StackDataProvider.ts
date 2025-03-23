@@ -224,9 +224,9 @@ export class StackDataProvider extends PaginatedDataProvider {
         // Update icon if active state changed
         if (wasActive !== item.isActive) {
           if (item.isActive) {
-            item.iconPath = new ThemeIcon('pass-filled', new ThemeColor('charts.green'));
+            item.iconPath = new ThemeIcon('layers-active', new ThemeColor('charts.green'));
           } else {
-            item.iconPath = new ThemeIcon('archive');
+            item.iconPath = new ThemeIcon('layers');
           }
           // Fire change event only for this item
           this._onDidChangeTreeData.fire(item);
