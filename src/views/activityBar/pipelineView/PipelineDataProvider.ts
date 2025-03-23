@@ -369,7 +369,8 @@ export class PipelineDataProvider extends PaginatedDataProvider {
       new PipelineRunTreeItem('pipeline', run.pipelineName),
       new PipelineRunTreeItem('stack', run.stackName),
       new PipelineRunTreeItem('start_time', formattedStartTime),
-      new PipelineRunTreeItem('end_time', formattedEndTime)
+      new PipelineRunTreeItem('end_time', formattedEndTime),
+      new PipelineRunTreeItem('status', run.status)
     );
 
     return new PipelineTreeItem(run, run.id, children);
