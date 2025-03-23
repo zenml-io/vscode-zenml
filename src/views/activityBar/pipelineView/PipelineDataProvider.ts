@@ -52,7 +52,7 @@ export class PipelineDataProvider extends PaginatedDataProvider {
   }
 
   /**
-   * Retrieves the singleton instance of ServerDataProvider.
+   * Retrieves the singleton instance of PipelineDataProvider.
    *
    * @returns {PipelineDataProvider} The singleton instance.
    */
