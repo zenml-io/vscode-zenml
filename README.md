@@ -13,7 +13,7 @@ The ZenML VSCode extension seamlessly integrates with [ZenML](https://github.com
 - **DAG Visualization for Pipeline Runs**: Explore Directed Acyclic Graphs for each pipeline view directly on the Activity Bar.
 - **Python Tool Integration**: Utilizes a Language Server Protocol (LSP) server for real-time synchronization with the ZenML environment.
 - **Real-Time Configuration Monitoring**: Leverages `watchdog` to dynamically update configurations, keeping the extension in sync with your ZenML setup.
-- **Status Bar**: Display the current active stack, active project, and connection status. You can also change your active stack from the status bar.
+- **Status Bar**: View your active stack, project, and connection status at a glance. You can also quickly switch between stacks or projects directly from the status bar.
 
 ## Getting Started
 
