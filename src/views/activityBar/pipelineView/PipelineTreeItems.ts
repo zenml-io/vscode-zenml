@@ -32,7 +32,7 @@ export class PipelineTreeItem extends vscode.TreeItem {
         ? vscode.TreeItemCollapsibleState.None
         : vscode.TreeItemCollapsibleState.Collapsed
     );
-    this.tooltip = `${run.name} - Status: ${run.status}`;
+    this.tooltip = '';
     this.iconPath = PIPELINE_RUN_STATUS_ICONS[run.status];
     this.children = children;
   }
