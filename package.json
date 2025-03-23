@@ -333,14 +333,14 @@
         {
           "id": "zenml",
           "title": "ZenML",
-          "icon": "resources/logo.png"
+          "icon": "resources/logo.svg"
         }
       ],
       "panel": [
         {
           "id": "zenmlPanel",
           "title": "ZenML",
-          "icon": "resources/logo.png"
+          "icon": "resources/logo.svg"
         }
       ]
     },
