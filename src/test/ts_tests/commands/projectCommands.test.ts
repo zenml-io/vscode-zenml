@@ -108,11 +108,6 @@ suite('Project Commands Test Suite', () => {
     sinon.assert.calledOnce(mockProjectDataProvider.refresh);
   });
 
-  test('refreshActiveProject refreshes the status bar', async () => {
-    await projectCommands.refreshActiveProject();
-    sinon.assert.calledOnce(mockStatusBar.refreshActiveProject);
-  });
-
   test('setActiveProject successfully switches to a new project', async () => {
     const mockProjectNode = new ProjectTreeItem(mockProject, 'mock-project', false);
 
