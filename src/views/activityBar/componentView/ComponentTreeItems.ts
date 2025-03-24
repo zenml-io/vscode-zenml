@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { Flavor, StackComponent } from '../../../types/StackTypes';
 import { formatFlavorTooltip } from '../../../utils/componentUtils';
+import { CONTEXT_VALUES, TREE_ICONS } from '../../../utils/ui-constants';
 import { TreeItemWithChildren } from '../common/TreeItemWithChildren';
 
 /**
@@ -14,8 +15,8 @@ export class ComponentCategoryTreeItem extends vscode.TreeItem implements TreeIt
     public readonly childComponents: ComponentTreeItem[]
   ) {
     super(type, vscode.TreeItemCollapsibleState.Expanded);
-    this.contextValue = 'componentCategory';
-    this.iconPath = new vscode.ThemeIcon('folder');
+    this.contextValue = CONTEXT_VALUES.COMPONENT_CATEGORY;
+    this.iconPath = TREE_ICONS.COMPONENT_CATEGORY;
     this.tooltip = `Component Type: ${type}`;
     this.children = childComponents;
   }
@@ -28,7 +29,7 @@ export class ComponentDetailTreeItem extends vscode.TreeItem {
   constructor(label: string, value: string) {
     super(label, vscode.TreeItemCollapsibleState.None);
     this.description = value;
-    this.contextValue = 'componentDetail';
+    this.contextValue = CONTEXT_VALUES.COMPONENT_DETAIL;
     this.tooltip = '';
   }
 }
@@ -58,9 +59,9 @@ export class ComponentTreeItem extends vscode.TreeItem implements TreeItemWithCh
       this.tooltip.appendMarkdown(`\n\n**Stack ID:** ${parentId}`);
     }
 
-    this.contextValue = 'component';
+    this.contextValue = CONTEXT_VALUES.COMPONENT;
     this.id = parentId ? `${parentId}-${component.id}` : `${component.id}`;
-    this.iconPath = new vscode.ThemeIcon('package');
+    this.iconPath = TREE_ICONS.COMPONENT;
 
     this.children = this.createDetailItems(parentId);
   }
@@ -106,6 +107,6 @@ export class StackComponentTreeItem extends ComponentTreeItem {
     public stackId?: string
   ) {
     super(component, stackId);
-    this.contextValue = 'stackComponent';
+    this.contextValue = CONTEXT_VALUES.STACK_COMPONENT;
   }
 }
