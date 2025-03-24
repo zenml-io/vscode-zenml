@@ -22,7 +22,7 @@ import {
   window,
 } from 'vscode';
 import { getActiveProject, switchActiveProject } from '../../commands/projects/utils';
-import { getActiveStack, switchActiveStack } from '../../commands/stack/utils';
+import { switchActiveStack } from '../../commands/stack/utils';
 import { EventBus } from '../../services/EventBus';
 import {
   MainMenuQuickPickItem,
@@ -30,11 +30,7 @@ import {
   StackQuickPickItem,
 } from '../../types/QuickPickItemTypes';
 import { StatusBarServerStatus } from '../../types/ServerInfoTypes';
-import {
-  LSP_ZENML_PROJECT_CHANGED,
-  LSP_ZENML_STACK_CHANGED,
-  SERVER_STATUS_UPDATED,
-} from '../../utils/constants';
+import { LSP_ZENML_PROJECT_CHANGED, SERVER_STATUS_UPDATED } from '../../utils/constants';
 import { ProjectDataProvider, StackDataProvider } from '../activityBar';
 import { ErrorTreeItem } from '../activityBar/common/ErrorTreeItem';
 import { ProjectTreeItem } from '../activityBar/projectView/ProjectTreeItems';
@@ -60,7 +56,7 @@ export default class ZenMLStatusBar {
    * and initiates the initial refresh of the status bar state.
    */
   constructor() {
-    this.statusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 100);
+    this.statusBarItem = window.createStatusBarItem(StatusBarAlignment.Left, 100);
     this.subscribeToEvents();
     this.statusBarItem.command = 'zenml/statusBar/openSwitchMenu';
   }
@@ -78,11 +74,9 @@ export default class ZenMLStatusBar {
    * @returns void
    */
   private subscribeToEvents(): void {
-    this.eventBus.off(LSP_ZENML_STACK_CHANGED, this.refreshActiveStack);
-    this.eventBus.off(LSP_ZENML_PROJECT_CHANGED, this.refreshActiveProject);
+    this.eventBus.off(LSP_ZENML_PROJECT_CHANGED, this.projectChangeHandler);
     this.eventBus.off(SERVER_STATUS_UPDATED, this.serverStatusUpdateHandler);
 
-    this.eventBus.on(LSP_ZENML_STACK_CHANGED, this.stackChangeHandler);
     this.eventBus.on(LSP_ZENML_PROJECT_CHANGED, this.projectChangeHandler);
     this.eventBus.on(SERVER_STATUS_UPDATED, this.serverStatusUpdateHandler);
   }
@@ -102,24 +96,10 @@ export default class ZenMLStatusBar {
    *
    * @param {string} projectName The name of the active project.
    */
-  private projectChangeHandler = async (projectName: string) => {
-    if (this.activeProjectName !== projectName) {
-      this.activeProjectName = projectName;
-      await this.refreshActiveProject();
-    }
+  private projectChangeHandler = (projectName: string) => {
+    this.refreshActiveProject(projectName);
   };
 
-  /**
-   * Handles the stack change event.
-   *
-   * @param {string} stackId The ID of the active stack.
-   */
-  private stackChangeHandler = async (stackId: string) => {
-    if (this.activeStackId !== stackId) {
-      this.activeStackId = stackId;
-      await this.refreshActiveStack();
-    }
-  };
   /**
    * Retrieves or creates an instance of the ZenMLStatusBar.
    * This method implements the Singleton pattern to ensure that only one instance of ZenMLStatusBar exists.
@@ -145,32 +125,28 @@ export default class ZenMLStatusBar {
    * Asynchronously refreshes the active stack display in the status bar.
    * Attempts to retrieve the current active stack name and updates the status bar item accordingly.
    */
-  public async refreshActiveStack(): Promise<void> {
-    this.showLoading();
-    this.isLoadingStack = true;
-    try {
-      const activeStack = await getActiveStack();
-      this.activeStackId = activeStack?.id || '';
-      this.activeStack = activeStack?.name || 'default';
-    } catch (error) {
-      console.error('Failed to fetch active ZenML stack:', error);
-      this.activeStack = 'Error';
-    } finally {
-      this.isLoadingStack = false;
-      this.updateStatusBarItem();
-    }
+  public refreshActiveStack(activeStack: { id: string; name: string }): void {
+    this.activeStackId = activeStack.id;
+    this.activeStack = activeStack.name;
+    this.updateStatusBarItem();
   }
 
   /**
    * Asynchronously refreshes the active project display in the status bar.
    * Attempts to retrieve the current active project name and updates the status bar accordingly.
    */
-  public async refreshActiveProject(): Promise<void> {
+  public async refreshActiveProject(projectName?: string): Promise<void> {
+    console.log('refreshActiveProject', projectName, this.activeProjectName);
     this.showLoading();
     this.isLoadingProject = true;
+
     try {
-      const activeProject = await getActiveProject();
-      this.activeProjectName = activeProject?.name || '(not set)';
+      if (projectName) {
+        this.activeProjectName = projectName;
+      } else {
+        const activeProject = await getActiveProject();
+        this.activeProjectName = activeProject?.name || '(not set)';
+      }
     } catch (error) {
       console.error('Failed to fetch active ZenML project:', error);
       this.activeProjectName = 'Error';
@@ -178,13 +154,6 @@ export default class ZenMLStatusBar {
       this.isLoadingProject = false;
       this.updateStatusBarItem();
     }
-  }
-
-  /**
-   * Refreshes both active stack and project information.
-   */
-  public async refresh(): Promise<void> {
-    await Promise.all([this.refreshActiveStack(), this.refreshActiveProject()]);
   }
 
   /**
@@ -204,7 +173,7 @@ export default class ZenMLStatusBar {
         label: `Switch Project (current: ${this.activeProjectName || '(not set)'})`,
         description: 'Change the active ZenML project',
         id: 'switchProject',
-        iconPath: new ThemeIcon('symbol-method'),
+        iconPath: new ThemeIcon('folder'),
       },
     ];
 
@@ -336,7 +305,7 @@ export default class ZenMLStatusBar {
         name: project.project.name,
         label: project.project.name,
         kind: QuickPickItemKind.Default,
-        iconPath: new ThemeIcon('symbol-method'),
+        iconPath: new ThemeIcon('folder-active'),
       })),
     ];
 
@@ -381,8 +350,8 @@ export default class ZenMLStatusBar {
       this.isLoadingStack || this.isLoadingProject
         ? '$(loading~spin) Loading...'
         : this.activeProjectName
-          ? `$(symbol-method) ${this.activeProjectName} | $(layers) ${this.activeStack}`
-          : `$(layers) ${this.activeStack}`;
+          ? `$(folder-active) ${this.activeProjectName} | $(layers-active) ${this.activeStack}`
+          : `$(layers-active) ${this.activeStack}`;
     this.updateStatusBarTooltip();
     this.statusBarItem.show();
   }
