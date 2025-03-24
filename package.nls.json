@@ -22,7 +22,6 @@
   "command.renderDag": "Renders a DAG visualizer for a specified ZenML pipeline run.",
   "command.setActiveProject": "Sets a specified project as the active ZenML project.",
   "command.refreshProjectView": "Refreshes the project view to display the latest information on ZenML projects.",
-  "command.refreshActiveProject": "Refreshes the active project to display the latest information on the currently active ZenML project.",
   "command.nextProjectPage": "Navigates to the next page of projects in the project view.",
   "command.previousProjectPage": "Navigates to the previous page of projects in the project view.",
   "command.goToProjectUrl": "Opens the URL of the specific ZenML project in the Dashboard",
