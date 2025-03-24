@@ -46,7 +46,6 @@ export default class ZenMLStatusBar {
   private activeStack: string = '';
   private activeStackId: string = '';
   private activeProjectName: string = '';
-  private isLoadingStack: boolean = false;
   private isLoadingProject: boolean = false;
   private eventBus = EventBus.getInstance();
 
@@ -136,7 +135,6 @@ export default class ZenMLStatusBar {
    * Attempts to retrieve the current active project name and updates the status bar accordingly.
    */
   public async refreshActiveProject(projectName?: string): Promise<void> {
-    console.log('refreshActiveProject', projectName, this.activeProjectName);
     this.showLoading();
     this.isLoadingProject = true;
 
@@ -346,12 +344,11 @@ export default class ZenMLStatusBar {
    * Updates the status bar item with the server status and active stack information.
    */
   private updateStatusBarItem(): void {
-    this.statusBarItem.text =
-      this.isLoadingStack || this.isLoadingProject
-        ? '$(loading~spin) Loading...'
-        : this.activeProjectName
-          ? `$(folder-active) ${this.activeProjectName} | $(layers-active) ${this.activeStack}`
-          : `$(layers-active) ${this.activeStack}`;
+    this.statusBarItem.text = this.isLoadingProject
+      ? '$(loading~spin) Loading...'
+      : this.activeProjectName
+        ? `$(folder) ${this.activeProjectName} | $(layers) ${this.activeStack}`
+        : `$(layers) ${this.activeStack}`;
     this.updateStatusBarTooltip();
     this.statusBarItem.show();
   }
