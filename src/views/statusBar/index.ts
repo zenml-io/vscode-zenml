@@ -31,6 +31,7 @@ import {
 } from '../../types/QuickPickItemTypes';
 import { StatusBarServerStatus } from '../../types/ServerInfoTypes';
 import { LSP_ZENML_PROJECT_CHANGED, SERVER_STATUS_UPDATED } from '../../utils/constants';
+import { TREE_ICONS } from '../../utils/ui-constants';
 import { ProjectDataProvider, StackDataProvider } from '../activityBar';
 import { ErrorTreeItem } from '../activityBar/common/ErrorTreeItem';
 import { ProjectTreeItem } from '../activityBar/projectView/ProjectTreeItems';
@@ -43,7 +44,7 @@ export default class ZenMLStatusBar {
   private static instance: ZenMLStatusBar;
   private statusBarItem: StatusBarItem;
   private serverStatus = { isConnected: false, serverUrl: '' };
-  private activeStack: string = '';
+  private activeStack: string = '$(sync~spin) Loading...';
   private activeStackId: string = '';
   private activeProjectName: string = '';
   private isLoadingProject: boolean = false;
@@ -165,13 +166,13 @@ export default class ZenMLStatusBar {
         label: `Switch Stack (current: ${this.activeStack})`,
         description: 'Change the active ZenML stack',
         id: 'switchStack',
-        iconPath: new ThemeIcon('layers'),
+        iconPath: TREE_ICONS.STACK,
       },
       {
         label: `Switch Project (current: ${this.activeProjectName || '(not set)'})`,
         description: 'Change the active ZenML project',
         id: 'switchProject',
-        iconPath: new ThemeIcon('folder'),
+        iconPath: TREE_ICONS.PROJECT,
       },
     ];
 
@@ -220,7 +221,7 @@ export default class ZenMLStatusBar {
         id: stack.id,
         label: stack.label as string,
         kind: QuickPickItemKind.Default,
-        iconPath: new ThemeIcon('layers'),
+        iconPath: TREE_ICONS.STACK,
       })),
     ];
 
@@ -303,7 +304,7 @@ export default class ZenMLStatusBar {
         name: project.project.name,
         label: project.project.name,
         kind: QuickPickItemKind.Default,
-        iconPath: new ThemeIcon('folder-active'),
+        iconPath: TREE_ICONS.PROJECT,
       })),
     ];
 
@@ -344,11 +345,12 @@ export default class ZenMLStatusBar {
    * Updates the status bar item with the server status and active stack information.
    */
   private updateStatusBarItem(): void {
-    this.statusBarItem.text = this.isLoadingProject
-      ? '$(loading~spin) Loading...'
-      : this.activeProjectName
-        ? `$(folder) ${this.activeProjectName} | $(layers) ${this.activeStack}`
-        : `$(layers) ${this.activeStack}`;
+    this.statusBarItem.text =
+      this.isLoadingProject || this.activeStack === '$(sync~spin) Loading...'
+        ? '$(loading~spin) Loading...'
+        : this.activeProjectName
+          ? `$(symbol-method) ${this.activeProjectName} | $(layers) ${this.activeStack}`
+          : `$(layers) ${this.activeStack}`;
     this.updateStatusBarTooltip();
     this.statusBarItem.show();
   }

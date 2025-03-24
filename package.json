@@ -359,7 +359,7 @@
         {
           "id": "zenmlProjectView",
           "name": "Projects",
-          "icon": "$(folder)"
+          "icon": "$(symbol-method)"
         },
         {
           "id": "zenmlComponentView",
