@@ -41,9 +41,8 @@ export class StackTreeItem extends vscode.TreeItem implements TreeItemWithChildr
     this.contextValue = isActive ? 'activeStack' : 'stack';
     this.isActive = isActive || false;
 
-    // Create a custom ThemeIcon for active stacks that won't lose color on hover
     if (isActive) {
-      this.iconPath = new vscode.ThemeIcon('layers-active', new vscode.ThemeColor('charts.green'));
+      this.iconPath = TREE_ICONS.ACTIVE_STACK;
     } else {
       this.iconPath = TREE_ICONS.STACK;
     }

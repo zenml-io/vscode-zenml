@@ -10,7 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
-import { ThemeColor, ThemeIcon, TreeItem } from 'vscode';
+import { TreeItem } from 'vscode';
 import { State } from 'vscode-languageclient';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
@@ -218,8 +218,7 @@ export class StackDataProvider extends PaginatedDataProvider {
         console.log('updateActiveStack', item.id, activeStackId, item.isActive);
         if (item.isActive) {
           ZenMLStatusBar.getInstance().refreshActiveStack({ id: item.id, name: item.name });
-          // Set a custom ThemeIcon that maintains its color during hover
-          item.iconPath = new ThemeIcon('layers-active', new ThemeColor('charts.green'));
+          item.iconPath = TREE_ICONS.ACTIVE_STACK;
           item.contextValue = 'activeStack';
         } else {
           item.iconPath = TREE_ICONS.STACK;
