@@ -11,10 +11,11 @@
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
+import { EventBus } from '../../services/EventBus';
+import { LSP_ZENML_PROJECT_CHANGED } from '../../utils/constants';
 import { showErrorMessage, showInformationMessage } from '../../utils/notifications';
 import { ProjectDataProvider } from '../../views/activityBar/projectView/ProjectDataProvider';
 import { ProjectTreeItem } from '../../views/activityBar/projectView/ProjectTreeItems';
-import ZenMLStatusBar from '../../views/statusBar';
 import { getProjectDashboardUrl, switchActiveProject } from './utils';
 
 /**
@@ -29,24 +30,6 @@ const refreshProjectView = async () => {
     },
     async () => {
       await ProjectDataProvider.getInstance().refresh();
-    }
-  );
-};
-
-/**
- * Refreshes the active project.
- */
-const refreshActiveProject = async () => {
-  const statusBar = ZenMLStatusBar.getInstance();
-
-  vscode.window.withProgress(
-    {
-      location: vscode.ProgressLocation.Notification,
-      title: 'Refreshing Active Project...',
-      cancellable: false,
-    },
-    async () => {
-      await statusBar.refreshActiveProject();
     }
   );
 };
@@ -68,10 +51,7 @@ const setActiveProject = async (node: ProjectTreeItem): Promise<void> => {
       try {
         const result = await switchActiveProject(node.name);
         if (result) {
-          ProjectDataProvider.getInstance().updateActiveProject(node.name);
-          const statusBar = ZenMLStatusBar.getInstance();
-          await statusBar.refresh();
-
+          EventBus.getInstance().emit(LSP_ZENML_PROJECT_CHANGED, node.name);
           showInformationMessage(`Active project set to: ${node.name}`);
         }
       } catch (error) {
@@ -107,7 +87,6 @@ const goToProjectUrl = (node: ProjectTreeItem) => {
 
 export const projectCommands = {
   refreshProjectView,
-  refreshActiveProject,
   setActiveProject,
   goToProjectUrl,
 };

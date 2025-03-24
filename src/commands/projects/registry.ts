@@ -30,9 +30,6 @@ export const registerProjectCommands = (context: ExtensionContext) => {
         projectDataProvider.updateItemsPerPage()
       ),
       registerCommand('zenml.refreshProjectView', async () => projectCommands.refreshProjectView()),
-      registerCommand('zenml.refreshActiveProject', async () =>
-        projectCommands.refreshActiveProject()
-      ),
       registerCommand('zenml.setActiveProject', async (node: ProjectTreeItem) =>
         projectCommands.setActiveProject(node)
       ),
