@@ -12,7 +12,7 @@
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
 import { PipelineRun } from '../../../types/PipelineTypes';
-import { PIPELINE_RUN_STATUS_ICONS } from '../../../utils/constants';
+import { CONTEXT_VALUES, PIPELINE_RUN_STATUS_ICONS } from '../../../utils/ui-constants';
 
 /**
  * Represents a Pipeline Run Tree Item in the VS Code tree view.
@@ -32,12 +32,13 @@ export class PipelineTreeItem extends vscode.TreeItem {
         ? vscode.TreeItemCollapsibleState.None
         : vscode.TreeItemCollapsibleState.Collapsed
     );
+    // Tooltip removed for demo recording (would contain ID)
     this.tooltip = '';
     this.iconPath = PIPELINE_RUN_STATUS_ICONS[run.status];
     this.children = children;
   }
 
-  contextValue = 'pipelineRun';
+  contextValue = CONTEXT_VALUES.PIPELINE_RUN;
 }
 
 /**
@@ -56,5 +57,5 @@ export class PipelineRunTreeItem extends vscode.TreeItem {
     this.tooltip = '';
   }
 
-  contextValue = 'pipelineRunDetail';
+  contextValue = CONTEXT_VALUES.PIPELINE_RUN_DETAIL;
 }

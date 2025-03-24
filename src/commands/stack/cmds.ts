@@ -38,24 +38,6 @@ const refreshStackView = async () => {
 };
 
 /**
- * Refreshes the active stack.
- */
-const refreshActiveStack = async () => {
-  const statusBar = ZenMLStatusBar.getInstance();
-
-  vscode.window.withProgress(
-    {
-      location: vscode.ProgressLocation.Notification,
-      title: 'Refreshing Active Stack...',
-      cancellable: false,
-    },
-    async () => {
-      await statusBar.refreshActiveStack();
-    }
-  );
-};
-
-/**
  * Renames the selected stack to a new name.
  *
  * @param node The stack to rename.
@@ -154,7 +136,7 @@ const setActiveStack = async (node: StackTreeItem): Promise<void> => {
 
           StackDataProvider.getInstance().updateActiveStack(id);
           const statusBar = ZenMLStatusBar.getInstance();
-          await statusBar.refreshActiveStack();
+          statusBar.refreshActiveStack({ id, name });
 
           showInformationMessage(`Active stack set to: ${name}`);
         }
@@ -259,7 +241,6 @@ const deleteStack = async (node: StackTreeItem) => {
 
 export const stackCommands = {
   refreshStackView,
-  refreshActiveStack,
   renameStack,
   copyStack,
   setActiveStack,

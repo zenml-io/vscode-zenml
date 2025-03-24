@@ -10,8 +10,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
-import { ThemeColor, ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri } from 'vscode';
+import { TreeItem, TreeItemCollapsibleState, Uri } from 'vscode';
 import { ServerStatus } from '../../../types/ServerInfoTypes';
+import { TREE_ICONS } from '../../../utils/ui-constants';
 
 /**
  * A specialized TreeItem for displaying details about a server's status.
@@ -29,7 +30,7 @@ class ServerDetailTreeItem extends TreeItem {
     this.description = detail;
 
     if (iconName) {
-      this.iconPath = new ThemeIcon(iconName);
+      this.iconPath = TREE_ICONS[iconName];
     }
 
     if (detail.startsWith('http://') || detail.startsWith('https://')) {
@@ -38,7 +39,6 @@ class ServerDetailTreeItem extends TreeItem {
         command: 'vscode.open',
         arguments: [Uri.parse(detail)],
       };
-      this.iconPath = new ThemeIcon('link', new ThemeColor('textLink.foreground'));
       this.tooltip = `Click to open ${detail}`;
     }
   }
@@ -79,12 +79,12 @@ export class ServerTreeItem extends TreeItem {
       children.push(new ServerDetailTreeItem('Workspace', workspaceIdentifier, 'symbol-variable'));
     }
 
-    if (this.serverStatus.active_project_id || this.serverStatus.active_project_name) {
-      const projName = this.serverStatus.active_project_name;
-      const projId = this.serverStatus.active_project_id;
-      const projectIdentifier = projName || projId || 'Unknown';
-      children.push(new ServerDetailTreeItem('Project', projectIdentifier, 'symbol-method'));
-    }
+    // if (this.serverStatus.active_project_id || this.serverStatus.active_project_name) {
+    //   const projName = this.serverStatus.active_project_name;
+    //   const projId = this.serverStatus.active_project_id;
+    //   const projectIdentifier = projName || projId || 'Unknown';
+    //   children.push(new ServerDetailTreeItem('Project', projectIdentifier, 'symbol-method'));
+    // }
 
     children.push(
       new ServerDetailTreeItem('Version', this.serverStatus.version, 'versions'),

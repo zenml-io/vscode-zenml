@@ -11,6 +11,7 @@
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
+import { CONTEXT_VALUES, TREE_ICONS } from '../../../utils/ui-constants';
 import { TreeItemWithChildren } from '../common/TreeItemWithChildren';
 import {
   ComponentCategoryTreeItem,
@@ -24,6 +25,7 @@ import {
 export class StackTreeItem extends vscode.TreeItem implements TreeItemWithChildren {
   public children?: vscode.TreeItem[];
   public isActive: boolean;
+  public name: string;
 
   constructor(
     public readonly label: string,
@@ -36,14 +38,16 @@ export class StackTreeItem extends vscode.TreeItem implements TreeItemWithChildr
     const groupedComponents = this.groupComponentsByType(components);
     this.children = groupedComponents;
 
-    this.contextValue = 'stack';
+    this.contextValue = isActive ? 'activeStack' : 'stack';
     this.isActive = isActive || false;
 
     if (isActive) {
-      this.iconPath = new vscode.ThemeIcon('layers-active', new vscode.ThemeColor('charts.green'));
+      this.iconPath = TREE_ICONS.ACTIVE_STACK;
     } else {
-      this.iconPath = new vscode.ThemeIcon('layers');
+      this.iconPath = TREE_ICONS.STACK;
     }
+
+    this.name = label;
 
     this.tooltip = new vscode.MarkdownString(
       `**Stack: ${label}**\n\nID: ${id}\n\nActive: ${isActive ? 'Yes' : 'No'}`
@@ -73,8 +77,8 @@ export class StackTreeItem extends vscode.TreeItem implements TreeItemWithChildr
           vscode.TreeItemCollapsibleState.Collapsed
         ) as TreeItemWithChildren;
 
-        treeItem.contextValue = 'stackComponent';
-        treeItem.iconPath = new vscode.ThemeIcon('package');
+        treeItem.contextValue = CONTEXT_VALUES.STACK_COMPONENT;
+        treeItem.iconPath = TREE_ICONS.COMPONENT;
         treeItem.id = component.id;
         treeItem.tooltip = component.tooltip;
         treeItem.children = component.children;

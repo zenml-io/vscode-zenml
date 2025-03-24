@@ -10,7 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
-import { ThemeColor, ThemeIcon, TreeItem, workspace } from 'vscode';
+import { TreeItem } from 'vscode';
 import { State } from 'vscode-languageclient';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
@@ -20,15 +20,16 @@ import {
   LSP_ZENML_CLIENT_INITIALIZED,
   LSP_ZENML_STACK_CHANGED,
 } from '../../../utils/constants';
+import { TREE_ICONS } from '../../../utils/ui-constants';
+import ZenMLStatusBar from '../../statusBar';
 import { ErrorTreeItem, createAuthErrorItem, createErrorItem } from '../common/ErrorTreeItem';
 import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
 import { PaginatedDataProvider } from '../common/PaginatedDataProvider';
 import { StackComponentTreeItem } from '../componentView/ComponentTreeItems';
 import { StackTreeItem } from './StackTreeItems';
-
 export class StackDataProvider extends PaginatedDataProvider {
   private static instance: StackDataProvider | null = null;
-
+  private activeStackId: string = '';
   private eventBus = EventBus.getInstance();
   private zenmlClientReady = false;
 
@@ -178,9 +179,14 @@ export class StackDataProvider extends PaginatedDataProvider {
           totalPages: total_pages,
         };
 
-        return stacks.map((stack: Stack) =>
-          this.convertToStackTreeItem(stack, this.isActiveStack(stack.id))
-        );
+        return stacks.map((stack: Stack) => {
+          const isActive = this.activeStackId === stack.id;
+          const stackTreeItem = this.convertToStackTreeItem(stack, isActive);
+          if (isActive) {
+            ZenMLStatusBar.getInstance().refreshActiveStack({ id: stack.id, name: stack.name });
+          }
+          return stackTreeItem;
+        });
       } else {
         console.error(`Unexpected response format:`, result);
         return [];
@@ -194,17 +200,6 @@ export class StackDataProvider extends PaginatedDataProvider {
   }
 
   /**
-   * Helper method to determine if a stack is the active stack.
-   *
-   * @param {string} stackId The ID of the stack.
-   * @returns {boolean} True if the stack is active; otherwise, false.
-   */
-  private isActiveStack(stackId: string): boolean {
-    const activeStackId = workspace.getConfiguration('zenml').get<string>('activeStackId');
-    return stackId === activeStackId;
-  }
-
-  /**
    * Updates the active stack status in the tree view without refetching all stacks.
    * This is more efficient than a full refresh when only the active stack changes.
    *
@@ -212,25 +207,25 @@ export class StackDataProvider extends PaginatedDataProvider {
    */
   public updateActiveStack(activeStackId: string): void {
     // Skip full refresh if there are no items yet
+    this.activeStackId = activeStackId;
     if (!this.items || this.items.length === 0 || !(this.items[0] instanceof StackTreeItem)) {
       return;
     }
 
     this.items.forEach(item => {
       if (item instanceof StackTreeItem) {
-        const wasActive = item.isActive;
         item.isActive = item.id === activeStackId;
-
-        // Update icon if active state changed
-        if (wasActive !== item.isActive) {
-          if (item.isActive) {
-            item.iconPath = new ThemeIcon('layers-active', new ThemeColor('charts.green'));
-          } else {
-            item.iconPath = new ThemeIcon('layers');
-          }
-          // Fire change event only for this item
-          this._onDidChangeTreeData.fire(item);
+        console.log('updateActiveStack', item.id, activeStackId, item.isActive);
+        if (item.isActive) {
+          ZenMLStatusBar.getInstance().refreshActiveStack({ id: item.id, name: item.name });
+          item.iconPath = TREE_ICONS.ACTIVE_STACK;
+          item.contextValue = 'activeStack';
+        } else {
+          item.iconPath = TREE_ICONS.STACK;
+          item.contextValue = 'stack';
         }
+
+        this._onDidChangeTreeData.fire(item);
       }
     });
   }

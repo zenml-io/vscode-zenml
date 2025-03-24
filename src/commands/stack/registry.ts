@@ -29,7 +29,6 @@ export const registerStackCommands = (context: ExtensionContext) => {
         stackDataProvider.updateItemsPerPage()
       ),
       registerCommand('zenml.refreshStackView', async () => stackCommands.refreshStackView()),
-      registerCommand('zenml.refreshActiveStack', async () => stackCommands.refreshActiveStack()),
       registerCommand('zenml.registerStack', async () => stackCommands.registerStack()),
       registerCommand('zenml.updateStack', async (node: StackTreeItem) =>
         stackCommands.updateStack(node)

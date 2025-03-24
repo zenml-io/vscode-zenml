@@ -13,7 +13,7 @@
 import { ProgressLocation, commands, window } from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
 import { storeActiveProject } from '../commands/projects/utils';
-import { storeActiveStack } from '../commands/stack/utils';
+import { storeActiveStackId } from '../commands/stack/utils';
 import { GenericLSClientResponse, VersionMismatchError } from '../types/LSClientResponseTypes';
 import { LSNotificationIsZenMLInstalled } from '../types/LSNotificationTypes';
 import { ConfigUpdateDetails } from '../types/ServerInfoTypes';
@@ -167,7 +167,7 @@ export class LSClient {
    */
   public handleStackChanged = async (activeStackId: string): Promise<void> => {
     console.log(`Received ${LSP_ZENML_STACK_CHANGED} notification:`, activeStackId);
-    await storeActiveStack(activeStackId);
+    await storeActiveStackId(activeStackId);
     this.eventBus.emit(LSP_ZENML_STACK_CHANGED, activeStackId);
   };
 

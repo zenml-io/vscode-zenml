@@ -56,7 +56,7 @@ suite('Stack Commands Test Suite', () => {
     sandbox.stub(ZenMLStatusBar, 'getInstance').returns(mockStatusBar);
     sandbox.stub(LSClient, 'getInstance').returns(mockLSClient);
     sandbox.stub(EventBus, 'getInstance').returns(mockEventBus);
-    sandbox.stub(stackUtils, 'storeActiveStack').resolves();
+    sandbox.stub(stackUtils, 'storeActiveStackId').resolves();
     sandbox.stub(globalUtils, 'getZenMLServerUrl').returns(stubbedServerUrl);
 
     showInputBoxStub = sandbox.stub(vscode.window, 'showInputBox');
@@ -155,11 +155,6 @@ suite('Stack Commands Test Suite', () => {
   test('stackDataProviderMock.refresh can be called directly', async () => {
     await mockStackDataProvider.refresh();
     sinon.assert.calledOnce(mockStackDataProvider.refresh);
-  });
-
-  test('refreshActiveStack successfully refreshes the active stack', async () => {
-    await stackCommands.refreshActiveStack();
-    sinon.assert.calledOnce(mockStatusBar.refreshActiveStack);
   });
 
   test('setActiveStack successfully switches to a new stack', async () => {

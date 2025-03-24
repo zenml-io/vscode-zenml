@@ -3,7 +3,7 @@
   "publisher": "ZenML",
   "displayName": "ZenML Studio",
   "description": "Integrates ZenML directly into VS Code, enhancing machine learning workflow with support for pipelines, stacks, server management and DAG visualization.",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "icon": "resources/extension-logo.png",
   "preview": false,
   "license": "Apache-2.0",
@@ -359,7 +359,7 @@
         {
           "id": "zenmlProjectView",
           "name": "Projects",
-          "icon": "$(symbol-variable)"
+          "icon": "$(symbol-method)"
         },
         {
           "id": "zenmlComponentView",
@@ -369,7 +369,7 @@
         {
           "id": "zenmlPipelineView",
           "name": "Pipeline Runs",
-          "icon": "$(beaker)"
+          "icon": "$(symbol-interface)"
         },
         {
           "id": "zenmlEnvironmentView",

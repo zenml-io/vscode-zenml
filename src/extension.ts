@@ -19,7 +19,6 @@ import { LSClient } from './services/LSClient';
 import { ZenExtension } from './services/ZenExtension';
 import { LSP_ZENML_CLIENT_INITIALIZED } from './utils/constants';
 import { toggleCommands } from './utils/global';
-import { refreshUIComponents } from './utils/refresh';
 import { EnvironmentDataProvider } from './views/activityBar/environmentView/EnvironmentDataProvider';
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -30,7 +29,7 @@ export async function activate(context: vscode.ExtensionContext) {
     console.log('ZenML client initialized: ', isInitialized);
     if (isInitialized) {
       await toggleCommands(true);
-      await refreshUIComponents();
+      // await refreshUIComponents();
     }
   };
 

@@ -2,6 +2,21 @@
 
 All notable changes to the "zenml-vscode" extension will be documented in this file.
 
+## [0.0.14] - 2025-03-24
+
+### Added
+
+- New ui-constants system for centralized theming and icons
+- Added new demonstration GIF for the extension
+- Added new gif to README with current features and improvements
+
+### Changed
+
+- Refactored project and stack command structure
+- Updated view icons across the extension for better visual consistency
+- Eliminated unused functions (isLoadingStack, refreshActiveProject/Stack)
+- Removed redundant command descriptions from package.nls.json
+
 ## [0.0.13] - 2025-03-23
 
 ### Added
