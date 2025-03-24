@@ -347,22 +347,21 @@ export class PipelineDataProvider extends PaginatedDataProvider {
     const formattedEndTime = run.endTime ? new Date(run.endTime).toLocaleString() : 'N/A';
     const children: PipelineRunTreeItem[] = [];
 
-    // Create step tree items
+    // steps
     if (run.steps && Object.keys(run.steps).length > 0) {
       children.push(this.createStepsTreeItem(run.steps));
     }
 
-    // Create model tree items
+    // model
     if (run.config?.model) {
       children.push(this.createModelTreeItem(run.config.model));
     }
 
-    // Create config tree items
+    // config
     if (run.config) {
       children.push(this.createConfigTreeItem(run.config));
     }
 
-    // Add basic run information
     children.push(
       new PipelineRunTreeItem('id', run.id),
       new PipelineRunTreeItem('name', run.name),
