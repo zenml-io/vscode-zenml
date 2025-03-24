@@ -36,7 +36,7 @@ export const switchActiveStack = async (
       throw new Error(result.error);
     }
     const { id, name } = result;
-    await storeActiveStack(id);
+    await storeActiveStackId(id);
     return { id, name };
   } catch (error: any) {
     console.error(`Error setting active stack: ${error}`);
@@ -73,7 +73,7 @@ export const getActiveStack = async (): Promise<{ id: string; name: string } | u
  * @param {string} id - The id of the ZenML stack to be stored.
  * @returns {Promise<void>} A promise that resolves when the stack information has been successfully stored.
  */
-export const storeActiveStack = async (id: string): Promise<void> => {
+export const storeActiveStackId = async (id: string): Promise<void> => {
   const config = vscode.workspace.getConfiguration('zenml');
   await config.update('activeStackId', id, vscode.ConfigurationTarget.Global);
 };
@@ -115,7 +115,7 @@ export const getStackDashboardUrl = (id: string): string => {
 const stackUtils = {
   switchActiveStack,
   getActiveStack,
-  storeActiveStack,
+  storeActiveStackId,
   getStackDashboardUrl,
 };
 
