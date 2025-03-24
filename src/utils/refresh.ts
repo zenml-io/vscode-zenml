@@ -17,7 +17,6 @@ import {
   ServerDataProvider,
   StackDataProvider,
 } from '../views/activityBar';
-import ZenMLStatusBar from '../views/statusBar';
 
 // Type definition for a refresh function that takes a global configuration object
 type RefreshFunction = (updatedServerConfig?: ZenServerDetails) => Promise<void>;
@@ -111,7 +110,6 @@ export async function refreshUIComponents(): Promise<void> {
   await StackDataProvider.getInstance().refresh();
   await PipelineDataProvider.getInstance().refresh();
   await ProjectDataProvider.getInstance().refresh();
-  await ZenMLStatusBar.getInstance().refresh();
 }
 
 export const refreshUtils = {

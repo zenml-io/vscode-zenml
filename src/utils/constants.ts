@@ -55,7 +55,7 @@ export const INITIAL_ZENML_SERVER_STATUS: ServerStatus = {
 
 export const PIPELINE_RUN_STATUS_ICONS: Record<string, ThemeIcon> = {
   initializing: new ThemeIcon('loading~spin'),
-  failed: new ThemeIcon('error', new ThemeColor('charts.red')),
+  failed: new ThemeIcon('x', new ThemeColor('charts.red')),
   completed: new ThemeIcon('check', new ThemeColor('charts.green')),
   running: new ThemeIcon('clock', new ThemeColor('charts.orange')),
   cached: new ThemeIcon('history', new ThemeColor('charts.yellow')),
