@@ -10,7 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
-import { ThemeColor, ThemeIcon, TreeItem } from 'vscode';
+import { ThemeIcon, TreeItem } from 'vscode';
 import { State } from 'vscode-languageclient';
 import { getActiveProjectNameFromConfig } from '../../../commands/projects/utils';
 import { EventBus } from '../../../services/EventBus';
@@ -21,6 +21,7 @@ import {
   LSP_ZENML_CLIENT_INITIALIZED,
   LSP_ZENML_PROJECT_CHANGED,
 } from '../../../utils/constants';
+import { TREE_ICONS } from '../../../utils/ui-constants';
 import { ErrorTreeItem, createAuthErrorItem, createErrorItem } from '../common/ErrorTreeItem';
 import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
 import { PaginatedDataProvider } from '../common/PaginatedDataProvider';
@@ -60,15 +61,6 @@ export class ProjectDataProvider extends PaginatedDataProvider {
   };
 
   /**
-   * Handles the change in the project.
-   *
-   * @param {string} projectName The new project name.
-   */
-  private projectChangeHandler = (projectName: string) => {
-    this.updateActiveProject(projectName);
-  };
-
-  /**
    * Handles the change in the LSP client state.
    *
    * @param {State} status The new LSP client state.
@@ -96,6 +88,15 @@ export class ProjectDataProvider extends PaginatedDataProvider {
       this.eventBus.off(LSP_ZENML_PROJECT_CHANGED, this.projectChangeHandler);
       this.eventBus.on(LSP_ZENML_PROJECT_CHANGED, this.projectChangeHandler);
     }
+  };
+
+  /**
+   * Handles the change in the active project.
+   *
+   * @param {string} projectName The name of the newly active project.
+   */
+  private projectChangeHandler = (projectName: string) => {
+    this.updateActiveProject(projectName);
   };
 
   /**
@@ -234,7 +235,6 @@ export class ProjectDataProvider extends PaginatedDataProvider {
     if (projectName === activeProjectName) {
       return true;
     }
-
     return false;
   }
 
@@ -245,30 +245,26 @@ export class ProjectDataProvider extends PaginatedDataProvider {
    * @param {string} activeProjectName The name of the newly active project.
    */
   public updateActiveProject(activeProjectName: string): void {
-    // Skip full refresh if there are no items yet
-    if (!this.items || this.items.length === 0 || !(this.items[0] instanceof ProjectTreeItem)) {
+    if (!this.items || !this.items.length || !(this.items[0] instanceof ProjectTreeItem)) {
       return;
     }
 
     this.items.forEach(item => {
       if (item instanceof ProjectTreeItem) {
-        const wasActive = item.isActive;
-        item.isActive = item.project.name === activeProjectName;
+        const isActive = item.project.name === activeProjectName;
 
-        // Update icon and children if active state changed
-        if (wasActive !== item.isActive) {
-          if (item.isActive) {
-            item.iconPath = new ThemeIcon('pass-filled', new ThemeColor('charts.green'));
-          } else {
-            item.iconPath = new ThemeIcon('symbol-method');
-          }
-
-          // Update the children items to reflect the new active status
-          item.updateChildren();
-
-          // Fire change event only for this item
-          this._onDidChangeTreeData.fire(item);
+        if (isActive) {
+          item.isActive = true;
+          item.iconPath = TREE_ICONS.ACTIVE_PROJECT;
+          item.description = 'Active';
+        } else {
+          item.isActive = false;
+          item.iconPath = TREE_ICONS.PROJECT;
+          item.description = '';
         }
+
+        item.updateChildren();
+        this._onDidChangeTreeData.fire(item);
       }
     });
   }

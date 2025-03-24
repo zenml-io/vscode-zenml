@@ -12,6 +12,7 @@
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
 import { Project } from '../../../types/ProjectTypes';
+import { CONTEXT_VALUES, TREE_ICONS } from '../../../utils/ui-constants';
 import { TreeItemWithChildren } from '../common/TreeItemWithChildren';
 
 /**
@@ -24,7 +25,7 @@ export class ProjectDetailItem extends vscode.TreeItem {
   ) {
     super(label, vscode.TreeItemCollapsibleState.None);
     this.description = detail;
-    this.contextValue = 'projectDetail';
+    this.contextValue = CONTEXT_VALUES.PROJECT_DETAIL;
   }
 }
 
@@ -42,24 +43,26 @@ export class ProjectTreeItem extends vscode.TreeItem implements TreeItemWithChil
   ) {
     super(project.name, vscode.TreeItemCollapsibleState.Collapsed);
 
-    this.contextValue = 'project';
+    this.contextValue = CONTEXT_VALUES.PROJECT;
     this.isActive = isActive || false;
 
     if (isActive) {
-      this.iconPath = new vscode.ThemeIcon('pass-filled', new vscode.ThemeColor('charts.green'));
+      this.iconPath = TREE_ICONS.ACTIVE_PROJECT;
+      this.description = 'Active';
     } else {
-      this.iconPath = new vscode.ThemeIcon('symbol-method');
+      this.iconPath = TREE_ICONS.PROJECT;
+      this.description = '';
     }
 
     this.id = this.project.id;
 
-    this.createChildrenItems();
+    this.updateChildren();
   }
 
   /**
-   * Creates child TreeItems for project details.
+   * Updates the children items when active status changes.
    */
-  private createChildrenItems(): void {
+  public updateChildren(): void {
     const createdOn = this.project.created
       ? new Date(this.project.created).toLocaleString()
       : 'N/A';
@@ -74,12 +77,5 @@ export class ProjectTreeItem extends vscode.TreeItem implements TreeItemWithChil
       new ProjectDetailItem('created', createdOn),
       new ProjectDetailItem('updated', updatedOn),
     ];
-  }
-
-  /**
-   * Updates the children items when active status changes.
-   */
-  public updateChildren(): void {
-    this.createChildrenItems();
   }
 }
