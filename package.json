@@ -359,7 +359,7 @@
         {
           "id": "zenmlProjectView",
           "name": "Projects",
-          "icon": "$(symbol-variable)"
+          "icon": "$(folder)"
         },
         {
           "id": "zenmlComponentView",
@@ -369,7 +369,7 @@
         {
           "id": "zenmlPipelineView",
           "name": "Pipeline Runs",
-          "icon": "$(beaker)"
+          "icon": "$(symbol-interface)"
         },
         {
           "id": "zenmlEnvironmentView",
