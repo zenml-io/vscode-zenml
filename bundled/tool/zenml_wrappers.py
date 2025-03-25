@@ -941,6 +941,37 @@ class StacksWrapper:
         except Exception as e:
             return {"error": f"Unexpected error: {str(e)}"}
 
+    def _process_stack(self, stack):
+        """Process a stack to the desired format."""
+        try:
+            stack_data = serialize_object(stack)
+            if "components" not in stack_data:
+                stack_data["components"] = {}
+            for comp_type, components in stack.components.items():
+                comp_type_str = str(comp_type)
+                stack_data["components"][comp_type_str] = []
+                for component in components:
+                    try:
+                        stack_data["components"][comp_type_str].append(
+                            {
+                                "id": str(component.id),
+                                "name": component.name,
+                                "flavor": serialize_flavor(component.flavor),
+                                "type": str(component.type),
+                            }
+                        )
+                    except Exception as e:
+                        stack_data["components"][comp_type_str].append(
+                            {
+                                "id": str(getattr(component, "id", "unknown")),
+                                "name": getattr(component, "name", "Error processing component"),
+                                "error": str(e),
+                            }
+                        )
+            return stack_data
+        except Exception as e:
+            return {"error": f"Error processing stack: {str(e)}"}
+
     def process_stacks(self, stacks):
         """Process stacks to the desired format."""
         try:
@@ -948,33 +979,7 @@ class StacksWrapper:
 
             for stack in stacks:
                 try:
-                    stack_data = serialize_object(stack)
-                    if "components" not in stack_data:
-                        stack_data["components"] = {}
-
-                    for comp_type, components in stack.components.items():
-                        comp_type_str = str(comp_type)
-                        stack_data["components"][comp_type_str] = []
-                        for component in components:
-                            try:
-                                stack_data["components"][comp_type_str].append(
-                                    {
-                                        "id": str(component.id),
-                                        "name": component.name,
-                                        "flavor": serialize_flavor(component.flavor),
-                                        "type": str(component.type),
-                                    }
-                                )
-                            except Exception as e:
-                                stack_data["components"][comp_type_str].append(
-                                    {
-                                        "id": str(getattr(component, "id", "unknown")),
-                                        "name": getattr(
-                                            component, "name", "Error processing component"
-                                        ),
-                                        "error": str(e),
-                                    }
-                                )
+                    stack_data = self._process_stack(stack)
                     result.append(stack_data)
                 except Exception as e:
                     result.append(
@@ -986,7 +991,6 @@ class StacksWrapper:
                     )
             if not result:
                 return [{"message": "No stacks found or all stacks failed to process"}]
-
             return result
         except Exception as e:
             return [{"error": f"Error processing stacks: {str(e)}"}]
@@ -1001,7 +1005,7 @@ class StacksWrapper:
         try:
             active_stack = self.client.active_stack_model
             if active_stack:
-                stack_data = serialize_object(active_stack)
+                stack_data = self._process_stack(active_stack)
                 return stack_data
             return {"message": "No active stack found"}
         except self.ZenMLBaseException as e:
