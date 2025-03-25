@@ -12,6 +12,7 @@
 // permissions and limitations under the License.
 
 import { ZenServerDetails } from './ServerInfoTypes';
+import { Components } from './StackTypes';
 
 /***** Generic Response Types *****/
 export interface SuccessMessageResponse {
@@ -48,6 +49,7 @@ export type ConnectServerResponse = RestServerConnectionResponse | ErrorMessageR
 export interface ActiveStackResponse {
   id: string;
   name: string;
+  components: Components;
 }
 
 export type SetActiveStackResponse = ActiveStackResponse | ErrorMessageResponse;
