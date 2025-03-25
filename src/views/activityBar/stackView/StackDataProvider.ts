@@ -217,14 +217,49 @@ export class StackDataProvider extends PaginatedDataProvider {
           totalPages: total_pages,
         };
 
-        return stacks.map((stack: Stack) => {
-          const isActive = this.activeStackId === stack.id;
-          const stackTreeItem = this.convertToStackTreeItem(stack, isActive);
-          if (isActive) {
-            ZenMLStatusBar.getInstance().refreshActiveStack({ id: stack.id, name: stack.name });
+        if (stacks.length === 0) {
+          return this.createNoStacksFoundItem();
+        }
+
+        // check if the active stack is in the fetched stacks.
+        const activeFound = stacks.some(stack => stack.id === this.activeStackId);
+        let activeStackItem: StackTreeItem | undefined;
+        let stackTreeItems: StackTreeItem[] = [];
+
+        if (activeFound) {
+          stackTreeItems = stacks.map(stack => {
+            const isActive = stack.id === this.activeStackId;
+            const treeItem = this.convertToStackTreeItem(stack, isActive);
+            if (isActive) {
+              activeStackItem = treeItem;
+              this.updateStatusBar(stack);
+            }
+            return treeItem;
+          });
+          // ensure the active stack is at the top.
+          if (activeStackItem) {
+            stackTreeItems = stackTreeItems.filter(item => item.id !== activeStackItem!.id);
+            stackTreeItems.unshift(activeStackItem);
           }
-          return stackTreeItem;
-        });
+        } else {
+          // active stack is not present in fetched stacks: call getActiveStack.
+          try {
+            const activeStackDetails = await getActiveStack();
+            if (activeStackDetails && !('error' in activeStackDetails)) {
+              activeStackItem = this.convertToStackTreeItem(activeStackDetails, true);
+              this.updateStatusBar(activeStackDetails);
+            }
+          } catch (error) {
+            console.error(`Failed to fetch active stack details: ${error}`);
+          }
+          stackTreeItems = stacks.map(stack => this.convertToStackTreeItem(stack, false));
+          // replace the first item with the active stack if it was fetched.
+          if (activeStackItem) {
+            stackTreeItems.shift();
+            stackTreeItems.unshift(activeStackItem);
+          }
+        }
+        return stackTreeItems;
       } else {
         console.error(`Unexpected response format:`, result);
         return [];
@@ -239,23 +274,26 @@ export class StackDataProvider extends PaginatedDataProvider {
 
   /**
    * Updates the active stack status in the tree view without refetching all stacks.
-   * This is more efficient than a full refresh when only the active stack changes.
    *
    * @param {string} activeStackId The ID of the newly active stack.
    */
-  public updateActiveStack(activeStackId: string): void {
-    // Skip full refresh if there are no items yet
+  public async updateActiveStack(activeStackId: string): Promise<void> {
     this.activeStackId = activeStackId;
+
     if (!this.items || this.items.length === 0 || !(this.items[0] instanceof StackTreeItem)) {
       return;
     }
 
+    let foundInItems = false;
+
     this.items.forEach(item => {
       if (item instanceof StackTreeItem) {
-        item.isActive = item.id === activeStackId;
-        console.log('updateActiveStack', item.id, activeStackId, item.isActive);
-        if (item.isActive) {
-          ZenMLStatusBar.getInstance().refreshActiveStack({ id: item.id, name: item.name });
+        const isActive = item.id === activeStackId;
+        item.isActive = isActive;
+
+        if (isActive) {
+          foundInItems = true;
+          this.updateStatusBar({ id: item.id, name: item.name, components: {} });
           item.iconPath = TREE_ICONS.ACTIVE_STACK;
           item.contextValue = 'activeStack';
         } else {
@@ -266,6 +304,47 @@ export class StackDataProvider extends PaginatedDataProvider {
         this._onDidChangeTreeData.fire(item);
       }
     });
+
+    // If active stack isn't in current items, fetch it and add to the top
+    if (!foundInItems && activeStackId) {
+      try {
+        const activeStackDetails = await getActiveStack();
+        if (activeStackDetails && !('error' in activeStackDetails)) {
+          console.log('activeStackDetails', activeStackDetails);
+          const newActiveStackItem = this.convertToStackTreeItem(activeStackDetails, true);
+          this.updateStatusBar(activeStackDetails);
+
+          const otherItems = this.items.filter(
+            item => !(item instanceof StackTreeItem && item.id === activeStackId)
+          );
+
+          // always show active stack at the top
+          this.items = [newActiveStackItem, ...otherItems];
+          this._onDidChangeTreeData.fire(undefined);
+        } else {
+          console.error(
+            `Failed to fetch active stack details: ${JSON.stringify(activeStackDetails)}`
+          );
+        }
+      } catch (error) {
+        console.error(`Failed to fetch active stack details: ${error}`);
+      }
+    }
+  }
+
+  /**
+   * Creates a TreeItem message when no stacks are found.
+   *
+   * @returns {TreeItem[]} An array with a single TreeItem showing a "No stacks found" message
+   */
+  private createNoStacksFoundItem(): TreeItem[] {
+    const noStacksItem = new TreeItem(
+      `No stacks found${this.activeProjectName ? ` for project '${this.activeProjectName}'` : ''}`
+    );
+    noStacksItem.contextValue = 'noStacks';
+    noStacksItem.iconPath = new vscode.ThemeIcon('info');
+    noStacksItem.tooltip = 'Create a stack to see it listed here';
+    return [noStacksItem];
   }
 
   /**
