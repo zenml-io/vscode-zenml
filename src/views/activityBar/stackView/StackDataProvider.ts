@@ -10,14 +10,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
+import * as vscode from 'vscode';
 import { TreeItem } from 'vscode';
 import { State } from 'vscode-languageclient';
+import { getActiveProjectNameFromConfig } from '../../../commands/projects/utils';
+import { getActiveStack } from '../../../commands/stack/utils';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
 import { Stack, StackComponent, StacksResponse } from '../../../types/StackTypes';
 import {
   LSCLIENT_STATE_CHANGED,
   LSP_ZENML_CLIENT_INITIALIZED,
+  LSP_ZENML_PROJECT_CHANGED,
   LSP_ZENML_STACK_CHANGED,
 } from '../../../utils/constants';
 import { TREE_ICONS } from '../../../utils/ui-constants';
@@ -27,9 +31,11 @@ import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
 import { PaginatedDataProvider } from '../common/PaginatedDataProvider';
 import { StackComponentTreeItem } from '../componentView/ComponentTreeItems';
 import { StackTreeItem } from './StackTreeItems';
+
 export class StackDataProvider extends PaginatedDataProvider {
   private static instance: StackDataProvider | null = null;
   private activeStackId: string = '';
+  private activeProjectName: string | undefined;
   private eventBus = EventBus.getInstance();
   private zenmlClientReady = false;
 
@@ -58,10 +64,25 @@ export class StackDataProvider extends PaginatedDataProvider {
   public subscribeToEvents(): void {
     this.eventBus.off(LSCLIENT_STATE_CHANGED, this.lsClientStateChangeHandler);
     this.eventBus.off(LSP_ZENML_CLIENT_INITIALIZED, this.zenmlClientStateChangeHandler);
+    this.eventBus.off(LSP_ZENML_PROJECT_CHANGED, this.projectChangeHandler);
 
     this.eventBus.on(LSCLIENT_STATE_CHANGED, this.lsClientStateChangeHandler);
     this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, this.zenmlClientStateChangeHandler);
+    this.eventBus.on(LSP_ZENML_PROJECT_CHANGED, this.projectChangeHandler);
   }
+
+  /**
+   * Handles the change in the project.
+   *
+   * @param {string} projectName The new project name.
+   */
+  private projectChangeHandler = (projectName?: string) => {
+    console.log(`StackDataProvider received project change event: ${projectName}`);
+    if (projectName && projectName !== this.activeProjectName) {
+      this.activeProjectName = projectName;
+      this.refresh();
+    }
+  };
 
   /**
    * Triggers the loading state for a given entity.
@@ -86,20 +107,38 @@ export class StackDataProvider extends PaginatedDataProvider {
     }
   };
 
+  // update status bar when active stack changes
+  private updateStatusBar = (activeStack: Stack) => {
+    ZenMLStatusBar.getInstance().refreshActiveStack({
+      id: activeStack.id,
+      name: activeStack.name,
+    });
+  };
+
   /**
    * Handles the change in the ZenML client state.
    *
    * @param {boolean} isInitialized The new ZenML client state.
    */
-  private zenmlClientStateChangeHandler = (isInitialized: boolean) => {
+  private zenmlClientStateChangeHandler = async (isInitialized: boolean) => {
     this.zenmlClientReady = isInitialized;
     if (!isInitialized) {
       this.triggerLoadingState('stacks');
     } else {
+      if (!this.activeProjectName) {
+        const projectName = getActiveProjectNameFromConfig();
+        if (projectName) {
+          this.activeProjectName = projectName;
+        }
+      }
+
       this.refresh();
 
       this.eventBus.off(LSP_ZENML_STACK_CHANGED, this.stackChangeHandler);
       this.eventBus.on(LSP_ZENML_STACK_CHANGED, this.stackChangeHandler);
+
+      this.eventBus.off(LSP_ZENML_PROJECT_CHANGED, this.projectChangeHandler);
+      this.eventBus.on(LSP_ZENML_PROJECT_CHANGED, this.projectChangeHandler);
     }
   };
 
@@ -108,8 +147,8 @@ export class StackDataProvider extends PaginatedDataProvider {
    *
    * @param {string} activeStackId The ID of the newly active stack.
    */
-  private stackChangeHandler = (activeStackId: string) => {
-    this.updateActiveStack(activeStackId);
+  private stackChangeHandler = async (activeStackId: string) => {
+    await this.updateActiveStack(activeStackId);
   };
 
   /**
@@ -171,7 +210,6 @@ export class StackDataProvider extends PaginatedDataProvider {
 
       if ('stacks' in result) {
         const { stacks, total, total_pages, current_page, items_per_page } = result;
-
         this.pagination = {
           currentPage: current_page,
           itemsPerPage: items_per_page,
