@@ -77,6 +77,8 @@ export const TREE_ICONS: Record<string, ThemeIcon> = {
   LOADING: new ThemeIcon('loading~spin'),
   CLOCK: new ThemeIcon('clock', ZENML_COLORS.ORANGE),
   HISTORY: new ThemeIcon('history', ZENML_COLORS.WARNING),
+  RUNNING: new ThemeIcon('sync~spin', ZENML_COLORS.WARNING),
+  INITIALIZING: new ThemeIcon('sync~spin', ZENML_COLORS.PURPLE),
 
   // View-specific icons
   SERVER: new ThemeIcon('vm'),
@@ -121,10 +123,10 @@ export const TREE_ICONS: Record<string, ThemeIcon> = {
  * Pipeline Run Status Icons - Icons for different pipeline run statuses
  */
 export const PIPELINE_RUN_STATUS_ICONS: Record<string, ThemeIcon> = {
-  initializing: TREE_ICONS.LOADING,
+  initializing: TREE_ICONS.INITIALIZING,
   failed: TREE_ICONS.ERROR,
   completed: TREE_ICONS.SUCCESS,
-  running: TREE_ICONS.CLOCK,
+  running: TREE_ICONS.RUNNING,
   cached: TREE_ICONS.HISTORY,
 };
 
