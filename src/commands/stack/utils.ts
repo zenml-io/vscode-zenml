@@ -52,7 +52,7 @@ export const switchActiveStack = async (
 /**
  * Gets the id and name of the active ZenML stack.
  *
- * @returns {Promise<{id: string, name: string}>} A promise that resolves with the id and name of the active stack, or undefined on error;
+ * @returns {Promise<{id: string, name: string, components?: any}>} A promise that resolves with the active stack details, or undefined on error
  */
 export const getActiveStack = async (): Promise<GetActiveStackResponse | undefined> => {
   const lsClient = LSClient.getInstance();
