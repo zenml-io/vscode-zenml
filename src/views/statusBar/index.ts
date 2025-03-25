@@ -44,9 +44,9 @@ export default class ZenMLStatusBar {
   private static instance: ZenMLStatusBar;
   private statusBarItem: StatusBarItem;
   private serverStatus = { isConnected: false, serverUrl: '' };
-  private activeStack: string = '$(sync~spin) Loading...';
+  private activeStack: string = '$(kebab-horizontal)';
   private activeStackId: string = '';
-  private activeProjectName: string = '';
+  private activeProjectName: string = '$(kebab-horizontal)';
   private isLoadingProject: boolean = false;
   private eventBus = EventBus.getInstance();
 
@@ -59,6 +59,7 @@ export default class ZenMLStatusBar {
     this.statusBarItem = window.createStatusBarItem(StatusBarAlignment.Left, 100);
     this.subscribeToEvents();
     this.statusBarItem.command = 'zenml/statusBar/openSwitchMenu';
+    this.updateStatusBarItem();
   }
 
   /**
