@@ -33,7 +33,7 @@ export class ComponentDataProvider extends PaginatedDataProvider {
   constructor() {
     super();
     this.subscribeToEvents();
-    this.items = [LOADING_TREE_ITEMS.get('components')!];
+    this.items = [this.createInitialMessage()];
     this.viewName = 'Component';
   }
 
@@ -65,9 +65,11 @@ export class ComponentDataProvider extends PaginatedDataProvider {
    */
   private lsClientStateChangeHandler = (status: State) => {
     if (status === State.Running) {
-      this.refresh();
+      this.items = [this.createInitialMessage()];
+      this._onDidChangeTreeData.fire(undefined);
     } else {
-      this.triggerLoadingState('lsClient');
+      this.items = [this.createInitialMessage('Language server not running')];
+      this._onDidChangeTreeData.fire(undefined);
     }
   };
 
@@ -79,9 +81,12 @@ export class ComponentDataProvider extends PaginatedDataProvider {
   private zenmlClientStateChangeHandler = (isInitialized: boolean) => {
     this.zenmlClientReady = isInitialized;
     if (!isInitialized) {
-      this.triggerLoadingState('components');
+      this.items = [this.createInitialMessage('ZenML client not initialized')];
+      this._onDidChangeTreeData.fire(undefined);
     } else {
-      this.refresh();
+      // just show a message that components can be loaded
+      this.items = [this.createInitialMessage()];
+      this._onDidChangeTreeData.fire(undefined);
     }
   };
 
@@ -96,6 +101,20 @@ export class ComponentDataProvider extends PaginatedDataProvider {
     }
 
     return ComponentDataProvider.instance;
+  }
+
+  /**
+   * Creates the initial message tree item that tells users to refresh
+   *
+   * @param {string} message - Optional custom message to display
+   * @returns {vscode.TreeItem} The tree item with the message
+   */
+  private createInitialMessage(message?: string): vscode.TreeItem {
+    const defaultMessage = 'Click the refresh button to load stack components';
+    const treeItem = new vscode.TreeItem(message || defaultMessage);
+    treeItem.iconPath = new vscode.ThemeIcon('info');
+    treeItem.contextValue = 'componentMessage';
+    return treeItem;
   }
 
   /**
