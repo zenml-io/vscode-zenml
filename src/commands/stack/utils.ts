@@ -32,11 +32,16 @@ export const switchActiveStack = async (
       stackNameOrId,
     ]);
     if (result && 'error' in result) {
-      console.log('Error in switchZenMLStack result', result);
       throw new Error(result.error);
     }
     const { id, name } = result;
-    await storeActiveStackId(id);
+
+    try {
+      await storeActiveStackId(id);
+    } catch (storageError) {
+      console.error(`Error storing active stack ID: ${storageError}`);
+    }
+
     return { id, name };
   } catch (error: any) {
     console.error(`Error setting active stack: ${error}`);
@@ -47,9 +52,9 @@ export const switchActiveStack = async (
 /**
  * Gets the id and name of the active ZenML stack.
  *
- * @returns {Promise<{id: string, name: string}>} A promise that resolves with the id and name of the active stack, or undefined on error;
+ * @returns {Promise<{id: string, name: string, components?: any}>} A promise that resolves with the active stack details, or undefined on error
  */
-export const getActiveStack = async (): Promise<{ id: string; name: string } | undefined> => {
+export const getActiveStack = async (): Promise<GetActiveStackResponse | undefined> => {
   const lsClient = LSClient.getInstance();
   if (!lsClient.clientReady) {
     return;
@@ -74,8 +79,20 @@ export const getActiveStack = async (): Promise<{ id: string; name: string } | u
  * @returns {Promise<void>} A promise that resolves when the stack information has been successfully stored.
  */
 export const storeActiveStackId = async (id: string): Promise<void> => {
-  const config = vscode.workspace.getConfiguration('zenml');
-  await config.update('activeStackId', id, vscode.ConfigurationTarget.Global);
+  try {
+    const config = vscode.workspace.getConfiguration('zenml');
+    await config.update('activeStackId', id, vscode.ConfigurationTarget.Global);
+  } catch (error) {
+    console.error(`Failed to store active stack ID in settings: ${error}`);
+    setTimeout(async () => {
+      try {
+        const config = vscode.workspace.getConfiguration('zenml');
+        await config.update('activeStackId', id, vscode.ConfigurationTarget.Global);
+      } catch (retryError) {
+        console.error(`Failed to store active stack ID on retry: ${retryError}`);
+      }
+    }, 500);
+  }
 };
 
 /**
