@@ -2,6 +2,21 @@
 
 All notable changes to the "zenml-vscode" extension will be documented in this file.
 
+## [0.0.15] - 2025-03-25
+
+### Fixed
+
+- Fixed stuck status bar loading state on startup
+- Resolved unhandled promise rejection from concurrent settings updates
+- Improved project and stack switching resilience between CLI and extension
+
+### Changed
+
+- Added "No stacks found" message for empty projects
+- Active stack now always shows at top regardless of pagination
+- Stack Components view shows info message on startup and loads on-demand (manual refresh)
+- Auto-refresh stack view when switching projects
+
 ## [0.0.14] - 2025-03-24
 
 ### Added
