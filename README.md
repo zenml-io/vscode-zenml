@@ -3,7 +3,7 @@
 ![](https://img.shields.io/github/license/zenml-io/vscode-zenml)
 
 <div>
-  <img src="resources/zenml-extension-new.gif" alt="ZenML Extension" width="55%">
+  <img src="resources/zenml-extension-new.gif" alt="ZenML Extension" width="60%">
 </div>
 
 The ZenML VSCode extension seamlessly integrates with [ZenML](https://github.com/zenml-io/zenml) to enhance your MLOps workflow within VSCode. It is designed to accurately mirror the current state of your ZenML environment within your IDE, ensuring a smooth and integrated experience.
