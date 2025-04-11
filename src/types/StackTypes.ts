@@ -18,6 +18,7 @@ import { ErrorMessageResponse, VersionMismatchError } from './LSClientResponseTy
  * Hydrated types are in the HydratedTypes.ts file.
  ************************************************************************************************/
 interface StacksData {
+  active_stack: Stack;
   stacks: Stack[];
   total: number;
   total_pages: number;
@@ -62,6 +63,8 @@ interface Flavor {
   id: string;
   name: string;
   type: string;
+  integration: string | null;
+  source: string | null;
   logo_url: string;
   config_schema: { [key: string]: any };
   docs_url: string | null;
@@ -71,7 +74,7 @@ interface Flavor {
   connector_resource_id_attr: string | null;
   created: string | null;
   updated: string | null;
-  body?: FlavorResponseBody;
+  is_custom: boolean;
 }
 
 interface FlavorListData {
@@ -80,16 +83,6 @@ interface FlavorListData {
   total_pages: number;
   total: number;
   items: Flavor[];
-}
-
-interface FlavorResponseBody {
-  created?: string;
-  updated?: string;
-  user?: string | null;
-  type?: string;
-  integration?: string;
-  source?: string;
-  logo_url?: string;
 }
 
 export type FlavorListResponse = FlavorListData | ErrorMessageResponse | VersionMismatchError;
@@ -103,7 +96,6 @@ export {
   ComponentsListData,
   ComponentTypes,
   Flavor,
-  FlavorResponseBody,
   Stack,
   StackComponent,
   StacksData,
