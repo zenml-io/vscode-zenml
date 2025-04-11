@@ -113,21 +113,7 @@ export class PaginatedDataProvider implements TreeDataProvider<TreeItem> {
       if (this.items[0] instanceof LoadingTreeItem || this.items[0] instanceof ErrorTreeItem) {
         return this.items;
       }
-
-      // Combine pinned items with regular items, ensuring no duplicates
-      let displayItems = this.pinnedItems.slice();
-
-      // Add separator if we have both pinned items and regular items
-      if (displayItems.length > 0 && this.items.length > 0) {
-        const separator = new TreeItem('────────────────');
-        separator.contextValue = 'separator';
-        displayItems.push(separator);
-      }
-
-      // Add the regular items
-      displayItems = displayItems.concat(this.items);
-
-      return this.addPaginationCommands(displayItems);
+      return this.addPaginationCommands(this.items.slice());
     }
 
     if (element && 'children' in element && element.children) {
