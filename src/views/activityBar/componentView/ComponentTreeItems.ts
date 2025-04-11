@@ -82,8 +82,8 @@ export class ComponentTreeItem extends vscode.TreeItem implements TreeItemWithCh
         if (flavor.name) {
           details.push(new ComponentDetailTreeItem('flavor', flavor.name));
         }
-        if (flavor.body?.integration) {
-          details.push(new ComponentDetailTreeItem('integration', flavor.body.integration));
+        if (flavor.integration) {
+          details.push(new ComponentDetailTreeItem('integration', flavor.integration));
         }
       }
     }
