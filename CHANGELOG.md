@@ -2,6 +2,20 @@
 
 All notable changes to the "zenml-vscode" extension will be documented in this file.
 
+## [0.0.16] - 2025-04-11
+
+### Changed
+
+- Supports ZenML 0.80.0-0.80.2
+
+### Fixed
+
+- Fixed `AttributeError` when loading pipeline run step data in DAG view
+- Fixed `AttributeError` when loading artifact data in DAG view
+- Fixed DAG view icons not showing up correctly
+- Fixed active stack occasionally being registered twice on refresh
+- Solves the "Element with id 'xyz' is already registered" error when refreshing Stacks view
+
 ## [0.0.15] - 2025-03-25
 
 ### Fixed
