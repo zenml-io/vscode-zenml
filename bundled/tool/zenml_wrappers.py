@@ -496,7 +496,7 @@ class PipelineRunsWrapper:
             run_data = {
                 "id": str(run.id),
                 "name": run.pipeline.name,
-                "status": run.status,
+                "status": run.status._value_ if hasattr(run.status, "_value_") else str(run.status),
                 "stackName": run.stack.name,
                 "startTime": (
                     run.metadata.start_time.isoformat() if run.metadata.start_time else None
@@ -553,7 +553,9 @@ class PipelineRunsWrapper:
             step_data = {
                 "name": step.name,
                 "id": str(step.id),
-                "status": step.status,
+                "status": step.status._value_
+                if hasattr(step.status, "_value_")
+                else str(step.status),
                 "author": {
                     "fullName": step.user.full_name,
                     "email": step.user.name,
@@ -569,7 +571,9 @@ class PipelineRunsWrapper:
                 "orchestrator": {"runId": str(run.metadata.orchestrator_run_id)},
                 "pipeline": {
                     "name": run.pipeline.name,
-                    "status": run.status,
+                    "status": run.status._value_
+                    if hasattr(run.status, "_value_")
+                    else str(run.status),
                 },
                 "cacheKey": step.metadata.cache_key,
                 "sourceCode": step.metadata.source_code,
