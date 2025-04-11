@@ -2,6 +2,33 @@
 
 All notable changes to the "zenml-vscode" extension will be documented in this file.
 
+## [0.0.16] - 2025-04-11
+
+### Changed
+
+- Supports ZenML 0.80.0-0.80.2
+
+### Fixed
+
+- Fixed `AttributeError` when loading pipeline run step data in DAG view
+- Fixed `AttributeError` when loading artifact data in DAG view
+- Fixed DAG view icons not showing up correctly
+- Fixed active stack occasionally being registered twice on refresh
+- Solves the "Element with id 'xyz' is already registered" error when refreshing Stacks view
+
+### Dependencies
+
+- Updated dependencies:
+  - svgdom (0.1.20 → 0.1.21)
+  - @eslint/js (9.22.0 → 9.24.0)
+  - @types/node (22.13.10 → 22.14.0)
+  - @types/vscode (1.98.0 → 1.99.0)
+  - @vscode/vsce (3.3.0 → 3.3.2)
+  - eslint (9.22.0 → 9.24.0)
+  - eslint-plugin-prettier (5.2.3 → 5.2.6)
+  - typescript (5.8.2 → 5.8.3)
+  - typescript-eslint (8.27.0 → 8.29.0)
+
 ## [0.0.15] - 2025-03-25
 
 ### Fixed

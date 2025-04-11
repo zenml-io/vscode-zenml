@@ -16,7 +16,6 @@ import datetime
 import functools
 import json
 import uuid
-from typing import Any, Dict
 
 
 def serialize_flavor(flavor):
@@ -35,15 +34,13 @@ def serialize_flavor(flavor):
         return flavor
 
     try:
-        base_dict: Dict[str, Any] = {}
-        if hasattr(flavor, "id"):
-            base_dict["id"] = str(flavor.id)
-        if hasattr(flavor, "name"):
-            base_dict["name"] = flavor.name
-        if hasattr(flavor, "type"):
-            base_dict["type"] = str(flavor.type)
-
-        for attr in [
+        result = {}
+        direct_attrs = [
+            "id",
+            "name",
+            "type",
+            "integration",
+            "source",
             "logo_url",
             "config_schema",
             "docs_url",
@@ -51,34 +48,23 @@ def serialize_flavor(flavor):
             "connector_type",
             "connector_resource_type",
             "connector_resource_id_attr",
-        ]:
+            "is_custom",
+            "created",
+            "updated",
+            "user",
+        ]
+
+        for attr in direct_attrs:
             if hasattr(flavor, attr):
-                base_dict[attr] = getattr(flavor, attr)
+                value = getattr(flavor, attr)
+                if isinstance(value, uuid.UUID):
+                    result[attr] = str(value)
+                elif isinstance(value, datetime.datetime):
+                    result[attr] = value.isoformat()
+                else:
+                    result[attr] = value
 
-        if hasattr(flavor, "body") and flavor.body:
-            body = {}
-            body_obj = flavor.body
-
-            for attr in ["type", "integration", "source", "logo_url", "user"]:
-                if hasattr(body_obj, attr):
-                    body[attr] = getattr(body_obj, attr)
-
-            for key in ["created", "updated"]:
-                if hasattr(body_obj, key):
-                    val = getattr(body_obj, key)
-                    if isinstance(val, datetime.datetime):
-                        body[key] = val.isoformat()
-                    else:
-                        body[key] = val
-
-            base_dict["body"] = body
-
-            # Copy datetime properties to top level for backwards compatibility
-            for key in ["created", "updated"]:
-                if key in body:
-                    base_dict[key] = body[key]
-
-        return base_dict
+        return result
     except Exception:
         return str(flavor)
 

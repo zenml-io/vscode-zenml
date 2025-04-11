@@ -89,6 +89,7 @@ export const TREE_ICONS: Record<string, ThemeIcon> = {
   PROJECT: new ThemeIcon('symbol-method'),
   ACTIVE_PROJECT: new ThemeIcon('symbol-function', ZENML_COLORS.SUCCESS),
   COMPONENT: new ThemeIcon('package'),
+  ACTIVE_COMPONENT: new ThemeIcon('package', ZENML_COLORS.SUCCESS),
   COMPONENT_CATEGORY: new ThemeIcon('folder'),
   PIPELINE: new ThemeIcon('symbol-interface'),
   PIPELINE_RUN: new ThemeIcon('beaker'),
@@ -156,10 +157,13 @@ export const TOOLTIPS = {
  */
 export const CONTEXT_VALUES = {
   // Container context values
-  STACK: 'stack',
   PROJECT: 'project',
-  COMPONENT: 'component',
+  ACTIVE_PROJECT: 'activeProject',
+  STACK: 'stack',
+  ACTIVE_STACK: 'activeStack',
   STACK_COMPONENT: 'stackComponent',
+  ACTIVE_STACK_COMPONENT: 'activeStackComponent',
+  COMPONENT: 'component',
   COMPONENT_CATEGORY: 'componentCategory',
   PIPELINE: 'pipeline',
   PIPELINE_RUN: 'pipelineRun',

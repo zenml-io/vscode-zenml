@@ -40,7 +40,6 @@ from type_hints import (
 from zenml_grapher import Grapher
 from zenml_serializers import (
     serialize_flavor,
-    serialize_object,
     serialize_response,
 )
 
@@ -359,6 +358,33 @@ class PipelineRunsWrapper:
         """Returns the ZenML ZenMLBaseException class."""
         return self.lazy_import("zenml.exceptions", "ZenMLBaseException")
 
+    def _extract_steps_data(self, steps):
+        """Extracts step data from a pipeline run."""
+        steps_data = {}
+        for step_name, step_info in steps.items():
+            step_data = {}
+
+            if hasattr(step_info, "status"):
+                status = step_info.status
+                step_data["status"] = status._value_ if hasattr(status, "_value_") else str(status)
+
+            if hasattr(step_info, "start_time"):
+                step_data["start_time"] = (
+                    step_info.start_time.isoformat() if step_info.start_time else None
+                )
+
+            if hasattr(step_info, "end_time"):
+                step_data["end_time"] = (
+                    step_info.end_time.isoformat() if step_info.end_time else None
+                )
+
+            if hasattr(step_info, "id"):
+                step_data["id"] = str(step_info.id)
+
+            steps_data[step_name] = step_data
+
+        return steps_data
+
     @serialize_response
     def fetch_pipeline_runs(self, args) -> Union[ListPipelineRunsResponse, ErrorResponse]:
         """Fetches ZenML pipeline runs with optional project filtering.
@@ -398,7 +424,7 @@ class PipelineRunsWrapper:
                 run_data = {
                     "id": str(run.id),
                     "name": run.name,
-                    "status": str(run.body.status),
+                    "status": str(run.status),
                     "stackName": run.stack.name,
                     "pipelineName": run.pipeline.name,
                     "startTime": (run.start_time.isoformat() if run.start_time else None),
@@ -424,44 +450,7 @@ class PipelineRunsWrapper:
                         }
 
                 if hasattr(run, "steps") and run.steps:
-                    steps_data = {}
-                    for step_name, step_info in run.steps.items():
-                        step_data = {}
-
-                        if hasattr(step_info, "body"):
-                            if hasattr(step_info.body, "status"):
-                                status = step_info.body.status
-                                if hasattr(status, "_value_"):
-                                    step_data["status"] = status._value_
-                                else:
-                                    step_data["status"] = str(status)
-
-                            if hasattr(step_info.body, "start_time"):
-                                step_data["start_time"] = (
-                                    step_info.body.start_time.isoformat()
-                                    if step_info.body.start_time
-                                    else None
-                                )
-
-                            if hasattr(step_info.body, "end_time"):
-                                step_data["end_time"] = (
-                                    step_info.body.end_time.isoformat()
-                                    if step_info.body.end_time
-                                    else None
-                                )
-
-                            if hasattr(step_info, "id"):
-                                step_data["id"] = str(step_info.id)
-                        elif isinstance(step_info, dict):
-                            step_data["status"] = step_info.get("status", "unknown")
-                            step_data["start_time"] = step_info.get("start_time")
-                            step_data["end_time"] = step_info.get("end_time")
-                        else:
-                            step_data["status"] = str(getattr(step_info, "status", "unknown"))
-
-                        steps_data[step_name] = step_data
-
-                    run_data["steps"] = steps_data
+                    run_data["steps"] = self._extract_steps_data(run.steps)
 
                 runs_data.append(run_data)
 
@@ -506,9 +495,9 @@ class PipelineRunsWrapper:
             run = self.client.get_pipeline_run(run_id, hydrate=True)
             run_data = {
                 "id": str(run.id),
-                "name": run.body.pipeline.name,
-                "status": run.body.status,
-                "stackName": run.body.stack.name,
+                "name": run.pipeline.name,
+                "status": run.status._value_ if hasattr(run.status, "_value_") else str(run.status),
+                "stackName": run.stack.name,
                 "startTime": (
                     run.metadata.start_time.isoformat() if run.metadata.start_time else None
                 ),
@@ -521,10 +510,14 @@ class PipelineRunsWrapper:
                 "pythonVersion": run.metadata.client_environment.get("python_version", "Unknown"),
             }
 
+            if hasattr(run, "steps") and run.steps:
+                run_data["steps"] = self._extract_steps_data(run.steps)
+
             return run_data
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve pipeline run: {str(e)}"}
 
+    @serialize_response
     def get_pipeline_run_graph(self, args: Tuple[str]) -> Union[GraphResponse, ErrorResponse]:
         """Gets a ZenML pipeline run step DAG.
 
@@ -543,6 +536,7 @@ class PipelineRunsWrapper:
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve pipeline run graph: {str(e)}"}
 
+    @serialize_response
     def get_run_step(self, args: Tuple[str]) -> Union[RunStepResponse, ErrorResponse]:
         """Gets a ZenML pipeline run step.
 
@@ -559,29 +553,31 @@ class PipelineRunsWrapper:
             step_data = {
                 "name": step.name,
                 "id": str(step.id),
-                "status": step.body.status,
+                "status": step.status._value_
+                if hasattr(step.status, "_value_")
+                else str(step.status),
                 "author": {
-                    "fullName": step.body.user.body.full_name,
-                    "email": step.body.user.name,
+                    "fullName": step.user.full_name,
+                    "email": step.user.name,
                 },
-                "startTime": (
-                    step.metadata.start_time.isoformat() if step.metadata.start_time else None
-                ),
-                "endTime": (step.metadata.end_time.isoformat() if step.metadata.end_time else None),
+                "startTime": (step.start_time.isoformat() if step.start_time else None),
+                "endTime": (step.end_time.isoformat() if step.end_time else None),
                 "duration": (
-                    str(step.metadata.end_time - step.metadata.start_time)
-                    if step.metadata.end_time and step.metadata.start_time
+                    str(step.end_time - step.start_time)
+                    if step.end_time and step.start_time
                     else None
                 ),
-                "stackName": run.body.stack.name,
+                "stackName": run.stack.name,
                 "orchestrator": {"runId": str(run.metadata.orchestrator_run_id)},
                 "pipeline": {
-                    "name": run.body.pipeline.name,
-                    "status": run.body.status,
+                    "name": run.pipeline.name,
+                    "status": run.status._value_
+                    if hasattr(run.status, "_value_")
+                    else str(run.status),
                 },
                 "cacheKey": step.metadata.cache_key,
                 "sourceCode": step.metadata.source_code,
-                "logsUri": step.metadata.logs.body.uri,
+                "logsUri": step.metadata.logs.uri,
             }
             return step_data
         except self.ZenMLBaseException as e:
@@ -601,21 +597,21 @@ class PipelineRunsWrapper:
 
             metadata = {}
             for key in artifact.metadata.run_metadata:
-                metadata[key] = artifact.metadata.run_metadata[key].body.value
+                metadata[key] = artifact.metadata.run_metadata[key]
 
             artifact_data = {
-                "name": artifact.body.artifact.name,
-                "version": artifact.body.version,
+                "name": artifact.artifact.name,
+                "version": artifact.version,
                 "id": str(artifact.id),
-                "type": artifact.body.type,
-                "author": {
-                    "fullName": artifact.body.user.body.full_name,
-                    "email": artifact.body.user.name,
+                "type": artifact.type,
+                "user": {
+                    "fullName": artifact.user.full_name,
+                    "name": artifact.user.name,
                 },
-                "updated": artifact.body.updated.isoformat(),
+                "updated": artifact.updated.isoformat(),
                 "data": {
-                    "uri": artifact.body.uri,
-                    "dataType": artifact.body.data_type.attribute,
+                    "uri": artifact.uri,
+                    "dataType": artifact.data_type.attribute,
                 },
                 "metadata": metadata,
             }
@@ -773,9 +769,9 @@ class ProjectsWrapper:
                 {
                     "id": str(project.id),
                     "name": project.name,
-                    "display_name": project.body.display_name,
-                    "created": project.body.created.isoformat(),
-                    "updated": project.body.updated.isoformat(),
+                    "display_name": project.display_name,
+                    "created": project.created.isoformat(),
+                    "updated": project.updated.isoformat(),
                     "metadata": project.metadata,
                 }
                 for project in projects.items
@@ -806,9 +802,9 @@ class ProjectsWrapper:
             return {
                 "id": str(active_project.id),
                 "name": active_project.name,
-                "display_name": active_project.body.display_name,
-                "created": active_project.body.created.isoformat(),
-                "updated": active_project.body.updated.isoformat(),
+                "display_name": active_project.display_name,
+                "created": active_project.created.isoformat(),
+                "updated": active_project.updated.isoformat(),
             }
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to get active project: {str(e)}"}
@@ -838,9 +834,9 @@ class ProjectsWrapper:
             return {
                 "id": str(active_project.id),
                 "name": active_project.name,
-                "display_name": active_project.body.display_name,
-                "created": active_project.body.created.isoformat(),
-                "updated": active_project.body.updated.isoformat(),
+                "display_name": active_project.display_name,
+                "created": active_project.created.isoformat(),
+                "updated": active_project.updated.isoformat(),
             }
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to set active project: {str(e)}"}
@@ -863,9 +859,9 @@ class ProjectsWrapper:
             return {
                 "id": str(project.id),
                 "name": project.name,
-                "display_name": project.body.display_name,
-                "created": project.body.created.isoformat(),
-                "updated": project.body.updated.isoformat(),
+                "display_name": project.display_name,
+                "created": project.created.isoformat(),
+                "updated": project.updated.isoformat(),
             }
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to get project by name: {str(e)}"}
@@ -886,6 +882,7 @@ class StacksWrapper:
 
         self.lazy_import = lazy_import
         self.client = client
+        self.active_stack_id = None
 
     @property
     def ZenMLBaseException(self):
@@ -918,84 +915,6 @@ class StacksWrapper:
         return self.lazy_import("zenml.exceptions", "ZenKeyError")
 
     @serialize_response
-    def fetch_stacks(self, args):
-        """Fetches all ZenML stacks and components with pagination."""
-        if len(args) < 2:
-            return {"error": "Insufficient arguments provided."}
-        page, max_size = args
-        try:
-            stacks_page = self.client.list_stacks(page=page, size=max_size, hydrate=True)
-            stacks_data = self.process_stacks(stacks_page.items)
-
-            return {
-                "stacks": stacks_data,
-                "total": stacks_page.total,
-                "total_pages": stacks_page.total_pages,
-                "current_page": page,
-                "items_per_page": max_size,
-            }
-        except self.ValidationError as e:
-            return {"error": "ValidationError", "message": str(e)}
-        except self.ZenMLBaseException as e:
-            return {"error": f"Failed to retrieve stacks: {str(e)}"}
-        except Exception as e:
-            return {"error": f"Unexpected error: {str(e)}"}
-
-    def _process_stack(self, stack):
-        """Process a stack to the desired format."""
-        try:
-            stack_data = serialize_object(stack)
-            if "components" not in stack_data:
-                stack_data["components"] = {}
-            for comp_type, components in stack.components.items():
-                comp_type_str = str(comp_type)
-                stack_data["components"][comp_type_str] = []
-                for component in components:
-                    try:
-                        stack_data["components"][comp_type_str].append(
-                            {
-                                "id": str(component.id),
-                                "name": component.name,
-                                "flavor": serialize_flavor(component.flavor),
-                                "type": str(component.type),
-                            }
-                        )
-                    except Exception as e:
-                        stack_data["components"][comp_type_str].append(
-                            {
-                                "id": str(getattr(component, "id", "unknown")),
-                                "name": getattr(component, "name", "Error processing component"),
-                                "error": str(e),
-                            }
-                        )
-            return stack_data
-        except Exception as e:
-            return {"error": f"Error processing stack: {str(e)}"}
-
-    def process_stacks(self, stacks):
-        """Process stacks to the desired format."""
-        try:
-            result = []
-
-            for stack in stacks:
-                try:
-                    stack_data = self._process_stack(stack)
-                    result.append(stack_data)
-                except Exception as e:
-                    result.append(
-                        {
-                            "id": str(getattr(stack, "id", "unknown")),
-                            "name": getattr(stack, "name", "Error processing stack"),
-                            "error": str(e),
-                        }
-                    )
-            if not result:
-                return [{"message": "No stacks found or all stacks failed to process"}]
-            return result
-        except Exception as e:
-            return [{"error": f"Error processing stacks: {str(e)}"}]
-
-    @serialize_response
     def get_active_stack(self) -> dict:
         """Fetches the active ZenML stack.
 
@@ -1010,6 +929,123 @@ class StacksWrapper:
             return {"message": "No active stack found"}
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve active stack: {str(e)}"}
+
+    @serialize_response
+    def get_stack_by_id(self, args) -> dict:
+        """Gets a stack by name or id.
+
+        Args:
+            args: A tuple containing the stack name or id.
+        """
+        stack_id = args[0]
+        try:
+            stack = self.client.get_stack(stack_id)
+            return self._process_stack(stack)
+        except self.ZenMLBaseException as e:
+            return {"error": f"Failed to get stack by id: {str(e)}"}
+
+    @serialize_response
+    def fetch_stacks(self, args):
+        """Fetches all ZenML stacks and components with pagination."""
+        if len(args) < 2:
+            return {"error": "Insufficient arguments provided."}
+
+        page = args[0]
+        max_size = args[1]
+        active_stack_id = args[2]
+
+        try:
+            stacks_page = self.client.list_stacks(page=page, size=max_size, hydrate=True)
+            stacks_data = self.process_stacks(stacks_page.items)
+            active_stack_data = None
+            active_stack = None
+
+            if active_stack_id is not None:
+                self.active_stack_id = active_stack_id
+                active_stack_data = self.get_stack_by_id([active_stack_id])
+                active_stack = active_stack_data
+            else:
+                active_stack = self.get_active_stack()
+                if active_stack:
+                    self.active_stack_id = active_stack["id"]
+                    active_stack_data = active_stack
+
+            if active_stack:
+                stacks_data = [stack for stack in stacks_data if stack["id"] != active_stack["id"]]
+
+            return {
+                "active_stack": active_stack_data,
+                "stacks": stacks_data,
+                "total": stacks_page.total,
+                "total_pages": stacks_page.total_pages,
+                "current_page": page,
+                "items_per_page": max_size,
+            }
+        except self.ValidationError as e:
+            return {"error": "ValidationError", "message": str(e)}
+        except self.ZenMLBaseException as e:
+            return {"error": f"Failed to retrieve stacks: {str(e)}"}
+        except Exception as e:
+            return {"error": f"Unexpected error: {str(e)}"}
+
+    def _process_component(self, component):
+        """Process a component to the desired format."""
+        try:
+            return {
+                "id": str(component.id),
+                "name": component.name,
+                "type": str(component.type),
+                "flavor_name": component.flavor_name,  # Direct access without body
+                "integration": getattr(component, "integration", None),
+                "logo_url": getattr(component, "logo_url", None),
+            }
+        except Exception as e:
+            return {
+                "id": str(getattr(component, "id", "unknown")),
+                "name": getattr(component, "name", "Error processing component"),
+                "error": str(e),
+            }
+
+    def _process_stack(self, stack):
+        """Process a stack to the desired format."""
+        try:
+            # Get basic stack information
+            stack_data = {
+                "id": str(stack.id),
+                "name": stack.name,
+                "created": getattr(stack, "created", None),
+                "updated": getattr(stack, "updated", None),
+                "user_id": str(stack.user.id) if hasattr(stack, "user") and stack.user else None,
+                "description": getattr(stack, "description", None),
+                "components": {},
+            }
+
+            # Process components
+            for comp_type, components in stack.components.items():
+                comp_type_str = str(comp_type)
+                stack_data["components"][comp_type_str] = [
+                    self._process_component(component) for component in components
+                ]
+
+            return stack_data
+        except Exception as e:
+            return {
+                "id": str(getattr(stack, "id", "unknown")),
+                "name": getattr(stack, "name", "Error processing stack"),
+                "error": f"Error processing stack: {str(e)}",
+            }
+
+    def process_stacks(self, stacks):
+        """Process stacks to the desired format."""
+        try:
+            result = [self._process_stack(stack) for stack in stacks]
+
+            if not result:
+                return [{"message": "No stacks found or all stacks failed to process"}]
+
+            return result
+        except Exception as e:
+            return [{"error": f"Error processing stacks: {str(e)}"}]
 
     @serialize_response
     def set_active_stack(self, args) -> dict:
@@ -1316,8 +1352,8 @@ class StacksWrapper:
                     {
                         "id": str(flavor.id),
                         "name": flavor.name,
-                        "type": flavor.body.type,
-                        "logo_url": flavor.body.logo_url,
+                        "type": flavor.type,
+                        "logo_url": flavor.logo_url,
                         "config_schema": flavor.metadata.config_schema,
                         "docs_url": flavor.metadata.docs_url,
                         "sdk_docs_url": flavor.metadata.sdk_docs_url,

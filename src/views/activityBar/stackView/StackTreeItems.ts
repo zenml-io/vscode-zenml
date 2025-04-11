@@ -26,6 +26,8 @@ export class StackTreeItem extends vscode.TreeItem implements TreeItemWithChildr
   public children?: vscode.TreeItem[];
   public isActive: boolean;
   public name: string;
+  // Stores original components to update icon colors when active stack changes
+  private originalComponents: StackComponentTreeItem[];
 
   constructor(
     public readonly label: string,
@@ -34,17 +36,19 @@ export class StackTreeItem extends vscode.TreeItem implements TreeItemWithChildr
     isActive?: boolean
   ) {
     super(label, vscode.TreeItemCollapsibleState.Collapsed);
-
-    const groupedComponents = this.groupComponentsByType(components);
-    this.children = groupedComponents;
-
-    this.contextValue = isActive ? 'activeStack' : 'stack';
+    this.contextValue = isActive ? CONTEXT_VALUES.ACTIVE_STACK : CONTEXT_VALUES.STACK;
     this.isActive = isActive || false;
+    this.originalComponents = components;
+
+    const groupedComponents = this.groupComponentsByType(components, this.isActive);
+    this.children = groupedComponents;
 
     if (isActive) {
       this.iconPath = TREE_ICONS.ACTIVE_STACK;
+      this.description = 'Active';
     } else {
       this.iconPath = TREE_ICONS.STACK;
+      this.description = '';
     }
 
     this.name = label;
@@ -55,9 +59,19 @@ export class StackTreeItem extends vscode.TreeItem implements TreeItemWithChildr
   }
 
   /**
+   * Returns the original component items used to create this stack tree item
+   */
+  public getOriginalComponents(): StackComponentTreeItem[] {
+    return this.originalComponents;
+  }
+
+  /**
    * Group components by their type and create component category items
    */
-  private groupComponentsByType(components: StackComponentTreeItem[]): vscode.TreeItem[] {
+  public groupComponentsByType(
+    components: StackComponentTreeItem[],
+    isActive: boolean
+  ): vscode.TreeItem[] {
     const groupedByType: { [key: string]: StackComponentTreeItem[] } = {};
 
     for (const component of components) {
@@ -77,8 +91,10 @@ export class StackTreeItem extends vscode.TreeItem implements TreeItemWithChildr
           vscode.TreeItemCollapsibleState.Collapsed
         ) as TreeItemWithChildren;
 
-        treeItem.contextValue = CONTEXT_VALUES.STACK_COMPONENT;
-        treeItem.iconPath = TREE_ICONS.COMPONENT;
+        treeItem.contextValue = isActive
+          ? CONTEXT_VALUES.ACTIVE_STACK_COMPONENT
+          : CONTEXT_VALUES.STACK_COMPONENT;
+        treeItem.iconPath = isActive ? TREE_ICONS.ACTIVE_COMPONENT : TREE_ICONS.COMPONENT;
         treeItem.id = component.id;
         treeItem.tooltip = component.tooltip;
         treeItem.children = component.children;
