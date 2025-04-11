@@ -286,7 +286,8 @@ export default class DagRenderer extends WebviewBase {
       database: 'database.svg',
       dataflow: 'dataflow.svg',
     };
-    Object.entries(ICON_MAP).forEach(async ([name, fileName]) => {
+
+    Object.entries(ICON_MAP).map(async ([name, fileName]) => {
       try {
         const file = await fs.readFile(path + fileName);
         this.iconSvgs[name] = file.toString();
@@ -361,8 +362,12 @@ export default class DagRenderer extends WebviewBase {
       const executionId = { attr: '', value: node.data.execution_id };
 
       if (node.type === 'step') {
-        iconSVG = this.iconSvgs[node.data.status];
         status = node.data.status;
+        if (status && typeof status === 'object') {
+          status = (status as any)._value_;
+        }
+        iconSVG = this.iconSvgs[status];
+
         executionId.attr = 'data-stepid';
       } else {
         executionId.attr = 'data-artifactid';
@@ -384,8 +389,12 @@ export default class DagRenderer extends WebviewBase {
         .attr('class', node.type)
         .attr(executionId.attr, executionId.value);
 
-      const icon = SVG(iconSVG);
-      box.add(SVG(icon).attr('class', `icon ${status}`));
+      if (iconSVG) {
+        const icon = SVG(iconSVG);
+        box.add(SVG(icon).attr('class', `icon ${status}`));
+      } else {
+        console.warn(`Missing icon for status: ${status}`);
+      }
       box.element('p').words(node.data.name);
     });
     return canvas.svg();
