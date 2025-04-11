@@ -40,7 +40,6 @@ from type_hints import (
 from zenml_grapher import Grapher
 from zenml_serializers import (
     serialize_flavor,
-    serialize_object,
     serialize_response,
 )
 
@@ -359,6 +358,33 @@ class PipelineRunsWrapper:
         """Returns the ZenML ZenMLBaseException class."""
         return self.lazy_import("zenml.exceptions", "ZenMLBaseException")
 
+    def _extract_steps_data(self, steps):
+        """Extracts step data from a pipeline run."""
+        steps_data = {}
+        for step_name, step_info in steps.items():
+            step_data = {}
+
+            if hasattr(step_info, "status"):
+                status = step_info.status
+                step_data["status"] = status._value_ if hasattr(status, "_value_") else str(status)
+
+            if hasattr(step_info, "start_time"):
+                step_data["start_time"] = (
+                    step_info.start_time.isoformat() if step_info.start_time else None
+                )
+
+            if hasattr(step_info, "end_time"):
+                step_data["end_time"] = (
+                    step_info.end_time.isoformat() if step_info.end_time else None
+                )
+
+            if hasattr(step_info, "id"):
+                step_data["id"] = str(step_info.id)
+
+            steps_data[step_name] = step_data
+
+        return steps_data
+
     @serialize_response
     def fetch_pipeline_runs(self, args) -> Union[ListPipelineRunsResponse, ErrorResponse]:
         """Fetches ZenML pipeline runs with optional project filtering.
@@ -398,7 +424,7 @@ class PipelineRunsWrapper:
                 run_data = {
                     "id": str(run.id),
                     "name": run.name,
-                    "status": str(run.body.status),
+                    "status": str(run.status),
                     "stackName": run.stack.name,
                     "pipelineName": run.pipeline.name,
                     "startTime": (run.start_time.isoformat() if run.start_time else None),
@@ -424,44 +450,7 @@ class PipelineRunsWrapper:
                         }
 
                 if hasattr(run, "steps") and run.steps:
-                    steps_data = {}
-                    for step_name, step_info in run.steps.items():
-                        step_data = {}
-
-                        if hasattr(step_info, "body"):
-                            if hasattr(step_info.body, "status"):
-                                status = step_info.body.status
-                                if hasattr(status, "_value_"):
-                                    step_data["status"] = status._value_
-                                else:
-                                    step_data["status"] = str(status)
-
-                            if hasattr(step_info.body, "start_time"):
-                                step_data["start_time"] = (
-                                    step_info.body.start_time.isoformat()
-                                    if step_info.body.start_time
-                                    else None
-                                )
-
-                            if hasattr(step_info.body, "end_time"):
-                                step_data["end_time"] = (
-                                    step_info.body.end_time.isoformat()
-                                    if step_info.body.end_time
-                                    else None
-                                )
-
-                            if hasattr(step_info, "id"):
-                                step_data["id"] = str(step_info.id)
-                        elif isinstance(step_info, dict):
-                            step_data["status"] = step_info.get("status", "unknown")
-                            step_data["start_time"] = step_info.get("start_time")
-                            step_data["end_time"] = step_info.get("end_time")
-                        else:
-                            step_data["status"] = str(getattr(step_info, "status", "unknown"))
-
-                        steps_data[step_name] = step_data
-
-                    run_data["steps"] = steps_data
+                    run_data["steps"] = self._extract_steps_data(run.steps)
 
                 runs_data.append(run_data)
 
@@ -506,9 +495,9 @@ class PipelineRunsWrapper:
             run = self.client.get_pipeline_run(run_id, hydrate=True)
             run_data = {
                 "id": str(run.id),
-                "name": run.body.pipeline.name,
-                "status": run.body.status,
-                "stackName": run.body.stack.name,
+                "name": run.pipeline.name,
+                "status": run.status,
+                "stackName": run.stack.name,
                 "startTime": (
                     run.metadata.start_time.isoformat() if run.metadata.start_time else None
                 ),
@@ -521,10 +510,14 @@ class PipelineRunsWrapper:
                 "pythonVersion": run.metadata.client_environment.get("python_version", "Unknown"),
             }
 
+            if hasattr(run, "steps") and run.steps:
+                run_data["steps"] = self._extract_steps_data(run.steps)
+
             return run_data
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve pipeline run: {str(e)}"}
 
+    @serialize_response
     def get_pipeline_run_graph(self, args: Tuple[str]) -> Union[GraphResponse, ErrorResponse]:
         """Gets a ZenML pipeline run step DAG.
 
@@ -543,6 +536,7 @@ class PipelineRunsWrapper:
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve pipeline run graph: {str(e)}"}
 
+    @serialize_response
     def get_run_step(self, args: Tuple[str]) -> Union[RunStepResponse, ErrorResponse]:
         """Gets a ZenML pipeline run step.
 
@@ -559,29 +553,27 @@ class PipelineRunsWrapper:
             step_data = {
                 "name": step.name,
                 "id": str(step.id),
-                "status": step.body.status,
+                "status": step.status,
                 "author": {
-                    "fullName": step.body.user.body.full_name,
-                    "email": step.body.user.name,
+                    "fullName": step.user.full_name,
+                    "email": step.user.name,
                 },
-                "startTime": (
-                    step.metadata.start_time.isoformat() if step.metadata.start_time else None
-                ),
-                "endTime": (step.metadata.end_time.isoformat() if step.metadata.end_time else None),
+                "startTime": (step.start_time.isoformat() if step.start_time else None),
+                "endTime": (step.end_time.isoformat() if step.end_time else None),
                 "duration": (
-                    str(step.metadata.end_time - step.metadata.start_time)
-                    if step.metadata.end_time and step.metadata.start_time
+                    str(step.end_time - step.start_time)
+                    if step.end_time and step.start_time
                     else None
                 ),
-                "stackName": run.body.stack.name,
+                "stackName": run.stack.name,
                 "orchestrator": {"runId": str(run.metadata.orchestrator_run_id)},
                 "pipeline": {
-                    "name": run.body.pipeline.name,
-                    "status": run.body.status,
+                    "name": run.pipeline.name,
+                    "status": run.status,
                 },
                 "cacheKey": step.metadata.cache_key,
                 "sourceCode": step.metadata.source_code,
-                "logsUri": step.metadata.logs.body.uri,
+                "logsUri": step.metadata.logs.uri,
             }
             return step_data
         except self.ZenMLBaseException as e:
@@ -773,9 +765,9 @@ class ProjectsWrapper:
                 {
                     "id": str(project.id),
                     "name": project.name,
-                    "display_name": project.body.display_name,
-                    "created": project.body.created.isoformat(),
-                    "updated": project.body.updated.isoformat(),
+                    "display_name": project.display_name,
+                    "created": project.created.isoformat(),
+                    "updated": project.updated.isoformat(),
                     "metadata": project.metadata,
                 }
                 for project in projects.items
@@ -806,9 +798,9 @@ class ProjectsWrapper:
             return {
                 "id": str(active_project.id),
                 "name": active_project.name,
-                "display_name": active_project.body.display_name,
-                "created": active_project.body.created.isoformat(),
-                "updated": active_project.body.updated.isoformat(),
+                "display_name": active_project.display_name,
+                "created": active_project.created.isoformat(),
+                "updated": active_project.updated.isoformat(),
             }
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to get active project: {str(e)}"}
@@ -838,9 +830,9 @@ class ProjectsWrapper:
             return {
                 "id": str(active_project.id),
                 "name": active_project.name,
-                "display_name": active_project.body.display_name,
-                "created": active_project.body.created.isoformat(),
-                "updated": active_project.body.updated.isoformat(),
+                "display_name": active_project.display_name,
+                "created": active_project.created.isoformat(),
+                "updated": active_project.updated.isoformat(),
             }
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to set active project: {str(e)}"}
@@ -863,9 +855,9 @@ class ProjectsWrapper:
             return {
                 "id": str(project.id),
                 "name": project.name,
-                "display_name": project.body.display_name,
-                "created": project.body.created.isoformat(),
-                "updated": project.body.updated.isoformat(),
+                "display_name": project.display_name,
+                "created": project.created.isoformat(),
+                "updated": project.updated.isoformat(),
             }
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to get project by name: {str(e)}"}
@@ -1356,8 +1348,8 @@ class StacksWrapper:
                     {
                         "id": str(flavor.id),
                         "name": flavor.name,
-                        "type": flavor.body.type,
-                        "logo_url": flavor.body.logo_url,
+                        "type": flavor.type,
+                        "logo_url": flavor.logo_url,
                         "config_schema": flavor.metadata.config_schema,
                         "docs_url": flavor.metadata.docs_url,
                         "sdk_docs_url": flavor.metadata.sdk_docs_url,

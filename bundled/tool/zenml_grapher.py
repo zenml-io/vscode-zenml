@@ -40,12 +40,12 @@ class Grapher:
                     "data": {
                         "execution_id": str(step_data.id),
                         "name": step,
-                        "status": step_data.body.status,
+                        "status": step_data.status,
                     },
                 }
             )
-            self.add_artifacts_from_list(step_data.body.inputs)
-            self.add_artifacts_from_list(step_data.body.outputs)
+            self.add_artifacts_from_list(step_data.inputs)
+            self.add_artifacts_from_list(step_data.outputs)
 
     def add_artifacts_from_list(self, dictOfArtifacts: Dict[str, StepArtifact]) -> None:
         """Used to add unique artifacts to the internal nodes list by build_nodes_from_steps"""
@@ -69,11 +69,7 @@ class Grapher:
                     artifact_type = getattr(artifact_data, "type", "Unknown")
                     execution_id = str(getattr(artifact_data, "id", "Unknown"))
                 else:
-                    if hasattr(artifact_value, "body") and hasattr(artifact_value.body, "artifact"):
-                        artifact_id = str(artifact_value.body.artifact.id)
-                        artifact_type = artifact_value.body.type
-                        execution_id = str(artifact_value.id)
-                    elif hasattr(artifact_value, "artifact") and hasattr(
+                    if hasattr(artifact_value, "artifact") and hasattr(
                         artifact_value.artifact, "id"
                     ):
                         artifact_id = str(artifact_value.artifact.id)
@@ -111,12 +107,12 @@ class Grapher:
             step_data = self.run.metadata.steps[step]
             step_id = str(step_data.id)
 
-            for artifact in step_data.body.inputs:
+            for artifact in step_data.inputs:
                 try:
-                    if isinstance(step_data.body.inputs[artifact], list):
-                        if not step_data.body.inputs[artifact]:  # Skip empty lists
+                    if isinstance(step_data.inputs[artifact], list):
+                        if not step_data.inputs[artifact]:  # Skip empty lists
                             continue
-                        artifact_version = step_data.body.inputs[artifact][0]
+                        artifact_version = step_data.inputs[artifact][0]
                         if hasattr(artifact_version, "artifact") and hasattr(
                             artifact_version.artifact, "id"
                         ):
@@ -127,18 +123,18 @@ class Grapher:
                             continue
                     else:
                         # Older access pattern
-                        input_id = str(step_data.body.inputs[artifact].body.artifact.id)
+                        input_id = str(step_data.inputs[artifact].artifact.id)
 
                     self.add_edge(input_id, step_id)
                 except (AttributeError, TypeError):
                     continue
 
-            for artifact in step_data.body.outputs:
+            for artifact in step_data.outputs:
                 try:
-                    if isinstance(step_data.body.outputs[artifact], list):
-                        if not step_data.body.outputs[artifact]:
+                    if isinstance(step_data.outputs[artifact], list):
+                        if not step_data.outputs[artifact]:
                             continue
-                        artifact_version = step_data.body.outputs[artifact][0]
+                        artifact_version = step_data.outputs[artifact][0]
                         if hasattr(artifact_version, "artifact") and hasattr(
                             artifact_version.artifact, "id"
                         ):
@@ -149,7 +145,7 @@ class Grapher:
                             continue
                     else:
                         # Older access pattern
-                        output_id = str(step_data.body.outputs[artifact].body.artifact.id)
+                        output_id = str(step_data.outputs[artifact].artifact.id)
 
                     self.add_edge(step_id, output_id)
                 except (AttributeError, TypeError):
@@ -170,6 +166,6 @@ class Grapher:
         return {
             "nodes": self.nodes,
             "edges": self.edges,
-            "status": self.run.body.status,
-            "name": self.run.body.pipeline.name,
+            "status": self.run.status,
+            "name": self.run.pipeline.name,
         }
