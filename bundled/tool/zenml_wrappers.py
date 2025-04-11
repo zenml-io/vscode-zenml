@@ -593,21 +593,21 @@ class PipelineRunsWrapper:
 
             metadata = {}
             for key in artifact.metadata.run_metadata:
-                metadata[key] = artifact.metadata.run_metadata[key].body.value
+                metadata[key] = artifact.metadata.run_metadata[key]
 
             artifact_data = {
-                "name": artifact.body.artifact.name,
-                "version": artifact.body.version,
+                "name": artifact.artifact.name,
+                "version": artifact.version,
                 "id": str(artifact.id),
-                "type": artifact.body.type,
-                "author": {
-                    "fullName": artifact.body.user.body.full_name,
-                    "email": artifact.body.user.name,
+                "type": artifact.type,
+                "user": {
+                    "fullName": artifact.user.full_name,
+                    "name": artifact.user.name,
                 },
-                "updated": artifact.body.updated.isoformat(),
+                "updated": artifact.updated.isoformat(),
                 "data": {
-                    "uri": artifact.body.uri,
-                    "dataType": artifact.body.data_type.attribute,
+                    "uri": artifact.uri,
+                    "dataType": artifact.data_type.attribute,
                 },
                 "metadata": metadata,
             }
