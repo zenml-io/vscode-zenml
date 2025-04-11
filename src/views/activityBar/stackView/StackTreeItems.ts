@@ -26,6 +26,7 @@ export class StackTreeItem extends vscode.TreeItem implements TreeItemWithChildr
   public children?: vscode.TreeItem[];
   public isActive: boolean;
   public name: string;
+  // Stores original components to update icon colors when active stack changes
   private originalComponents: StackComponentTreeItem[];
 
   constructor(

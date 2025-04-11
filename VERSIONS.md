@@ -6,12 +6,12 @@ This file serves as a reference for ZenML extension version compatibility with d
 
 | Extension Version | ZenML Library Version | Notes                                                         |
 | ----------------- | --------------------- | ------------------------------------------------------------- |
-| 0.0.16            | 0.80.0+               | Latest version with stability fixes and DAG view improvements |
+| 0.0.16            | 0.80.x                | Latest version with stability fixes and DAG view improvements |
 | 0.0.15            | 0.80.0                | Adds stability fixes and improves project management          |
-| 0.0.13 - 0.0.14   | 0.80.0                | Includes Project View and full project management support     |
-| 0.0.12            | 0.75.0 - 0.79.x       | Supports stack registration and components visualization      |
-| 0.0.11            | 0.63.0 - 0.74.0       | Includes DAG Visualizer and pipeline run management           |
-| 0.0.5 - 0.0.10    | 0.55.0 - 0.63.0       | Early versions with basic functionality                       |
+| 0.0.13 – 0.0.14   | 0.80.0                | Includes Project View and full project management support     |
+| 0.0.12            | 0.75.0 – 0.79.x       | Supports stack registration and components visualization      |
+| 0.0.11            | 0.63.0 – 0.74.0       | Includes DAG Visualizer and pipeline run management           |
+| 0.0.5 – 0.0.10    | 0.55.0 – 0.63.0       | Early versions with basic functionality                       |
 
 ## Installing a Specific Extension Version
 

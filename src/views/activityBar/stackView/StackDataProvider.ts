@@ -254,6 +254,12 @@ export class StackDataProvider extends PaginatedDataProvider {
     }
   }
 
+  /**
+   * Updates the active stack item in the tree view.
+   *
+   * @param {string} activeStackId The ID of the newly active stack.
+   * @returns {Promise<StackTreeItem | undefined>} A promise that resolves with the updated stack item or undefined if the stack details cannot be fetched.
+   */
   private async updateActiveStackItem(activeStackId: string): Promise<StackTreeItem | undefined> {
     const activeStackDetails = await getStackById(activeStackId);
     if (activeStackDetails && !('error' in activeStackDetails)) {
