@@ -886,6 +886,7 @@ class StacksWrapper:
 
         self.lazy_import = lazy_import
         self.client = client
+        self.active_stack_id = None
 
     @property
     def ZenMLBaseException(self):
@@ -918,84 +919,6 @@ class StacksWrapper:
         return self.lazy_import("zenml.exceptions", "ZenKeyError")
 
     @serialize_response
-    def fetch_stacks(self, args):
-        """Fetches all ZenML stacks and components with pagination."""
-        if len(args) < 2:
-            return {"error": "Insufficient arguments provided."}
-        page, max_size = args
-        try:
-            stacks_page = self.client.list_stacks(page=page, size=max_size, hydrate=True)
-            stacks_data = self.process_stacks(stacks_page.items)
-
-            return {
-                "stacks": stacks_data,
-                "total": stacks_page.total,
-                "total_pages": stacks_page.total_pages,
-                "current_page": page,
-                "items_per_page": max_size,
-            }
-        except self.ValidationError as e:
-            return {"error": "ValidationError", "message": str(e)}
-        except self.ZenMLBaseException as e:
-            return {"error": f"Failed to retrieve stacks: {str(e)}"}
-        except Exception as e:
-            return {"error": f"Unexpected error: {str(e)}"}
-
-    def _process_stack(self, stack):
-        """Process a stack to the desired format."""
-        try:
-            stack_data = serialize_object(stack)
-            if "components" not in stack_data:
-                stack_data["components"] = {}
-            for comp_type, components in stack.components.items():
-                comp_type_str = str(comp_type)
-                stack_data["components"][comp_type_str] = []
-                for component in components:
-                    try:
-                        stack_data["components"][comp_type_str].append(
-                            {
-                                "id": str(component.id),
-                                "name": component.name,
-                                "flavor": serialize_flavor(component.flavor),
-                                "type": str(component.type),
-                            }
-                        )
-                    except Exception as e:
-                        stack_data["components"][comp_type_str].append(
-                            {
-                                "id": str(getattr(component, "id", "unknown")),
-                                "name": getattr(component, "name", "Error processing component"),
-                                "error": str(e),
-                            }
-                        )
-            return stack_data
-        except Exception as e:
-            return {"error": f"Error processing stack: {str(e)}"}
-
-    def process_stacks(self, stacks):
-        """Process stacks to the desired format."""
-        try:
-            result = []
-
-            for stack in stacks:
-                try:
-                    stack_data = self._process_stack(stack)
-                    result.append(stack_data)
-                except Exception as e:
-                    result.append(
-                        {
-                            "id": str(getattr(stack, "id", "unknown")),
-                            "name": getattr(stack, "name", "Error processing stack"),
-                            "error": str(e),
-                        }
-                    )
-            if not result:
-                return [{"message": "No stacks found or all stacks failed to process"}]
-            return result
-        except Exception as e:
-            return [{"error": f"Error processing stacks: {str(e)}"}]
-
-    @serialize_response
     def get_active_stack(self) -> dict:
         """Fetches the active ZenML stack.
 
@@ -1010,6 +933,123 @@ class StacksWrapper:
             return {"message": "No active stack found"}
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve active stack: {str(e)}"}
+
+    @serialize_response
+    def get_stack_by_id(self, args) -> dict:
+        """Gets a stack by name or id.
+
+        Args:
+            args: A tuple containing the stack name or id.
+        """
+        stack_id = args[0]
+        try:
+            stack = self.client.get_stack(stack_id)
+            return self._process_stack(stack)
+        except self.ZenMLBaseException as e:
+            return {"error": f"Failed to get stack by id: {str(e)}"}
+
+    @serialize_response
+    def fetch_stacks(self, args):
+        """Fetches all ZenML stacks and components with pagination."""
+        if len(args) < 2:
+            return {"error": "Insufficient arguments provided."}
+
+        page = args[0]
+        max_size = args[1]
+        active_stack_id = args[2]
+
+        try:
+            stacks_page = self.client.list_stacks(page=page, size=max_size, hydrate=True)
+            stacks_data = self.process_stacks(stacks_page.items)
+            active_stack_data = None
+            active_stack = None
+
+            if active_stack_id is not None:
+                self.active_stack_id = active_stack_id
+                active_stack_data = self.get_stack_by_id([active_stack_id])
+                active_stack = active_stack_data
+            else:
+                active_stack = self.get_active_stack()
+                if active_stack:
+                    self.active_stack_id = active_stack["id"]
+                    active_stack_data = active_stack
+
+            if active_stack:
+                stacks_data = [stack for stack in stacks_data if stack["id"] != active_stack["id"]]
+
+            return {
+                "active_stack": active_stack_data,
+                "stacks": stacks_data,
+                "total": stacks_page.total,
+                "total_pages": stacks_page.total_pages,
+                "current_page": page,
+                "items_per_page": max_size,
+            }
+        except self.ValidationError as e:
+            return {"error": "ValidationError", "message": str(e)}
+        except self.ZenMLBaseException as e:
+            return {"error": f"Failed to retrieve stacks: {str(e)}"}
+        except Exception as e:
+            return {"error": f"Unexpected error: {str(e)}"}
+
+    def _process_component(self, component):
+        """Process a component to the desired format."""
+        try:
+            return {
+                "id": str(component.id),
+                "name": component.name,
+                "type": str(component.type),
+                "flavor_name": component.flavor_name,  # Direct access without body
+                "integration": getattr(component, "integration", None),
+                "logo_url": getattr(component, "logo_url", None),
+            }
+        except Exception as e:
+            return {
+                "id": str(getattr(component, "id", "unknown")),
+                "name": getattr(component, "name", "Error processing component"),
+                "error": str(e),
+            }
+
+    def _process_stack(self, stack):
+        """Process a stack to the desired format."""
+        try:
+            # Get basic stack information
+            stack_data = {
+                "id": str(stack.id),
+                "name": stack.name,
+                "created": getattr(stack, "created", None),
+                "updated": getattr(stack, "updated", None),
+                "user_id": str(stack.user.id) if hasattr(stack, "user") and stack.user else None,
+                "description": getattr(stack, "description", None),
+                "components": {},
+            }
+
+            # Process components
+            for comp_type, components in stack.components.items():
+                comp_type_str = str(comp_type)
+                stack_data["components"][comp_type_str] = [
+                    self._process_component(component) for component in components
+                ]
+
+            return stack_data
+        except Exception as e:
+            return {
+                "id": str(getattr(stack, "id", "unknown")),
+                "name": getattr(stack, "name", "Error processing stack"),
+                "error": f"Error processing stack: {str(e)}",
+            }
+
+    def process_stacks(self, stacks):
+        """Process stacks to the desired format."""
+        try:
+            result = [self._process_stack(stack) for stack in stacks]
+
+            if not result:
+                return [{"message": "No stacks found or all stacks failed to process"}]
+
+            return result
+        except Exception as e:
+            return [{"error": f"Error processing stacks: {str(e)}"}]
 
     @serialize_response
     def set_active_stack(self, args) -> dict:
