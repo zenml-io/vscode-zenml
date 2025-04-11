@@ -31,26 +31,26 @@ export function formatFlavorTooltip(flavor: Flavor | string): string {
     lines.push(`&nbsp;&nbsp;name: ${flavor.name}`);
   }
 
-  if (flavor.body?.integration) {
-    lines.push(`&nbsp;&nbsp;integration: ${flavor.body.integration}`);
+  if (flavor.integration) {
+    lines.push(`&nbsp;&nbsp;integration: ${flavor.integration}`);
   }
 
   if (flavor.type) {
     lines.push(`&nbsp;&nbsp;type: ${flavor.type}`);
   }
 
-  const created = flavor.created || flavor.body?.created;
+  const created = flavor.created;
   if (created) {
     lines.push(`&nbsp;&nbsp;created: ${created}`);
   }
 
-  const updated = flavor.updated || flavor.body?.updated;
+  const updated = flavor.updated;
   if (updated) {
     lines.push(`&nbsp;&nbsp;updated: ${updated}`);
   }
 
   const sourceFromConfigSchema = flavor.config_schema?.title;
-  const sourceFromBody = flavor.body?.source?.split('.').pop() || flavor.body?.source;
+  const sourceFromBody = flavor.source?.split('.').pop() || flavor.source;
   const source = sourceFromConfigSchema || sourceFromBody;
 
   if (source) {
