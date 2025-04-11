@@ -65,9 +65,34 @@ export const getActiveStack = async (): Promise<GetActiveStackResponse | undefin
     if (result && 'error' in result) {
       throw new Error(result.error);
     }
+
     return result;
   } catch (error: any) {
     console.error(`Failed to get active stack information: ${error}`);
+    return undefined;
+  }
+};
+
+/**
+ * Gets the id and name of the active ZenML stack.
+ *
+ * @returns {Promise<{id: string, name: string, components?: any}>} A promise that resolves with the active stack details, or undefined on error
+ */
+export const getStackById = async (id: string): Promise<GetActiveStackResponse | undefined> => {
+  const lsClient = LSClient.getInstance();
+  if (!lsClient.clientReady) {
+    return;
+  }
+
+  try {
+    const result = await lsClient.sendLsClientRequest<GetActiveStackResponse>('getStackById', [id]);
+    if (result && 'error' in result) {
+      throw new Error(result.error);
+    }
+
+    return result;
+  } catch (error: any) {
+    console.error(`Failed to get stack by id: ${error}`);
     return undefined;
   }
 };
@@ -134,6 +159,7 @@ const stackUtils = {
   getActiveStack,
   storeActiveStackId,
   getStackDashboardUrl,
+  getStackById,
 };
 
 export default stackUtils;

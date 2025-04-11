@@ -232,7 +232,7 @@ export default class StackForm extends WebviewBase {
         return {
           name: component.name,
           id: component.id,
-          url: component.flavor.body?.logo_url || '',
+          url: component.flavor.logo_url || '',
         };
       });
     });
