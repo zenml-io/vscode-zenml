@@ -237,6 +237,12 @@ class ZenLanguageServer(LanguageServer):
             """Fetches a list of all ZenML stacks."""
             return wrapper_instance.fetch_stacks(args)
 
+        @self.command(f"{TOOL_MODULE_NAME}.getStackById")
+        @self.zenml_command(wrapper_name="stacks_wrapper")
+        def get_stack_by_id(wrapper_instance, args):
+            """Gets a stack by id."""
+            return wrapper_instance.get_stack_by_id(args)
+
         @self.command(f"{TOOL_MODULE_NAME}.getActiveStack")
         @self.zenml_command(wrapper_name="stacks_wrapper")
         def get_active_stack(wrapper_instance, *args, **kwargs):
