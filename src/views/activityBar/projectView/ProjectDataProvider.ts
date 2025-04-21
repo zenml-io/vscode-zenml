@@ -22,7 +22,12 @@ import {
   LSP_ZENML_PROJECT_CHANGED,
 } from '../../../utils/constants';
 import { TREE_ICONS } from '../../../utils/ui-constants';
-import { ErrorTreeItem, createAuthErrorItem, createErrorItem } from '../common/ErrorTreeItem';
+import {
+  ErrorTreeItem,
+  createAuthErrorItem,
+  createErrorItem,
+  createServicesNotAvailableItem,
+} from '../common/ErrorTreeItem';
 import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
 import { PaginatedDataProvider } from '../common/PaginatedDataProvider';
 import { ProjectTreeItem } from './ProjectTreeItems';
@@ -67,7 +72,8 @@ export class ProjectDataProvider extends PaginatedDataProvider {
    */
   private lsClientStateChangeHandler = (status: State) => {
     if (status !== State.Running) {
-      this.triggerLoadingState('lsClient');
+      this.items = [createServicesNotAvailableItem()];
+      this._onDidChangeTreeData.fire(undefined);
     } else {
       this.refresh();
     }
@@ -139,7 +145,7 @@ export class ProjectDataProvider extends PaginatedDataProvider {
    */
   async fetchProjects(page: number = 1, itemsPerPage: number = 20): Promise<TreeItem[]> {
     if (!this.zenmlClientReady) {
-      return [LOADING_TREE_ITEMS.get('zenmlClient')!];
+      return [createServicesNotAvailableItem()];
     }
 
     try {
@@ -151,17 +157,35 @@ export class ProjectDataProvider extends PaginatedDataProvider {
 
       if (Array.isArray(result) && result.length === 1 && 'error' in result[0]) {
         const errorMessage = result[0].error;
-        if (errorMessage.includes('Authentication error')) {
+        console.error(`Failed to fetch projects:`, errorMessage);
+
+        if (
+          errorMessage.includes('Authentication error') ||
+          errorMessage.includes('Not authorized')
+        ) {
           return createAuthErrorItem(errorMessage);
         }
+
+        return createErrorItem({
+          errorType: 'Error',
+          message: errorMessage,
+        });
       }
 
       if (!result || 'error' in result) {
+        console.error(`Failed to fetch projects:`, result);
         if ('clientVersion' in result && 'serverVersion' in result) {
           return createErrorItem(result);
+        } else if (result.error.includes('Not authorized')) {
+          return createErrorItem({
+            errorType: 'AuthorizationException',
+            message: result.error,
+          });
         } else {
-          console.error(`Failed to fetch projects: ${result.error}`);
-          return [];
+          return createErrorItem({
+            errorType: 'Error',
+            message: result.error,
+          });
         }
       }
 

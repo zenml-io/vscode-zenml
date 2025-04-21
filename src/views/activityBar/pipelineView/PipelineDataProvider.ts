@@ -29,7 +29,12 @@ import {
   LSP_ZENML_CLIENT_INITIALIZED,
   LSP_ZENML_PROJECT_CHANGED,
 } from '../../../utils/constants';
-import { createAuthErrorItem, createErrorItem, ErrorTreeItem } from '../common/ErrorTreeItem';
+import {
+  createAuthErrorItem,
+  createErrorItem,
+  createServicesNotAvailableItem,
+  ErrorTreeItem,
+} from '../common/ErrorTreeItem';
 import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
 import { PaginatedDataProvider } from '../common/PaginatedDataProvider';
 import { TreeItemWithChildren } from '../common/TreeItemWithChildren';
@@ -43,6 +48,7 @@ export class PipelineDataProvider extends PaginatedDataProvider {
   private activeProjectName: string | undefined;
   private eventBus = EventBus.getInstance();
   private zenmlClientReady = false;
+  private lsClientReady = false;
 
   constructor() {
     super();
@@ -103,8 +109,11 @@ export class PipelineDataProvider extends PaginatedDataProvider {
    */
   private lsClientStateChangeHandler = (status: State) => {
     if (status !== State.Running) {
-      this.triggerLoadingState('lsClient');
+      this.lsClientReady = false;
+      this.items = [createServicesNotAvailableItem()];
+      this._onDidChangeTreeData.fire(undefined);
     } else {
+      this.lsClientReady = true;
       this.refresh();
     }
   };
@@ -166,8 +175,8 @@ export class PipelineDataProvider extends PaginatedDataProvider {
     itemsPerPage: number = 20,
     projectName?: string
   ): Promise<TreeItem[]> {
-    if (!this.zenmlClientReady) {
-      return [LOADING_TREE_ITEMS.get('zenmlClient')!];
+    if (!this.lsClientReady || !this.zenmlClientReady) {
+      return [createServicesNotAvailableItem()];
     }
 
     try {
@@ -249,6 +258,10 @@ export class PipelineDataProvider extends PaginatedDataProvider {
       if (errorMessage.includes('Authentication error')) {
         return createAuthErrorItem(errorMessage);
       }
+      return createErrorItem({
+        errorType: errorMessage.includes('Not authorized') ? 'AuthorizationException' : 'Error',
+        message: errorMessage,
+      });
     }
 
     if (!result || 'error' in result) {
@@ -260,6 +273,12 @@ export class PipelineDataProvider extends PaginatedDataProvider {
       }
       if ('clientVersion' in result && 'serverVersion' in result) {
         return createErrorItem(result);
+      }
+      if (result.error.includes('Not authorized')) {
+        return createErrorItem({
+          errorType: 'AuthorizationException',
+          message: result.error,
+        });
       }
     }
 

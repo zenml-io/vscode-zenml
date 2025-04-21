@@ -26,7 +26,12 @@ import {
 } from '../../../utils/constants';
 import { CONTEXT_VALUES, TREE_ICONS } from '../../../utils/ui-constants';
 import ZenMLStatusBar from '../../statusBar';
-import { ErrorTreeItem, createAuthErrorItem, createErrorItem } from '../common/ErrorTreeItem';
+import {
+  ErrorTreeItem,
+  createAuthErrorItem,
+  createErrorItem,
+  createServicesNotAvailableItem,
+} from '../common/ErrorTreeItem';
 import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
 import { PaginatedDataProvider } from '../common/PaginatedDataProvider';
 import { StackComponentTreeItem } from '../componentView/ComponentTreeItems';
@@ -39,6 +44,7 @@ export class StackDataProvider extends PaginatedDataProvider {
   private eventBus = EventBus.getInstance();
   private zenmlClientReady = false;
   private activeStackItem: StackTreeItem | undefined;
+  private lsClientReady = false;
 
   constructor() {
     super();
@@ -80,6 +86,7 @@ export class StackDataProvider extends PaginatedDataProvider {
   private projectChangeHandler = (projectName?: string) => {
     console.log(`StackDataProvider received project change event: ${projectName}`);
     if (projectName && projectName !== this.activeProjectName) {
+      this.activeStackId = '';
       this.activeProjectName = projectName;
       this.refresh();
     }
@@ -102,8 +109,13 @@ export class StackDataProvider extends PaginatedDataProvider {
    */
   private lsClientStateChangeHandler = (status: State) => {
     if (status !== State.Running) {
-      this.triggerLoadingState('lsClient');
+      this.lsClientReady = false;
+      this.items = [createServicesNotAvailableItem()];
+      this._onDidChangeTreeData.fire(undefined);
     } else {
+      this.lsClientReady = true;
+      this.activeStackId = '';
+      this.activeStackItem = undefined;
       this.refresh();
     }
   };
@@ -162,7 +174,6 @@ export class StackDataProvider extends PaginatedDataProvider {
 
     const page = this.pagination.currentPage;
     const itemsPerPage = this.pagination.itemsPerPage;
-
     try {
       const newStacksData = await this.fetchStacksWithComponents(
         page,
