@@ -204,9 +204,9 @@ class ZenServerWrapper:
         return self.lazy_import("zenml.zen_stores.base_zen_store", "BaseZenStore")
 
     @property
-    def ServerDeployer(self):
+    def LocalServerDeployer(self):
         """Provides access to the ZenML server deployment utilities."""
-        return self.lazy_import("zenml.zen_server.deploy.deployer", "ServerDeployer")
+        return self.lazy_import("zenml.zen_server.deploy.deployer", "LocalServerDeployer")
 
     @property
     def ZenMLProClient(self):
@@ -217,6 +217,11 @@ class ZenServerWrapper:
     def get_active_deployment(self):
         """Returns the function to get the active ZenML server deployment."""
         return self.lazy_import("zenml.zen_server.utils", "get_active_deployment")
+
+    @property
+    def connected_to_local_server(self):
+        """Returns the function to check if the user is connected to a local ZenML server."""
+        return self.lazy_import("zenml.utils.server_utils", "connected_to_local_server")
 
     def get_server_info(self) -> ZenmlServerInfoResp:
         """Fetches the ZenML server info.
@@ -273,63 +278,99 @@ class ZenServerWrapper:
             },
         }
 
+    def _login_pro_server(self, url: str, verify_ssl: bool) -> str:
+        """
+        Helper to log into a ZenML Pro server.
+
+        This uses the new ZenMLProClient API. It initializes the client
+        using the provided pro API URL (e.g. "https://cloudapi.zenml.io").
+        The client will fetch the API token from the credentials store,
+        raising an exception if no token is available.
+        """
+        pro_client = self.ZenMLProClient(url=url)
+        return pro_client.api_token
+
     def connect(self, args, **kwargs) -> dict:
-        """Connects to a ZenML server.
+        """Connects to a ZenML server (regular server, ZenML Pro, or local).
 
         Args:
-            args (list): List of arguments.
+            args (list): List of arguments containing:
+                - url (str): Server URL, 'local', or 'pro'
+                - verify_ssl (bool, optional): Whether to verify SSL. Defaults to True.
+                - options (dict, optional): Additional connection options like docker, port, etc.
+
         Returns:
             dict: Dictionary containing the result of the operation.
         """
-        url = args[0]
-        verify_ssl = args[1] if len(args) > 1 else True
+        connection_type = args[0]
+        url = args[1]
+        options = args[2] if len(args) > 2 else {}
+        verify_ssl = args[3] if len(args) > 3 else True
 
-        if not url:
-            return {"error": "Server URL is required."}
+        if not url and connection_type != "local":
+            return {"error": "Server URL is required for remote connections."}
 
         try:
-            # pylint: disable=not-callable
-            access_token = self.web_login(url=url, verify_ssl=verify_ssl)
-            self._config_wrapper.set_store_configuration(remote_url=url, access_token=access_token)
-            return {"message": "Connected successfully.", "access_token": access_token}
+            if connection_type == "local":
+                start_local_server = self.lazy_import("zenml.cli.login", "start_local_server")
+
+                docker = options.get("docker", False)
+                port = options.get("port", None)
+
+                start_local_server(
+                    docker=docker,
+                    port=port,
+                )
+                return {"message": "Local ZenML server started and connected successfully."}
+            else:
+                # Check if the URL is a Pro server
+                connect_to_pro_server = self.lazy_import("zenml.cli.login", "connect_to_pro_server")
+                is_pro_server = self.lazy_import("zenml.cli.login", "is_pro_server")
+
+                server_is_pro, server_pro_api_url = is_pro_server(url)
+
+                if server_is_pro:
+                    # Connect to a specific Pro server
+                    connect_to_pro_server(
+                        pro_server=url,
+                        pro_api_url=server_pro_api_url,
+                    )
+                    return {"message": f"Connected to ZenML Pro server at {url} successfully."}
+                else:
+                    # Connect to a standard ZenML server
+                    access_token = self.web_login(url=url, verify_ssl=verify_ssl)
+                    self._config_wrapper.set_store_configuration(
+                        remote_url=url, access_token=access_token
+                    )
+                    return {"message": "Connected successfully.", "access_token": access_token}
+
         except self.AuthorizationException as e:
             return {"error": f"Authorization failed: {str(e)}"}
+        except Exception as e:
+            return {"error": f"Connection failed: {str(e)}"}
 
     def disconnect(self, args) -> dict:
         """Disconnects from a ZenML server.
 
         Args:
             args (list): List of arguments.
+
         Returns:
             dict: Dictionary containing the result of the operation.
         """
         try:
-            # Adjust for changes from 'store' to 'store_configuration'
-            store_attr_name = (
-                "store_configuration" if hasattr(self.gc, "store_configuration") else "store"
-            )
-            url = getattr(self.gc, store_attr_name).url
-            store_type = self.BaseZenStore.get_store_type(url)
-
             # pylint: disable=not-callable
-            server = self.get_active_deployment(local=True)
-            deployer = self.ServerDeployer()
+            is_connected_to_local_server = self.connected_to_local_server()
 
-            messages = []
-
-            if server:
-                deployer.remove_server(server.config.name)
-                messages.append("Shut down the local ZenML server.")
+            if is_connected_to_local_server:
+                deployer = self.LocalServerDeployer()
+                deployer.remove_server()
+                message = "Disconnected and shut down the local ZenML server."
             else:
-                messages.append("No local ZenML server was found running.")
+                self.gc.set_default_store()
+                message = "Disconnected from ZenML server."
 
-            if store_type == self.StoreType.REST:
-                deployer.disconnect_from_server()
-                messages.append("Disconnected from the remote ZenML REST server.")
-
-            self.gc.set_default_store()
-
-            return {"message": " ".join(messages)}
+            return {"message": message}
         except self.ServerDeploymentNotFoundError as e:
             return {"error": f"Failed to disconnect: {str(e)}"}
 
@@ -960,17 +1001,33 @@ class StacksWrapper:
             active_stack_data = None
             active_stack = None
 
-            if active_stack_id is not None:
-                self.active_stack_id = active_stack_id
-                active_stack_data = self.get_stack_by_id([active_stack_id])
-                active_stack = active_stack_data
-            else:
-                active_stack = self.get_active_stack()
-                if active_stack:
-                    self.active_stack_id = active_stack["id"]
-                    active_stack_data = active_stack
-
+            # First try to get the active stack from the client
+            active_stack = self.get_active_stack()
             if active_stack:
+                self.active_stack_id = active_stack["id"]
+                active_stack_data = active_stack
+
+            # If there's a provided active_stack_id and it's different from what we found,
+            # try to get it but handle the case where it might not exist
+            if active_stack_id is not None and (
+                not active_stack or active_stack["id"] != active_stack_id
+            ):
+                try:
+                    self.active_stack_id = active_stack_id
+                    stack_by_id = self.get_stack_by_id([active_stack_id])
+                    # Only use this if it doesn't have an error
+                    if stack_by_id and (
+                        not isinstance(stack_by_id, dict) or "error" not in stack_by_id
+                    ):
+                        active_stack_data = stack_by_id
+                        active_stack = active_stack_data
+                except Exception:
+                    # If we can't find the requested stack, fall back to using the active stack
+                    # from the client (which we already set above)
+                    pass
+
+            # If we have an active stack, filter it out from the main stack list
+            if active_stack and isinstance(active_stack, dict) and "id" in active_stack:
                 stacks_data = [stack for stack in stacks_data if stack["id"] != active_stack["id"]]
 
             return {
