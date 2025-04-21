@@ -198,10 +198,12 @@ export class StackDataProvider extends PaginatedDataProvider {
     itemsPerPage: number = 20,
     activeStackId: string = ''
   ): Promise<TreeItem[]> {
-    if (!this.zenmlClientReady) {
-      return [LOADING_TREE_ITEMS.get('zenmlClient')!];
+    if (!this.lsClientReady || !this.zenmlClientReady) {
+      return [createServicesNotAvailableItem()];
     }
 
+    // If activeStackId is from settings but doesn't match what's in zenml,
+    // we want to let the server try to reconcile rather than failing early
     const args = [page, itemsPerPage, activeStackId ? activeStackId : null];
 
     try {
@@ -210,17 +212,42 @@ export class StackDataProvider extends PaginatedDataProvider {
 
       if (Array.isArray(result) && result.length === 1 && 'error' in result[0]) {
         const errorMessage = result[0].error;
-        if (errorMessage.includes('Authentication error')) {
+        if (
+          errorMessage.includes('Authentication error') ||
+          errorMessage.includes('Not authorized')
+        ) {
           return createAuthErrorItem(errorMessage);
         }
+        return createErrorItem({
+          errorType: 'Error',
+          message: errorMessage,
+        });
       }
 
       if (!result || 'error' in result) {
+        console.error(`Failed to fetch stacks:`, result);
+
+        // If we failed because of a missing stack ID, try one more time without the active stack ID
+        if (activeStackId && result?.error?.includes('No stack with this ID found')) {
+          console.log('Stack ID not found, retrying without active stack ID...');
+          // Reset the active stack ID to trigger a clean fetch
+          this.activeStackId = '';
+          await this.refresh();
+          return this.items;
+        }
+
         if ('clientVersion' in result && 'serverVersion' in result) {
           return createErrorItem(result);
+        } else if (result.error?.includes('Not authorized')) {
+          return createErrorItem({
+            errorType: 'AuthorizationException',
+            message: result.error,
+          });
         } else {
-          console.error(`Failed to fetch stacks: ${result.error}`);
-          return [];
+          return createErrorItem({
+            errorType: 'Error',
+            message: result.error,
+          });
         }
       }
 
@@ -233,7 +260,7 @@ export class StackDataProvider extends PaginatedDataProvider {
           totalPages: total_pages,
         };
 
-        if (stacks.length === 0) {
+        if (stacks.length === 0 && !active_stack) {
           return this.createNoStacksFoundItem();
         }
 
@@ -244,12 +271,16 @@ export class StackDataProvider extends PaginatedDataProvider {
         }
 
         // The backend has already filtered out the active stack from stacks.
-        const stackTreeItems: StackTreeItem[] = stacks.map(stack =>
-          this.convertToStackTreeItem(stack, false)
-        );
+        let stackTreeItems: StackTreeItem[] = [];
 
-        if (this.activeStackItem) {
+        if (this.activeStackItem && stacks.length >= 1) {
+          stackTreeItems = stacks.map(stack => this.convertToStackTreeItem(stack, false));
           stackTreeItems.unshift(this.activeStackItem);
+        } else if (this.activeStackItem) {
+          stackTreeItems = [this.activeStackItem];
+        } else if (stacks.length > 0) {
+          // If we don't have an active stack but have stacks, show them all as inactive
+          stackTreeItems = stacks.map(stack => this.convertToStackTreeItem(stack, false));
         }
 
         return stackTreeItems;
@@ -259,6 +290,15 @@ export class StackDataProvider extends PaginatedDataProvider {
       }
     } catch (error: any) {
       console.error(`Failed to fetch stacks: ${error}`);
+
+      // If the active stack ID is the issue, clear it and retry
+      if (activeStackId && error.toString().includes('No stack with this ID found')) {
+        console.log('Invalid active stack ID, retrying without it...');
+        this.activeStackId = '';
+        await this.refresh();
+        return this.items;
+      }
+
       return [
         new ErrorTreeItem('Error', `Failed to fetch stacks: ${error.message || error.toString()}`),
       ];
