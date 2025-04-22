@@ -19,6 +19,7 @@ import { registerPipelineCommands } from '../commands/pipelines/registry';
 import { registerProjectCommands } from '../commands/projects/registry';
 import { registerServerCommands } from '../commands/server/registry';
 import { registerStackCommands } from '../commands/stack/registry';
+
 import { EXTENSION_ROOT_DIR } from '../common/constants';
 import { registerLogger, traceLog, traceVerbose } from '../common/log/logging';
 import {
@@ -40,12 +41,12 @@ import {
 import { toggleCommands } from '../utils/global';
 import { refreshUIComponents } from '../utils/refresh';
 import {
+  ComponentDataProvider,
   PipelineDataProvider,
   ProjectDataProvider,
   ServerDataProvider,
   StackDataProvider,
 } from '../views/activityBar';
-import { ComponentDataProvider } from '../views/activityBar/componentView/ComponentDataProvider';
 import { PanelDataProvider } from '../views/panel/panelView/PanelDataProvider';
 import ZenMLStatusBar from '../views/statusBar';
 import { LSClient } from './LSClient';
