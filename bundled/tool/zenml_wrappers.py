@@ -466,8 +466,12 @@ class PipelineRunsWrapper:
                     "id": str(run.id),
                     "name": run.name,
                     "status": str(run.status),
-                    "stackName": run.stack.name,
-                    "pipelineName": run.pipeline.name,
+                    "stackName": run.stack.name
+                    if hasattr(run, "stack") and run.stack
+                    else "unknown",
+                    "pipelineName": run.pipeline.name
+                    if hasattr(run, "pipeline") and run.pipeline
+                    else "unknown",
                     "startTime": (run.start_time.isoformat() if run.start_time else None),
                     "endTime": (run.end_time.isoformat() if run.end_time else None),
                 }
@@ -536,19 +540,39 @@ class PipelineRunsWrapper:
             run = self.client.get_pipeline_run(run_id, hydrate=True)
             run_data = {
                 "id": str(run.id),
-                "name": run.pipeline.name,
+                "name": run.pipeline.name
+                if hasattr(run, "pipeline") and run.pipeline
+                else "unknown",
                 "status": run.status._value_ if hasattr(run.status, "_value_") else str(run.status),
-                "stackName": run.stack.name,
+                "stackName": run.stack.name if hasattr(run, "stack") and run.stack else "unknown",
                 "startTime": (
-                    run.metadata.start_time.isoformat() if run.metadata.start_time else None
+                    run.metadata.start_time.isoformat()
+                    if hasattr(run, "metadata") and run.metadata and run.metadata.start_time
+                    else None
                 ),
-                "endTime": (run.metadata.end_time.isoformat() if run.metadata.end_time else None),
-                "os": run.metadata.client_environment.get("os", "Unknown OS"),
+                "endTime": (
+                    run.metadata.end_time.isoformat()
+                    if hasattr(run, "metadata") and run.metadata and run.metadata.end_time
+                    else None
+                ),
+                "os": run.metadata.client_environment.get("os", "unknown")
+                if hasattr(run, "metadata")
+                and run.metadata
+                and hasattr(run.metadata, "client_environment")
+                else "unknown",
                 "osVersion": run.metadata.client_environment.get(
                     "os_version",
-                    run.metadata.client_environment.get("mac_version", "Unknown Version"),
-                ),
-                "pythonVersion": run.metadata.client_environment.get("python_version", "Unknown"),
+                    run.metadata.client_environment.get("mac_version", "unknown"),
+                )
+                if hasattr(run, "metadata")
+                and run.metadata
+                and hasattr(run.metadata, "client_environment")
+                else "unknown",
+                "pythonVersion": run.metadata.client_environment.get("python_version", "unknown")
+                if hasattr(run, "metadata")
+                and run.metadata
+                and hasattr(run.metadata, "client_environment")
+                else "unknown",
             }
 
             if hasattr(run, "steps") and run.steps:
@@ -598,8 +622,10 @@ class PipelineRunsWrapper:
                 if hasattr(step.status, "_value_")
                 else str(step.status),
                 "author": {
-                    "fullName": step.user.full_name,
-                    "email": step.user.name,
+                    "fullName": step.user.full_name
+                    if hasattr(step, "user") and step.user
+                    else "unknown",
+                    "email": step.user.name if hasattr(step, "user") and step.user else "unknown",
                 },
                 "startTime": (step.start_time.isoformat() if step.start_time else None),
                 "endTime": (step.end_time.isoformat() if step.end_time else None),
@@ -608,17 +634,38 @@ class PipelineRunsWrapper:
                     if step.end_time and step.start_time
                     else None
                 ),
-                "stackName": run.stack.name,
-                "orchestrator": {"runId": str(run.metadata.orchestrator_run_id)},
+                "stackName": run.stack.name if hasattr(run, "stack") and run.stack else "unknown",
+                "orchestrator": {
+                    "runId": str(run.metadata.orchestrator_run_id)
+                    if hasattr(run, "metadata")
+                    and run.metadata
+                    and hasattr(run.metadata, "orchestrator_run_id")
+                    else "unknown"
+                },
                 "pipeline": {
-                    "name": run.pipeline.name,
+                    "name": run.pipeline.name
+                    if hasattr(run, "pipeline") and run.pipeline
+                    else "unknown",
                     "status": run.status._value_
                     if hasattr(run.status, "_value_")
                     else str(run.status),
                 },
-                "cacheKey": step.metadata.cache_key,
-                "sourceCode": step.metadata.source_code,
-                "logsUri": step.metadata.logs.uri,
+                "cacheKey": step.metadata.cache_key
+                if hasattr(step, "metadata")
+                and step.metadata
+                and hasattr(step.metadata, "cache_key")
+                else "",
+                "sourceCode": step.metadata.source_code
+                if hasattr(step, "metadata")
+                and step.metadata
+                and hasattr(step.metadata, "source_code")
+                else "",
+                "logsUri": step.metadata.logs.uri
+                if hasattr(step, "metadata")
+                and step.metadata
+                and hasattr(step.metadata, "logs")
+                and step.metadata.logs
+                else "",
             }
             return step_data
         except self.ZenMLBaseException as e:
