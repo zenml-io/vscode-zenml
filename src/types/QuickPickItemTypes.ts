@@ -13,26 +13,27 @@
 
 /** Custom interfaces for our QuickPick items */
 
-import { QuickPickItem, ThemeIcon } from 'vscode';
+import { QuickPickItem, ThemeIcon, Uri } from 'vscode';
+export type IconPath = ThemeIcon | { light: Uri; dark: Uri };
 
 export interface MainMenuQuickPickItem extends QuickPickItem {
   id: string;
-  iconPath?: ThemeIcon;
+  iconPath?: IconPath;
   buttons?: Array<{
-    iconPath: ThemeIcon;
+    iconPath: IconPath;
     tooltip: string;
   }>;
 }
 
 export interface StackQuickPickItem extends QuickPickItem {
   id?: string;
-  iconPath?: ThemeIcon;
+  iconPath?: IconPath;
   disabled?: boolean;
 }
 
 export interface ProjectQuickPickItem extends QuickPickItem {
   id?: string;
   name?: string;
-  iconPath?: ThemeIcon;
+  iconPath?: IconPath;
   disabled?: boolean;
 }
