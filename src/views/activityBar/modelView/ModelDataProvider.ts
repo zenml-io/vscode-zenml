@@ -144,7 +144,9 @@ export class ModelDataProvider extends PaginatedDataProvider {
 
     // If not, fetch them from the server
     try {
-      const result = await this.getModelVersionsData(modelId);
+      const versionsPerPage = Math.floor(this.pagination.itemsPerPage / 2);
+      const page = this.pagination.currentPage;
+      const result = await this.getModelVersionsData(modelId, page, versionsPerPage);
       if (Array.isArray(result) && result.length > 0 && 'error' in result[0]) {
         return [];
       }
@@ -265,7 +267,7 @@ export class ModelDataProvider extends PaginatedDataProvider {
   private async getModelVersionsData(
     modelId: string,
     page: number = 1,
-    itemsPerPage: number = 20,
+    itemsPerPage: number = 10,
     projectName?: string
   ): Promise<ModelVersionsResponse> {
     const lsClient = LSClient.getInstance();
@@ -387,6 +389,11 @@ export class ModelDataProvider extends PaginatedDataProvider {
         detailItems.push(pipelineRunsSection);
       }
 
+      // Add run metadata if present
+      if (version.run_metadata && Object.keys(version.run_metadata).length > 0) {
+        detailItems.push(this.createMetadataTreeItems(version.run_metadata));
+      }
+
       return detailItems;
     }
 
@@ -439,6 +446,67 @@ export class ModelDataProvider extends PaginatedDataProvider {
       'error' in result ||
       ('clientVersion' in result && 'serverVersion' in result)
     );
+  }
+
+  /**
+   * Creates tree items for metadata objects with proper nesting for complex structures.
+   *
+   * @param metadata The metadata object to convert to tree items
+   * @returns An array of TreeItems representing the metadata
+   */
+  private createMetadataTreeItems(metadata: Record<string, any>): ModelSectionTreeItem {
+    // Use ModelSectionTreeItem instead of ModelDetailTreeItem for the section
+    const metadataSection = new ModelSectionTreeItem('run_metadata');
+    metadataSection.children = this.processMetadataObject(metadata);
+    return metadataSection;
+  }
+
+  /**
+   * Processes a metadata object into tree items
+   *
+   * @param obj The object to process
+   * @returns Array of tree items
+   */
+  private processMetadataObject(obj: any): vscode.TreeItem[] {
+    const items: vscode.TreeItem[] = [];
+
+    for (const [key, value] of Object.entries(obj)) {
+      if (value === null || value === undefined) {
+        // Handle null/undefined
+        items.push(new ModelDetailTreeItem(key, 'null'));
+      } else if (Array.isArray(value)) {
+        // Handle arrays
+        const arraySection = new ModelSectionTreeItem(key);
+
+        if (value.length === 0) {
+          arraySection.children = [new ModelDetailTreeItem('empty', '[]')];
+        } else {
+          arraySection.children = value.map((item, index) => {
+            if (typeof item === 'object' && item !== null) {
+              // For object elements in arrays
+              const subSection = new ModelSectionTreeItem(`[${index}]`);
+              subSection.children = this.processMetadataObject(item);
+              return subSection;
+            } else {
+              // For primitive elements in arrays
+              return new ModelDetailTreeItem(`[${index}]`, String(item));
+            }
+          });
+        }
+
+        items.push(arraySection);
+      } else if (typeof value === 'object') {
+        // Handle objects
+        const objectSection = new ModelSectionTreeItem(key);
+        objectSection.children = this.processMetadataObject(value);
+        items.push(objectSection);
+      } else {
+        // Handle primitives
+        items.push(new ModelDetailTreeItem(key, String(value)));
+      }
+    }
+
+    return items;
   }
 
   /**

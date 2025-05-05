@@ -68,12 +68,15 @@ Updated: ${new Date(version.updated).toLocaleString()}`;
  * Represents a detail item for a model or model version in the tree view.
  */
 export class ModelDetailTreeItem extends vscode.TreeItem {
+  public children?: ModelDetailTreeItem[];
+
   constructor(
     public readonly label: string,
     public readonly description: string,
+    collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None,
     public readonly contextValue: string = CONTEXT_VALUES.MODEL_DETAIL
   ) {
-    super(label);
+    super(label, collapsibleState);
     this.description = description;
     this.contextValue = contextValue;
     this.tooltip = `${label}: ${description}`;
