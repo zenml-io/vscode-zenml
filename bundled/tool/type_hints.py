@@ -162,6 +162,7 @@ class PipelineRun(TypedDict):
     status: str
     stackName: str
     pipelineName: str
+    runMetadata: Optional[Dict[str, Any]]
     startTime: Optional[str]
     endTime: Optional[str]
     config: Optional[Dict[str, Any]]
