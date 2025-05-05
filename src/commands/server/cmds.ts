@@ -20,6 +20,7 @@ import {
 import { updateServerUrlAndToken } from '../../utils/global';
 import { refreshUtils } from '../../utils/refresh';
 import { ServerDataProvider } from '../../views/activityBar';
+import { promptAndStoreServerUrl } from './utils';
 
 /**
  * Shows a quick pick to select the type of ZenML server connection.
@@ -45,11 +46,8 @@ const selectConnectionType = async (): Promise<{ type: string; url?: string } | 
   if (!selection) return undefined;
 
   if (selection.value === 'remote') {
-    // const url = await promptAndStoreServerUrl();
-    // if (!url) return undefined;
-    const url = 'https://11870fb5-zenml.cloudinfra.zenml.io';
-    const config = vscode.workspace.getConfiguration('zenml');
-    await config.update('serverUrl', url, vscode.ConfigurationTarget.Global);
+    const url = await promptAndStoreServerUrl();
+    if (!url) return undefined;
     return { type: 'remote', url };
   }
 
