@@ -57,6 +57,7 @@ export interface ModelVersion {
   stage: string | null;
   number: number;
   model: ModelVersionModel;
+  run_metadata?: Record<string, any>;
   data_artifact_ids?: {
     [key: string]: {
       [key: string]: string;

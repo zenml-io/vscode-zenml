@@ -1606,7 +1606,7 @@ class ModelsWrapper:
 
             model_id_or_name = args[0]
             page = args[1] if len(args) > 1 else 1
-            size = args[2] if len(args) > 2 else 20
+            size = args[2] if len(args) > 2 else 5
             project_name = args[3] if len(args) > 3 else None
 
             # This needs to use the underlying zen_store instead of client
@@ -1637,6 +1637,7 @@ class ModelsWrapper:
                     "updated": version.updated.isoformat() if version.updated else None,
                     "stage": str(version.stage) if version.stage else None,
                     "number": version.number,
+                    "run_metadata": version.run_metadata if version.run_metadata else None,
                     "tags": [{"name": tag.name} for tag in version.tags]
                     if hasattr(version, "tags") and version.tags
                     else [],

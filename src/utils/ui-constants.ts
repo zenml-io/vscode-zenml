@@ -94,6 +94,12 @@ export const TREE_ICONS: Record<string, ThemeIcon> = {
   PIPELINE: new ThemeIcon('symbol-interface'),
   PIPELINE_RUN: new ThemeIcon('beaker'),
   ENVIRONMENT: new ThemeIcon('server-environment'),
+  // Model icons
+  MODEL: new ThemeIcon('chip', ZENML_COLORS.PURPLE),
+  MODEL_VERSION: new ThemeIcon('chip'),
+  MODEL_STAGING: new ThemeIcon('chip', ZENML_COLORS.ORANGE),
+  MODEL_PRODUCTION: new ThemeIcon('chip', ZENML_COLORS.SUCCESS),
+  MODEL_LATEST: new ThemeIcon('chip', ZENML_COLORS.PRIMARY),
 
   // Detail icons
   DETAIL: new ThemeIcon('symbol-property'),
@@ -111,11 +117,7 @@ export const TREE_ICONS: Record<string, ThemeIcon> = {
   VERSIONS: new ThemeIcon('versions'),
   LOCK: new ThemeIcon('lock'),
   TAG: new ThemeIcon('tag'),
-  MODEL: new ThemeIcon('chip', ZENML_COLORS.PURPLE),
-  MODEL_VERSION: new ThemeIcon('chip'),
-  MODEL_STAGING: new ThemeIcon('chip', ZENML_COLORS.ORANGE),
-  MODEL_PRODUCTION: new ThemeIcon('chip', ZENML_COLORS.SUCCESS),
-  MODEL_LATEST: new ThemeIcon('chip', ZENML_COLORS.PRIMARY),
+  METADATA: new ThemeIcon('graph'),
 
   // Action icons
   DAG: new ThemeIcon('type-hierarchy'),
@@ -151,8 +153,8 @@ export const MODEL_VERSION_SECTION_ICONS: Record<string, ThemeIcon> = {
   tags: TREE_ICONS.TAG,
   data_artifacts: TREE_ICONS.DATABASE,
   model_artifacts: TREE_ICONS.DATABASE,
-  metadata: TREE_ICONS.MODEL_VERSION,
   pipeline_runs: TREE_ICONS.PIPELINE_RUN,
+  run_metadata: TREE_ICONS.METADATA,
 };
 
 /**

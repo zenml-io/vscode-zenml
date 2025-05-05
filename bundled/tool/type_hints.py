@@ -259,6 +259,7 @@ class ModelVersion(TypedDict):
     updated: str
     stage: Optional[str]
     number: int
+    run_metadata: Optional[Dict[str, Any]]
     model: ModelVersionModel
     data_artifact_ids: Optional[Dict[str, Dict[str, str]]]
     model_artifact_ids: Optional[Dict[str, Dict[str, str]]]
