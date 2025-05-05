@@ -19,6 +19,7 @@ The file is organized into sections for each wrapper class:
 4. WorkspacesWrapper - Workspace management for ZenML Pro
 5. ProjectsWrapper - Project management
 6. StacksWrapper - Stack management
+7. ModelsWrapper - Model registry operations
 """
 
 import pathlib
@@ -29,6 +30,8 @@ from type_hints import (
     GraphResponse,
     ListComponentsResponse,
     ListFlavorsResponse,
+    ListModelsResponse,
+    ListModelVersionsResponse,
     ListPipelineRunsResponse,
     ListProjectsResponse,
     ListWorkspacesResponse,
@@ -1472,3 +1475,217 @@ class StacksWrapper:
 
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve list of flavors: {str(e)}"}
+
+
+# =============================================================================
+# 7. ModelsWrapper
+# =============================================================================
+class ModelsWrapper:
+    """Wrapper class for Model registry management."""
+
+    def __init__(self, client, projects_wrapper):
+        """Initializes ModelsWrapper with a ZenML client."""
+        # pylint: disable=wrong-import-position,import-error
+        from lazy_import import lazy_import
+
+        self.lazy_import = lazy_import
+        self.client = client
+        self.projects_wrapper = projects_wrapper
+
+    @property
+    def ZenMLBaseException(self):
+        """Returns the ZenML ZenMLBaseException class."""
+        return self.lazy_import("zenml.exceptions", "ZenMLBaseException")
+
+    @property
+    def ValidationError(self):
+        """Returns the ZenML ValidationError class."""
+        return self.lazy_import("zenml.exceptions", "ValidationError")
+
+    @property
+    def LogicalOperators(self):
+        """Returns the ZenML LogicalOperators enum."""
+        return self.lazy_import("zenml.enums", "LogicalOperators")
+
+    @property
+    def ModelStages(self):
+        """Returns the ZenML ModelStages enum."""
+        return self.lazy_import("zenml.enums", "ModelStages")
+
+    @property
+    def ModelFilter(self):
+        """Returns the ZenML ModelFilter class."""
+        return self.lazy_import("zenml.models", "ModelFilter")
+
+    @property
+    def ModelVersionFilter(self):
+        """Returns the ZenML ModelVersionFilter class."""
+        return self.lazy_import("zenml.models", "ModelVersionFilter")
+
+    @serialize_response
+    def list_models(self, args) -> Union[ListModelsResponse, ErrorResponse]:
+        """Lists models in Model Registry.
+
+        Args:
+            args: A tuple containing (page, size)
+
+        Returns:
+            A dictionary containing models or an error message.
+        """
+        try:
+            page = args[0] if len(args) > 0 else 1
+            size = args[1] if len(args) > 1 else 20
+            project_name = args[2] if len(args) > 2 else None
+
+            # This needs to use the underlying zen_store instead of client
+            # since client doesn't expose list_models
+            query_params = {
+                "page": page,
+                "size": size,
+                "sort_by": "desc:created",
+            }
+
+            if project_name:
+                query_params["project"] = project_name
+            else:
+                active_project = self.projects_wrapper.get_active_project()
+                query_params["project"] = active_project["id"]
+
+            models_page = self.client.zen_store.list_models(self.ModelFilter(**query_params))
+
+            models_data = []
+            for model in models_page.items:
+                model_data = {
+                    "id": str(model.id),
+                    "name": model.name,
+                    "latest_version_name": getattr(model, "latest_version_name", None),
+                    "tags": [tag.name for tag in model.tags]
+                    if hasattr(model, "tags") and model.tags
+                    else [],
+                }
+
+                # Handle user information
+                if hasattr(model, "user") and model.user:
+                    model_data["user"] = {
+                        "name": model.user.name,
+                        "is_service_account": getattr(model.user, "is_service_account", False),
+                        "full_name": getattr(model.user, "full_name", ""),
+                        "email_opted_in": getattr(model.user, "email_opted_in", False),
+                        "is_admin": getattr(model.user, "is_admin", False),
+                    }
+
+                models_data.append(model_data)
+
+            return {
+                "index": page,
+                "max_size": size,
+                "total_pages": models_page.total_pages,
+                "total": models_page.total,
+                "items": models_data,
+            }
+        except self.ValidationError as e:
+            return {"error": "ValidationError", "message": str(e)}
+        except self.ZenMLBaseException as e:
+            return {"error": f"Failed to retrieve list of models: {str(e)}"}
+        except Exception as e:
+            return {"error": f"Unexpected error listing models: {str(e)}"}
+
+    @serialize_response
+    def list_model_versions(self, args) -> Union[ListModelVersionsResponse, ErrorResponse]:
+        """Lists versions for a specific model.
+
+        Args:
+            args: A tuple containing (model_id_or_name, page, size)
+
+        Returns:
+            A dictionary containing model versions or an error message.
+        """
+        try:
+            if len(args) < 1:
+                return {"error": "model_id_or_name is required"}
+
+            model_id_or_name = args[0]
+            page = args[1] if len(args) > 1 else 1
+            size = args[2] if len(args) > 2 else 20
+            project_name = args[3] if len(args) > 3 else None
+
+            # This needs to use the underlying zen_store instead of client
+            # since client doesn't expose list_model_versions
+            query_params = {
+                "model": model_id_or_name,
+                "page": page,
+                "size": size,
+                "sort_by": "desc:created",  # Sort by version number
+            }
+
+            if project_name:
+                query_params["project"] = project_name
+            else:
+                active_project = self.projects_wrapper.get_active_project()
+                query_params["project"] = active_project["id"]
+
+            versions_page = self.client.zen_store.list_model_versions(
+                self.ModelVersionFilter(**query_params)
+            )
+
+            versions_data = []
+            for version in versions_page.items:
+                version_data = {
+                    "id": str(version.id),
+                    "name": version.name,
+                    "created": version.created.isoformat() if version.created else None,
+                    "updated": version.updated.isoformat() if version.updated else None,
+                    "stage": str(version.stage) if version.stage else None,
+                    "number": version.number,
+                    "tags": [{"name": tag.name} for tag in version.tags]
+                    if hasattr(version, "tags") and version.tags
+                    else [],
+                }
+
+                # Handle model information
+                if hasattr(version, "model") and version.model:
+                    model_data = {
+                        "id": str(version.model.id),
+                        "name": version.model.name,
+                        "tags": [],
+                    }
+
+                    # Handle model tags
+                    if hasattr(version.model, "tags") and version.model.tags:
+                        model_data["tags"] = [tag.name for tag in version.model.tags]
+
+                    # Handle user information
+                    if hasattr(version.model, "user") and version.model.user:
+                        model_data["user"] = {
+                            "id": str(version.model.user.id),
+                            "name": version.model.user.name,
+                            "full_name": getattr(version.model.user, "full_name", ""),
+                        }
+
+                    version_data["model"] = model_data
+
+                # Handle artifact IDs
+                if hasattr(version, "data_artifact_ids") and version.data_artifact_ids:
+                    version_data["data_artifact_ids"] = version.data_artifact_ids
+
+                if hasattr(version, "model_artifact_ids") and version.model_artifact_ids:
+                    version_data["model_artifact_ids"] = version.model_artifact_ids
+
+                if hasattr(version, "pipeline_run_ids") and version.pipeline_run_ids:
+                    version_data["pipeline_run_ids"] = version.pipeline_run_ids
+
+                versions_data.append(version_data)
+
+            return {
+                "index": page,
+                "max_size": size,
+                "total_pages": versions_page.total_pages,
+                "total": versions_page.total,
+                "items": versions_data,
+            }
+        except self.ValidationError as e:
+            return {"error": "ValidationError", "message": str(e)}
+        except self.ZenMLBaseException as e:
+            return {"error": f"Failed to retrieve list of model versions: {str(e)}"}
+        except Exception as e:
+            return {"error": f"Unexpected error listing model versions: {str(e)}"}
