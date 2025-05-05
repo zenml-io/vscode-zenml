@@ -53,7 +53,7 @@ this extension and your Python version needs to be 3.8 or greater.
 ## Requirements
 
 - **ZenML Installation:** ZenML needs to be installed in the local Python environment associated with the Python interpreter selected in the current VS Code workspace. This extension interacts directly with your ZenML environment, so ensuring that ZenML is installed and properly configured is essential.
-- **ZenML Version**: This extension is compatible with ZenML version 0.80.0 or newer. For older ZenML versions, see our [version compatibility guide](VERSIONS.md) to install the appropriate extension version.
+- **ZenML Version**: This extension is compatible with ZenML versions 0.80.0 to 0.82.0 or newer. For older ZenML versions, see our [version compatibility guide](VERSIONS.md) to install the appropriate extension version.
 - **Python Version**: Python 3.8 or greater is required for the operation of the LSP server, which is a part of this extension.
 
 ## Feedback and Contributions

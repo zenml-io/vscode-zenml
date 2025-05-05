@@ -14,7 +14,7 @@ All notable changes to the "zenml-vscode" extension will be documented in this f
 
 ### Fixed
 
-- Fixed server command connection for remote URLs
+- Fixed server command connection for local and remote URLs
 - Fixed server command tests with better error handling
 
 ### Dependencies
