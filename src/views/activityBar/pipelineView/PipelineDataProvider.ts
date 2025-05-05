@@ -413,9 +413,11 @@ export class PipelineDataProvider extends PaginatedDataProvider {
     );
 
     const metadataChildren: PipelineRunTreeItem[] = [];
+    // Create a new WeakSet for detecting circular references across the entire metadata object
+    const seen = new WeakSet<object>();
 
     for (const [key, value] of Object.entries(metadata)) {
-      metadataChildren.push(this.createValueTreeItem(key, value));
+      metadataChildren.push(this.createValueTreeItem(key, value, 0, seen));
     }
 
     metadataItem.children = metadataChildren;
@@ -481,10 +483,12 @@ export class PipelineDataProvider extends PaginatedDataProvider {
     );
 
     const modelChildren: PipelineRunTreeItem[] = [];
+    // Create a new WeakSet for detecting circular references across the entire model object
+    const seen = new WeakSet<object>();
 
     for (const [key, value] of Object.entries(model)) {
       if (key !== 'name' && value !== undefined) {
-        modelChildren.push(this.createValueTreeItem(key, value));
+        modelChildren.push(this.createValueTreeItem(key, value, 0, seen));
       }
     }
 
@@ -506,10 +510,12 @@ export class PipelineDataProvider extends PaginatedDataProvider {
     );
 
     const configChildren: PipelineRunTreeItem[] = [];
+    // Create a new WeakSet for detecting circular references across the entire config object
+    const seen = new WeakSet<object>();
 
     for (const [key, value] of Object.entries(config)) {
       if (key !== 'model' && value !== undefined) {
-        configChildren.push(this.createValueTreeItem(key, value));
+        configChildren.push(this.createValueTreeItem(key, value, 0, seen));
       }
     }
 
@@ -518,13 +524,34 @@ export class PipelineDataProvider extends PaginatedDataProvider {
   }
 
   /**
-   * Creates a tree item for a key-value pair.
+   * Creates a tree item for a key-value pair, with protection against circular references
+   * and deep nesting that could cause stack overflows.
    *
    * @param {string} key - The key to create a tree item for.
    * @param {any} value - The value to create a tree item for.
+   * @param {number} depth - The current recursion depth (for limiting nesting).
+   * @param {WeakSet<object>} seen - WeakSet of already processed objects (for detecting circulars).
    * @returns {PipelineRunTreeItem} A tree item for the key-value pair.
    */
-  private createValueTreeItem(key: string, value: any): PipelineRunTreeItem {
+  private createValueTreeItem(
+    key: string,
+    value: any,
+    depth: number = 0,
+    seen: WeakSet<object> = new WeakSet()
+  ): PipelineRunTreeItem {
+    // Prevent excessive nesting with a depth limit
+    if (depth > 10) {
+      return new PipelineRunTreeItem(key, '[truncated: maximum depth reached]');
+    }
+
+    // Detect circular references for objects
+    if (typeof value === 'object' && value !== null) {
+      if (seen.has(value)) {
+        return new PipelineRunTreeItem(key, '[circular reference]');
+      }
+      seen.add(value);
+    }
+
     if (Array.isArray(value)) {
       const arrayItem = new PipelineRunTreeItem(
         key,
@@ -532,37 +559,99 @@ export class PipelineDataProvider extends PaginatedDataProvider {
         vscode.TreeItemCollapsibleState.Collapsed
       );
 
-      const arrayChildren: PipelineRunTreeItem[] = value.map((item, index) => {
+      // Limit large arrays to prevent UI overload
+      const displayLimit = 100;
+      const displayArray = value.length > displayLimit ? value.slice(0, displayLimit) : value;
+
+      const arrayChildren: PipelineRunTreeItem[] = displayArray.map((item, index) => {
         if (typeof item === 'object' && item !== null) {
-          return this.createNestedObjectTreeItem(`[${index}]`, item);
+          return this.createNestedObjectTreeItem(`[${index}]`, item, depth + 1, seen);
         } else {
-          return new PipelineRunTreeItem(`[${index}]`, String(item));
+          // For primitives, handle long strings
+          const strValue = String(item);
+          const maxLength = 500;
+          const displayValue =
+            strValue.length > maxLength
+              ? `${strValue.substring(0, maxLength)}... (truncated)`
+              : strValue;
+          return new PipelineRunTreeItem(`[${index}]`, displayValue);
         }
       });
+
+      // Add indicator if array was truncated
+      if (value.length > displayLimit) {
+        arrayChildren.push(
+          new PipelineRunTreeItem(
+            `[and ${value.length - displayLimit} more items...]`,
+            `(array truncated)`
+          )
+        );
+      }
 
       arrayItem.children = arrayChildren;
       return arrayItem;
     } else if (typeof value === 'object' && value !== null) {
-      return this.createNestedObjectTreeItem(key, value);
+      return this.createNestedObjectTreeItem(key, value, depth, seen);
     } else {
-      return new PipelineRunTreeItem(key, String(value));
+      // Handle primitives - truncate long string values
+      const stringValue = String(value);
+      const maxLength = 500;
+      const displayValue =
+        stringValue.length > maxLength
+          ? `${stringValue.substring(0, maxLength)}... (truncated, ${stringValue.length} chars)`
+          : stringValue;
+
+      return new PipelineRunTreeItem(key, displayValue);
     }
   }
 
   /**
-   * Creates a tree item for a nested object.
+   * Creates a tree item for a nested object, with protection against circular references
+   * and deep nesting that could cause stack overflows.
    *
    * @param {string} key - The key to create a tree item for.
    * @param {any} obj - The nested object to create a tree item for.
+   * @param {number} depth - The current recursion depth (for limiting nesting).
+   * @param {WeakSet<object>} seen - WeakSet of already processed objects (for detecting circulars).
    * @returns {PipelineRunTreeItem} A tree item for the nested object.
    */
-  private createNestedObjectTreeItem(key: string, obj: any): PipelineRunTreeItem {
-    const objectItem = new PipelineRunTreeItem(key, '', vscode.TreeItemCollapsibleState.Collapsed);
+  private createNestedObjectTreeItem(
+    key: string,
+    obj: any,
+    depth: number = 0,
+    seen: WeakSet<object> = new WeakSet()
+  ): PipelineRunTreeItem {
+    // Prevent excessive nesting with a depth limit
+    if (depth > 10) {
+      return new PipelineRunTreeItem(key, '[truncated: maximum depth reached]');
+    }
 
+    // Detect circular references
+    if (seen.has(obj)) {
+      return new PipelineRunTreeItem(key, '[circular reference]');
+    }
+    seen.add(obj);
+
+    const objectItem = new PipelineRunTreeItem(key, '', vscode.TreeItemCollapsibleState.Collapsed);
     const objectChildren: PipelineRunTreeItem[] = [];
 
-    for (const [childKey, childValue] of Object.entries(obj)) {
-      objectChildren.push(this.createValueTreeItem(childKey, childValue));
+    // Limit the number of properties to prevent UI overload for large objects
+    const entries = Object.entries(obj);
+    const displayLimit = 100;
+    const displayEntries = entries.length > displayLimit ? entries.slice(0, displayLimit) : entries;
+
+    for (const [childKey, childValue] of displayEntries) {
+      objectChildren.push(this.createValueTreeItem(childKey, childValue, depth + 1, seen));
+    }
+
+    // Add indicator if object properties were truncated
+    if (entries.length > displayLimit) {
+      objectChildren.push(
+        new PipelineRunTreeItem(
+          `[and ${entries.length - displayLimit} more properties...]`,
+          `(object truncated)`
+        )
+      );
     }
 
     objectItem.children = objectChildren;

@@ -460,12 +460,32 @@ export class ModelDataProvider extends PaginatedDataProvider {
   }
 
   /**
-   * Processes a metadata object into tree items
+   * Processes a metadata object into tree items, with protection against circular references
+   * and deep nesting that could cause stack overflows
    *
    * @param obj The object to process
+   * @param depth Current recursion depth (to limit deep nesting)
+   * @param seen WeakSet of already processed objects (to detect circular references)
    * @returns Array of tree items
    */
-  private processMetadataObject(obj: any): vscode.TreeItem[] {
+  private processMetadataObject(
+    obj: any,
+    depth: number = 0,
+    seen: WeakSet<object> = new WeakSet()
+  ): vscode.TreeItem[] {
+    // Prevent excessive nesting with a depth limit
+    if (depth > 10) {
+      return [new ModelDetailTreeItem('[maximum depth reached]', '[truncated]')];
+    }
+
+    // Detect circular references for objects
+    if (typeof obj === 'object' && obj !== null) {
+      if (seen.has(obj)) {
+        return [new ModelDetailTreeItem('[circular reference]', '[circular]')];
+      }
+      seen.add(obj);
+    }
+
     const items: vscode.TreeItem[] = [];
 
     for (const [key, value] of Object.entries(obj)) {
@@ -479,28 +499,49 @@ export class ModelDataProvider extends PaginatedDataProvider {
         if (value.length === 0) {
           arraySection.children = [new ModelDetailTreeItem('empty', '[]')];
         } else {
-          arraySection.children = value.map((item, index) => {
+          // Limit large arrays to prevent UI overload
+          const displayLimit = 100;
+          const displayArray = value.length > displayLimit ? value.slice(0, displayLimit) : value;
+
+          arraySection.children = displayArray.map((item, index) => {
             if (typeof item === 'object' && item !== null) {
               // For object elements in arrays
               const subSection = new ModelSectionTreeItem(`[${index}]`);
-              subSection.children = this.processMetadataObject(item);
+              subSection.children = this.processMetadataObject(item, depth + 1, seen);
               return subSection;
             } else {
               // For primitive elements in arrays
               return new ModelDetailTreeItem(`[${index}]`, String(item));
             }
           });
+
+          // Add indicator if array was truncated
+          if (value.length > displayLimit) {
+            arraySection.children.push(
+              new ModelDetailTreeItem(
+                `[and ${value.length - displayLimit} more items...]`,
+                `(array truncated)`
+              )
+            );
+          }
         }
 
         items.push(arraySection);
       } else if (typeof value === 'object') {
         // Handle objects
         const objectSection = new ModelSectionTreeItem(key);
-        objectSection.children = this.processMetadataObject(value);
+        objectSection.children = this.processMetadataObject(value, depth + 1, seen);
         items.push(objectSection);
       } else {
-        // Handle primitives
-        items.push(new ModelDetailTreeItem(key, String(value)));
+        // Handle primitives - truncate long string values
+        const stringValue = String(value);
+        const maxLength = 500;
+        const displayValue =
+          stringValue.length > maxLength
+            ? `${stringValue.substring(0, maxLength)}... (truncated, ${stringValue.length} chars)`
+            : stringValue;
+
+        items.push(new ModelDetailTreeItem(key, displayValue));
       }
     }
 
