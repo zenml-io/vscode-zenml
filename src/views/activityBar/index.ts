@@ -19,3 +19,7 @@ export * from './serverView/ServerTreeItems';
 // Stack View
 export * from './stackView/StackDataProvider';
 export * from './stackView/StackTreeItems';
+
+// Model View
+export * from './modelView/ModelDataProvider';
+export * from './modelView/ModelTreeItems';
