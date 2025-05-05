@@ -298,27 +298,41 @@ class ZenServerWrapper:
 
         Args:
             args (list): List of arguments containing:
-                - url (str): Server URL, 'local', or 'pro'
-                - verify_ssl (bool, optional): Whether to verify SSL. Defaults to True.
+                - connection_type (str): Type of connection, e.g. 'remote', 'local'
+                - url (str, optional): Server URL (required for remote connections)
                 - options (dict, optional): Additional connection options like docker, port, etc.
+                - verify_ssl (bool, optional): Whether to verify SSL. Defaults to True.
 
         Returns:
             dict: Dictionary containing the result of the operation.
         """
-        connection_type = args[0]
-        url = args[1]
-        options = args[2] if len(args) > 2 else {}
-        verify_ssl = args[3] if len(args) > 3 else True
+        # Safety check for empty args
+        if not args:
+            return {"error": "No connection arguments provided."}
 
-        if not url and connection_type != "local":
-            return {"error": "Server URL is required for remote connections."}
+        try:
+            connection_type, *rest = args
+        except ValueError:
+            return {"error": "connection_type argument required"}
+
+        # Handle local connection which only needs connection_type and options
+        if connection_type == "local":
+            options = rest[0] if rest else {}
+        # Handle remote connections which need url and optional parameters
+        else:
+            try:
+                url, *rest2 = rest
+            except ValueError:
+                return {"error": "Server URL is required for remote connections."}
+            options = rest2[0] if rest2 else {}
+            verify_ssl = rest2[1] if rest2 else True
 
         try:
             if connection_type == "local":
                 start_local_server = self.lazy_import("zenml.cli.login", "start_local_server")
 
-                docker = options.get("docker", False)
-                port = options.get("port", None)
+                docker = getattr(options, "docker", False)
+                port = getattr(options, "port", None)
 
                 start_local_server(
                     docker=docker,
@@ -539,9 +553,16 @@ class PipelineRunsWrapper:
         Returns:
             dict: Dictionary containing the result of the operation.
         """
+
         try:
             run_id = args[0]
             run = self.client.get_pipeline_run(run_id, hydrate=True)
+
+            # Safely unwrap metadata
+            meta = getattr(run, "metadata", None)
+            start_time = getattr(meta, "start_time", None)
+            end_time = getattr(meta, "end_time", None)
+            env = getattr(meta, "client_environment", {}) or {}
             run_data = {
                 "id": str(run.id),
                 "name": run.pipeline.name
@@ -549,34 +570,11 @@ class PipelineRunsWrapper:
                 else "unknown",
                 "status": run.status._value_ if hasattr(run.status, "_value_") else str(run.status),
                 "stackName": run.stack.name if hasattr(run, "stack") and run.stack else "unknown",
-                "startTime": (
-                    run.metadata.start_time.isoformat()
-                    if hasattr(run, "metadata") and run.metadata and run.metadata.start_time
-                    else None
-                ),
-                "endTime": (
-                    run.metadata.end_time.isoformat()
-                    if hasattr(run, "metadata") and run.metadata and run.metadata.end_time
-                    else None
-                ),
-                "os": run.metadata.client_environment.get("os", "unknown")
-                if hasattr(run, "metadata")
-                and run.metadata
-                and hasattr(run.metadata, "client_environment")
-                else "unknown",
-                "osVersion": run.metadata.client_environment.get(
-                    "os_version",
-                    run.metadata.client_environment.get("mac_version", "unknown"),
-                )
-                if hasattr(run, "metadata")
-                and run.metadata
-                and hasattr(run.metadata, "client_environment")
-                else "unknown",
-                "pythonVersion": run.metadata.client_environment.get("python_version", "unknown")
-                if hasattr(run, "metadata")
-                and run.metadata
-                and hasattr(run.metadata, "client_environment")
-                else "unknown",
+                "startTime": start_time.isoformat() if start_time else None,
+                "endTime": end_time.isoformat() if end_time else None,
+                "os": env.get("os", "unknown"),
+                "osVersion": env.get("os_version", env.get("mac_version", "unknown")),
+                "pythonVersion": env.get("python_version", "unknown"),
             }
 
             if hasattr(run, "steps") and run.steps:
@@ -1017,10 +1015,15 @@ class StacksWrapper:
             active_stack = self.client.active_stack_model
             if active_stack:
                 stack_data = self._process_stack(active_stack)
+                # Check if stack_data contains an error key
+                if isinstance(stack_data, dict) and "error" in stack_data:
+                    return {"error": stack_data["error"]}
                 return stack_data
             return {"message": "No active stack found"}
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve active stack: {str(e)}"}
+        except Exception as e:
+            return {"error": f"Unexpected error retrieving active stack: {str(e)}"}
 
     @serialize_response
     def get_stack_by_id(self, args) -> dict:
@@ -1054,22 +1057,29 @@ class StacksWrapper:
 
             # First try to get the active stack from the client
             active_stack = self.get_active_stack()
-            if active_stack:
+            # Check if active_stack is valid (has no error and has an id)
+            if (
+                active_stack
+                and isinstance(active_stack, dict)
+                and "error" not in active_stack
+                and "id" in active_stack
+            ):
                 self.active_stack_id = active_stack["id"]
                 active_stack_data = active_stack
 
             # If there's a provided active_stack_id and it's different from what we found,
             # try to get it but handle the case where it might not exist
             if active_stack_id is not None and (
-                not active_stack or active_stack["id"] != active_stack_id
+                not active_stack
+                or not isinstance(active_stack, dict)
+                or "id" not in active_stack
+                or active_stack["id"] != active_stack_id
             ):
                 try:
                     self.active_stack_id = active_stack_id
                     stack_by_id = self.get_stack_by_id([active_stack_id])
                     # Only use this if it doesn't have an error
-                    if stack_by_id and (
-                        not isinstance(stack_by_id, dict) or "error" not in stack_by_id
-                    ):
+                    if stack_by_id and isinstance(stack_by_id, dict) and "error" not in stack_by_id:
                         active_stack_data = stack_by_id
                         active_stack = active_stack_data
                 except Exception:
@@ -1079,7 +1089,13 @@ class StacksWrapper:
 
             # If we have an active stack, filter it out from the main stack list
             if active_stack and isinstance(active_stack, dict) and "id" in active_stack:
-                stacks_data = [stack for stack in stacks_data if stack["id"] != active_stack["id"]]
+                stacks_data = [
+                    stack
+                    for stack in stacks_data
+                    if isinstance(stack, dict)
+                    and "id" in stack
+                    and stack["id"] != active_stack["id"]
+                ]
 
             return {
                 "active_stack": active_stack_data,
@@ -1549,7 +1565,10 @@ class ModelsWrapper:
                 query_params["project"] = project_name
             else:
                 active_project = self.projects_wrapper.get_active_project()
-                query_params["project"] = active_project["id"]
+                if active_project and not active_project.get("error"):
+                    if isinstance(active_project, dict):
+                        active_project_id = active_project.get("id")
+                        query_params["project"] = active_project_id
 
             models_page = self.client.zen_store.list_models(self.ModelFilter(**query_params))
 
@@ -1622,7 +1641,10 @@ class ModelsWrapper:
                 query_params["project"] = project_name
             else:
                 active_project = self.projects_wrapper.get_active_project()
-                query_params["project"] = active_project["id"]
+                if active_project and not active_project.get("error"):
+                    if isinstance(active_project, dict):
+                        active_project_id = active_project.get("id")
+                        query_params["project"] = active_project_id
 
             versions_page = self.client.zen_store.list_model_versions(
                 self.ModelVersionFilter(**query_params)
