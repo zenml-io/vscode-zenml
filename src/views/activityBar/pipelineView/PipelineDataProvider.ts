@@ -381,6 +381,11 @@ export class PipelineDataProvider extends PaginatedDataProvider {
       children.push(this.createConfigTreeItem(run.config));
     }
 
+    // run metadata
+    if (run.runMetadata && Object.keys(run.runMetadata).length > 0) {
+      children.push(this.createRunMetadataTreeItem(run.runMetadata));
+    }
+
     children.push(
       new PipelineRunTreeItem('id', run.id),
       new PipelineRunTreeItem('name', run.name),
@@ -392,6 +397,29 @@ export class PipelineDataProvider extends PaginatedDataProvider {
     );
 
     return new PipelineTreeItem(run, run.id, children);
+  }
+
+  /**
+   * Creates a tree item for run metadata.
+   *
+   * @param {Record<string, any>} metadata - The metadata to create a tree item for.
+   * @returns {PipelineRunTreeItem} A tree item for the metadata.
+   */
+  private createRunMetadataTreeItem(metadata: Record<string, any>): PipelineRunTreeItem {
+    const metadataItem = new PipelineRunTreeItem(
+      'metadata',
+      '',
+      vscode.TreeItemCollapsibleState.Collapsed
+    );
+
+    const metadataChildren: PipelineRunTreeItem[] = [];
+
+    for (const [key, value] of Object.entries(metadata)) {
+      metadataChildren.push(this.createValueTreeItem(key, value));
+    }
+
+    metadataItem.children = metadataChildren;
+    return metadataItem;
   }
 
   /**
@@ -498,11 +526,46 @@ export class PipelineDataProvider extends PaginatedDataProvider {
    */
   private createValueTreeItem(key: string, value: any): PipelineRunTreeItem {
     if (Array.isArray(value)) {
-      return new PipelineRunTreeItem(key, value.join(', '));
+      const arrayItem = new PipelineRunTreeItem(
+        key,
+        `(${value.length} items)`,
+        vscode.TreeItemCollapsibleState.Collapsed
+      );
+
+      const arrayChildren: PipelineRunTreeItem[] = value.map((item, index) => {
+        if (typeof item === 'object' && item !== null) {
+          return this.createNestedObjectTreeItem(`[${index}]`, item);
+        } else {
+          return new PipelineRunTreeItem(`[${index}]`, String(item));
+        }
+      });
+
+      arrayItem.children = arrayChildren;
+      return arrayItem;
     } else if (typeof value === 'object' && value !== null) {
-      return new PipelineRunTreeItem(key, JSON.stringify(value));
+      return this.createNestedObjectTreeItem(key, value);
     } else {
       return new PipelineRunTreeItem(key, String(value));
     }
+  }
+
+  /**
+   * Creates a tree item for a nested object.
+   *
+   * @param {string} key - The key to create a tree item for.
+   * @param {any} obj - The nested object to create a tree item for.
+   * @returns {PipelineRunTreeItem} A tree item for the nested object.
+   */
+  private createNestedObjectTreeItem(key: string, obj: any): PipelineRunTreeItem {
+    const objectItem = new PipelineRunTreeItem(key, '', vscode.TreeItemCollapsibleState.Collapsed);
+
+    const objectChildren: PipelineRunTreeItem[] = [];
+
+    for (const [childKey, childValue] of Object.entries(obj)) {
+      objectChildren.push(this.createValueTreeItem(childKey, childValue));
+    }
+
+    objectItem.children = objectChildren;
+    return objectItem;
   }
 }

@@ -14,7 +14,7 @@ export class ComponentCategoryTreeItem extends vscode.TreeItem implements TreeIt
     public readonly type: string,
     public readonly childComponents: ComponentTreeItem[]
   ) {
-    super(type, vscode.TreeItemCollapsibleState.Expanded);
+    super(type, vscode.TreeItemCollapsibleState.Collapsed);
     this.contextValue = CONTEXT_VALUES.COMPONENT_CATEGORY;
     this.iconPath = TREE_ICONS.COMPONENT_CATEGORY;
     this.tooltip = `Component Type: ${type}`;
