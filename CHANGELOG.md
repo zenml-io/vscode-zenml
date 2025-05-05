@@ -2,6 +2,35 @@
 
 All notable changes to the "zenml-vscode" extension will be documented in this file.
 
+## [0.0.20] - 2025-05-05
+
+### Added
+
+- New Models tree view to display models and model versions
+- Each model version displays a collapsible tree view of its tags, data artifacts, model artifacts, pipeline runs, and run metadata
+- New ModelDataProvider and ModelTreeItems for browsing ML models
+- Model commands for refreshing and navigating the model view
+- Added run metadata tree items for Pipeline Runs tree view
+
+### Fixed
+
+- Fixed server command connection for remote URLs
+- Fixed server command tests with better error handling
+
+### Dependencies
+
+- Updated multiple dependencies to address security alerts:
+  - axios (1.8.4 → 1.9.0)
+  - @eslint/js (9.24.0 → 9.26.0)
+  - @types/node (22.14.0 → 22.15.3)
+  - @vscode/test-electron (2.4.1 → 2.5.2)
+  - eslint (9.24.0 → 9.26.0)
+  - eslint-config-prettier (10.1.1 → 10.1.2)
+  - eslint-plugin-prettier (5.2.6 → 5.3.1)
+  - typescript-eslint (8.29.1 → 8.31.1)
+  - webpack (5.98.0 → 5.99.7)
+  - sinon (17.0.1 → 20.0.0)
+
 ## [0.0.16] - 2025-04-11
 
 ### Changed

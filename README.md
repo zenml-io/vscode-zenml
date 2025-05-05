@@ -12,6 +12,7 @@ The ZenML VSCode extension seamlessly integrates with [ZenML](https://github.com
 
 - **Server, Projects, Stacks, and Pipeline Runs Views**: Interact directly with ML stacks, pipeline runs, and server configurations from the Activity Bar.
 - **Project Management**: Explore, switch between, and manage your ZenML projects directly from the Activity Bar.
+- **Models**: Browse and view model details, including model versions and their artifacts, tags, and metadata.
 - **DAG Visualization for Pipeline Runs**: Explore Directed Acyclic Graphs for each pipeline view directly on the Activity Bar.
 - **Python Tool Integration**: Utilizes a Language Server Protocol (LSP) server for real-time synchronization with the ZenML environment.
 - **Real-Time Configuration Monitoring**: Leverages `watchdog` to dynamically update configurations, keeping the extension in sync with your ZenML setup.
@@ -33,6 +34,7 @@ this extension and your Python version needs to be 3.8 or greater.
 - **Stack Operations**: View stack details, register, update, delete, copy, or set active stacks directly from VSCode.
 - **Stack Component Operations**: View stack component details, register, update, or delete stack components directly from VSCode.
 - **Pipeline Runs**: Monitor and manage pipeline runs, including deleting runs from the system and rendering DAGs.
+- **Models**: Browse model details and their versions directly from the Models view in the Activity Bar.
 - **Environment Information**: Get detailed snapshots of the development environment, aiding troubleshooting.
 
 ### DAG Visualization
