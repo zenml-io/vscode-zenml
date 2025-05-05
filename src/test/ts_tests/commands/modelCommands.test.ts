@@ -19,7 +19,6 @@ import { ModelDataProvider } from '../../../views/activityBar/modelView/ModelDat
 import { MockEventBus } from '../__mocks__/MockEventBus';
 import { MockLSClient } from '../__mocks__/MockLSClient';
 
-// Use an interface for mocking instead of inheritance to avoid complex dependencies
 interface MockModelDataProviderInterface {
   refresh: sinon.SinonStub;
 }
@@ -75,9 +74,16 @@ suite('Model Commands Test Suite', () => {
   });
 
   test('refreshModelView refreshes view on command execution', async () => {
-    // Setup
-    const refreshCommand = vscode.commands.registerCommand('zenml.refreshModelView', async () => {
-      await modelCommands.refreshModelView();
+    // Create a backup of the original executeCommand function
+    const originalExecuteCommand = vscode.commands.executeCommand;
+
+    // Instead of registering the command again, just stub executeCommand
+    // to call our modelCommands.refreshModelView directly when it sees zenml.refreshModelView
+    sandbox.stub(vscode.commands, 'executeCommand').callsFake(async (command, ...args) => {
+      if (command === 'zenml.refreshModelView') {
+        return modelCommands.refreshModelView();
+      }
+      return originalExecuteCommand.call(vscode.commands, command, ...args);
     });
 
     // Execute
@@ -85,8 +91,5 @@ suite('Model Commands Test Suite', () => {
 
     // Verify
     sinon.assert.calledOnce(mockModelDataProvider.refresh);
-
-    // Cleanup
-    refreshCommand.dispose();
   });
 });
