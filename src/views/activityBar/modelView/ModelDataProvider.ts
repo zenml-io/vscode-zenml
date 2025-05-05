@@ -144,9 +144,7 @@ export class ModelDataProvider extends PaginatedDataProvider {
 
     // If not, fetch them from the server
     try {
-      const versionsPerPage = Math.floor(this.pagination.itemsPerPage / 2);
-      const page = this.pagination.currentPage;
-      const result = await this.getModelVersionsData(modelId, page, versionsPerPage);
+      const result = await this.getModelVersionsData(modelId);
       if (Array.isArray(result) && result.length > 0 && 'error' in result[0]) {
         return [];
       }
@@ -328,7 +326,7 @@ export class ModelDataProvider extends PaginatedDataProvider {
       const detailItems: vscode.TreeItem[] = [
         new ModelDetailTreeItem('id', version.id),
         new ModelDetailTreeItem('number', version.number.toString()),
-        new ModelDetailTreeItem('stage', version.stage || 'Not set'),
+        new ModelDetailTreeItem('stage', version.stage || ''),
         new ModelDetailTreeItem('created', new Date(version.created).toLocaleString()),
         new ModelDetailTreeItem('updated', new Date(version.updated).toLocaleString()),
       ];

@@ -146,7 +146,6 @@ export const MODEL_VERSION_STATUS_ICONS: Record<string, ThemeIcon> = {
   staging: TREE_ICONS.MODEL_STAGING,
   archived: TREE_ICONS.MODEL_VERSION,
   latest: TREE_ICONS.MODEL_LATEST,
-  'Not set': TREE_ICONS.MODEL_VERSION,
 };
 
 export const MODEL_VERSION_SECTION_ICONS: Record<string, ThemeIcon> = {

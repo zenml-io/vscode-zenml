@@ -52,13 +52,13 @@ export class ModelVersionTreeItem extends vscode.TreeItem implements TreeItemWit
     super(`${version.name}`, vscode.TreeItemCollapsibleState.Collapsed);
 
     // For description, show version number and stage if available
-    const stagePart = version.stage ? ` (${version.stage})` : '';
-    this.description = `${stagePart}`;
-    this.iconPath = MODEL_VERSION_STATUS_ICONS[version.stage || 'Not set'];
+    const stage = (version.stage ?? 'Not set').toLowerCase();
+    this.description = stage !== 'not set' ? stage : '';
+    this.iconPath = MODEL_VERSION_STATUS_ICONS[stage] ?? TREE_ICONS.MODEL_VERSION;
 
     this.tooltip = `Model Version: ${version.name}
 Number: ${version.number}
-Stage: ${version.stage || 'Not set'}
+Stage: ${version.stage ?? 'Not set'}
 Created: ${new Date(version.created).toLocaleString()}
 Updated: ${new Date(version.updated).toLocaleString()}`;
   }
