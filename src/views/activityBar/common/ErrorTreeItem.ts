@@ -10,7 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
-import { ThemeColor, ThemeIcon, TreeItem } from 'vscode';
+import { ThemeColor, ThemeIcon, TreeItem, TreeItemCollapsibleState } from 'vscode';
 
 export interface GenericErrorTreeItem {
   label: string;
@@ -19,13 +19,14 @@ export interface GenericErrorTreeItem {
   icon?: string;
 }
 
-export type ErrorTreeItemType = VersionMismatchTreeItem | ErrorTreeItem;
+export type ErrorTreeItemType = VersionMismatchTreeItem | ErrorTreeItem | InfoTreeItem;
 
 export class ErrorTreeItem extends TreeItem {
   constructor(label: string, description: string) {
-    super(label);
+    super(label, TreeItemCollapsibleState.None);
     this.description = description;
     this.iconPath = new ThemeIcon('warning', new ThemeColor('charts.yellow'));
+    this.contextValue = 'error';
   }
 }
 
@@ -33,6 +34,7 @@ export class VersionMismatchTreeItem extends ErrorTreeItem {
   constructor(clientVersion: string, serverVersion: string) {
     super(`Version mismatch detected`, `Client: ${clientVersion} – Server: ${serverVersion}`);
     this.iconPath = new ThemeIcon('warning', new ThemeColor('charts.yellow'));
+    this.contextValue = 'versionMismatch';
   }
 }
 
@@ -76,3 +78,24 @@ export const createAuthErrorItem = (errorMessage: string): ErrorTreeItem[] => {
   }
   return errorItems;
 };
+
+/**
+ * InfoTreeItem for displaying information messages in tree views
+ */
+export class InfoTreeItem extends TreeItem {
+  constructor(message: string, description: string = '') {
+    super(message, TreeItemCollapsibleState.None);
+    this.description = description;
+    this.iconPath = new ThemeIcon('info');
+    this.contextValue = 'info';
+  }
+}
+
+/**
+ * Creates an info message for when the ZenML services are not available.
+ *
+ * @returns A TreeItem with info about the ZenML services status
+ */
+export function createServicesNotAvailableItem(): TreeItem {
+  return new InfoTreeItem('Pending LSP and ZenML client initialization.');
+}

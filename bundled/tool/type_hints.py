@@ -162,6 +162,7 @@ class PipelineRun(TypedDict):
     status: str
     stackName: str
     pipelineName: str
+    runMetadata: Optional[Dict[str, Any]]
     startTime: Optional[str]
     endTime: Optional[str]
     config: Optional[Dict[str, Any]]
@@ -213,3 +214,62 @@ class ListProjectsResponse(TypedDict):
     total_pages: int
     current_page: int
     items_per_page: int
+
+
+class ModelUser(TypedDict):
+    id: Optional[str]
+    name: str
+    is_service_account: Optional[bool]
+    full_name: Optional[str]
+    email_opted_in: Optional[bool]
+    is_admin: Optional[bool]
+
+
+class ModelTag(TypedDict):
+    name: str
+
+
+class Model(TypedDict):
+    id: Optional[str]
+    name: str
+    latest_version_name: Optional[str]
+    user: Optional[ModelUser]
+    tags: List[str]
+
+
+class ListModelsResponse(TypedDict):
+    index: int
+    max_size: int
+    total_pages: int
+    total: int
+    items: List[Model]
+
+
+class ModelVersionModel(TypedDict):
+    id: str
+    name: str
+    tags: List[str]
+    user: Optional[ModelUser]
+
+
+class ModelVersion(TypedDict):
+    id: str
+    name: str
+    created: str
+    updated: str
+    stage: Optional[str]
+    number: int
+    run_metadata: Optional[Dict[str, Any]]
+    model: ModelVersionModel
+    data_artifact_ids: Optional[Dict[str, Dict[str, str]]]
+    model_artifact_ids: Optional[Dict[str, Dict[str, str]]]
+    pipeline_run_ids: Optional[Dict[str, str]]
+    tags: List[ModelTag]
+
+
+class ListModelVersionsResponse(TypedDict):
+    index: int
+    max_size: int
+    total_pages: int
+    total: int
+    items: List[ModelVersion]

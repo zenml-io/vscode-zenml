@@ -25,6 +25,7 @@ class ZenMLClient:
         from lazy_import import lazy_import, suppress_stdout_temporarily
         from zenml_wrappers import (
             GlobalConfigWrapper,
+            ModelsWrapper,
             PipelineRunsWrapper,
             ProjectsWrapper,
             StacksWrapper,
@@ -42,5 +43,6 @@ class ZenMLClient:
         self.pipeline_runs_wrapper = PipelineRunsWrapper(self.client)
         self.workspaces_wrapper = WorkspacesWrapper(self.client, self.config_wrapper)
         self.projects_wrapper = ProjectsWrapper(self.client)
+        self.models_wrapper = ModelsWrapper(self.client, self.projects_wrapper)
         self.zen_server_wrapper = ZenServerWrapper(self.config_wrapper, self.projects_wrapper)
         self.initialized = True

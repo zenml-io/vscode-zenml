@@ -22,6 +22,7 @@ import {
   SERVER_STATUS_UPDATED,
 } from '../../../utils/constants';
 import { TREE_ICONS } from '../../../utils/ui-constants';
+import { createServicesNotAvailableItem } from '../common/ErrorTreeItem';
 import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
 import { ServerTreeItem } from './ServerTreeItems';
 
@@ -78,7 +79,8 @@ export class ServerDataProvider implements TreeDataProvider<TreeItem> {
    */
   private lsClientStateChangeHandler = (status: State) => {
     if (status !== State.Running) {
-      this.triggerLoadingState('lsClient');
+      this.currentStatus = [createServicesNotAvailableItem()];
+      this._onDidChangeTreeData.fire(undefined);
     } else {
       this.refresh();
     }

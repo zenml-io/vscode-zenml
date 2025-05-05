@@ -396,3 +396,15 @@ class ZenLanguageServer(LanguageServer):
         def get_project_by_name(wrapper_instance, args):
             """Gets a project by name"""
             return wrapper_instance.get_project_by_name(args[0])
+
+        @self.command(f"{TOOL_MODULE_NAME}.listModels")
+        @self.zenml_command(wrapper_name="models_wrapper")
+        def list_models(wrapper_instance, args):
+            """Lists models from Model Registry"""
+            return wrapper_instance.list_models(args)
+
+        @self.command(f"{TOOL_MODULE_NAME}.listModelVersions")
+        @self.zenml_command(wrapper_name="models_wrapper")
+        def list_model_versions(wrapper_instance, args):
+            """Lists versions for a specific model"""
+            return wrapper_instance.list_model_versions(args)

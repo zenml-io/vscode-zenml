@@ -11,29 +11,16 @@
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-/** Custom interfaces for our QuickPick items */
+import { ModelDataProvider } from '../../views/activityBar/modelView/ModelDataProvider';
 
-import { QuickPickItem, ThemeIcon, Uri } from 'vscode';
-export type IconPath = ThemeIcon | { light: Uri; dark: Uri };
-
-export interface MainMenuQuickPickItem extends QuickPickItem {
-  id: string;
-  iconPath?: IconPath;
-  buttons?: Array<{
-    iconPath: IconPath;
-    tooltip: string;
-  }>;
+/**
+ * Refreshes the Models view.
+ */
+async function refreshModelView(): Promise<void> {
+  const modelProvider = ModelDataProvider.getInstance();
+  void modelProvider.refresh();
 }
 
-export interface StackQuickPickItem extends QuickPickItem {
-  id?: string;
-  iconPath?: IconPath;
-  disabled?: boolean;
-}
-
-export interface ProjectQuickPickItem extends QuickPickItem {
-  id?: string;
-  name?: string;
-  iconPath?: IconPath;
-  disabled?: boolean;
-}
+export const modelCommands = {
+  refreshModelView,
+};

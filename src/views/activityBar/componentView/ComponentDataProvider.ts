@@ -165,14 +165,21 @@ export class ComponentDataProvider extends PaginatedDataProvider {
         if (errorMessage.includes('Authentication error')) {
           return createAuthErrorItem(errorMessage);
         }
+        return createErrorItem({
+          errorType: errorMessage.includes('Not authorized') ? 'AuthorizationException' : 'Error',
+          message: errorMessage,
+        });
       }
 
       if (!result || 'error' in result) {
         if ('clientVersion' in result && 'serverVersion' in result) {
           return createErrorItem(result);
-        } else {
-          console.error(`Failed to fetch stack components: ${result.error}`);
-          return [];
+        }
+        if (result.error.includes('Not authorized')) {
+          return createErrorItem({
+            errorType: 'AuthorizationException',
+            message: result.error,
+          });
         }
       }
 

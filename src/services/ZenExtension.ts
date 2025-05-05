@@ -15,10 +15,12 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { registerComponentCommands } from '../commands/components/registry';
+import { registerModelCommands } from '../commands/models/registry';
 import { registerPipelineCommands } from '../commands/pipelines/registry';
 import { registerProjectCommands } from '../commands/projects/registry';
 import { registerServerCommands } from '../commands/server/registry';
 import { registerStackCommands } from '../commands/stack/registry';
+
 import { EXTENSION_ROOT_DIR } from '../common/constants';
 import { registerLogger, traceLog, traceVerbose } from '../common/log/logging';
 import {
@@ -40,12 +42,13 @@ import {
 import { toggleCommands } from '../utils/global';
 import { refreshUIComponents } from '../utils/refresh';
 import {
+  ComponentDataProvider,
+  ModelDataProvider,
   PipelineDataProvider,
   ProjectDataProvider,
   ServerDataProvider,
   StackDataProvider,
 } from '../views/activityBar';
-import { ComponentDataProvider } from '../views/activityBar/componentView/ComponentDataProvider';
 import { PanelDataProvider } from '../views/panel/panelView/PanelDataProvider';
 import ZenMLStatusBar from '../views/statusBar';
 import { LSClient } from './LSClient';
@@ -72,6 +75,7 @@ export class ZenExtension {
     ['zenmlComponentView', ComponentDataProvider.getInstance()],
     ['zenmlPipelineView', PipelineDataProvider.getInstance()],
     ['zenmlProjectView', ProjectDataProvider.getInstance()],
+    ['zenmlModelView', ModelDataProvider.getInstance()],
     ['zenmlPanelView', PanelDataProvider.getInstance()],
   ]);
 
@@ -81,6 +85,7 @@ export class ZenExtension {
     registerComponentCommands,
     registerPipelineCommands,
     registerProjectCommands,
+    registerModelCommands,
   ];
 
   /**

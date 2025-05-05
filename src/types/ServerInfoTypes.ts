@@ -71,6 +71,7 @@ export interface ZenServerStoreInfo {
 
   // Added for ZenML 0.80.0 support:
   organization_id?: string;
+  organization_name?: string;
   active_workspace_id?: string;
   active_workspace_name?: string;
   active_project_id?: string;

@@ -80,12 +80,25 @@ export class MockLSClient {
   async sendLsClientRequest(command: string, args: any[] = []): Promise<any> {
     switch (command) {
       case 'connect':
-        if (args[0] === MOCK_REST_SERVER_URL) {
+        // Debug logging for test failures
+        console.log(`Mock sendLsClientRequest called with args:`, JSON.stringify(args));
+
+        if (args.length >= 4 && args[0] === 'remote' && args[1] === MOCK_REST_SERVER_URL) {
           return Promise.resolve({
             message: 'Connected successfully',
             access_token: MOCK_ACCESS_TOKEN,
           });
+        } else if (args.length === 1 && args[0] === MOCK_REST_SERVER_URL) {
+          // Handle legacy test case format
+          return Promise.resolve({
+            message: 'Connected successfully',
+            access_token: MOCK_ACCESS_TOKEN,
+          });
+        } else if (args.length >= 2 && args[0] === 'remote' && args[1] === 'invalid.url') {
+          // For the fail test case
+          return Promise.reject(new Error('Failed to connect with incorrect URL'));
         } else {
+          console.log(`Mock LSClient rejecting connect request with args:`, JSON.stringify(args));
           return Promise.reject(new Error('Failed to connect with incorrect URL'));
         }
       case 'disconnect':

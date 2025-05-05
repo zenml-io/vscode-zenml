@@ -54,6 +54,7 @@ export interface PipelineRun {
   startTime: string;
   endTime: string;
   pipelineName: string;
+  runMetadata?: Record<string, any>;
   config?: PipelineRunConfig;
   steps?: {
     [stepName: string]: PipelineRunStep;

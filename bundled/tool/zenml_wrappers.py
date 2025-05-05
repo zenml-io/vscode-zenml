@@ -19,6 +19,7 @@ The file is organized into sections for each wrapper class:
 4. WorkspacesWrapper - Workspace management for ZenML Pro
 5. ProjectsWrapper - Project management
 6. StacksWrapper - Stack management
+7. ModelsWrapper - Model registry operations
 """
 
 import pathlib
@@ -29,6 +30,8 @@ from type_hints import (
     GraphResponse,
     ListComponentsResponse,
     ListFlavorsResponse,
+    ListModelsResponse,
+    ListModelVersionsResponse,
     ListPipelineRunsResponse,
     ListProjectsResponse,
     ListWorkspacesResponse,
@@ -204,9 +207,9 @@ class ZenServerWrapper:
         return self.lazy_import("zenml.zen_stores.base_zen_store", "BaseZenStore")
 
     @property
-    def ServerDeployer(self):
+    def LocalServerDeployer(self):
         """Provides access to the ZenML server deployment utilities."""
-        return self.lazy_import("zenml.zen_server.deploy.deployer", "ServerDeployer")
+        return self.lazy_import("zenml.zen_server.deploy.deployer", "LocalServerDeployer")
 
     @property
     def ZenMLProClient(self):
@@ -217,6 +220,11 @@ class ZenServerWrapper:
     def get_active_deployment(self):
         """Returns the function to get the active ZenML server deployment."""
         return self.lazy_import("zenml.zen_server.utils", "get_active_deployment")
+
+    @property
+    def connected_to_local_server(self):
+        """Returns the function to check if the user is connected to a local ZenML server."""
+        return self.lazy_import("zenml.utils.server_utils", "connected_to_local_server")
 
     def get_server_info(self) -> ZenmlServerInfoResp:
         """Fetches the ZenML server info.
@@ -273,63 +281,113 @@ class ZenServerWrapper:
             },
         }
 
+    def _login_pro_server(self, url: str, verify_ssl: bool) -> str:
+        """
+        Helper to log into a ZenML Pro server.
+
+        This uses the new ZenMLProClient API. It initializes the client
+        using the provided pro API URL (e.g. "https://cloudapi.zenml.io").
+        The client will fetch the API token from the credentials store,
+        raising an exception if no token is available.
+        """
+        pro_client = self.ZenMLProClient(url=url)
+        return pro_client.api_token
+
     def connect(self, args, **kwargs) -> dict:
-        """Connects to a ZenML server.
+        """Connects to a ZenML server (regular server, ZenML Pro, or local).
 
         Args:
-            args (list): List of arguments.
+            args (list): List of arguments containing:
+                - connection_type (str): Type of connection, e.g. 'remote', 'local'
+                - url (str, optional): Server URL (required for remote connections)
+                - options (dict, optional): Additional connection options like docker, port, etc.
+                - verify_ssl (bool, optional): Whether to verify SSL. Defaults to True.
+
         Returns:
             dict: Dictionary containing the result of the operation.
         """
-        url = args[0]
-        verify_ssl = args[1] if len(args) > 1 else True
-
-        if not url:
-            return {"error": "Server URL is required."}
+        # Safety check for empty args
+        if not args:
+            return {"error": "No connection arguments provided."}
 
         try:
-            # pylint: disable=not-callable
-            access_token = self.web_login(url=url, verify_ssl=verify_ssl)
-            self._config_wrapper.set_store_configuration(remote_url=url, access_token=access_token)
-            return {"message": "Connected successfully.", "access_token": access_token}
+            connection_type, *rest = args
+        except ValueError:
+            return {"error": "connection_type argument required"}
+
+        # Handle local connection which only needs connection_type and options
+        if connection_type == "local":
+            options = rest[0] if rest else {}
+        # Handle remote connections which need url and optional parameters
+        else:
+            try:
+                url, *rest2 = rest
+            except ValueError:
+                return {"error": "Server URL is required for remote connections."}
+            options = rest2[0] if rest2 else {}
+            verify_ssl = rest2[1] if rest2 else True
+
+        try:
+            if connection_type == "local":
+                start_local_server = self.lazy_import("zenml.cli.login", "start_local_server")
+
+                docker = getattr(options, "docker", False)
+                port = getattr(options, "port", None)
+
+                start_local_server(
+                    docker=docker,
+                    port=port,
+                )
+                return {"message": "Local ZenML server started and connected successfully."}
+            else:
+                # Check if the URL is a Pro server
+                connect_to_pro_server = self.lazy_import("zenml.cli.login", "connect_to_pro_server")
+                is_pro_server = self.lazy_import("zenml.cli.login", "is_pro_server")
+
+                server_is_pro, server_pro_api_url = is_pro_server(url)
+
+                if server_is_pro:
+                    # Connect to a specific Pro server
+                    connect_to_pro_server(
+                        pro_server=url,
+                        pro_api_url=server_pro_api_url,
+                    )
+                    return {"message": f"Connected to ZenML Pro server at {url} successfully."}
+                else:
+                    # Connect to a standard ZenML server
+                    access_token = self.web_login(url=url, verify_ssl=verify_ssl)
+                    self._config_wrapper.set_store_configuration(
+                        remote_url=url, access_token=access_token
+                    )
+                    return {"message": "Connected successfully.", "access_token": access_token}
+
         except self.AuthorizationException as e:
             return {"error": f"Authorization failed: {str(e)}"}
+        except Exception as e:
+            return {"error": f"Connection failed: {str(e)}"}
 
     def disconnect(self, args) -> dict:
         """Disconnects from a ZenML server.
 
         Args:
             args (list): List of arguments.
+
         Returns:
             dict: Dictionary containing the result of the operation.
         """
         try:
-            # Adjust for changes from 'store' to 'store_configuration'
-            store_attr_name = (
-                "store_configuration" if hasattr(self.gc, "store_configuration") else "store"
-            )
-            url = getattr(self.gc, store_attr_name).url
-            store_type = self.BaseZenStore.get_store_type(url)
-
             # pylint: disable=not-callable
-            server = self.get_active_deployment(local=True)
-            deployer = self.ServerDeployer()
+            is_connected_to_local_server = self.connected_to_local_server()
 
-            messages = []
-
-            if server:
-                deployer.remove_server(server.config.name)
-                messages.append("Shut down the local ZenML server.")
+            if is_connected_to_local_server:
+                deployer = self.LocalServerDeployer()
+                deployer.remove_server()
+                message = "Disconnected and shut down the local ZenML server."
             else:
-                messages.append("No local ZenML server was found running.")
+                self.gc.set_default_store()
+                message = "Disconnected from ZenML server."
 
-            if store_type == self.StoreType.REST:
-                deployer.disconnect_from_server()
-                messages.append("Disconnected from the remote ZenML REST server.")
-
-            self.gc.set_default_store()
-
-            return {"message": " ".join(messages)}
+            return {"message": message}
         except self.ServerDeploymentNotFoundError as e:
             return {"error": f"Failed to disconnect: {str(e)}"}
 
@@ -425,8 +483,13 @@ class PipelineRunsWrapper:
                     "id": str(run.id),
                     "name": run.name,
                     "status": str(run.status),
-                    "stackName": run.stack.name,
-                    "pipelineName": run.pipeline.name,
+                    "stackName": run.stack.name
+                    if hasattr(run, "stack") and run.stack
+                    else "unknown",
+                    "pipelineName": run.pipeline.name
+                    if hasattr(run, "pipeline") and run.pipeline
+                    else "unknown",
+                    "runMetadata": run.run_metadata if hasattr(run, "run_metadata") else None,
                     "startTime": (run.start_time.isoformat() if run.start_time else None),
                     "endTime": (run.end_time.isoformat() if run.end_time else None),
                 }
@@ -490,24 +553,28 @@ class PipelineRunsWrapper:
         Returns:
             dict: Dictionary containing the result of the operation.
         """
+
         try:
             run_id = args[0]
             run = self.client.get_pipeline_run(run_id, hydrate=True)
+
+            # Safely unwrap metadata
+            meta = getattr(run, "metadata", None)
+            start_time = getattr(meta, "start_time", None)
+            end_time = getattr(meta, "end_time", None)
+            env = getattr(meta, "client_environment", {}) or {}
             run_data = {
                 "id": str(run.id),
-                "name": run.pipeline.name,
+                "name": run.pipeline.name
+                if hasattr(run, "pipeline") and run.pipeline
+                else "unknown",
                 "status": run.status._value_ if hasattr(run.status, "_value_") else str(run.status),
-                "stackName": run.stack.name,
-                "startTime": (
-                    run.metadata.start_time.isoformat() if run.metadata.start_time else None
-                ),
-                "endTime": (run.metadata.end_time.isoformat() if run.metadata.end_time else None),
-                "os": run.metadata.client_environment.get("os", "Unknown OS"),
-                "osVersion": run.metadata.client_environment.get(
-                    "os_version",
-                    run.metadata.client_environment.get("mac_version", "Unknown Version"),
-                ),
-                "pythonVersion": run.metadata.client_environment.get("python_version", "Unknown"),
+                "stackName": run.stack.name if hasattr(run, "stack") and run.stack else "unknown",
+                "startTime": start_time.isoformat() if start_time else None,
+                "endTime": end_time.isoformat() if end_time else None,
+                "os": env.get("os", "unknown"),
+                "osVersion": env.get("os_version", env.get("mac_version", "unknown")),
+                "pythonVersion": env.get("python_version", "unknown"),
             }
 
             if hasattr(run, "steps") and run.steps:
@@ -557,8 +624,10 @@ class PipelineRunsWrapper:
                 if hasattr(step.status, "_value_")
                 else str(step.status),
                 "author": {
-                    "fullName": step.user.full_name,
-                    "email": step.user.name,
+                    "fullName": step.user.full_name
+                    if hasattr(step, "user") and step.user
+                    else "unknown",
+                    "email": step.user.name if hasattr(step, "user") and step.user else "unknown",
                 },
                 "startTime": (step.start_time.isoformat() if step.start_time else None),
                 "endTime": (step.end_time.isoformat() if step.end_time else None),
@@ -567,17 +636,38 @@ class PipelineRunsWrapper:
                     if step.end_time and step.start_time
                     else None
                 ),
-                "stackName": run.stack.name,
-                "orchestrator": {"runId": str(run.metadata.orchestrator_run_id)},
+                "stackName": run.stack.name if hasattr(run, "stack") and run.stack else "unknown",
+                "orchestrator": {
+                    "runId": str(run.metadata.orchestrator_run_id)
+                    if hasattr(run, "metadata")
+                    and run.metadata
+                    and hasattr(run.metadata, "orchestrator_run_id")
+                    else "unknown"
+                },
                 "pipeline": {
-                    "name": run.pipeline.name,
+                    "name": run.pipeline.name
+                    if hasattr(run, "pipeline") and run.pipeline
+                    else "unknown",
                     "status": run.status._value_
                     if hasattr(run.status, "_value_")
                     else str(run.status),
                 },
-                "cacheKey": step.metadata.cache_key,
-                "sourceCode": step.metadata.source_code,
-                "logsUri": step.metadata.logs.uri,
+                "cacheKey": step.metadata.cache_key
+                if hasattr(step, "metadata")
+                and step.metadata
+                and hasattr(step.metadata, "cache_key")
+                else "",
+                "sourceCode": step.metadata.source_code
+                if hasattr(step, "metadata")
+                and step.metadata
+                and hasattr(step.metadata, "source_code")
+                else "",
+                "logsUri": step.metadata.logs.uri
+                if hasattr(step, "metadata")
+                and step.metadata
+                and hasattr(step.metadata, "logs")
+                and step.metadata.logs
+                else "",
             }
             return step_data
         except self.ZenMLBaseException as e:
@@ -925,10 +1015,15 @@ class StacksWrapper:
             active_stack = self.client.active_stack_model
             if active_stack:
                 stack_data = self._process_stack(active_stack)
+                # Check if stack_data contains an error key
+                if isinstance(stack_data, dict) and "error" in stack_data:
+                    return {"error": stack_data["error"]}
                 return stack_data
             return {"message": "No active stack found"}
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve active stack: {str(e)}"}
+        except Exception as e:
+            return {"error": f"Unexpected error retrieving active stack: {str(e)}"}
 
     @serialize_response
     def get_stack_by_id(self, args) -> dict:
@@ -960,18 +1055,47 @@ class StacksWrapper:
             active_stack_data = None
             active_stack = None
 
-            if active_stack_id is not None:
-                self.active_stack_id = active_stack_id
-                active_stack_data = self.get_stack_by_id([active_stack_id])
-                active_stack = active_stack_data
-            else:
-                active_stack = self.get_active_stack()
-                if active_stack:
-                    self.active_stack_id = active_stack["id"]
-                    active_stack_data = active_stack
+            # First try to get the active stack from the client
+            active_stack = self.get_active_stack()
+            # Check if active_stack is valid (has no error and has an id)
+            if (
+                active_stack
+                and isinstance(active_stack, dict)
+                and "error" not in active_stack
+                and "id" in active_stack
+            ):
+                self.active_stack_id = active_stack["id"]
+                active_stack_data = active_stack
 
-            if active_stack:
-                stacks_data = [stack for stack in stacks_data if stack["id"] != active_stack["id"]]
+            # If there's a provided active_stack_id and it's different from what we found,
+            # try to get it but handle the case where it might not exist
+            if active_stack_id is not None and (
+                not active_stack
+                or not isinstance(active_stack, dict)
+                or "id" not in active_stack
+                or active_stack["id"] != active_stack_id
+            ):
+                try:
+                    self.active_stack_id = active_stack_id
+                    stack_by_id = self.get_stack_by_id([active_stack_id])
+                    # Only use this if it doesn't have an error
+                    if stack_by_id and isinstance(stack_by_id, dict) and "error" not in stack_by_id:
+                        active_stack_data = stack_by_id
+                        active_stack = active_stack_data
+                except Exception:
+                    # If we can't find the requested stack, fall back to using the active stack
+                    # from the client (which we already set above)
+                    pass
+
+            # If we have an active stack, filter it out from the main stack list
+            if active_stack and isinstance(active_stack, dict) and "id" in active_stack:
+                stacks_data = [
+                    stack
+                    for stack in stacks_data
+                    if isinstance(stack, dict)
+                    and "id" in stack
+                    and stack["id"] != active_stack["id"]
+                ]
 
             return {
                 "active_stack": active_stack_data,
@@ -1367,3 +1491,224 @@ class StacksWrapper:
 
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve list of flavors: {str(e)}"}
+
+
+# =============================================================================
+# 7. ModelsWrapper
+# =============================================================================
+class ModelsWrapper:
+    """Wrapper class for Model registry management."""
+
+    def __init__(self, client, projects_wrapper):
+        """Initializes ModelsWrapper with a ZenML client."""
+        # pylint: disable=wrong-import-position,import-error
+        from lazy_import import lazy_import
+
+        self.lazy_import = lazy_import
+        self.client = client
+        self.projects_wrapper = projects_wrapper
+
+    @property
+    def ZenMLBaseException(self):
+        """Returns the ZenML ZenMLBaseException class."""
+        return self.lazy_import("zenml.exceptions", "ZenMLBaseException")
+
+    @property
+    def ValidationError(self):
+        """Returns the ZenML ValidationError class."""
+        return self.lazy_import("zenml.exceptions", "ValidationError")
+
+    @property
+    def LogicalOperators(self):
+        """Returns the ZenML LogicalOperators enum."""
+        return self.lazy_import("zenml.enums", "LogicalOperators")
+
+    @property
+    def ModelStages(self):
+        """Returns the ZenML ModelStages enum."""
+        return self.lazy_import("zenml.enums", "ModelStages")
+
+    @property
+    def ModelFilter(self):
+        """Returns the ZenML ModelFilter class."""
+        return self.lazy_import("zenml.models", "ModelFilter")
+
+    @property
+    def ModelVersionFilter(self):
+        """Returns the ZenML ModelVersionFilter class."""
+        return self.lazy_import("zenml.models", "ModelVersionFilter")
+
+    @serialize_response
+    def list_models(self, args) -> Union[ListModelsResponse, ErrorResponse]:
+        """Lists models in Model Registry.
+
+        Args:
+            args: A tuple containing (page, size)
+
+        Returns:
+            A dictionary containing models or an error message.
+        """
+        try:
+            page = args[0] if len(args) > 0 else 1
+            size = args[1] if len(args) > 1 else 20
+            project_name = args[2] if len(args) > 2 else None
+
+            # This needs to use the underlying zen_store instead of client
+            # since client doesn't expose list_models
+            query_params = {
+                "page": page,
+                "size": size,
+                "sort_by": "desc:created",
+            }
+
+            if project_name:
+                query_params["project"] = project_name
+            else:
+                active_project = self.projects_wrapper.get_active_project()
+                if active_project and not active_project.get("error"):
+                    if isinstance(active_project, dict):
+                        active_project_id = active_project.get("id")
+                        query_params["project"] = active_project_id
+
+            models_page = self.client.zen_store.list_models(self.ModelFilter(**query_params))
+
+            models_data = []
+            for model in models_page.items:
+                model_data = {
+                    "id": str(model.id),
+                    "name": model.name,
+                    "latest_version_name": getattr(model, "latest_version_name", None),
+                    "tags": [tag.name for tag in model.tags]
+                    if hasattr(model, "tags") and model.tags
+                    else [],
+                }
+
+                # Handle user information
+                if hasattr(model, "user") and model.user:
+                    model_data["user"] = {
+                        "name": model.user.name,
+                        "is_service_account": getattr(model.user, "is_service_account", False),
+                        "full_name": getattr(model.user, "full_name", ""),
+                        "email_opted_in": getattr(model.user, "email_opted_in", False),
+                        "is_admin": getattr(model.user, "is_admin", False),
+                    }
+
+                models_data.append(model_data)
+
+            return {
+                "index": page,
+                "max_size": size,
+                "total_pages": models_page.total_pages,
+                "total": models_page.total,
+                "items": models_data,
+            }
+        except self.ValidationError as e:
+            return {"error": "ValidationError", "message": str(e)}
+        except self.ZenMLBaseException as e:
+            return {"error": f"Failed to retrieve list of models: {str(e)}"}
+        except Exception as e:
+            return {"error": f"Unexpected error listing models: {str(e)}"}
+
+    @serialize_response
+    def list_model_versions(self, args) -> Union[ListModelVersionsResponse, ErrorResponse]:
+        """Lists versions for a specific model.
+
+        Args:
+            args: A tuple containing (model_id_or_name, page, size)
+
+        Returns:
+            A dictionary containing model versions or an error message.
+        """
+        try:
+            if len(args) < 1:
+                return {"error": "model_id_or_name is required"}
+
+            model_id_or_name = args[0]
+            page = args[1] if len(args) > 1 else 1
+            size = args[2] if len(args) > 2 else 5
+            project_name = args[3] if len(args) > 3 else None
+
+            # This needs to use the underlying zen_store instead of client
+            # since client doesn't expose list_model_versions
+            query_params = {
+                "model": model_id_or_name,
+                "page": page,
+                "size": size,
+                "sort_by": "desc:created",  # Sort by version number
+            }
+
+            if project_name:
+                query_params["project"] = project_name
+            else:
+                active_project = self.projects_wrapper.get_active_project()
+                if active_project and not active_project.get("error"):
+                    if isinstance(active_project, dict):
+                        active_project_id = active_project.get("id")
+                        query_params["project"] = active_project_id
+
+            versions_page = self.client.zen_store.list_model_versions(
+                self.ModelVersionFilter(**query_params)
+            )
+
+            versions_data = []
+            for version in versions_page.items:
+                version_data = {
+                    "id": str(version.id),
+                    "name": version.name,
+                    "created": version.created.isoformat() if version.created else None,
+                    "updated": version.updated.isoformat() if version.updated else None,
+                    "stage": str(version.stage) if version.stage else None,
+                    "number": version.number,
+                    "run_metadata": version.run_metadata if version.run_metadata else None,
+                    "tags": [{"name": tag.name} for tag in version.tags]
+                    if hasattr(version, "tags") and version.tags
+                    else [],
+                }
+
+                # Handle model information
+                if hasattr(version, "model") and version.model:
+                    model_data = {
+                        "id": str(version.model.id),
+                        "name": version.model.name,
+                        "tags": [],
+                    }
+
+                    # Handle model tags
+                    if hasattr(version.model, "tags") and version.model.tags:
+                        model_data["tags"] = [tag.name for tag in version.model.tags]
+
+                    # Handle user information
+                    if hasattr(version.model, "user") and version.model.user:
+                        model_data["user"] = {
+                            "id": str(version.model.user.id),
+                            "name": version.model.user.name,
+                            "full_name": getattr(version.model.user, "full_name", ""),
+                        }
+
+                    version_data["model"] = model_data
+
+                # Handle artifact IDs
+                if hasattr(version, "data_artifact_ids") and version.data_artifact_ids:
+                    version_data["data_artifact_ids"] = version.data_artifact_ids
+
+                if hasattr(version, "model_artifact_ids") and version.model_artifact_ids:
+                    version_data["model_artifact_ids"] = version.model_artifact_ids
+
+                if hasattr(version, "pipeline_run_ids") and version.pipeline_run_ids:
+                    version_data["pipeline_run_ids"] = version.pipeline_run_ids
+
+                versions_data.append(version_data)
+
+            return {
+                "index": page,
+                "max_size": size,
+                "total_pages": versions_page.total_pages,
+                "total": versions_page.total,
+                "items": versions_data,
+            }
+        except self.ValidationError as e:
+            return {"error": "ValidationError", "message": str(e)}
+        except self.ZenMLBaseException as e:
+            return {"error": f"Failed to retrieve list of model versions: {str(e)}"}
+        except Exception as e:
+            return {"error": f"Unexpected error listing model versions: {str(e)}"}

@@ -28,7 +28,7 @@ import { EnvironmentItem } from './EnvironmentItem';
 export function createLSClientItem(lsClientStatus: State): EnvironmentItem {
   const statusMappings = {
     [State.Running]: { description: 'Running', icon: 'globe' },
-    [State.Starting]: { description: 'Initializing…', icon: 'sync~spin' },
+    [State.Starting]: { description: 'Starting...', icon: 'sync~spin' },
     [State.Stopped]: { description: 'Stopped', icon: 'close' },
   };
 
@@ -48,14 +48,30 @@ export function createLSClientItem(lsClientStatus: State): EnvironmentItem {
  *
  * @returns {EnvironmentItem} The ZenML status items.
  */
-export function createZenMLClientStatusItem(zenmlClientReady: boolean): EnvironmentItem {
+export function createZenMLClientStatusItem(
+  zenmlClientReady: boolean,
+  lsClientStatus: State
+): EnvironmentItem {
   const localZenML = LSClient.getInstance().localZenML;
+  const lsClientRunning = lsClientStatus === State.Running;
 
   const zenMLClientStatusItem = new EnvironmentItem(
     'ZenML Client',
-    !localZenML.is_installed ? '' : zenmlClientReady ? 'Initialized' : 'Awaiting Initialization',
+    !lsClientRunning
+      ? 'Language server not running'
+      : !localZenML.is_installed
+        ? ''
+        : zenmlClientReady
+          ? 'Initialized'
+          : 'Awaiting Initialization',
     TreeItemCollapsibleState.None,
-    !localZenML.is_installed ? 'warning' : zenmlClientReady ? 'check' : 'sync~spin'
+    !lsClientRunning
+      ? 'close'
+      : !localZenML.is_installed
+        ? 'warning'
+        : zenmlClientReady
+          ? 'check'
+          : 'sync~spin'
   );
 
   return zenMLClientStatusItem;
@@ -68,8 +84,20 @@ export function createZenMLClientStatusItem(zenmlClientReady: boolean): Environm
  * @returns {EnvironmentItem} The ZenML installation item.
  */
 export function createZenMLInstallationItem(
-  installationStatus: LSNotificationIsZenMLInstalled | null
+  installationStatus: LSNotificationIsZenMLInstalled | null,
+  lsClientStatus: State
 ): EnvironmentItem {
+  const lsClientRunning = lsClientStatus === State.Running;
+
+  if (!lsClientRunning) {
+    return new EnvironmentItem(
+      'ZenML Local Installation',
+      'Language server not running',
+      TreeItemCollapsibleState.None,
+      'close'
+    );
+  }
+
   if (!installationStatus) {
     return new EnvironmentItem(
       'ZenML Local Installation',

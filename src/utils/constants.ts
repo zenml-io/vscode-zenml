@@ -20,6 +20,7 @@ export const ZENML_EMOJI = '⛩️';
 
 export const ZENML_PYPI_URL = 'https://pypi.org/pypi/zenml/json';
 export const DEFAULT_LOCAL_ZENML_SERVER_URL = 'http://127.0.0.1:8237';
+export const BASE_CLOUD_ZENML_SERVER_URL = 'https://cloudapi.zenml.io';
 
 // LSP server notifications
 export const LSP_IS_ZENML_INSTALLED = 'zenml/isInstalled';

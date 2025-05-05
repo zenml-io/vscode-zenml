@@ -127,8 +127,8 @@ export class EnvironmentDataProvider implements TreeDataProvider<TreeItem> {
   private async createRootItems(): Promise<EnvironmentItem[]> {
     const items: EnvironmentItem[] = [
       createLSClientItem(this.lsClientStatus),
-      createZenMLInstallationItem(this.zenmlInstallationStatus),
-      createZenMLClientStatusItem(this.zenmlClientReady),
+      createZenMLInstallationItem(this.zenmlInstallationStatus, this.lsClientStatus),
+      createZenMLClientStatusItem(this.zenmlClientReady, this.lsClientStatus),
       ...(await createInterpreterDetails()),
       ...(await createWorkspaceSettingsItems()),
     ];

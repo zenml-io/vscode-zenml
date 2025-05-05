@@ -23,38 +23,133 @@ import { ServerDataProvider } from '../../views/activityBar';
 import { promptAndStoreServerUrl } from './utils';
 
 /**
- * Initiates a connection to the ZenML server using a Flask service for OAuth2 authentication.
- * The service handles user authentication, device authorization, and updates the global configuration upon success.
+ * Shows a quick pick to select the type of ZenML server connection.
+ *
+ * @returns {Promise<string | undefined>} The selected connection type or undefined if cancelled.
+ */
+const selectConnectionType = async (): Promise<{ type: string; url?: string } | undefined> => {
+  const items = [
+    {
+      label: '$(globe) Connect to Remote ZenML Server',
+      value: 'remote',
+    },
+    {
+      label: '$(server) Start Local ZenML Server',
+      value: 'local',
+    },
+  ];
+
+  const selection = await vscode.window.showQuickPick(items, {
+    placeHolder: 'Select a ZenML server connection type',
+  });
+
+  if (!selection) return undefined;
+
+  if (selection.value === 'remote') {
+    const url = await promptAndStoreServerUrl();
+    if (!url) return undefined;
+    return { type: 'remote', url };
+  }
+
+  return { type: selection.value };
+};
+
+/**
+ * Prompts for local server options when starting a local server.
+ *
+ * @returns {Promise<object | undefined>} Local server configuration options
+ */
+const promptLocalServerOptions = async (): Promise<object | undefined> => {
+  const useDocker = await vscode.window.showQuickPick(['Yes', 'No'], {
+    placeHolder: 'Run in Docker container?',
+  });
+
+  if (!useDocker) return undefined;
+
+  const docker = useDocker === 'Yes';
+
+  const portInput = await vscode.window.showInputBox({
+    prompt: 'Enter port number (optional)',
+    placeHolder: 'Leave empty for default port',
+    validateInput: value => {
+      if (!value) return null;
+      const port = parseInt(value);
+      if (isNaN(port) || port < 1 || port > 65535) {
+        return 'Please enter a valid port number (1-65535)';
+      }
+      return null;
+    },
+  });
+
+  if (portInput === undefined) return undefined;
+
+  const port = portInput ? parseInt(portInput) : undefined;
+
+  return { docker, port, restart: false };
+};
+
+/**
+ * Initiates a connection to a ZenML server - allowing the user to choose between
+ * standard remote server, ZenML Pro, or starting a local server.
  *
  * @returns {Promise<boolean>} Resolves after attempting to connect to the server.
  */
 const connectServer = async (): Promise<boolean> => {
-  const url = await promptAndStoreServerUrl();
+  const selection = await selectConnectionType();
+  if (!selection) return false;
 
-  if (!url) {
-    return false;
+  let url: string;
+  let connectionType: string;
+  let options: object = {};
+
+  switch (selection.type) {
+    case 'remote':
+      connectionType = 'remote';
+      url = selection.url || '';
+      break;
+    case 'local': {
+      connectionType = 'local';
+      const localOptions = await promptLocalServerOptions();
+      if (!localOptions) return false;
+      options = localOptions;
+      break;
+    }
+    default:
+      return false;
   }
 
   return new Promise<boolean>(resolve => {
     vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
-        title: 'Connecting to ZenML server...',
+        title: `Connecting to ${
+          selection.type === 'local' ? 'local ZenML server' : 'ZenML server'
+        }...`,
         cancellable: true,
       },
       async () => {
         try {
           const lsClient = LSClient.getInstance();
           const result = await lsClient.sendLsClientRequest<ConnectServerResponse>('connect', [
+            connectionType,
             url,
+            options,
+            true, // verify_ssl
           ]);
 
           if (result && 'error' in result) {
             throw new Error(result.error);
           }
 
-          const accessToken = (result as RestServerConnectionResponse).access_token;
-          await updateServerUrlAndToken(url, accessToken);
+          // If we have an access token (standard connection), update it
+          if ('access_token' in result) {
+            const accessToken = (result as RestServerConnectionResponse).access_token;
+            await updateServerUrlAndToken(
+              selection.type === 'remote' ? selection.url! : '',
+              accessToken
+            );
+          }
+
           await refreshUtils.refreshUIComponents();
           resolve(true);
         } catch (error) {

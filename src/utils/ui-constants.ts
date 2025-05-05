@@ -94,13 +94,18 @@ export const TREE_ICONS: Record<string, ThemeIcon> = {
   PIPELINE: new ThemeIcon('symbol-interface'),
   PIPELINE_RUN: new ThemeIcon('beaker'),
   ENVIRONMENT: new ThemeIcon('server-environment'),
+  // Model icons
+  MODEL: new ThemeIcon('chip', ZENML_COLORS.PURPLE),
+  MODEL_VERSION: new ThemeIcon('chip'),
+  MODEL_STAGING: new ThemeIcon('chip', ZENML_COLORS.ORANGE),
+  MODEL_PRODUCTION: new ThemeIcon('chip', ZENML_COLORS.SUCCESS),
+  MODEL_LATEST: new ThemeIcon('chip', ZENML_COLORS.PRIMARY),
 
   // Detail icons
   DETAIL: new ThemeIcon('symbol-property'),
   FOLDER: new ThemeIcon('folder'),
   VARIABLE: new ThemeIcon('symbol-variable'),
   CONFIG: new ThemeIcon('settings-gear'),
-  MODEL: new ThemeIcon('symbol-enum'),
   STEP: new ThemeIcon('debug-step-over'),
   LINK: new ThemeIcon('link', new ThemeColor('textLink.foreground')),
   KEY: new ThemeIcon('key'),
@@ -111,6 +116,8 @@ export const TREE_ICONS: Record<string, ThemeIcon> = {
   ROCKET: new ThemeIcon('rocket'),
   VERSIONS: new ThemeIcon('versions'),
   LOCK: new ThemeIcon('lock'),
+  TAG: new ThemeIcon('tag'),
+  METADATA: new ThemeIcon('graph'),
 
   // Action icons
   DAG: new ThemeIcon('type-hierarchy'),
@@ -129,6 +136,24 @@ export const PIPELINE_RUN_STATUS_ICONS: Record<string, ThemeIcon> = {
   completed: TREE_ICONS.SUCCESS,
   running: TREE_ICONS.RUNNING,
   cached: TREE_ICONS.HISTORY,
+};
+
+/**
+ * Model Version Status Icons - Icons for different model version statuses
+ */
+export const MODEL_VERSION_STATUS_ICONS: Record<string, ThemeIcon> = {
+  production: TREE_ICONS.MODEL_PRODUCTION,
+  staging: TREE_ICONS.MODEL_STAGING,
+  archived: TREE_ICONS.MODEL_VERSION,
+  latest: TREE_ICONS.MODEL_LATEST,
+};
+
+export const MODEL_VERSION_SECTION_ICONS: Record<string, ThemeIcon> = {
+  tags: TREE_ICONS.TAG,
+  data_artifacts: TREE_ICONS.DATABASE,
+  model_artifacts: TREE_ICONS.DATABASE,
+  pipeline_runs: TREE_ICONS.PIPELINE_RUN,
+  run_metadata: TREE_ICONS.METADATA,
 };
 
 /**
@@ -159,15 +184,23 @@ export const CONTEXT_VALUES = {
   // Container context values
   PROJECT: 'project',
   ACTIVE_PROJECT: 'activeProject',
+  // Stack context values
   STACK: 'stack',
   ACTIVE_STACK: 'activeStack',
+  // Stack component context values
   STACK_COMPONENT: 'stackComponent',
   ACTIVE_STACK_COMPONENT: 'activeStackComponent',
   COMPONENT: 'component',
   COMPONENT_CATEGORY: 'componentCategory',
+  // Pipeline context values
   PIPELINE: 'pipeline',
   PIPELINE_RUN: 'pipelineRun',
   NO_RUNS: 'noRuns',
+  // Model registry context values
+  MODEL: 'model',
+  MODEL_VERSION: 'modelVersion',
+  MODEL_DETAIL: 'modelDetail',
+  MODEL_SECTION: 'modelSection',
 
   // Detail context values
   PROJECT_DETAIL: 'projectDetail',
