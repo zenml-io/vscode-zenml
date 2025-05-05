@@ -292,6 +292,18 @@
         "category": "ZenML Pipeline Runs"
       },
       {
+        "command": "zenml.setModelsPerPage",
+        "title": "Set Models Per Page",
+        "icon": "$(layers)",
+        "category": "ZenML Models"
+      },
+      {
+        "command": "zenml.refreshModelView",
+        "title": "Refresh Models View",
+        "icon": "$(refresh)",
+        "category": "ZenML Models"
+      },
+      {
         "command": "zenml.deletePipelineRun",
         "title": "Delete Pipeline Run",
         "icon": "$(trash)",
@@ -372,6 +384,11 @@
           "icon": "$(symbol-interface)"
         },
         {
+          "id": "zenmlModelView",
+          "name": "Models",
+          "icon": "$(database)"
+        },
+        {
           "id": "zenmlEnvironmentView",
           "name": "Environment",
           "icon": "$(server-environment)"
@@ -449,6 +466,16 @@
         {
           "when": "pipelineCommandsRegistered && view == zenmlPipelineView",
           "command": "zenml.refreshPipelineView",
+          "group": "navigation@2"
+        },
+        {
+          "when": "modelCommandsRegistered && view == zenmlModelView",
+          "command": "zenml.setModelsPerPage",
+          "group": "navigation@1"
+        },
+        {
+          "when": "modelCommandsRegistered && view == zenmlModelView",
+          "command": "zenml.refreshModelView",
           "group": "navigation@2"
         },
         {
