@@ -472,6 +472,7 @@ class PipelineRunsWrapper:
                     "pipelineName": run.pipeline.name
                     if hasattr(run, "pipeline") and run.pipeline
                     else "unknown",
+                    "runMetadata": run.run_metadata if hasattr(run, "run_metadata") else None,
                     "startTime": (run.start_time.isoformat() if run.start_time else None),
                     "endTime": (run.end_time.isoformat() if run.end_time else None),
                 }
