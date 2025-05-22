@@ -512,8 +512,13 @@ class PipelineRunsWrapper:
                             "license": run.config.model.license,
                         }
 
+                # Steps may not be included in optimized responses
+                # Only include if explicitly available
                 if hasattr(run, "steps") and run.steps:
                     run_data["steps"] = self._extract_steps_data(run.steps)
+                else:
+                    # Mark that steps data is not available in this response
+                    run_data["steps"] = None
 
                 runs_data.append(run_data)
 
@@ -577,8 +582,11 @@ class PipelineRunsWrapper:
                 "pythonVersion": env.get("python_version", "unknown"),
             }
 
+            # Steps may not be included in optimized responses
             if hasattr(run, "steps") and run.steps:
                 run_data["steps"] = self._extract_steps_data(run.steps)
+            else:
+                run_data["steps"] = None
 
             return run_data
         except self.ZenMLBaseException as e:
@@ -595,7 +603,25 @@ class PipelineRunsWrapper:
         """
         try:
             run_id = args[0]
-            run = self.client.get_pipeline_run(run_id)
+            # Get pipeline run with hydration to ensure we have step data
+            run = self.client.get_pipeline_run(run_id, hydrate=True)
+            
+            # Check if steps are available for graph generation
+            if not hasattr(run, 'steps') or not run.steps:
+                # Try to get steps from metadata if available
+                if hasattr(run, 'metadata') and hasattr(run.metadata, 'steps') and run.metadata.steps:
+                    # Steps available in metadata
+                    pass
+                else:
+                    # No step data available - return empty graph
+                    return {
+                        "nodes": [],
+                        "edges": [],
+                        "status": run.status._value_ if hasattr(run.status, '_value_') else str(run.status),
+                        "name": run.pipeline.name if hasattr(run, 'pipeline') and run.pipeline else "unknown",
+                        "message": "Step data not available in optimized response"
+                    }
+            
             graph = Grapher(run)
             graph.build_nodes_from_steps()
             graph.build_edges_from_steps()
@@ -1555,42 +1581,73 @@ class ModelsWrapper:
 
             # This needs to use the underlying zen_store instead of client
             # since client doesn't expose list_models
-            query_params = {
-                "page": page,
-                "size": size,
-                "sort_by": "desc:created",
-            }
-
-            if project_name:
-                query_params["project"] = project_name
-            else:
+            # Get active project for filtering
+            active_project = None
+            if not project_name:
                 active_project = self.projects_wrapper.get_active_project()
-                if active_project and not active_project.get("error"):
-                    if isinstance(active_project, dict):
-                        active_project_id = active_project.get("id")
-                        query_params["project"] = active_project_id
 
-            models_page = self.client.zen_store.list_models(self.ModelFilter(**query_params))
+            # Create ModelFilter with proper parameters for new API
+            model_filter = self.ModelFilter(
+                page=page,
+                size=size,
+                sort_by="desc:created"
+            )
+            
+            # Add project filter if specified
+            if project_name:
+                model_filter.project = project_name
+            elif active_project and not active_project.get("error"):
+                if isinstance(active_project, dict):
+                    active_project_id = active_project.get("id")
+                    model_filter.project = active_project_id
+            
+            models_page = self.client.zen_store.list_models(model_filter)
 
             models_data = []
             for model in models_page.items:
                 model_data = {
                     "id": str(model.id),
                     "name": model.name,
-                    "latest_version_name": getattr(model, "latest_version_name", None),
-                    "tags": [tag.name for tag in model.tags]
-                    if hasattr(model, "tags") and model.tags
-                    else [],
                 }
+                
+                # Handle latest_version_name - may be in body or resources
+                latest_version_name = None
+                if hasattr(model, "latest_version_name") and model.latest_version_name:
+                    latest_version_name = model.latest_version_name
+                elif hasattr(model, "resources") and hasattr(model.resources, "latest_version_name"):
+                    latest_version_name = model.resources.latest_version_name
+                model_data["latest_version_name"] = latest_version_name
+                
+                # Handle latest_version_id - may be in body or resources
+                latest_version_id = None
+                if hasattr(model, "latest_version_id") and model.latest_version_id:
+                    latest_version_id = str(model.latest_version_id)
+                elif hasattr(model, "resources") and hasattr(model.resources, "latest_version_id"):
+                    latest_version_id = str(model.resources.latest_version_id)
+                model_data["latest_version_id"] = latest_version_id
+                
+                # Handle tags - may be in body.tags or resources.tags
+                tags = []
+                if hasattr(model, "tags") and model.tags:
+                    tags = [tag.name if hasattr(tag, 'name') else str(tag) for tag in model.tags]
+                elif hasattr(model, "resources") and hasattr(model.resources, "tags") and model.resources.tags:
+                    tags = [tag.name if hasattr(tag, 'name') else str(tag) for tag in model.resources.tags]
+                model_data["tags"] = tags
 
-                # Handle user information
+                # Handle user information - may be in body.user or resources.user
+                user_obj = None
                 if hasattr(model, "user") and model.user:
+                    user_obj = model.user
+                elif hasattr(model, "resources") and hasattr(model.resources, "user") and model.resources.user:
+                    user_obj = model.resources.user
+                
+                if user_obj:
                     model_data["user"] = {
-                        "name": model.user.name,
-                        "is_service_account": getattr(model.user, "is_service_account", False),
-                        "full_name": getattr(model.user, "full_name", ""),
-                        "email_opted_in": getattr(model.user, "email_opted_in", False),
-                        "is_admin": getattr(model.user, "is_admin", False),
+                        "name": user_obj.name,
+                        "is_service_account": getattr(user_obj, "is_service_account", False),
+                        "full_name": getattr(user_obj, "full_name", ""),
+                        "email_opted_in": getattr(user_obj, "email_opted_in", False),
+                        "is_admin": getattr(user_obj, "is_admin", False),
                     }
 
                 models_data.append(model_data)
@@ -1628,27 +1685,25 @@ class ModelsWrapper:
             size = args[2] if len(args) > 2 else 5
             project_name = args[3] if len(args) > 3 else None
 
-            # This needs to use the underlying zen_store instead of client
-            # since client doesn't expose list_model_versions
-            query_params = {
-                "model": model_id_or_name,
-                "page": page,
-                "size": size,
-                "sort_by": "desc:created",  # Sort by version number
-            }
-
+            # Create ModelVersionFilter with proper parameters for new API
+            model_version_filter = self.ModelVersionFilter(
+                model=model_id_or_name,
+                page=page,
+                size=size,
+                sort_by="desc:created"
+            )
+            
+            # Add project filter if specified
             if project_name:
-                query_params["project"] = project_name
+                model_version_filter.project = project_name
             else:
                 active_project = self.projects_wrapper.get_active_project()
                 if active_project and not active_project.get("error"):
                     if isinstance(active_project, dict):
                         active_project_id = active_project.get("id")
-                        query_params["project"] = active_project_id
+                        model_version_filter.project = active_project_id
 
-            versions_page = self.client.zen_store.list_model_versions(
-                self.ModelVersionFilter(**query_params)
-            )
+            versions_page = self.client.zen_store.list_model_versions(model_version_filter)
 
             versions_data = []
             for version in versions_page.items:
@@ -1660,10 +1715,15 @@ class ModelsWrapper:
                     "stage": str(version.stage) if version.stage else None,
                     "number": version.number,
                     "run_metadata": version.run_metadata if version.run_metadata else None,
-                    "tags": [{"name": tag.name} for tag in version.tags]
-                    if hasattr(version, "tags") and version.tags
-                    else [],
                 }
+                
+                # Handle tags - may be in body.tags or resources.tags
+                tags = []
+                if hasattr(version, "tags") and version.tags:
+                    tags = [{"name": tag.name if hasattr(tag, 'name') else str(tag)} for tag in version.tags]
+                elif hasattr(version, "resources") and hasattr(version.resources, "tags") and version.resources.tags:
+                    tags = [{"name": tag.name if hasattr(tag, 'name') else str(tag)} for tag in version.resources.tags]
+                version_data["tags"] = tags
 
                 # Handle model information
                 if hasattr(version, "model") and version.model:
@@ -1677,25 +1737,29 @@ class ModelsWrapper:
                     if hasattr(version.model, "tags") and version.model.tags:
                         model_data["tags"] = [tag.name for tag in version.model.tags]
 
-                    # Handle user information
+                    # Handle user information - may be in body.user or resources.user
+                    user_obj = None
                     if hasattr(version.model, "user") and version.model.user:
+                        user_obj = version.model.user
+                    elif hasattr(version.model, "resources") and hasattr(version.model.resources, "user") and version.model.resources.user:
+                        user_obj = version.model.resources.user
+                    
+                    if user_obj:
                         model_data["user"] = {
-                            "id": str(version.model.user.id),
-                            "name": version.model.user.name,
-                            "full_name": getattr(version.model.user, "full_name", ""),
+                            "id": str(user_obj.id),
+                            "name": user_obj.name,
+                            "full_name": getattr(user_obj, "full_name", ""),
                         }
 
                     version_data["model"] = model_data
 
-                # Handle artifact IDs
-                if hasattr(version, "data_artifact_ids") and version.data_artifact_ids:
-                    version_data["data_artifact_ids"] = version.data_artifact_ids
-
-                if hasattr(version, "model_artifact_ids") and version.model_artifact_ids:
-                    version_data["model_artifact_ids"] = version.model_artifact_ids
-
-                if hasattr(version, "pipeline_run_ids") and version.pipeline_run_ids:
-                    version_data["pipeline_run_ids"] = version.pipeline_run_ids
+                # Handle artifact IDs - these have been REMOVED from responses in v0.82+
+                # These fields are no longer available to reduce response size
+                # Set to None to maintain backward compatibility with frontend
+                version_data["data_artifact_ids"] = None
+                version_data["model_artifact_ids"] = None
+                version_data["deployment_artifact_ids"] = None
+                version_data["pipeline_run_ids"] = None
 
                 versions_data.append(version_data)
 

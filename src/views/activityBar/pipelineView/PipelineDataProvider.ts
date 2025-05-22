@@ -366,9 +366,18 @@ export class PipelineDataProvider extends PaginatedDataProvider {
     const formattedEndTime = run.endTime ? new Date(run.endTime).toLocaleString() : 'N/A';
     const children: PipelineRunTreeItem[] = [];
 
-    // steps
-    if (run.steps && Object.keys(run.steps).length > 0) {
+    // steps - may not be available in optimized responses
+    if (run.steps && typeof run.steps === 'object' && Object.keys(run.steps).length > 0) {
       children.push(this.createStepsTreeItem(run.steps));
+    } else if (run.steps === null) {
+      // Steps data not available in this response
+      children.push(
+        new PipelineRunTreeItem(
+          'steps',
+          'Not available (optimized response)',
+          vscode.TreeItemCollapsibleState.None
+        )
+      );
     }
 
     // model

@@ -200,6 +200,26 @@ export default class DagRenderer extends WebviewBase {
 
       const cssUri = panel.webview.asWebviewUri(this.css);
       const jsUri = panel.webview.asWebviewUri(this.javaScript);
+
+      // Check if we have a message indicating no step data
+      if ('message' in dagData && dagData.message) {
+        // Show informative message when step data is not available
+        panel.webview.html = this.getNoStepsContent({
+          cssUri,
+          jsUri,
+          message: dagData.message,
+          pipelineName: dagData.name || (node.label as string),
+          status: dagData.status,
+          cspSource: panel.webview.cspSource,
+        });
+        return;
+      }
+
+      // Check if nodes/edges are undefined or empty
+      if (!dagData.nodes || !dagData.edges) {
+        throw new Error('DAG data is missing nodes or edges');
+      }
+
       const graph = this.layoutDag(dagData);
       const svg = await this.drawDag(graph);
       const updateButton = dagData.status === 'running' || dagData.status === 'initializing';
@@ -227,6 +247,50 @@ export default class DagRenderer extends WebviewBase {
         cspSource: panel.webview.cspSource,
       });
     }
+  }
+
+  private getNoStepsContent({
+    cssUri,
+    jsUri,
+    message,
+    pipelineName,
+    status,
+    cspSource,
+  }: {
+    cssUri: vscode.Uri;
+    jsUri: vscode.Uri;
+    message: string;
+    pipelineName: string;
+    status: string;
+    cspSource: string;
+  }): string {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src ${cspSource}; style-src ${cspSource};">
+    <link rel="stylesheet" href="${cssUri}">
+    <title>DAG - No Steps</title>
+</head>
+<body>
+    <div id="update">
+      <p>${pipelineName} (${status})</p><button id="retry-button">Retry</button>
+    </div>
+    <div class="error-container">
+      <div class="error-icon">ℹ️</div>
+      <div class="error-title">DAG visualization not available</div>
+      <div class="error-message">${message}</div>
+      <p>Step data is not included in optimized responses to improve performance. The pipeline run information is still available in the tree view.</p>
+    </div>
+    <script src="${jsUri}"></script>
+    <script>
+      document.getElementById('retry-button').addEventListener('click', () => {
+        vscode.postMessage({ command: 'update' });
+      });
+    </script>
+</body>
+</html>`;
   }
 
   private getErrorContent({
@@ -303,10 +367,16 @@ export default class DagRenderer extends WebviewBase {
     const graph = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
     graph.setGraph({ rankdir: 'TB', ranksep: 35, nodesep: 5 });
 
-    edges.forEach(edge => graph.setEdge(edge.source, edge.target));
-    nodes.forEach(node =>
-      graph.setNode(node.id, { width: 300, height: node.type === 'step' ? 50 : 44, ...node })
-    );
+    // Safely handle potentially empty arrays
+    if (edges && Array.isArray(edges)) {
+      edges.forEach(edge => graph.setEdge(edge.source, edge.target));
+    }
+
+    if (nodes && Array.isArray(nodes)) {
+      nodes.forEach(node =>
+        graph.setNode(node.id, { width: 300, height: node.type === 'step' ? 50 : 44, ...node })
+      );
+    }
 
     Dagre.layout(graph);
     return graph;

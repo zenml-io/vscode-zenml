@@ -31,21 +31,36 @@ class Grapher:
         self.nodes = []
         self.artifacts = {}
 
-        for step in self.run.metadata.steps:
-            step_data = self.run.metadata.steps[step]
+        # Try to get steps from different locations based on response format
+        steps_data = None
+        
+        # Option 1: Steps in run.steps (new format)
+        if hasattr(self.run, 'steps') and self.run.steps:
+            steps_data = self.run.steps
+        # Option 2: Steps in run.metadata.steps (old format)
+        elif hasattr(self.run, 'metadata') and hasattr(self.run.metadata, 'steps') and self.run.metadata.steps:
+            steps_data = self.run.metadata.steps
+        else:
+            # No steps available
+            return
+
+        for step_name, step_data in steps_data.items():
             self.nodes.append(
                 {
                     "id": str(step_data.id),
                     "type": "step",
                     "data": {
                         "execution_id": str(step_data.id),
-                        "name": step,
-                        "status": step_data.status,
+                        "name": step_name,
+                        "status": step_data.status._value_ if hasattr(step_data.status, '_value_') else str(step_data.status),
                     },
                 }
             )
-            self.add_artifacts_from_list(step_data.inputs)
-            self.add_artifacts_from_list(step_data.outputs)
+            # Only add artifacts if step data has inputs/outputs
+            if hasattr(step_data, 'inputs') and step_data.inputs:
+                self.add_artifacts_from_list(step_data.inputs)
+            if hasattr(step_data, 'outputs') and step_data.outputs:
+                self.add_artifacts_from_list(step_data.outputs)
 
     def add_artifacts_from_list(self, dictOfArtifacts: Dict[str, StepArtifact]) -> None:
         """Used to add unique artifacts to the internal nodes list by build_nodes_from_steps"""
@@ -103,53 +118,69 @@ class Grapher:
         """Builds internal edges list from run steps"""
         self.edges = []
 
-        for step in self.run.metadata.steps:
-            step_data = self.run.metadata.steps[step]
+        # Try to get steps from different locations based on response format
+        steps_data = None
+        
+        # Option 1: Steps in run.steps (new format)
+        if hasattr(self.run, 'steps') and self.run.steps:
+            steps_data = self.run.steps
+        # Option 2: Steps in run.metadata.steps (old format)
+        elif hasattr(self.run, 'metadata') and hasattr(self.run.metadata, 'steps') and self.run.metadata.steps:
+            steps_data = self.run.metadata.steps
+        else:
+            # No steps available
+            return
+
+        for step_name, step_data in steps_data.items():
             step_id = str(step_data.id)
 
-            for artifact in step_data.inputs:
-                try:
-                    if isinstance(step_data.inputs[artifact], list):
-                        if not step_data.inputs[artifact]:  # Skip empty lists
-                            continue
-                        artifact_version = step_data.inputs[artifact][0]
-                        if hasattr(artifact_version, "artifact") and hasattr(
-                            artifact_version.artifact, "id"
-                        ):
-                            input_id = str(artifact_version.artifact.id)
-                        elif hasattr(artifact_version, "id"):
-                            input_id = str(artifact_version.id)
+            # Process inputs
+            if hasattr(step_data, 'inputs') and step_data.inputs:
+                for artifact in step_data.inputs:
+                    try:
+                        if isinstance(step_data.inputs[artifact], list):
+                            if not step_data.inputs[artifact]:  # Skip empty lists
+                                continue
+                            artifact_version = step_data.inputs[artifact][0]
+                            if hasattr(artifact_version, "artifact") and hasattr(
+                                artifact_version.artifact, "id"
+                            ):
+                                input_id = str(artifact_version.artifact.id)
+                            elif hasattr(artifact_version, "id"):
+                                input_id = str(artifact_version.id)
+                            else:
+                                continue
                         else:
-                            continue
-                    else:
-                        # Older access pattern
-                        input_id = str(step_data.inputs[artifact].artifact.id)
+                            # Older access pattern
+                            input_id = str(step_data.inputs[artifact].artifact.id)
 
-                    self.add_edge(input_id, step_id)
-                except (AttributeError, TypeError):
-                    continue
+                        self.add_edge(input_id, step_id)
+                    except (AttributeError, TypeError):
+                        continue
 
-            for artifact in step_data.outputs:
-                try:
-                    if isinstance(step_data.outputs[artifact], list):
-                        if not step_data.outputs[artifact]:
-                            continue
-                        artifact_version = step_data.outputs[artifact][0]
-                        if hasattr(artifact_version, "artifact") and hasattr(
-                            artifact_version.artifact, "id"
-                        ):
-                            output_id = str(artifact_version.artifact.id)
-                        elif hasattr(artifact_version, "id"):
-                            output_id = str(artifact_version.id)
+            # Process outputs
+            if hasattr(step_data, 'outputs') and step_data.outputs:
+                for artifact in step_data.outputs:
+                    try:
+                        if isinstance(step_data.outputs[artifact], list):
+                            if not step_data.outputs[artifact]:
+                                continue
+                            artifact_version = step_data.outputs[artifact][0]
+                            if hasattr(artifact_version, "artifact") and hasattr(
+                                artifact_version.artifact, "id"
+                            ):
+                                output_id = str(artifact_version.artifact.id)
+                            elif hasattr(artifact_version, "id"):
+                                output_id = str(artifact_version.id)
+                            else:
+                                continue
                         else:
-                            continue
-                    else:
-                        # Older access pattern
-                        output_id = str(step_data.outputs[artifact].artifact.id)
+                            # Older access pattern
+                            output_id = str(step_data.outputs[artifact].artifact.id)
 
-                    self.add_edge(step_id, output_id)
-                except (AttributeError, TypeError):
-                    continue
+                        self.add_edge(step_id, output_id)
+                    except (AttributeError, TypeError):
+                        continue
 
     def add_edge(self, v: str, w: str) -> None:
         """Helper method to add an edge to the internal edges list"""
@@ -166,6 +197,6 @@ class Grapher:
         return {
             "nodes": self.nodes,
             "edges": self.edges,
-            "status": self.run.status,
-            "name": self.run.pipeline.name,
+            "status": self.run.status._value_ if hasattr(self.run.status, '_value_') else str(self.run.status),
+            "name": self.run.pipeline.name if hasattr(self.run, 'pipeline') and self.run.pipeline else "unknown",
         }
