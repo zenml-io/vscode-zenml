@@ -607,17 +607,35 @@ class PipelineRunsWrapper:
             run = self.client.get_pipeline_run(run_id, hydrate=True)
 
             # Check if steps are available for graph generation
+            # In ZenML 0.83.0+, steps are no longer included in pipeline run responses
+            # for performance optimization. We need to fetch them separately if needed.
             if not hasattr(run, "steps") or not run.steps:
-                # Try to get steps from metadata if available
-                if (
-                    hasattr(run, "metadata")
-                    and hasattr(run.metadata, "steps")
-                    and run.metadata.steps
-                ):
-                    # Steps available in metadata
-                    pass
-                else:
-                    # No step data available - return empty graph
+                try:
+                    # Try to fetch steps separately using list_run_steps
+                    # This is the recommended approach for ZenML 0.83.0+
+                    StepRunFilter = self.lazy_import("zenml.models", "StepRunFilter")
+                    
+                    step_filter = StepRunFilter(pipeline_run_id=run.id)
+                    steps_page = self.client.list_run_steps(step_filter)
+                    
+                    if steps_page and steps_page.items:
+                        # Simulate the old structure by adding steps to run object
+                        run.steps = {step.name: step for step in steps_page.items}
+                    else:
+                        # No steps found - return empty graph
+                        return {
+                            "nodes": [],
+                            "edges": [],
+                            "status": run.status._value_
+                            if hasattr(run.status, "_value_")
+                            else str(run.status),
+                            "name": run.pipeline.name
+                            if hasattr(run, "pipeline") and run.pipeline
+                            else "unknown",
+                            "message": "No steps found for this pipeline run",
+                        }
+                except Exception:
+                    # Fall back to empty graph if step fetching fails
                     return {
                         "nodes": [],
                         "edges": [],
@@ -627,7 +645,9 @@ class PipelineRunsWrapper:
                         "name": run.pipeline.name
                         if hasattr(run, "pipeline") and run.pipeline
                         else "unknown",
-                        "message": "Step data not available in optimized response",
+                        "message": (
+                            "Step data not available - may require different ZenML version"
+                        ),
                     }
 
             graph = Grapher(run)
@@ -704,10 +724,28 @@ class PipelineRunsWrapper:
                 if hasattr(step.status, "_value_")
                 else str(step.status),
                 "author": {
-                    "fullName": step.user.full_name
-                    if hasattr(step, "user") and step.user
-                    else "unknown",
-                    "email": step.user.name if hasattr(step, "user") and step.user else "unknown",
+                    "fullName": (
+                        step.user.full_name
+                        if hasattr(step, "user") and step.user
+                        else (
+                            step.resources.user.full_name
+                            if hasattr(step, "resources")
+                            and hasattr(step.resources, "user")
+                            and step.resources.user
+                            else "unknown"
+                        )
+                    ),
+                    "email": (
+                        step.user.name
+                        if hasattr(step, "user") and step.user
+                        else (
+                            step.resources.user.name
+                            if hasattr(step, "resources")
+                            and hasattr(step.resources, "user")
+                            and step.resources.user
+                            else "unknown"
+                        )
+                    ),
                 },
                 "startTime": (step.start_time.isoformat() if step.start_time else None),
                 "endTime": (step.end_time.isoformat() if step.end_time else None),
@@ -769,8 +807,28 @@ class PipelineRunsWrapper:
                 "id": str(artifact.id),
                 "type": artifact.type,
                 "user": {
-                    "fullName": artifact.user.full_name,
-                    "name": artifact.user.name,
+                    "fullName": (
+                        artifact.user.full_name
+                        if hasattr(artifact, "user") and artifact.user
+                        else (
+                            artifact.resources.user.full_name
+                            if hasattr(artifact, "resources")
+                            and hasattr(artifact.resources, "user")
+                            and artifact.resources.user
+                            else "unknown"
+                        )
+                    ),
+                    "name": (
+                        artifact.user.name
+                        if hasattr(artifact, "user") and artifact.user
+                        else (
+                            artifact.resources.user.name
+                            if hasattr(artifact, "resources")
+                            and hasattr(artifact.resources, "user")
+                            and artifact.resources.user
+                            else "unknown"
+                        )
+                    ),
                 },
                 "updated": artifact.updated.isoformat(),
                 "data": {
@@ -1631,21 +1689,23 @@ class ModelsWrapper:
 
             # This needs to use the underlying zen_store instead of client
             # since client doesn't expose list_models
-            # Get active project for filtering
-            active_project = None
-            if not project_name:
-                active_project = self.projects_wrapper.get_active_project()
-
-            # Create ModelFilter with proper parameters for new API
-            model_filter = self.ModelFilter(page=page, size=size, sort_by="desc:created")
-
-            # Add project filter if specified
+            # Determine project for filtering
+            project_filter = None
             if project_name:
-                model_filter.project = project_name
-            elif active_project and not active_project.get("error"):
-                if isinstance(active_project, dict):
-                    active_project_id = active_project.get("id")
-                    model_filter.project = active_project_id
+                project_filter = project_name
+            else:
+                active_project = self.projects_wrapper.get_active_project()
+                if active_project and not active_project.get("error"):
+                    if isinstance(active_project, dict):
+                        project_filter = active_project.get("id")
+
+            # Create ModelFilter with all parameters at once
+            if project_filter:
+                model_filter = self.ModelFilter(
+                    page=page, size=size, sort_by="desc:created", project=project_filter
+                )
+            else:
+                model_filter = self.ModelFilter(page=page, size=size, sort_by="desc:created")
 
             models_page = self.client.zen_store.list_models(model_filter)
 
@@ -1744,20 +1804,29 @@ class ModelsWrapper:
             size = args[2] if len(args) > 2 else 5
             project_name = args[3] if len(args) > 3 else None
 
-            # Create ModelVersionFilter with proper parameters for new API
-            model_version_filter = self.ModelVersionFilter(
-                model=model_id_or_name, page=page, size=size, sort_by="desc:created"
-            )
-
-            # Add project filter if specified
+            # Determine project for filtering
+            project_filter = None
             if project_name:
-                model_version_filter.project = project_name
+                project_filter = project_name
             else:
                 active_project = self.projects_wrapper.get_active_project()
                 if active_project and not active_project.get("error"):
                     if isinstance(active_project, dict):
-                        active_project_id = active_project.get("id")
-                        model_version_filter.project = active_project_id
+                        project_filter = active_project.get("id")
+
+            # Create ModelVersionFilter with all parameters at once
+            if project_filter:
+                model_version_filter = self.ModelVersionFilter(
+                    model=model_id_or_name,
+                    page=page,
+                    size=size,
+                    sort_by="desc:created",
+                    project=project_filter,
+                )
+            else:
+                model_version_filter = self.ModelVersionFilter(
+                    model=model_id_or_name, page=page, size=size, sort_by="desc:created"
+                )
 
             versions_page = self.client.zen_store.list_model_versions(model_version_filter)
 
