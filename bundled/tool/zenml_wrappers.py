@@ -614,10 +614,10 @@ class PipelineRunsWrapper:
                     # Try to fetch steps separately using list_run_steps
                     # This is the recommended approach for ZenML 0.83.0+
                     StepRunFilter = self.lazy_import("zenml.models", "StepRunFilter")
-                    
+
                     step_filter = StepRunFilter(pipeline_run_id=run.id)
                     steps_page = self.client.list_run_steps(step_filter)
-                    
+
                     if steps_page and steps_page.items:
                         # Simulate the old structure by adding steps to run object
                         run.steps = {step.name: step for step in steps_page.items}
