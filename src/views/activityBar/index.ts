@@ -23,3 +23,6 @@ export * from './stackView/StackTreeItems';
 // Model View
 export * from './modelView/ModelDataProvider';
 export * from './modelView/ModelTreeItems';
+
+// Environment View
+export * from './environmentView/EnvironmentDataProvider';
