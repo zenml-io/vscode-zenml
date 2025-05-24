@@ -664,11 +664,7 @@ class PipelineRunsWrapper:
                 ),
                 "stackName": run.stack.name if hasattr(run, "stack") and run.stack else "unknown",
                 "orchestrator": {
-                    "runId": str(run.metadata.orchestrator_run_id)
-                    if hasattr(run, "metadata")
-                    and run.metadata
-                    and hasattr(run.metadata, "orchestrator_run_id")
-                    else "unknown"
+                    "runId": self._get_orchestrator_run_id(run)
                 },
                 "pipeline": {
                     "name": run.pipeline.name
@@ -1030,6 +1026,46 @@ class StacksWrapper:
         """Returns the ZenKeyError class."""
         return self.lazy_import("zenml.exceptions", "ZenKeyError")
 
+    def _get_orchestrator_run_id(self, run) -> str:
+        """Gets the orchestrator run ID from various possible locations in the run object.
+        
+        Args:
+            run: The pipeline run object
+            
+        Returns:
+            str: The orchestrator run ID or "unknown" if not found
+        """
+        # Try different possible paths for orchestrator run ID
+        try:
+            # Path 1: run.metadata.orchestrator_run_id (older versions)
+            if (hasattr(run, "metadata") 
+                and run.metadata 
+                and hasattr(run.metadata, "orchestrator_run_id")
+                and run.metadata.orchestrator_run_id):
+                return str(run.metadata.orchestrator_run_id)
+            
+            # Path 2: run.orchestrator_run_id (newer versions)
+            if hasattr(run, "orchestrator_run_id") and run.orchestrator_run_id:
+                return str(run.orchestrator_run_id)
+            
+            # Path 3: Check in run metadata dict
+            if (hasattr(run, "metadata") 
+                and run.metadata 
+                and hasattr(run.metadata, "run_metadata")
+                and run.metadata.run_metadata
+                and "orchestrator_run_id" in run.metadata.run_metadata):
+                return str(run.metadata.run_metadata["orchestrator_run_id"])
+            
+            # Path 4: Check in run.run_metadata directly
+            if (hasattr(run, "run_metadata") 
+                and run.run_metadata 
+                and "orchestrator_run_id" in run.run_metadata):
+                return str(run.run_metadata["orchestrator_run_id"])
+                
+            return "unknown"
+        except Exception:
+            return "unknown"
+
     @serialize_response
     def get_active_stack(self) -> dict:
         """Fetches the active ZenML stack.
@@ -1076,7 +1112,9 @@ class StacksWrapper:
         active_stack_id = args[2]
 
         try:
-            stacks_page = self.client.list_stacks(page=page, size=max_size, hydrate=True)
+            # Use hydrate=False to avoid unique() constraint issues in ZenML 0.83.0+
+            # Components data will still be available in the response structure
+            stacks_page = self.client.list_stacks(page=page, size=max_size, hydrate=False)
             stacks_data = self.process_stacks(stacks_page.items)
             active_stack_data = None
             active_stack = None
