@@ -30,8 +30,7 @@ import { EnvironmentDataProvider } from '../../views/activityBar/environmentView
 const setPythonInterpreter = async (): Promise<void> => {
   await window.withProgress(
     {
-      location: ProgressLocation.Window,
-      title: 'Refreshing server status...',
+      location: ProgressLocation.Notification,
     },
     async progress => {
       progress.report({ increment: 10 });
@@ -43,15 +42,10 @@ const setPythonInterpreter = async (): Promise<void> => {
 
       if (newInterpreter === currentInterpreter) {
         console.log('Interpreter selection unchanged or cancelled. No server restart required.');
-        window.showInformationMessage('Interpreter selection unchanged. Restart not required.');
         return;
       }
       progress.report({ increment: 90 });
-      console.log('Interpreter selection completed.');
-
-      window.showInformationMessage(
-        'ZenML server will restart to apply the new interpreter settings.'
-      );
+      console.log('ZenML server restarting to apply the new interpreter settings.');
       // The onDidChangePythonInterpreter event will trigger the server restart.
       progress.report({ increment: 100 });
     }
@@ -62,7 +56,6 @@ const refreshEnvironmentView = async (): Promise<void> => {
   window.withProgress(
     {
       location: ProgressLocation.Notification,
-      title: 'Refreshing Environment View...',
       cancellable: false,
     },
     async () => {

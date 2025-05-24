@@ -18,6 +18,10 @@ import { LSClient } from '../../services/LSClient';
 import { ComponentTypesResponse, Flavor } from '../../types/StackTypes';
 import { ComponentDataProvider } from '../../views/activityBar/componentView/ComponentDataProvider';
 import { StackComponentTreeItem } from '../../views/activityBar/componentView/ComponentTreeItems';
+import {
+  createCommandErrorItem,
+  createCommandSuccessItem,
+} from '../../views/activityBar/common/ErrorTreeItem';
 import ComponentForm from './ComponentsForm';
 
 /**
@@ -28,7 +32,6 @@ const refreshComponentView = async () => {
     await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
-        title: 'Refreshing Component View...',
         cancellable: false,
       },
       async () => {
@@ -36,7 +39,10 @@ const refreshComponentView = async () => {
       }
     );
   } catch (e) {
-    vscode.window.showErrorMessage(`Failed to refresh component view: ${e}`);
+    const componentProvider = ComponentDataProvider.getInstance();
+    componentProvider.showCommandError(
+      createCommandErrorItem('refresh component view', `Failed to refresh component view: ${e}`)
+    );
     traceError(`Failed to refresh component view: ${e}`);
     console.error(`Failed to refresh component view: ${e}`);
   }
@@ -79,7 +85,10 @@ const registerComponent = async () => {
     const flavor = flavors.find(flavor => selectedFlavor === flavor.name);
     await ComponentForm.getInstance().registerForm(flavor as Flavor);
   } catch (e) {
-    vscode.window.showErrorMessage(`Unable to open component form: ${e}`);
+    const componentProvider = ComponentDataProvider.getInstance();
+    componentProvider.showCommandError(
+      createCommandErrorItem('register component', `Unable to open component form: ${e}`)
+    );
     traceError(e);
     console.error(e);
   }
@@ -96,7 +105,10 @@ const updateComponent = async (node: StackComponentTreeItem) => {
       node.component.config
     );
   } catch (e) {
-    vscode.window.showErrorMessage(`Unable to open component form: ${e}`);
+    const componentProvider = ComponentDataProvider.getInstance();
+    componentProvider.showCommandError(
+      createCommandErrorItem('update component', `Unable to open component form: ${e}`)
+    );
     traceError(e);
     console.error(e);
   }
@@ -121,7 +133,7 @@ const deleteComponent = async (node: StackComponentTreeItem) => {
 
   await vscode.window.withProgress(
     {
-      location: vscode.ProgressLocation.Window,
+      location: vscode.ProgressLocation.Notification,
       title: `Deleting stack component ${node.component.name}...`,
     },
     async () => {
@@ -135,12 +147,18 @@ const deleteComponent = async (node: StackComponentTreeItem) => {
           throw resp.error;
         }
 
-        vscode.window.showInformationMessage(`${node.component.name} deleted`);
+        const componentProvider = ComponentDataProvider.getInstance();
+        componentProvider.showCommandSuccess(
+          createCommandSuccessItem('deleted component', `${node.component.name} deleted`)
+        );
         traceInfo(`${node.component.name} deleted`);
 
-        ComponentDataProvider.getInstance().refresh();
+        componentProvider.refresh();
       } catch (e) {
-        vscode.window.showErrorMessage(`Failed to delete component: ${e}`);
+        const componentProvider = ComponentDataProvider.getInstance();
+        componentProvider.showCommandError(
+          createCommandErrorItem('delete component', `Failed to delete component: ${e}`)
+        );
         traceError(e);
         console.error(e);
       }
