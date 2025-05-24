@@ -31,6 +31,14 @@ import svgPanZoom from 'svg-pan-zoom';
   resize();
   window.addEventListener('resize', resize);
 
+  // Handle retry button clicks for error/no-steps views
+  const retryButton = document.getElementById('retry-button');
+  if (retryButton) {
+    retryButton.addEventListener('click', () => {
+      vscode.postMessage({ command: 'update' });
+    });
+  }
+
   const edges = [...document.querySelectorAll('polyline')];
 
   dag.addEventListener('mouseover', evt => {

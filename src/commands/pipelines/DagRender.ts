@@ -302,7 +302,7 @@ export default class DagRenderer extends WebviewBase {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src ${cspSource} 'unsafe-inline'; style-src ${cspSource};">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src ${cspSource}; style-src ${cspSource};">
     <link rel="stylesheet" href="${cssUri}">
     <title>DAG - No Steps</title>
 </head>
@@ -317,11 +317,6 @@ export default class DagRenderer extends WebviewBase {
       <p>Step data is not included in optimized responses to improve performance. The pipeline run information is still available in the tree view.</p>
     </div>
     <script src="${jsUri}"></script>
-    <script>
-      document.getElementById('retry-button').addEventListener('click', () => {
-        vscode.postMessage({ command: 'update' });
-      });
-    </script>
 </body>
 </html>`;
   }
