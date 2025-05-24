@@ -43,6 +43,7 @@ import { toggleCommands } from '../utils/global';
 import { refreshUIComponents } from '../utils/refresh';
 import {
   ComponentDataProvider,
+  EnvironmentDataProvider,
   ModelDataProvider,
   PipelineDataProvider,
   ProjectDataProvider,
@@ -76,6 +77,7 @@ export class ZenExtension {
     ['zenmlPipelineView', PipelineDataProvider.getInstance()],
     ['zenmlProjectView', ProjectDataProvider.getInstance()],
     ['zenmlModelView', ModelDataProvider.getInstance()],
+    ['zenmlEnvironmentView', EnvironmentDataProvider.getInstance()],
     ['zenmlPanelView', PanelDataProvider.getInstance()],
   ]);
 
@@ -162,9 +164,9 @@ export class ZenExtension {
           await runServer();
           if (!this.lsClient.isZenMLReady) {
             console.log('ZenML Client is not initialized yet.');
-            await this.promptForPythonInterpreter();
+            // Let Environment view handle the detailed messaging
           } else {
-            vscode.window.showInformationMessage('🚀 ZenML installation found. Ready to use.');
+            console.log('🚀 ZenML installation found. Ready to use.');
             await refreshUIComponents();
           }
         }
@@ -182,44 +184,8 @@ export class ZenExtension {
       registerCommand(`${this.serverId}.restart`, async () => {
         await runServer();
       }),
-      registerCommand(`zenml.promptForInterpreter`, async () => {
-        if (!this.interpreterCheckInProgress && !this.lsClient.isZenMLReady) {
-          await this.promptForPythonInterpreter();
-        }
-      }),
       registerLanguageStatusItem(this.serverId, this.serverName, `${this.serverId}.showLogs`)
     );
-  }
-
-  /**
-   * Prompts the user to select a Python interpreter.
-   *
-   * @returns {Promise<void>} A promise that resolves to void.
-   */
-  static async promptForPythonInterpreter(): Promise<void> {
-    if (this.interpreterCheckInProgress) {
-      console.log('Interpreter check already in progress. Skipping prompt.');
-      return;
-    }
-    if (this.lsClient.isZenMLReady) {
-      console.log('ZenML is already installed, no need to prompt for interpreter.');
-      return;
-    }
-    try {
-      const selected = await vscode.window.showInformationMessage(
-        'ZenML not found with the current Python interpreter. Would you like to select a different interpreter?',
-        'Select Interpreter',
-        'Cancel'
-      );
-      if (selected === 'Select Interpreter') {
-        await vscode.commands.executeCommand('python.setInterpreter');
-        console.log('Interpreter selection completed.');
-      } else {
-        console.log('Interpreter selection cancelled.');
-      }
-    } catch (err) {
-      console.error('Error selecting Python interpreter:', err);
-    }
   }
 
   /**
