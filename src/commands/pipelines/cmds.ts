@@ -12,8 +12,11 @@
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
 import { LSClient } from '../../services/LSClient';
-import { showErrorMessage, showInformationMessage } from '../../utils/notifications';
 import { PipelineTreeItem } from '../../views/activityBar';
+import {
+  createCommandErrorItem,
+  createCommandSuccessItem,
+} from '../../views/activityBar/common/ErrorTreeItem';
 import { PipelineDataProvider } from '../../views/activityBar/pipelineView/PipelineDataProvider';
 import DagRenderer from './DagRender';
 import { getPipelineRunDashboardUrl } from './utils';
@@ -27,7 +30,6 @@ const refreshPipelineView = async (): Promise<void> => {
   await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Window,
-      title: 'Refreshing server status...',
     },
     async () => {
       await PipelineDataProvider.getInstance().refresh();
@@ -63,11 +65,20 @@ const deletePipelineRun = async (node: PipelineTreeItem): Promise<void> => {
           if (result && 'error' in result) {
             throw new Error(result.error);
           }
-          showInformationMessage('Pipeline run deleted successfully.');
+          const pipelineProvider = PipelineDataProvider.getInstance();
+          pipelineProvider.showCommandSuccess(
+            createCommandSuccessItem('deleted pipeline run', 'Pipeline run deleted successfully')
+          );
           await refreshPipelineView();
         } catch (error: any) {
           console.error(`Error deleting pipeline run: ${error}`);
-          showErrorMessage(`Failed to delete pipeline run: ${error.message}`);
+          const pipelineProvider = PipelineDataProvider.getInstance();
+          pipelineProvider.showCommandError(
+            createCommandErrorItem(
+              'delete pipeline run',
+              `Failed to delete pipeline run: ${error.message}`
+            )
+          );
         }
       }
     );
@@ -89,7 +100,10 @@ const goToPipelineUrl = (node: PipelineTreeItem): void => {
       vscode.env.openExternal(parsedUrl);
     } catch (error) {
       console.log(error);
-      vscode.window.showErrorMessage(`Failed to open pipeline run URL: ${error}`);
+      const pipelineProvider = PipelineDataProvider.getInstance();
+      pipelineProvider.showCommandError(
+        createCommandErrorItem('open pipeline URL', `Failed to open pipeline run URL: ${error}`)
+      );
     }
   }
 };

@@ -101,7 +101,10 @@ export default class DagRenderer extends WebviewBase {
     const status = ServerDataProvider.getInstance().getCurrentStatus() as ServerStatus;
     const dashboardUrl = status.dashboard_url;
     const deploymentType = status.deployment_type;
-    const runUrl = deploymentType === 'other' ? '' : `${dashboardUrl}/runs/${node.id}?tab=overview`;
+    const runUrl =
+      dashboardUrl && dashboardUrl !== 'N/A'
+        ? `${dashboardUrl}/runs/${node.id}?tab=overview`
+        : `Run ID: ${node.id}`;
 
     return async (message: { command: string; id: string }): Promise<void> => {
       switch (message.command) {
