@@ -18,6 +18,7 @@ All notable changes to the "zenml-vscode" extension will be documented in this f
 
 - Fixed DAG visualization for ZenML 0.83.0: steps are now fetched separately due to API performance optimizations
 - Fixed XSS vulnerabilities in DAG error messages through proper HTML escaping
+- Fixed Content Security Policy violation by moving retry button logic from inline script to bundled JavaScript
 - Fixed `AttributeError` when ZenML client is not ready by showing appropriate tree view messages
 - Fixed circular dependency issues in LSP module that caused import errors
 - Fixed data provider pagination and error boundary handling across all activity bar views

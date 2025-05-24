@@ -45,6 +45,7 @@ suite('Pipeline Utils Test Suite', () => {
     try {
       const result = getPipelineRunDashboardUrl('test-run-id');
       sinon.assert.match(result, '');
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       // If it throws an error with null, that's also acceptable behavior
       sinon.assert.match(true, true);
