@@ -70,12 +70,12 @@ class ZenLanguageServer(LanguageServer):
         self.send_custom_notification("zenml/client", {"status": "pending"})
         if self.zenml_client is not None:
             # Client is already initialized.
-            self.notify_user("⭐️ ZenML Client Already Initialized ⭐️")
+            self.show_message_log("⭐️ ZenML Client Already Initialized ⭐️")
             return
 
         if not await self.is_zenml_installed():
             self.send_custom_notification(IS_ZENML_INSTALLED, {"is_installed": False})
-            self.notify_user("❗ ZenML not detected.", lsp.MessageType.Warning)
+            self.show_message_log("❗ ZenML not detected.", lsp.MessageType.Warning)
             return
 
         zenml_version = self.get_zenml_version()
@@ -92,7 +92,7 @@ class ZenLanguageServer(LanguageServer):
             # initialize watcher
             self.initialize_global_config_watcher()
         except Exception as e:
-            self.notify_user(f"Failed to initialize ZenML client: {str(e)}", lsp.MessageType.Error)
+            self.show_message_log(f"Failed to initialize ZenML client: {str(e)}", lsp.MessageType.Error)
 
     def initialize_global_config_watcher(self):
         """Sets up and starts the Global Configuration Watcher."""
@@ -101,7 +101,7 @@ class ZenLanguageServer(LanguageServer):
             watcher.watch_zenml_config_yaml()
             self.log_to_output("👀 Watching ZenML configuration for changes.")
         except Exception as e:
-            self.notify_user(
+            self.show_message_log(
                 f"Error setting up the Global Configuration Watcher: {e}",
                 msg_type=lsp.MessageType.Error,
             )
@@ -171,7 +171,7 @@ class ZenLanguageServer(LanguageServer):
             status = {"message": message, "version": version_str, "is_valid": False}
 
         self.send_custom_notification("zenml/version", status)
-        self.notify_user(message)
+        self.show_message_log(message)
         return status
 
     def send_custom_notification(self, method: str, args: dict):
