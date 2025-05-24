@@ -87,7 +87,12 @@ export class ProjectDataProvider extends PaginatedDataProvider {
   private zenmlClientStateChangeHandler = (isInitialized: boolean) => {
     this.zenmlClientReady = isInitialized;
     if (!isInitialized) {
-      this.triggerLoadingState('projects');
+      this.items = [
+        this.createInitialMessage(
+          'ZenML client not initialized. See Environment view for details.'
+        ),
+      ];
+      this._onDidChangeTreeData.fire(undefined);
     } else {
       this.refresh();
 
@@ -115,6 +120,19 @@ export class ProjectDataProvider extends PaginatedDataProvider {
       ProjectDataProvider.instance = new ProjectDataProvider();
     }
     return ProjectDataProvider.instance;
+  }
+
+  /**
+   * Creates an informational message tree item.
+   *
+   * @param {string} message The message to display
+   * @returns {TreeItem} The tree item with the message
+   */
+  private createInitialMessage(message: string): TreeItem {
+    const treeItem = new TreeItem(message);
+    treeItem.iconPath = new ThemeIcon('info');
+    treeItem.contextValue = 'projectMessage';
+    return treeItem;
   }
 
   /**
@@ -291,5 +309,31 @@ export class ProjectDataProvider extends PaginatedDataProvider {
         this._onDidChangeTreeData.fire(item);
       }
     });
+  }
+
+  /**
+   * Shows a command error in the tree view.
+   * @param errorItem The error tree item to display
+   */
+  public showCommandError(errorItem: ErrorTreeItem): void {
+    this.items = [errorItem];
+    this._onDidChangeTreeData.fire(undefined);
+
+    setTimeout(() => {
+      this.refresh();
+    }, 5000);
+  }
+
+  /**
+   * Shows a command success message in the tree view.
+   * @param successItem The success tree item to display
+   */
+  public showCommandSuccess(successItem: ErrorTreeItem): void {
+    this.items = [successItem];
+    this._onDidChangeTreeData.fire(undefined);
+
+    setTimeout(() => {
+      this.refresh();
+    }, 3000);
   }
 }
