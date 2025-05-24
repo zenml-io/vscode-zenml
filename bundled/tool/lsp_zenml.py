@@ -92,7 +92,9 @@ class ZenLanguageServer(LanguageServer):
             # initialize watcher
             self.initialize_global_config_watcher()
         except Exception as e:
-            self.show_message_log(f"Failed to initialize ZenML client: {str(e)}", lsp.MessageType.Error)
+            self.show_message_log(
+                f"Failed to initialize ZenML client: {str(e)}", lsp.MessageType.Error
+            )
 
     def initialize_global_config_watcher(self):
         """Sets up and starts the Global Configuration Watcher."""

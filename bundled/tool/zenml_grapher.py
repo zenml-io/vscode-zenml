@@ -33,12 +33,16 @@ class Grapher:
 
         # Try to get steps from different locations based on response format
         steps_data = None
-        
+
         # Option 1: Steps in run.steps (new format)
-        if hasattr(self.run, 'steps') and self.run.steps:
+        if hasattr(self.run, "steps") and self.run.steps:
             steps_data = self.run.steps
         # Option 2: Steps in run.metadata.steps (old format)
-        elif hasattr(self.run, 'metadata') and hasattr(self.run.metadata, 'steps') and self.run.metadata.steps:
+        elif (
+            hasattr(self.run, "metadata")
+            and hasattr(self.run.metadata, "steps")
+            and self.run.metadata.steps
+        ):
             steps_data = self.run.metadata.steps
         else:
             # No steps available
@@ -52,14 +56,16 @@ class Grapher:
                     "data": {
                         "execution_id": str(step_data.id),
                         "name": step_name,
-                        "status": step_data.status._value_ if hasattr(step_data.status, '_value_') else str(step_data.status),
+                        "status": step_data.status._value_
+                        if hasattr(step_data.status, "_value_")
+                        else str(step_data.status),
                     },
                 }
             )
             # Only add artifacts if step data has inputs/outputs
-            if hasattr(step_data, 'inputs') and step_data.inputs:
+            if hasattr(step_data, "inputs") and step_data.inputs:
                 self.add_artifacts_from_list(step_data.inputs)
-            if hasattr(step_data, 'outputs') and step_data.outputs:
+            if hasattr(step_data, "outputs") and step_data.outputs:
                 self.add_artifacts_from_list(step_data.outputs)
 
     def add_artifacts_from_list(self, dictOfArtifacts: Dict[str, StepArtifact]) -> None:
@@ -120,22 +126,26 @@ class Grapher:
 
         # Try to get steps from different locations based on response format
         steps_data = None
-        
+
         # Option 1: Steps in run.steps (new format)
-        if hasattr(self.run, 'steps') and self.run.steps:
+        if hasattr(self.run, "steps") and self.run.steps:
             steps_data = self.run.steps
         # Option 2: Steps in run.metadata.steps (old format)
-        elif hasattr(self.run, 'metadata') and hasattr(self.run.metadata, 'steps') and self.run.metadata.steps:
+        elif (
+            hasattr(self.run, "metadata")
+            and hasattr(self.run.metadata, "steps")
+            and self.run.metadata.steps
+        ):
             steps_data = self.run.metadata.steps
         else:
             # No steps available
             return
 
-        for step_name, step_data in steps_data.items():
+        for step_name, step_data in steps_data.items():  # noqa: B007
             step_id = str(step_data.id)
 
             # Process inputs
-            if hasattr(step_data, 'inputs') and step_data.inputs:
+            if hasattr(step_data, "inputs") and step_data.inputs:
                 for artifact in step_data.inputs:
                     try:
                         if isinstance(step_data.inputs[artifact], list):
@@ -159,7 +169,7 @@ class Grapher:
                         continue
 
             # Process outputs
-            if hasattr(step_data, 'outputs') and step_data.outputs:
+            if hasattr(step_data, "outputs") and step_data.outputs:
                 for artifact in step_data.outputs:
                     try:
                         if isinstance(step_data.outputs[artifact], list):
@@ -197,6 +207,10 @@ class Grapher:
         return {
             "nodes": self.nodes,
             "edges": self.edges,
-            "status": self.run.status._value_ if hasattr(self.run.status, '_value_') else str(self.run.status),
-            "name": self.run.pipeline.name if hasattr(self.run, 'pipeline') and self.run.pipeline else "unknown",
+            "status": self.run.status._value_
+            if hasattr(self.run.status, "_value_")
+            else str(self.run.status),
+            "name": self.run.pipeline.name
+            if hasattr(self.run, "pipeline") and self.run.pipeline
+            else "unknown",
         }

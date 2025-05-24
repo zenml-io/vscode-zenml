@@ -605,11 +605,15 @@ class PipelineRunsWrapper:
             run_id = args[0]
             # Get pipeline run with hydration to ensure we have step data
             run = self.client.get_pipeline_run(run_id, hydrate=True)
-            
+
             # Check if steps are available for graph generation
-            if not hasattr(run, 'steps') or not run.steps:
+            if not hasattr(run, "steps") or not run.steps:
                 # Try to get steps from metadata if available
-                if hasattr(run, 'metadata') and hasattr(run.metadata, 'steps') and run.metadata.steps:
+                if (
+                    hasattr(run, "metadata")
+                    and hasattr(run.metadata, "steps")
+                    and run.metadata.steps
+                ):
                     # Steps available in metadata
                     pass
                 else:
@@ -617,17 +621,67 @@ class PipelineRunsWrapper:
                     return {
                         "nodes": [],
                         "edges": [],
-                        "status": run.status._value_ if hasattr(run.status, '_value_') else str(run.status),
-                        "name": run.pipeline.name if hasattr(run, 'pipeline') and run.pipeline else "unknown",
-                        "message": "Step data not available in optimized response"
+                        "status": run.status._value_
+                        if hasattr(run.status, "_value_")
+                        else str(run.status),
+                        "name": run.pipeline.name
+                        if hasattr(run, "pipeline") and run.pipeline
+                        else "unknown",
+                        "message": "Step data not available in optimized response",
                     }
-            
+
             graph = Grapher(run)
             graph.build_nodes_from_steps()
             graph.build_edges_from_steps()
             return graph.to_dict()
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve pipeline run graph: {str(e)}"}
+
+    def _get_orchestrator_run_id(self, run) -> str:
+        """Gets the orchestrator run ID from various possible locations in the run object.
+
+        Args:
+            run: The pipeline run object
+
+        Returns:
+            str: The orchestrator run ID or "unknown" if not found
+        """
+        # Try different possible paths for orchestrator run ID
+        try:
+            # Path 1: run.metadata.orchestrator_run_id (older versions)
+            if (
+                hasattr(run, "metadata")
+                and run.metadata
+                and hasattr(run.metadata, "orchestrator_run_id")
+                and run.metadata.orchestrator_run_id
+            ):
+                return str(run.metadata.orchestrator_run_id)
+
+            # Path 2: run.orchestrator_run_id (newer versions)
+            if hasattr(run, "orchestrator_run_id") and run.orchestrator_run_id:
+                return str(run.orchestrator_run_id)
+
+            # Path 3: Check in run metadata dict
+            if (
+                hasattr(run, "metadata")
+                and run.metadata
+                and hasattr(run.metadata, "run_metadata")
+                and run.metadata.run_metadata
+                and "orchestrator_run_id" in run.metadata.run_metadata
+            ):
+                return str(run.metadata.run_metadata["orchestrator_run_id"])
+
+            # Path 4: Check in run.run_metadata directly
+            if (
+                hasattr(run, "run_metadata")
+                and run.run_metadata
+                and "orchestrator_run_id" in run.run_metadata
+            ):
+                return str(run.run_metadata["orchestrator_run_id"])
+
+            return "unknown"
+        except Exception:
+            return "unknown"
 
     @serialize_response
     def get_run_step(self, args: Tuple[str]) -> Union[RunStepResponse, ErrorResponse]:
@@ -663,9 +717,7 @@ class PipelineRunsWrapper:
                     else None
                 ),
                 "stackName": run.stack.name if hasattr(run, "stack") and run.stack else "unknown",
-                "orchestrator": {
-                    "runId": self._get_orchestrator_run_id(run)
-                },
+                "orchestrator": {"runId": self._get_orchestrator_run_id(run)},
                 "pipeline": {
                     "name": run.pipeline.name
                     if hasattr(run, "pipeline") and run.pipeline
@@ -1025,46 +1077,6 @@ class StacksWrapper:
     def ZenKeyError(self) -> Any:
         """Returns the ZenKeyError class."""
         return self.lazy_import("zenml.exceptions", "ZenKeyError")
-
-    def _get_orchestrator_run_id(self, run) -> str:
-        """Gets the orchestrator run ID from various possible locations in the run object.
-        
-        Args:
-            run: The pipeline run object
-            
-        Returns:
-            str: The orchestrator run ID or "unknown" if not found
-        """
-        # Try different possible paths for orchestrator run ID
-        try:
-            # Path 1: run.metadata.orchestrator_run_id (older versions)
-            if (hasattr(run, "metadata") 
-                and run.metadata 
-                and hasattr(run.metadata, "orchestrator_run_id")
-                and run.metadata.orchestrator_run_id):
-                return str(run.metadata.orchestrator_run_id)
-            
-            # Path 2: run.orchestrator_run_id (newer versions)
-            if hasattr(run, "orchestrator_run_id") and run.orchestrator_run_id:
-                return str(run.orchestrator_run_id)
-            
-            # Path 3: Check in run metadata dict
-            if (hasattr(run, "metadata") 
-                and run.metadata 
-                and hasattr(run.metadata, "run_metadata")
-                and run.metadata.run_metadata
-                and "orchestrator_run_id" in run.metadata.run_metadata):
-                return str(run.metadata.run_metadata["orchestrator_run_id"])
-            
-            # Path 4: Check in run.run_metadata directly
-            if (hasattr(run, "run_metadata") 
-                and run.run_metadata 
-                and "orchestrator_run_id" in run.run_metadata):
-                return str(run.run_metadata["orchestrator_run_id"])
-                
-            return "unknown"
-        except Exception:
-            return "unknown"
 
     @serialize_response
     def get_active_stack(self) -> dict:
@@ -1625,12 +1637,8 @@ class ModelsWrapper:
                 active_project = self.projects_wrapper.get_active_project()
 
             # Create ModelFilter with proper parameters for new API
-            model_filter = self.ModelFilter(
-                page=page,
-                size=size,
-                sort_by="desc:created"
-            )
-            
+            model_filter = self.ModelFilter(page=page, size=size, sort_by="desc:created")
+
             # Add project filter if specified
             if project_name:
                 model_filter.project = project_name
@@ -1638,7 +1646,7 @@ class ModelsWrapper:
                 if isinstance(active_project, dict):
                     active_project_id = active_project.get("id")
                     model_filter.project = active_project_id
-            
+
             models_page = self.client.zen_store.list_models(model_filter)
 
             models_data = []
@@ -1647,15 +1655,17 @@ class ModelsWrapper:
                     "id": str(model.id),
                     "name": model.name,
                 }
-                
+
                 # Handle latest_version_name - may be in body or resources
                 latest_version_name = None
                 if hasattr(model, "latest_version_name") and model.latest_version_name:
                     latest_version_name = model.latest_version_name
-                elif hasattr(model, "resources") and hasattr(model.resources, "latest_version_name"):
+                elif hasattr(model, "resources") and hasattr(
+                    model.resources, "latest_version_name"
+                ):
                     latest_version_name = model.resources.latest_version_name
                 model_data["latest_version_name"] = latest_version_name
-                
+
                 # Handle latest_version_id - may be in body or resources
                 latest_version_id = None
                 if hasattr(model, "latest_version_id") and model.latest_version_id:
@@ -1663,22 +1673,33 @@ class ModelsWrapper:
                 elif hasattr(model, "resources") and hasattr(model.resources, "latest_version_id"):
                     latest_version_id = str(model.resources.latest_version_id)
                 model_data["latest_version_id"] = latest_version_id
-                
+
                 # Handle tags - may be in body.tags or resources.tags
                 tags = []
                 if hasattr(model, "tags") and model.tags:
-                    tags = [tag.name if hasattr(tag, 'name') else str(tag) for tag in model.tags]
-                elif hasattr(model, "resources") and hasattr(model.resources, "tags") and model.resources.tags:
-                    tags = [tag.name if hasattr(tag, 'name') else str(tag) for tag in model.resources.tags]
+                    tags = [tag.name if hasattr(tag, "name") else str(tag) for tag in model.tags]
+                elif (
+                    hasattr(model, "resources")
+                    and hasattr(model.resources, "tags")
+                    and model.resources.tags
+                ):
+                    tags = [
+                        tag.name if hasattr(tag, "name") else str(tag)
+                        for tag in model.resources.tags
+                    ]
                 model_data["tags"] = tags
 
                 # Handle user information - may be in body.user or resources.user
                 user_obj = None
                 if hasattr(model, "user") and model.user:
                     user_obj = model.user
-                elif hasattr(model, "resources") and hasattr(model.resources, "user") and model.resources.user:
+                elif (
+                    hasattr(model, "resources")
+                    and hasattr(model.resources, "user")
+                    and model.resources.user
+                ):
                     user_obj = model.resources.user
-                
+
                 if user_obj:
                     model_data["user"] = {
                         "name": user_obj.name,
@@ -1725,12 +1746,9 @@ class ModelsWrapper:
 
             # Create ModelVersionFilter with proper parameters for new API
             model_version_filter = self.ModelVersionFilter(
-                model=model_id_or_name,
-                page=page,
-                size=size,
-                sort_by="desc:created"
+                model=model_id_or_name, page=page, size=size, sort_by="desc:created"
             )
-            
+
             # Add project filter if specified
             if project_name:
                 model_version_filter.project = project_name
@@ -1754,13 +1772,23 @@ class ModelsWrapper:
                     "number": version.number,
                     "run_metadata": version.run_metadata if version.run_metadata else None,
                 }
-                
+
                 # Handle tags - may be in body.tags or resources.tags
                 tags = []
                 if hasattr(version, "tags") and version.tags:
-                    tags = [{"name": tag.name if hasattr(tag, 'name') else str(tag)} for tag in version.tags]
-                elif hasattr(version, "resources") and hasattr(version.resources, "tags") and version.resources.tags:
-                    tags = [{"name": tag.name if hasattr(tag, 'name') else str(tag)} for tag in version.resources.tags]
+                    tags = [
+                        {"name": tag.name if hasattr(tag, "name") else str(tag)}
+                        for tag in version.tags
+                    ]
+                elif (
+                    hasattr(version, "resources")
+                    and hasattr(version.resources, "tags")
+                    and version.resources.tags
+                ):
+                    tags = [
+                        {"name": tag.name if hasattr(tag, "name") else str(tag)}
+                        for tag in version.resources.tags
+                    ]
                 version_data["tags"] = tags
 
                 # Handle model information
@@ -1779,9 +1807,13 @@ class ModelsWrapper:
                     user_obj = None
                     if hasattr(version.model, "user") and version.model.user:
                         user_obj = version.model.user
-                    elif hasattr(version.model, "resources") and hasattr(version.model.resources, "user") and version.model.resources.user:
+                    elif (
+                        hasattr(version.model, "resources")
+                        and hasattr(version.model.resources, "user")
+                        and version.model.resources.user
+                    ):
                         user_obj = version.model.resources.user
-                    
+
                     if user_obj:
                         model_data["user"] = {
                             "id": str(user_obj.id),
