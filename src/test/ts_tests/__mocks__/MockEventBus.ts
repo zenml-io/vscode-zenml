@@ -69,4 +69,18 @@ export class MockEventBus extends EventEmitter {
     this.lsClientReady = isReady;
     this.emit('lsClientReady', isReady);
   }
+
+  /**
+   * Gets event handlers for testing purposes.
+   *
+   * @returns {Map<string, boolean>} A map of event names and whether they have handlers.
+   */
+  public getEventHandlers(): Map<string, boolean> {
+    const handlers = new Map<string, boolean>();
+    const eventNames = this.eventNames();
+    for (const eventName of eventNames) {
+      handlers.set(eventName.toString(), this.listenerCount(eventName) > 0);
+    }
+    return handlers;
+  }
 }
