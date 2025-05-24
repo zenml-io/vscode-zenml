@@ -22,11 +22,19 @@ export class EnvironmentItem extends TreeItem {
     public readonly description?: string,
     public readonly collapsibleState: TreeItemCollapsibleState = TreeItemCollapsibleState.None,
     private readonly customIcon?: string,
-    public readonly contextValue?: string
+    public readonly contextValue?: string,
+    public readonly customTooltip?: string
   ) {
     super(label, collapsibleState);
     this.iconPath = this.determineIcon(label);
     this.contextValue = contextValue;
+
+    // Use custom tooltip if provided, otherwise use description for tooltip if it's long enough to be truncated
+    if (customTooltip) {
+      this.tooltip = customTooltip;
+    } else if (description && description.length > 60) {
+      this.tooltip = description;
+    }
   }
 
   /**

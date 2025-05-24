@@ -60,7 +60,7 @@ export function createZenMLClientStatusItem(
     !lsClientRunning
       ? 'Language server not running'
       : !localZenML.is_installed
-        ? ''
+        ? 'Not found in current environment'
         : zenmlClientReady
           ? 'Initialized'
           : 'Awaiting Initialization',
@@ -71,7 +71,13 @@ export function createZenMLClientStatusItem(
         ? 'warning'
         : zenmlClientReady
           ? 'check'
-          : 'sync~spin'
+          : 'sync~spin',
+    undefined, // contextValue
+    !lsClientRunning
+      ? undefined
+      : !localZenML.is_installed
+        ? 'ZenML not found in the current Python environment.\n\nTo fix this:\n1. Select a Python interpreter that has ZenML installed\n2. Use Command Palette: "Python: Select Interpreter"\n3. Choose an environment with ZenML\n\nThe extension will automatically refresh when you change interpreters.'
+        : undefined
   );
 
   return zenMLClientStatusItem;
