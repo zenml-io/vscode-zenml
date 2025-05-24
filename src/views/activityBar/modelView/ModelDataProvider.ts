@@ -73,6 +73,19 @@ export class ModelDataProvider extends PaginatedDataProvider {
   }
 
   /**
+   * Creates an informational message tree item.
+   *
+   * @param {string} message The message to display
+   * @returns {vscode.TreeItem} The tree item with the message
+   */
+  private createInitialMessage(message: string): vscode.TreeItem {
+    const treeItem = new vscode.TreeItem(message);
+    treeItem.iconPath = new vscode.ThemeIcon('info');
+    treeItem.contextValue = 'modelMessage';
+    return treeItem;
+  }
+
+  /**
    * Subscribes to relevant events to trigger a refresh of the tree view.
    */
   public subscribeToEvents(): void {
@@ -107,7 +120,11 @@ export class ModelDataProvider extends PaginatedDataProvider {
   private zenmlClientStateChangeHandler = (isInitialized: boolean) => {
     this.zenmlClientReady = isInitialized;
     if (!isInitialized) {
-      this.items = [LOADING_TREE_ITEMS.get('models')!];
+      this.items = [
+        this.createInitialMessage(
+          'ZenML client not initialized. See Environment view for details.'
+        ),
+      ];
       this._onDidChangeTreeData.fire(undefined);
     } else {
       this.refresh();
@@ -326,7 +343,7 @@ export class ModelDataProvider extends PaginatedDataProvider {
       const detailItems: vscode.TreeItem[] = [
         new ModelDetailTreeItem('id', version.id),
         new ModelDetailTreeItem('number', version.number.toString()),
-        new ModelDetailTreeItem('stage', version.stage || ''),
+        new ModelDetailTreeItem('stage', version.stage || 'none'),
         new ModelDetailTreeItem('created', new Date(version.created).toLocaleString()),
         new ModelDetailTreeItem('updated', new Date(version.updated).toLocaleString()),
       ];
