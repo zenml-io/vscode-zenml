@@ -41,6 +41,10 @@ suite('DagRenderer Test Suite', () => {
     } as vscode.ExtensionContext;
     WebviewBase.setContext(mockExtensionContext);
 
+    // Stub icon loading and SVG lib to prevent file system warnings
+    sandbox.stub(DagRenderer.prototype, 'loadIcons' as any).returns(undefined);
+    sandbox.stub(DagRenderer.prototype, 'loadSvgWindowLib' as any).returns(undefined);
+
     // Mock webview panel
     mockWebviewPanel = {
       webview: {
