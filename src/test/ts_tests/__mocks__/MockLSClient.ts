@@ -178,9 +178,7 @@ export class MockLSClient {
             { id: 'step1', name: 'Step 1', status: 'completed' },
             { id: 'step2', name: 'Step 2', status: 'completed' },
           ],
-          edges: [
-            { source: 'step1', target: 'step2' },
-          ],
+          edges: [{ source: 'step1', target: 'step2' }],
           status: 'completed',
           name: 'test-pipeline',
         });

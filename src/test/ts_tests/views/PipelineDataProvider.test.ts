@@ -34,7 +34,7 @@ suite('PipelineDataProvider Test Suite', () => {
     sandbox.stub(EventBus, 'getInstance').returns(mockEventBus as any);
 
     pipelineDataProvider = PipelineDataProvider.getInstance();
-    
+
     // Set the client ready states to true for testing
     (pipelineDataProvider as any).lsClientReady = true;
     (pipelineDataProvider as any).zenmlClientReady = true;
