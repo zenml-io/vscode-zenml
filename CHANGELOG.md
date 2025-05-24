@@ -2,6 +2,46 @@
 
 All notable changes to the "zenml-vscode" extension will be documented in this file.
 
+## [Unreleased] - ZenML 0.83.0 Compatibility
+
+### Added
+
+- New `DagRenderer` test suite with HTML escaping and XSS protection validation
+- New `PipelineDataProvider` test suite for data fetching, error handling, and singleton pattern testing
+- New `ZenExtension` test suite for service lifecycle and state management
+- New `WebviewBase` test suite for extension context management
+- New pipeline utilities test suite for URL generation and edge case handling
+- Enhanced `MockLSClient` with `getPipelineRunDag`, `getPipelineRunStep`, and `getPipelineRunArtifact` command support
+- Added `getEventHandlers` method to MockEventBus for better test infrastructure
+
+### Fixed
+
+- Fixed DAG visualization for ZenML 0.83.0: steps are now fetched separately due to API performance optimizations
+- Fixed XSS vulnerabilities in DAG error messages through proper HTML escaping
+- Fixed `AttributeError` when ZenML client is not ready by showing appropriate tree view messages
+- Fixed circular dependency issues in LSP module that caused import errors
+- Fixed data provider pagination and error boundary handling across all activity bar views
+
+### Changed
+
+- Updated ZenML wrapper implementations for 0.83.0 API compatibility
+- Consolidated activity bar provider interfaces for consistency
+- Removed ZenExtension prompt for interpreter (replaced with message in tree view)
+- Removed progress notifications for extension initialization and background operations
+- Errors now appear in tree view or console instead of popup notifications
+
+### Dependencies
+
+- Updated multiple dependencies for security and compatibility:
+  - @eslint/js (9.26.0 → 9.27.0)
+  - @types/node (22.15.3 → 22.15.19)
+  - @types/vscode (1.99.1 → 1.100.0)
+  - @vscode/vsce (3.3.2 → 3.4.0)
+  - eslint (9.26.0 → 9.27.0)
+  - eslint-config-prettier (10.1.2 → 10.1.5)
+  - typescript-eslint (8.31.1 → 8.32.1)
+  - webpack (5.99.7 → 5.99.8)
+
 ## [0.0.20] - 2025-05-05
 
 ### Added
