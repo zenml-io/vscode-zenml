@@ -22,11 +22,18 @@ export interface GenericErrorTreeItem {
 export type ErrorTreeItemType = VersionMismatchTreeItem | ErrorTreeItem | InfoTreeItem;
 
 export class ErrorTreeItem extends TreeItem {
-  constructor(label: string, description: string) {
+  constructor(label: string, description: string, tooltip?: string) {
     super(label, TreeItemCollapsibleState.None);
     this.description = description;
     this.iconPath = new ThemeIcon('warning', new ThemeColor('charts.yellow'));
     this.contextValue = 'error';
+
+    // Use custom tooltip if provided, otherwise use description for tooltip if it's long enough to be truncated
+    if (tooltip) {
+      this.tooltip = tooltip;
+    } else if (description && description.length > 60) {
+      this.tooltip = description;
+    }
   }
 }
 
@@ -98,4 +105,33 @@ export class InfoTreeItem extends TreeItem {
  */
 export function createServicesNotAvailableItem(): TreeItem {
   return new InfoTreeItem('Pending LSP and ZenML client initialization.');
+}
+
+/**
+ * Creates an error item for command failures that should be displayed in tree views.
+ *
+ * @param operation The operation that failed (e.g., "connect", "disconnect")
+ * @param errorMessage The error message
+ * @returns An ErrorTreeItem with appropriate tooltip for long messages
+ */
+export function createCommandErrorItem(operation: string, errorMessage: string): ErrorTreeItem {
+  const shortDescription =
+    errorMessage.length > 50 ? `${errorMessage.substring(0, 47)}...` : errorMessage;
+
+  return new ErrorTreeItem(
+    `Failed to ${operation}`,
+    shortDescription,
+    errorMessage.length > 60 ? errorMessage : undefined
+  );
+}
+
+/**
+ * Creates a success info item for command completions.
+ *
+ * @param operation The operation that succeeded
+ * @param message Optional success message
+ * @returns An InfoTreeItem
+ */
+export function createCommandSuccessItem(operation: string, message?: string): InfoTreeItem {
+  return new InfoTreeItem(`Successfully ${operation}`, message || '');
 }
