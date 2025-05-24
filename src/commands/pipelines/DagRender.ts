@@ -18,6 +18,7 @@ import Panels from '../../common/panels';
 import WebviewBase from '../../common/WebviewBase';
 import { LSClient } from '../../services/LSClient';
 import { DagNode, PipelineRunDag } from '../../types/PipelineTypes';
+import { getPipelineRunDashboardUrl } from './utils';
 import { ServerStatus } from '../../types/ServerInfoTypes';
 import { PipelineTreeItem, ServerDataProvider } from '../../views/activityBar';
 import { PanelDataProvider } from '../../views/panel/panelView/PanelDataProvider';
@@ -101,10 +102,11 @@ export default class DagRenderer extends WebviewBase {
     const status = ServerDataProvider.getInstance().getCurrentStatus() as ServerStatus;
     const dashboardUrl = status.dashboard_url;
     const deploymentType = status.deployment_type;
+
+    // Use the proper utility function to get dashboard URL
+    const pipelineRunDashboardUrl = getPipelineRunDashboardUrl(node.id);
     const runUrl =
-      dashboardUrl && dashboardUrl !== 'N/A'
-        ? `${dashboardUrl}/runs/${node.id}?tab=overview`
-        : `Run ID: ${node.id}`;
+      pipelineRunDashboardUrl || 'Dashboard only available when connected to remote ZenML server';
 
     return async (message: { command: string; id: string }): Promise<void> => {
       switch (message.command) {
@@ -183,15 +185,30 @@ export default class DagRenderer extends WebviewBase {
     deploymentType: string,
     runUrl: string
   ): void {
-    const uri = vscode.Uri.parse(
-      deploymentType === 'cloud' ? `${dashboardUrl}/artifact-versions/${id}?tab=overview` : runUrl
-    );
-    vscode.env.openExternal(uri);
+    const targetUrl =
+      deploymentType === 'cloud' ? `${dashboardUrl}/artifact-versions/${id}?tab=overview` : runUrl;
+
+    // Only open URL if it's a valid URL (not a message about remote server)
+    if (targetUrl.startsWith('http')) {
+      const uri = vscode.Uri.parse(targetUrl);
+      vscode.env.openExternal(uri);
+    } else {
+      vscode.window.showInformationMessage(
+        'Dashboard is only available when connected to a remote ZenML server.'
+      );
+    }
   }
 
   private openStepUrl(runUrl: string): void {
-    const uri = vscode.Uri.parse(runUrl);
-    vscode.env.openExternal(uri);
+    // Only open URL if it's a valid URL (not a message about remote server)
+    if (runUrl.startsWith('http')) {
+      const uri = vscode.Uri.parse(runUrl);
+      vscode.env.openExternal(uri);
+    } else {
+      vscode.window.showInformationMessage(
+        'Dashboard is only available when connected to a remote ZenML server.'
+      );
+    }
   }
 
   private async renderDag(panel: vscode.WebviewPanel, node: PipelineTreeItem) {
@@ -252,6 +269,15 @@ export default class DagRenderer extends WebviewBase {
     }
   }
 
+  private static escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+  }
+
   private getNoStepsContent({
     cssUri,
     jsUri,
@@ -267,23 +293,27 @@ export default class DagRenderer extends WebviewBase {
     status: string;
     cspSource: string;
   }): string {
+    const escapedPipelineName = DagRenderer.escapeHtml(pipelineName);
+    const escapedStatus = DagRenderer.escapeHtml(status);
+    const escapedMessage = DagRenderer.escapeHtml(message);
+
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src ${cspSource}; style-src ${cspSource};">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src ${cspSource} 'unsafe-inline'; style-src ${cspSource};">
     <link rel="stylesheet" href="${cssUri}">
     <title>DAG - No Steps</title>
 </head>
 <body>
     <div id="update">
-      <p>${pipelineName} (${status})</p><button id="retry-button">Retry</button>
+      <p>${escapedPipelineName} (${escapedStatus})</p><button id="retry-button">Retry</button>
     </div>
     <div class="error-container">
       <div class="error-icon">ℹ️</div>
       <div class="error-title">DAG visualization not available</div>
-      <div class="error-message">${message}</div>
+      <div class="error-message">${escapedMessage}</div>
       <p>Step data is not included in optimized responses to improve performance. The pipeline run information is still available in the tree view.</p>
     </div>
     <script src="${jsUri}"></script>
