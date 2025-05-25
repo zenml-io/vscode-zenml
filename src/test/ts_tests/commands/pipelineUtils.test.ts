@@ -11,6 +11,7 @@
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
+import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { getPipelineRunDashboardUrl } from '../../../commands/pipelines/utils';
 import { ServerDataProvider } from '../../../views/activityBar/serverView/ServerDataProvider';
@@ -35,14 +36,14 @@ suite('Pipeline Utils Test Suite', () => {
 
   test('getPipelineRunDashboardUrl should return empty string for empty id', () => {
     const result = getPipelineRunDashboardUrl('');
-    sinon.assert.match(result, '');
+    assert.strictEqual(result, '');
   });
 
   test('getPipelineRunDashboardUrl should return empty string for null server status', () => {
     mockServerDataProvider.getCurrentStatus.returns(null);
 
     const result = getPipelineRunDashboardUrl('test-run-id');
-    sinon.assert.match(result, '');
+    assert.strictEqual(result, '');
   });
 
   test('getPipelineRunDashboardUrl should return empty string for "other" deployment type', () => {
@@ -52,7 +53,7 @@ suite('Pipeline Utils Test Suite', () => {
     });
 
     const result = getPipelineRunDashboardUrl('test-run-id');
-    sinon.assert.match(result, '');
+    assert.strictEqual(result, '');
   });
 
   test('getPipelineRunDashboardUrl should handle missing dashboard_url', () => {
@@ -63,7 +64,7 @@ suite('Pipeline Utils Test Suite', () => {
     });
 
     const result = getPipelineRunDashboardUrl('test-run-id');
-    sinon.assert.match(result, '');
+    assert.strictEqual(result, '');
   });
 
   test('getPipelineRunDashboardUrl should handle undefined dashboard_url', () => {
@@ -73,6 +74,6 @@ suite('Pipeline Utils Test Suite', () => {
     });
 
     const result = getPipelineRunDashboardUrl('test-run-id');
-    sinon.assert.match(result, '');
+    assert.strictEqual(result, '');
   });
 });

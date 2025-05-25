@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
+
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import * as vscode from 'vscode';
@@ -148,7 +149,7 @@ suite('Project Commands Test Suite', () => {
     const openExternalStub = sandbox.stub(vscode.env, 'openExternal');
     projectCommands.goToProjectUrl(fakeProjectNode);
 
-    assert.strictEqual(openExternalStub.calledOnce, true, 'openExternal should be called once');
+    sinon.assert.calledOnce(openExternalStub);
 
     const actualUrl = openExternalStub.args[0][0].toString();
     assert.strictEqual(

@@ -11,6 +11,7 @@
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
+import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
@@ -50,13 +51,13 @@ suite('PipelineDataProvider Test Suite', () => {
   });
 
   test('should create PipelineDataProvider instance', () => {
-    sinon.assert.match(pipelineDataProvider, sinon.match.instanceOf(PipelineDataProvider));
+    assert.ok(pipelineDataProvider instanceof PipelineDataProvider);
   });
 
   test('should implement singleton pattern', () => {
     const instance1 = PipelineDataProvider.getInstance();
     const instance2 = PipelineDataProvider.getInstance();
-    sinon.assert.match(instance1, instance2);
+    assert.strictEqual(instance1, instance2);
   });
 
   test('should handle pipeline runs data correctly', async () => {
@@ -91,7 +92,7 @@ suite('PipelineDataProvider Test Suite', () => {
     sinon.assert.calledWith(mockLSClient.sendLsClientRequest, 'getPipelineRuns');
 
     // Should return tree items
-    sinon.assert.match(Array.isArray(children), true);
+    assert.ok(Array.isArray(children));
   });
 
   test('should handle LSClient errors gracefully', async () => {
@@ -100,8 +101,8 @@ suite('PipelineDataProvider Test Suite', () => {
     const children = await pipelineDataProvider.getChildren();
 
     // Should return error tree item
-    sinon.assert.match(Array.isArray(children), true);
-    sinon.assert.match(children && children.length >= 1, true);
+    assert.ok(Array.isArray(children));
+    assert.ok(children && children.length >= 1);
   });
 
   test('should handle empty pipeline runs list', async () => {
@@ -116,7 +117,7 @@ suite('PipelineDataProvider Test Suite', () => {
 
     const children = await pipelineDataProvider.getChildren();
 
-    sinon.assert.match(Array.isArray(children), true);
+    assert.ok(Array.isArray(children));
   });
 
   test('should refresh data when requested', async () => {
@@ -156,7 +157,7 @@ suite('PipelineDataProvider Test Suite', () => {
     const children = await pipelineDataProvider.getChildren();
 
     // Should include pagination items if more pages available
-    sinon.assert.match(Array.isArray(children), true);
+    assert.ok(Array.isArray(children));
   });
 
   test('should handle different pipeline run statuses', async () => {
@@ -177,14 +178,14 @@ suite('PipelineDataProvider Test Suite', () => {
     await pipelineDataProvider.refresh();
     const children = await pipelineDataProvider.getChildren();
 
-    sinon.assert.match(Array.isArray(children), true);
+    assert.ok(Array.isArray(children));
     // Just verify we get some children - the exact count may vary due to tree structure
-    sinon.assert.match(children && children.length > 0, true);
+    assert.ok(children && children.length > 0);
   });
 
   test('should register event listeners on initialization', () => {
     // Just verify the data provider initializes correctly
-    sinon.assert.match(pipelineDataProvider, sinon.match.instanceOf(PipelineDataProvider));
+    assert.ok(pipelineDataProvider instanceof PipelineDataProvider);
     // Event listener testing is complex with mocked event bus
   });
 
@@ -199,6 +200,6 @@ suite('PipelineDataProvider Test Suite', () => {
 
     // This tests the tree item creation logic
     const result = pipelineDataProvider.getTreeItem(mockRun as any);
-    sinon.assert.match(result, sinon.match.object);
+    assert.ok(typeof result === 'object' && result !== null);
   });
 });

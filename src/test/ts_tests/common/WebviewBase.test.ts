@@ -11,6 +11,7 @@
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
+import * as assert from 'assert';
 import * as sinon from 'sinon';
 import WebviewBase from '../../../common/WebviewBase';
 
@@ -39,27 +40,22 @@ suite('WebviewBase Test Suite', () => {
   });
 
   test('should create WebviewBase instance', () => {
-    sinon.assert.match(testWebview, sinon.match.instanceOf(WebviewBase));
-    sinon.assert.match(testWebview, sinon.match.instanceOf(TestWebviewBase));
+    assert.ok(testWebview instanceof WebviewBase);
+    assert.ok(testWebview instanceof TestWebviewBase);
   });
 
   test('getHtmlContent should return HTML string', () => {
     const content = testWebview.getHtmlContent();
-    sinon.assert.match(content, sinon.match.string);
-    sinon.assert.match(content, sinon.match(/html/));
-  });
-
-  test('should handle webview panel creation patterns', () => {
-    // Test that the base class can be extended properly
-    const htmlContent = testWebview.getHtmlContent();
-    sinon.assert.match(htmlContent, sinon.match(/Test Content/));
+    assert.strictEqual(typeof content, 'string');
+    assert.match(content, /html/);
+    assert.match(content, /Test Content/);
   });
 
   test('concrete implementation should provide HTML content', () => {
     // Verify that our test implementation works
     const content = testWebview.getHtmlContent();
-    sinon.assert.match(typeof content, 'string');
-    sinon.assert.match(content.length > 0, true);
+    assert.strictEqual(typeof content, 'string');
+    assert.ok(content.length > 0);
   });
 
   test('should be extendable for different webview types', () => {
@@ -72,11 +68,11 @@ suite('WebviewBase Test Suite', () => {
 
     const anotherWebview = new AnotherTestWebview();
     const content = anotherWebview.getHtmlContent();
-    sinon.assert.match(content, sinon.match(/Another Test/));
+    assert.match(content, /Another Test/);
   });
 
   test('should maintain proper inheritance chain', () => {
-    sinon.assert.match(testWebview instanceof WebviewBase, true);
-    sinon.assert.match(testWebview instanceof TestWebviewBase, true);
+    assert.ok(testWebview instanceof WebviewBase);
+    assert.ok(testWebview instanceof TestWebviewBase);
   });
 });

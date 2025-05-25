@@ -11,6 +11,7 @@
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
+import * as assert from 'assert';
 import * as sinon from 'sinon';
 import * as vscode from 'vscode';
 import DagRenderer from '../../../commands/pipelines/DagRender';
@@ -94,7 +95,7 @@ suite('DagRenderer Test Suite', () => {
 
   test('should create DagRenderer instance', () => {
     const dagRenderer = new DagRenderer();
-    sinon.assert.match(dagRenderer, sinon.match.instanceOf(DagRenderer));
+    assert.ok(dagRenderer instanceof DagRenderer);
   });
 
   test('escapeHtml should properly escape HTML characters', () => {
@@ -110,7 +111,7 @@ suite('DagRenderer Test Suite', () => {
 
     testCases.forEach(({ input, expected }) => {
       const result = (DagRenderer as any).escapeHtml(input);
-      sinon.assert.match(result, expected);
+      assert.strictEqual(result, expected);
     });
   });
 
@@ -128,13 +129,10 @@ suite('DagRenderer Test Suite', () => {
     const html = (dagRenderer as any).getNoStepsContent(testContent);
 
     // Should contain escaped content
-    sinon.assert.match(html, /Test &amp; Pipeline/);
-    sinon.assert.match(html, /&lt;script&gt;/);
+    assert.match(html, /Test &amp; Pipeline/);
+    assert.match(html, /&lt;script&gt;/);
 
     // Should not contain unescaped HTML
-    sinon.assert.match(
-      html,
-      sinon.match(content => !content.includes('<script>alert'))
-    );
+    assert.ok(!html.includes('<script>alert'));
   });
 });

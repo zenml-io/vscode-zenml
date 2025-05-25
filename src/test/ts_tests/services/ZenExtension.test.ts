@@ -11,6 +11,7 @@
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
+import * as assert from 'assert';
 import * as sinon from 'sinon';
 import * as vscode from 'vscode';
 import { EventBus } from '../../../services/EventBus';
@@ -60,8 +61,8 @@ suite('ZenExtension Test Suite', () => {
   });
 
   test('should have ZenExtension class available', () => {
-    sinon.assert.match(typeof ZenExtension, 'function');
-    sinon.assert.match(typeof ZenExtension.activate, 'function');
+    assert.strictEqual(typeof ZenExtension, 'function');
+    assert.strictEqual(typeof ZenExtension.activate, 'function');
   });
 
   test('should handle LSClient state changes', () => {
@@ -77,7 +78,7 @@ suite('ZenExtension Test Suite', () => {
 
   test('should handle extension deactivation', async () => {
     // Should have deactivate method
-    sinon.assert.match(typeof ZenExtension.deactivateFeatures, 'function');
+    assert.strictEqual(typeof ZenExtension.deactivateFeatures, 'function');
 
     // Should not throw when called
     await ZenExtension.deactivateFeatures();
@@ -85,7 +86,7 @@ suite('ZenExtension Test Suite', () => {
 
   test('should handle deferred initialization', () => {
     // Should have deferredInitialize method
-    sinon.assert.match(typeof ZenExtension.deferredInitialize, 'function');
+    assert.strictEqual(typeof ZenExtension.deferredInitialize, 'function');
 
     // Should not throw when called
     ZenExtension.deferredInitialize();
@@ -106,7 +107,7 @@ suite('ZenExtension Test Suite', () => {
     } as any);
 
     // Should have setupViewsAndCommands method
-    sinon.assert.match(typeof ZenExtension.setupViewsAndCommands, 'function');
+    assert.strictEqual(typeof ZenExtension.setupViewsAndCommands, 'function');
 
     await ZenExtension.setupViewsAndCommands();
 
@@ -116,7 +117,7 @@ suite('ZenExtension Test Suite', () => {
 
   test('should manage static properties', () => {
     // Should have static properties
-    sinon.assert.match(Array.isArray(ZenExtension.commandDisposables), true);
-    sinon.assert.match(Array.isArray(ZenExtension.viewDisposables), true);
+    assert.ok(Array.isArray(ZenExtension.commandDisposables));
+    assert.ok(Array.isArray(ZenExtension.viewDisposables));
   });
 });
