@@ -41,15 +41,8 @@ suite('Pipeline Utils Test Suite', () => {
   test('getPipelineRunDashboardUrl should return empty string for null server status', () => {
     mockServerDataProvider.getCurrentStatus.returns(null);
 
-    // Test should handle null gracefully
-    try {
-      const result = getPipelineRunDashboardUrl('test-run-id');
-      sinon.assert.match(result, '');
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
-      // If it throws an error with null, that's also acceptable behavior
-      sinon.assert.match(true, true);
-    }
+    const result = getPipelineRunDashboardUrl('test-run-id');
+    sinon.assert.match(result, '');
   });
 
   test('getPipelineRunDashboardUrl should return empty string for "other" deployment type', () => {

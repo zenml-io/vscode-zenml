@@ -80,12 +80,7 @@ suite('ZenExtension Test Suite', () => {
     sinon.assert.match(typeof ZenExtension.deactivateFeatures, 'function');
 
     // Should not throw when called
-    try {
-      await ZenExtension.deactivateFeatures();
-      sinon.assert.match(true, true); // Test passes if no error thrown
-    } catch (error) {
-      sinon.assert.fail(`deactivateFeatures threw an error: ${error}`);
-    }
+    await ZenExtension.deactivateFeatures();
   });
 
   test('should handle deferred initialization', () => {
@@ -93,12 +88,7 @@ suite('ZenExtension Test Suite', () => {
     sinon.assert.match(typeof ZenExtension.deferredInitialize, 'function');
 
     // Should not throw when called
-    try {
-      ZenExtension.deferredInitialize();
-      sinon.assert.match(true, true); // Test passes if no error thrown
-    } catch (error) {
-      sinon.assert.fail(`deferredInitialize threw an error: ${error}`);
-    }
+    ZenExtension.deferredInitialize();
   });
 
   test('should setup views and commands', async () => {
