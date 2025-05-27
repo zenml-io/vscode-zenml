@@ -11,6 +11,7 @@
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
+import DagRenderer from '../../dag/renderer/DagRenderer';
 import { LSClient } from '../../services/LSClient';
 import { PipelineTreeItem } from '../../views/activityBar';
 import {
@@ -18,7 +19,6 @@ import {
   createCommandSuccessItem,
 } from '../../views/activityBar/common/ErrorTreeItem';
 import { PipelineDataProvider } from '../../views/activityBar/pipelineView/PipelineDataProvider';
-import DagRenderer from './DagRender';
 import { getPipelineRunDashboardUrl } from './utils';
 
 /**
