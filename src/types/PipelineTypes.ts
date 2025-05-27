@@ -78,6 +78,7 @@ export interface DagArtifact {
     execution_id: string;
     name: string;
     artifact_type: string;
+    type?: string;
   };
 }
 
