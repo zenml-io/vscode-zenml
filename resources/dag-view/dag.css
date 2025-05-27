@@ -10,20 +10,59 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
    or implied. See the License for the specific language governing
    permissions and limitations under the License. */
+
+/* === ROOT VARIABLES === */
+:root {
+  --node-padding: 12px 16px;
+  --node-margin: 4px;
+  --node-transition: all 0.2s ease;
+  --node-shadow-base: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --node-shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.15);
+  --node-shadow-hover-dark: 0 4px 16px rgba(0, 0, 0, 0.25);
+
+  --selection-color: #f59e0b;
+  --selection-bg: rgba(245, 158, 11, 0.1);
+  --selection-glow: 0 0 0 1px rgba(245, 158, 11, 0.6);
+  --selection-glow-hover: 0 0 0 1px rgba(245, 158, 11, 0.8);
+
+  --step-radius: 12px;
+  --artifact-radius: 24px;
+  --icon-size: 20px;
+
+  --color-gray-500: #6b7280;
+  --color-gray-400: #9ca3af;
+  --color-emerald-500: #10b981;
+  --color-red-500: #ef4444;
+  --color-amber-500: #f59e0b;
+  --color-indigo-500: #6366f1;
+  --color-violet-500: #8b5cf6;
+  --color-purple-600: #7c3aed;
+}
+
+/* === BASE STYLES === */
 body {
   background-color: var(--vscode-editor-background);
   color: var(--vscode-editor-foreground);
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
 }
 
-body > svg {
-  z-index: 0;
-  width: 100%;
-}
-
+/* === EDGES === */
 #edges polyline {
-  stroke: var(--vscode-editor-foreground);
+  stroke: #d1d5db;
+  stroke-width: 2px;
 }
 
+body.vscode-dark #edges polyline {
+  stroke: #4b5563;
+}
+
+/* === NODE LAYOUT === */
 .node {
   width: 100%;
   height: 100%;
@@ -31,91 +70,336 @@ body > svg {
   justify-content: center;
   align-items: center;
   z-index: 1;
+  padding: 18px 12px;
+  box-sizing: border-box;
+  overflow: visible;
 }
 
 .node > div {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
-  border: 2px var(--vscode-editor-foreground) solid;
   width: auto;
   max-width: 280px;
+  min-width: 140px;
   height: 100%;
   box-sizing: border-box;
-  padding: 0 10px;
-  background: var(--vscode-editor-background);
+  padding: var(--node-padding);
+  margin: var(--node-margin);
   cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: var(--node-transition);
+  position: relative;
+  box-shadow: var(--node-shadow-base);
 }
 
-.node > .step {
-  border-radius: 10px;
-  color: lightblue;
-  background: rgb(0, 10, 50);
+/* === NODE CONTENT STRUCTURE === */
+.node-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  gap: 4px;
 }
 
-.node > .artifact {
-  border-radius: 9999px;
+.artifact .node-content {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
 }
 
-body.vscode-light .highlight,
-body.vscode-high-contrast .highlight {
-  filter: drop-shadow(5px 0px 8px rgb(150, 0, 150));
+.artifact .node-text-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  flex: 1;
 }
 
-body.vscode-dark .highlight {
-  filter: drop-shadow(5px 0px 8px lightpink);
+.node-main {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
 }
 
-body.vscode-light #edges .highlight,
-body.vscode-high-contrast #edges .highlight {
-  stroke: rgb(150, 0, 150);
-  stroke-width: 4px;
+.artifact .node-main {
+  width: auto;
+  gap: 0;
 }
 
-body.vscode-dark #edges .highlight {
-  stroke: lightpink;
-  stroke-width: 4px;
+/* === TEXT STYLES === */
+.node > div p,
+.node-main p {
+  margin: 0;
+  font-weight: 500;
+  line-height: 1.2;
 }
 
+.node-main p {
+  flex: 1;
+}
+
+.artifact .node-main p {
+  flex: none;
+}
+
+.node > .step p {
+  font-size: 14px;
+}
+
+.node > .artifact p {
+  font-size: 13px;
+}
+
+.node-secondary {
+  font-size: 11px;
+  color: var(--color-gray-500);
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+body.vscode-dark .node-secondary {
+  color: var(--color-gray-400);
+}
+
+.node-secondary.duration {
+  font-weight: 500;
+  font-size: 10px;
+  margin-left: 30px;
+}
+
+.node-secondary.data-type {
+  margin-top: 4px;
+  margin-left: 0;
+  font-style: italic;
+}
+
+/* === ICONS === */
 .icon {
-  width: 24px;
-  height: 24px;
-  margin-right: 5px;
+  width: var(--icon-size);
+  height: var(--icon-size);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* === STEP CONTAINERS === */
+.node > .step {
+  border-radius: var(--step-radius);
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  color: #374151;
+  min-height: 54px;
+}
+
+.node > .step.completed {
+  background: #f0fdf4;
+  border-color: var(--color-emerald-500);
+  color: #065f46;
+}
+
+body.vscode-dark .node > .step {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+body.vscode-dark .node > .step.completed {
+  background: #064e3b;
+  border-color: var(--color-emerald-500);
+  color: #a7f3d0;
+}
+
+/* === ARTIFACT CONTAINERS === */
+.node > .artifact {
+  border-radius: var(--artifact-radius);
+  background: #f8f4ff;
+  border: 2px solid #e5d5ff;
+  color: var(--color-purple-600);
+  min-height: 48px;
+}
+
+body.vscode-dark .node > .artifact {
+  background: #312e81;
+  border-color: var(--color-indigo-500);
+  color: #c4b5fd;
+}
+
+/* === HOVER EFFECTS === */
+.node > div:hover {
+  box-shadow: var(--node-shadow-hover);
+  position: relative;
+  z-index: 5;
+}
+
+body.vscode-dark .node > div:hover {
+  box-shadow: var(--node-shadow-hover-dark);
+}
+
+.node > .step:hover {
+  border-color: var(--color-emerald-500);
+}
+
+.node > .step.completed:hover {
+  background: #ecfdf5;
+  border-color: #059669;
+}
+
+body.vscode-dark .node > .step.completed:hover {
+  background: #022c22;
+  border-color: #059669;
+}
+
+.node > .artifact:hover {
+  background: #f3f0ff;
+  border-color: #c4b5fd;
+}
+
+body.vscode-dark .node > .artifact:hover {
+  background: #1e1538;
+  border-color: var(--color-purple-600);
+}
+
+/* === SELECTION STYLES === */
+.node > .step.selected,
+.node > .artifact.selected {
+  border-color: var(--selection-color);
+  background-color: var(--selection-bg);
+}
+
+.node > .step.selected:hover,
+.node > .step.completed.selected:hover,
+.node > .step.failed.selected:hover,
+.node > .step.running.selected:hover,
+.node > .step.cached.selected:hover,
+.node > .step.initializing.selected:hover,
+.node > .artifact.selected:hover {
+  border-color: var(--selection-color);
+  background-color: var(--selection-bg);
+}
+
+.node > div.selected {
+  border-width: 2px !important;
+  box-shadow: var(--selection-glow);
+  position: relative;
+  z-index: 10;
+}
+
+.node > div.selected:hover {
+  box-shadow: var(--selection-glow-hover);
+}
+
+/* === ICON COLORS === */
+.step .icon {
+  fill: var(--color-gray-500);
+}
+
+.step.completed .icon {
+  fill: var(--color-emerald-500);
+}
+
+.step.failed .icon {
+  fill: var(--color-red-500);
+}
+
+.step.running .icon {
+  fill: var(--color-amber-500);
+  animation: spin 2s linear infinite;
+}
+
+.step.cached .icon {
+  fill: var(--color-indigo-500);
+}
+
+.step.initializing .icon {
+  fill: var(--color-violet-500);
 }
 
 .artifact .icon {
-  fill: var(--vscode-editor-foreground);
+  fill: var(--color-purple-600);
+  opacity: 1;
 }
 
-.completed {
-  fill: hsl(137 85% 50%);
+/* === DARK MODE ICON COLORS === */
+body.vscode-dark .step .icon {
+  fill: var(--color-gray-400);
 }
 
-.failed {
-  fill: hsl(3 81% 52%);
+body.vscode-dark .step.completed .icon {
+  fill: var(--color-emerald-500);
 }
 
-.cached {
-  fill: hsl(220 35% 50%);
+body.vscode-dark .step.failed .icon {
+  fill: var(--color-red-500);
 }
 
-.initializing {
-  fill: hsl(259 90% 50%);
+body.vscode-dark .step.running .icon {
+  fill: var(--color-amber-500);
+  animation: spin 2s linear infinite;
 }
 
-.running {
-  fill: hsl(33 96% 50%);
+body.vscode-dark .step.cached .icon {
+  fill: var(--color-indigo-500);
 }
 
+body.vscode-dark .step.initializing .icon {
+  fill: var(--color-violet-500);
+}
+
+body.vscode-dark .artifact .icon {
+  fill: #a78bfa;
+}
+
+/* === ANIMATIONS === */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* === HIGHLIGHT EFFECTS === */
+.highlight {
+  border-color: var(--color-violet-500);
+}
+
+#edges .highlight {
+  stroke: var(--color-violet-500);
+  stroke-width: 3px;
+}
+
+/* === PAN ZOOM CONTROLS === */
 rect.svg-pan-zoom-control-background {
-  fill: var(--vscode-editor-foreground);
+  fill: #ffffff;
+  stroke: #e5e7eb;
+  stroke-width: 1px;
+}
+
+body.vscode-dark rect.svg-pan-zoom-control-background {
+  fill: #1f2937;
+  stroke: #374151;
 }
 
 g.svg-pan-zoom-control {
-  fill: var(--vscode-editor-background);
-  fill-opacity: 100%;
+  fill: #374151;
 }
 
+body.vscode-dark g.svg-pan-zoom-control {
+  fill: #f9fafb;
+}
+
+/* === UPDATE NOTIFICATION === */
 #update {
   position: absolute;
   box-sizing: border-box;
@@ -133,17 +417,31 @@ g.svg-pan-zoom-control {
 #update button {
   border: none;
   background-color: inherit;
-  color: lightblue;
+  color: var(--color-indigo-500);
   display: inline-block;
   text-decoration: underline;
-  font-weight: bold;
+  font-weight: 600;
   cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+#update button:hover {
+  background-color: rgba(99, 102, 241, 0.1);
 }
 
 .needs-update {
-  background-color: rgb(0, 10, 50);
+  background-color: #fef3c7;
+  border-bottom: 1px solid var(--color-amber-500);
 }
 
+body.vscode-dark .needs-update {
+  background-color: #451a03;
+  border-bottom-color: var(--color-amber-500);
+}
+
+/* === LAYOUT CONTAINERS === */
 #container {
   box-sizing: border-box;
   width: 100%;
@@ -154,8 +452,10 @@ g.svg-pan-zoom-control {
 #dag {
   width: 100%;
   height: 100%;
+  overflow: visible;
 }
 
+/* === ERROR HANDLING === */
 .error-container {
   padding: 20px;
   text-align: center;
@@ -164,7 +464,7 @@ g.svg-pan-zoom-control {
 
 .error-icon {
   font-size: 48px;
-  color: var(--vscode-errorForeground);
+  color: var(--color-red-500);
   margin-bottom: 20px;
 }
 
@@ -176,25 +476,32 @@ g.svg-pan-zoom-control {
 
 .error-message {
   margin-bottom: 20px;
-  color: var(--vscode-errorForeground);
-  padding: 10px;
-  background-color: var(--vscode-inputValidation-errorBackground);
-  border: 1px solid var(--vscode-inputValidation-errorBorder);
-  border-radius: 4px;
+  color: var(--color-red-500);
+  padding: 16px;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
   text-align: left;
   overflow-wrap: break-word;
   white-space: pre-wrap;
 }
 
+body.vscode-dark .error-message {
+  background-color: #450a0a;
+  border-color: #7f1d1d;
+}
+
 #retry-button {
-  background-color: var(--vscode-button-background);
-  color: var(--vscode-button-foreground);
+  background-color: var(--color-indigo-500);
+  color: white;
   border: none;
-  padding: 8px 16px;
+  padding: 10px 20px;
   cursor: pointer;
-  border-radius: 2px;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
 }
 
 #retry-button:hover {
-  background-color: var(--vscode-button-hoverBackground);
+  background-color: #4f46e5;
 }
