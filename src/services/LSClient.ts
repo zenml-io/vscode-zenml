@@ -105,7 +105,6 @@ export class LSClient {
     console.log(`Received ${LSP_ZENML_CLIENT_INITIALIZED} notification: `, params.ready);
     if (!params.ready) {
       this.eventBus.emit(LSP_ZENML_CLIENT_INITIALIZED, false);
-      await commands.executeCommand('zenml.promptForInterpreter');
     } else {
       this.eventBus.emit(LSP_ZENML_CLIENT_INITIALIZED, true);
     }
