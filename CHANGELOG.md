@@ -6,6 +6,7 @@ All notable changes to the "zenml-vscode" extension will be documented in this f
 
 ### Added
 
+- Improved DAG view with node highlighting, step durations, and artifact type labels
 - New `DagRenderer` test suite with HTML escaping and XSS protection validation
 - New `PipelineDataProvider` test suite for data fetching, error handling, and singleton pattern testing
 - New `ZenExtension` test suite for service lifecycle and state management
