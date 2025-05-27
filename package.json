@@ -147,11 +147,6 @@
     },
     "commands": [
       {
-        "command": "zenml.promptForInterpreter",
-        "title": "Select Python Interpreter",
-        "category": "ZenML"
-      },
-      {
         "command": "zenml-python.restart",
         "title": "Restart LSP Server",
         "category": "ZenML"
