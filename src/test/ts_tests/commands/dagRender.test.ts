@@ -14,9 +14,9 @@
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import * as vscode from 'vscode';
-import DagRenderer from '../../../commands/pipelines/DagRender';
 import Panels from '../../../common/panels';
 import WebviewBase from '../../../common/WebviewBase';
+import DagRenderer from '../../../dag/renderer/DagRenderer';
 import { LSClient } from '../../../services/LSClient';
 import { PipelineTreeItem } from '../../../views/activityBar/pipelineView/PipelineTreeItems';
 import { ServerDataProvider } from '../../../views/activityBar/serverView/ServerDataProvider';
