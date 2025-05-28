@@ -22,6 +22,7 @@ import asyncio
 import subprocess
 import sys
 from functools import wraps
+from typing import Any, Dict
 
 import lsprotocol.types as lsp
 from constants import IS_ZENML_INSTALLED, MIN_ZENML_VERSION, TOOL_MODULE_NAME
@@ -135,7 +136,7 @@ class ZenLanguageServer(LanguageServer):
                 # Cache wrapper instances to avoid repeated getattr calls
                 if wrapper_name:
                     if not hasattr(self, "_wrapper_cache"):
-                        self._wrapper_cache = {}
+                        self._wrapper_cache: Dict[str, Any] = {}
 
                     if wrapper_name not in self._wrapper_cache:
                         wrapper_instance = getattr(self.zenml_client, wrapper_name, None)
