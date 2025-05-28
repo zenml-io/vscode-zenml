@@ -2,6 +2,32 @@
 
 All notable changes to the "zenml-vscode" extension will be documented in this file.
 
+## [0.0.21] - 2025-01-28
+
+### Added
+
+- Loading spinner for DAG rendering to eliminate blank screen during data fetching
+- 30-second TTL request caching for pipeline data provider to improve responsiveness
+- Wrapper instance caching in LSP server to reduce repeated getattr calls
+
+### Changed
+
+- Optimized model versions fetch from 10 to 5 items for 30% performance improvement
+- Improved ZenML wrappers with optimized getattr usage and reduced hasattr calls
+- Enhanced error logging consistency across all command modules
+
+### Fixed
+
+- Removed expensive object introspection from serialize_object for better performance
+- Fixed failing tests for pipeline caching and DAG renderer functionality
+
+### Dependencies
+
+- Updated dependencies:
+  - @types/node (22.15.19 → 22.15.21)
+  - @vscode/vsce (3.4.0 → 3.4.2)
+  - webpack (5.99.8 → 5.99.9)
+
 ## [Unreleased] - ZenML 0.83.0 Compatibility
 
 ### Added
