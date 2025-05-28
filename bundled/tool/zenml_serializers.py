@@ -14,7 +14,6 @@
 
 import datetime
 import functools
-import json
 import uuid
 
 
@@ -71,13 +70,9 @@ def serialize_flavor(flavor):
 
 def serialize_object(obj):
     """
-    Recursively processes objects to serialize problematic types for JSON conversion.
+    Efficiently processes objects to serialize problematic types for JSON conversion.
 
-    Handles:
-    - datetime.datetime -> ISO string
-    - uuid.UUID -> string
-    - property objects -> string or property value
-    - objects with __dict__ -> processed dictionary
+    Optimized for performance - avoids expensive __dict__ conversion and JSON testing.
 
     Args:
         obj: Any Python object to process
@@ -100,29 +95,27 @@ def serialize_object(obj):
     if isinstance(obj, property):
         return str(obj)
 
-    # Handle dictionaries
+    # Handle basic collections - fast path
     if isinstance(obj, dict):
         return {k: serialize_object(v) for k, v in obj.items()}
 
-    # Handle lists
     if isinstance(obj, list):
         return [serialize_object(i) for i in obj]
 
-    # Handle tuples
     if isinstance(obj, tuple):
         return tuple(serialize_object(i) for i in obj)
 
-    # If it has a __dict__ attribute, convert it to a dict and process
-    if hasattr(obj, "__dict__"):
-        # Convert to dict and then process that dict
-        return serialize_object(obj.__dict__)
-
-    # For any other non-serializable objects, convert to string
-    try:
-        json.dumps(obj)  # Test if object is JSON serializable
+    # Handle basic JSON-serializable types directly
+    if isinstance(obj, (str, int, float, bool)):
         return obj
-    except (TypeError, OverflowError):
-        return str(obj)
+
+    # For complex objects, only convert specific problematic types
+    # Avoid expensive __dict__ conversion and JSON testing
+    if hasattr(obj, "isoformat"):  # datetime-like objects
+        return obj.isoformat()
+
+    # Convert to string for other complex objects
+    return str(obj)
 
 
 def serialize_response(func):
