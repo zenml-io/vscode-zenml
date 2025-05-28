@@ -10,6 +10,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
+
+/* eslint-env browser */
+/* global acquireVsCodeApi, document, window, setTimeout */
+
 import svgPanZoom from 'svg-pan-zoom';
 
 (() => {
@@ -30,6 +34,14 @@ import svgPanZoom from 'svg-pan-zoom';
 
   resize();
   window.addEventListener('resize', resize);
+
+  // Handle retry button clicks for error/no-steps views
+  const retryButton = document.getElementById('retry-button');
+  if (retryButton) {
+    retryButton.addEventListener('click', () => {
+      vscode.postMessage({ command: 'update' });
+    });
+  }
 
   const edges = [...document.querySelectorAll('polyline')];
 
@@ -52,11 +64,28 @@ import svgPanZoom from 'svg-pan-zoom';
   });
 
   dag.addEventListener('click', evt => {
-    const stepId = evt.target.closest('[data-stepid]')?.dataset.stepid;
-    const artifactId = evt.target.closest('[data-artifactid]')?.dataset.artifactid;
-
-    if (!stepId && !artifactId) {
+    const stepElement = evt.target.closest('[data-stepid]');
+    const artifactElement = evt.target.closest('[data-artifactid]');
+    const rawNode = stepElement || artifactElement;
+    if (!rawNode) {
       return;
+    }
+
+    const stepId = rawNode.dataset.stepid;
+    const artifactId = rawNode.dataset.artifactid;
+
+    // Remove any existing selection
+    document
+      .querySelectorAll('.node > .step.selected, .node > .artifact.selected')
+      .forEach(el => el.classList.remove('selected'));
+
+    // Find the inner div that  has the .step or .artifact border
+    const styledDiv = rawNode
+      .closest('.node') // get back to the .node container
+      .querySelector(':scope > .step, :scope > .artifact');
+
+    if (styledDiv) {
+      styledDiv.classList.add('selected');
     }
 
     if (!panZoom.isDblClickZoomEnabled()) {

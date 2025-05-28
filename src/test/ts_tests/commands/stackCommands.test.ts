@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
+
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import * as vscode from 'vscode';
@@ -103,7 +104,7 @@ suite('Stack Commands Test Suite', () => {
     showInputBoxStub.resolves(newStackName);
     await stackCommands.renameStack({ label: 'Old Stack', id: stackId } as any);
 
-    assert.strictEqual(showInputBoxStub.calledOnce, true);
+    sinon.assert.calledOnce(showInputBoxStub);
   });
 
   test('copyStack successfully copies a stack', async () => {
@@ -114,11 +115,9 @@ suite('Stack Commands Test Suite', () => {
     await stackCommands.copyStack({ label: 'Source Stack', id: sourceStackId } as any);
 
     sinon.assert.calledOnce(showInputBoxStub);
-    assert.strictEqual(
-      showInputBoxStub.calledWithExactly({ prompt: 'Enter the name for the copied stack' }),
-      true,
-      'Input box was not called with the correct prompt'
-    );
+    sinon.assert.calledWithExactly(showInputBoxStub, {
+      prompt: 'Enter the name for the copied stack',
+    });
   });
 
   test('goToStackUrl opens the correct URL', async () => {
@@ -141,7 +140,7 @@ suite('Stack Commands Test Suite', () => {
     const openExternalStub = sandbox.stub(vscode.env, 'openExternal');
     await stackCommands.goToStackUrl({ label: 'Stack', id: stackId } as any);
 
-    assert.strictEqual(openExternalStub.calledOnce, true, 'openExternal should be called once');
+    sinon.assert.calledOnce(openExternalStub);
 
     // Get the actual URL that was passed
     const actualUrl = openExternalStub.args[0][0].toString();

@@ -12,7 +12,7 @@
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
 import { registerEnvironmentCommands } from './commands/environment/registry';
-import DagRenderer from './commands/pipelines/DagRender';
+import DagRenderer from './dag/renderer/DagRenderer';
 import WebviewBase from './common/WebviewBase';
 import { EventBus } from './services/EventBus';
 import { LSClient } from './services/LSClient';

@@ -58,7 +58,7 @@ export interface PipelineRun {
   config?: PipelineRunConfig;
   steps?: {
     [stepName: string]: PipelineRunStep;
-  };
+  } | null; // Steps may be null in optimized responses
 }
 
 export interface DagStep {
@@ -78,6 +78,7 @@ export interface DagArtifact {
     execution_id: string;
     name: string;
     artifact_type: string;
+    type?: string;
   };
 }
 
@@ -94,6 +95,7 @@ export interface PipelineRunDag {
   edges: Array<DagEdge>;
   status: string;
   name: string;
+  message?: string; // Optional message when step data is not available
 }
 
 export type PipelineRunsResponse = PipelineRunsData | ErrorMessageResponse | VersionMismatchError;

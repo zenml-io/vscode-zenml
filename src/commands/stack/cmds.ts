@@ -13,8 +13,11 @@
 import * as vscode from 'vscode';
 import { traceError, traceInfo } from '../../common/log/logging';
 import { LSClient } from '../../services/LSClient';
-import { showInformationMessage } from '../../utils/notifications';
 import { StackComponentTreeItem } from '../../views/activityBar/componentView/ComponentTreeItems';
+import {
+  createCommandErrorItem,
+  createCommandSuccessItem,
+} from '../../views/activityBar/common/ErrorTreeItem';
 import { StackDataProvider } from '../../views/activityBar/stackView/StackDataProvider';
 import { StackTreeItem } from '../../views/activityBar/stackView/StackTreeItems';
 import ZenMLStatusBar from '../../views/statusBar';
@@ -28,7 +31,6 @@ const refreshStackView = async () => {
   vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
-      title: 'Refreshing Stack View...',
       cancellable: false,
     },
     async () => {
@@ -62,15 +64,16 @@ const renameStack = async (node: StackTreeItem): Promise<void> => {
         if (result && 'error' in result) {
           throw new Error(result.error);
         }
-        showInformationMessage(`Stack ${label} successfully renamed to ${newStackName}.`);
-        await StackDataProvider.getInstance().refresh();
+        const stackProvider = StackDataProvider.getInstance();
+        stackProvider.showCommandSuccess(
+          createCommandSuccessItem('renamed stack', `${label} renamed to ${newStackName}`)
+        );
       } catch (error: any) {
-        if (error.response) {
-          vscode.window.showErrorMessage(`Failed to rename stack: ${error.response.data.message}`);
-        } else {
-          console.error('Failed to rename stack:', error);
-          vscode.window.showErrorMessage('Failed to rename stack');
-        }
+        console.error('Failed to rename stack:', error);
+        const stackProvider = StackDataProvider.getInstance();
+        const errorMessage =
+          error.response?.data?.message || error.message || 'Failed to rename stack';
+        stackProvider.showCommandError(createCommandErrorItem('rename stack', errorMessage));
       }
     }
   );
@@ -101,15 +104,17 @@ const copyStack = async (node: StackTreeItem) => {
         if ('error' in result && result.error) {
           throw new Error(result.error);
         }
-        showInformationMessage('Stack copied successfully.');
-        await StackDataProvider.getInstance().refresh();
+        const stackProvider = StackDataProvider.getInstance();
+        stackProvider.showCommandSuccess(
+          createCommandSuccessItem('copied stack', `${node.label} copied to ${newStackName}`)
+        );
+        await stackProvider.refresh();
       } catch (error: any) {
-        if (error.response && error.response.data && error.response.data.message) {
-          vscode.window.showErrorMessage(`Failed to copy stack: ${error.response.data.message}`);
-        } else {
-          console.error('Failed to copy stack:', error);
-          vscode.window.showErrorMessage(`Failed to copy stack: ${error.message || error}`);
-        }
+        console.error('Failed to copy stack:', error);
+        const stackProvider = StackDataProvider.getInstance();
+        const errorMessage =
+          error.response?.data?.message || error.message || 'Failed to copy stack';
+        stackProvider.showCommandError(createCommandErrorItem('copy stack', errorMessage));
       }
     }
   );
@@ -138,11 +143,17 @@ const setActiveStack = async (node: StackTreeItem): Promise<void> => {
           const statusBar = ZenMLStatusBar.getInstance();
           statusBar.refreshActiveStack({ id, name });
 
-          showInformationMessage(`Active stack set to: ${name}`);
+          const stackProvider = StackDataProvider.getInstance();
+          stackProvider.showCommandSuccess(
+            createCommandSuccessItem('set active stack', `Active stack set to: ${name}`)
+          );
         }
       } catch (error) {
         console.log(error);
-        vscode.window.showErrorMessage(`Failed to set active stack: ${error}`);
+        const stackProvider = StackDataProvider.getInstance();
+        stackProvider.showCommandError(
+          createCommandErrorItem('set active stack', `Failed to set active stack: ${error}`)
+        );
       }
     }
   );
@@ -162,7 +173,10 @@ const goToStackUrl = (node: StackTreeItem): void => {
       vscode.env.openExternal(parsedUrl);
     } catch (error) {
       console.log(error);
-      vscode.window.showErrorMessage(`Failed to open stack URL: ${error}`);
+      const stackProvider = StackDataProvider.getInstance();
+      stackProvider.showCommandError(
+        createCommandErrorItem('open stack URL', `Failed to open stack URL: ${error}`)
+      );
     }
   }
 };
@@ -226,12 +240,16 @@ const deleteStack = async (node: StackTreeItem) => {
           throw resp.error;
         }
 
-        vscode.window.showInformationMessage(`${node.label} deleted`);
+        const stackProvider = StackDataProvider.getInstance();
+        stackProvider.showCommandSuccess(
+          createCommandSuccessItem('deleted stack', `${node.label} deleted`)
+        );
         traceInfo(`${node.label} deleted`);
-
-        StackDataProvider.getInstance().refresh();
       } catch (e) {
-        vscode.window.showErrorMessage(`Failed to delete component: ${e}`);
+        const stackProvider = StackDataProvider.getInstance();
+        stackProvider.showCommandError(
+          createCommandErrorItem('delete stack', `Failed to delete stack: ${e}`)
+        );
         traceError(e);
         console.error(e);
       }

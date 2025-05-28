@@ -66,6 +66,19 @@ export class StackDataProvider extends PaginatedDataProvider {
   }
 
   /**
+   * Creates an informational message tree item.
+   *
+   * @param {string} message The message to display
+   * @returns {TreeItem} The tree item with the message
+   */
+  private createInitialMessage(message: string): TreeItem {
+    const treeItem = new TreeItem(message);
+    treeItem.iconPath = new vscode.ThemeIcon('info');
+    treeItem.contextValue = 'stackMessage';
+    return treeItem;
+  }
+
+  /**
    * Subscribes to relevant events to trigger a refresh of the tree view.
    */
   public subscribeToEvents(): void {
@@ -136,7 +149,12 @@ export class StackDataProvider extends PaginatedDataProvider {
   private zenmlClientStateChangeHandler = async (isInitialized: boolean) => {
     this.zenmlClientReady = isInitialized;
     if (!isInitialized) {
-      this.triggerLoadingState('stacks');
+      this.items = [
+        this.createInitialMessage(
+          'ZenML client not initialized. See Environment view for details.'
+        ),
+      ];
+      this._onDidChangeTreeData.fire(undefined);
     } else {
       if (!this.activeProjectName) {
         const projectName = getActiveProjectNameFromConfig();
@@ -395,6 +413,31 @@ export class StackDataProvider extends PaginatedDataProvider {
     noStacksItem.iconPath = new vscode.ThemeIcon('info');
     noStacksItem.tooltip = 'Create a stack to see it listed here';
     return [noStacksItem];
+  }
+
+  /**
+   * Displays a command error in the stack view.
+   *
+   * @param {TreeItem} errorItem The error item to display.
+   */
+  public showCommandError(errorItem: TreeItem): void {
+    this.items = [errorItem];
+    this._onDidChangeTreeData.fire(undefined);
+  }
+
+  /**
+   * Displays a command success message in the stack view temporarily.
+   *
+   * @param {TreeItem} successItem The success item to display.
+   */
+  public showCommandSuccess(successItem: TreeItem): void {
+    this.items = [successItem];
+    this._onDidChangeTreeData.fire(undefined);
+
+    // Clear the success message after 3 seconds and refresh
+    setTimeout(() => {
+      this.refresh();
+    }, 3000);
   }
 
   /**

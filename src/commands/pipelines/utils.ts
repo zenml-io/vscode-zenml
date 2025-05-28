@@ -26,8 +26,7 @@ export const getPipelineRunDashboardUrl = (id: string): string => {
   }
 
   const status = ServerDataProvider.getInstance().getCurrentStatus();
-
-  if (!isServerStatus(status) || status.deployment_type === 'other') {
+  if (!status || !isServerStatus(status) || status.deployment_type === 'other') {
     return '';
   }
 

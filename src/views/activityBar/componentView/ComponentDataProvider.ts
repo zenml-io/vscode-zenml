@@ -139,6 +139,31 @@ export class ComponentDataProvider extends PaginatedDataProvider {
   }
 
   /**
+   * Displays a command error in the component view.
+   *
+   * @param {vscode.TreeItem} errorItem The error item to display.
+   */
+  public showCommandError(errorItem: vscode.TreeItem): void {
+    this.items = [errorItem];
+    this._onDidChangeTreeData.fire(undefined);
+  }
+
+  /**
+   * Displays a command success message in the component view temporarily.
+   *
+   * @param {vscode.TreeItem} successItem The success item to display.
+   */
+  public showCommandSuccess(successItem: vscode.TreeItem): void {
+    this.items = [successItem];
+    this._onDidChangeTreeData.fire(undefined);
+
+    // Clear the success message after 3 seconds and refresh
+    setTimeout(() => {
+      this.refresh();
+    }, 3000);
+  }
+
+  /**
    * Fetches the components from the ZenML server.
    *
    * @param {number} page The page number to fetch.

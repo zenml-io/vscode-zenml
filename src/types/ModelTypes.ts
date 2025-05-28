@@ -30,6 +30,7 @@ export interface Model {
   id?: string;
   name: string;
   latest_version_name?: string;
+  latest_version_id?: string;
   user?: ModelUser;
   tags: string[];
 }
@@ -58,20 +59,43 @@ export interface ModelVersion {
   number: number;
   model: ModelVersionModel;
   run_metadata?: Record<string, any>;
+  // These fields have been REMOVED in v0.82+ to reduce response size
   data_artifact_ids?: {
     [key: string]: {
       [key: string]: string;
     };
-  };
+  } | null;
   model_artifact_ids?: {
     [key: string]: {
       [key: string]: string;
     };
-  };
+  } | null;
+  deployment_artifact_ids?: {
+    [key: string]: {
+      [key: string]: string;
+    };
+  } | null;
   pipeline_run_ids?: {
     [key: string]: string;
-  };
+  } | null;
   tags: ModelTag[];
+  // New resources field for optimized responses
+  resources?: {
+    data_artifact_ids?: {
+      [key: string]: {
+        [key: string]: string;
+      };
+    };
+    model_artifact_ids?: {
+      [key: string]: {
+        [key: string]: string;
+      };
+    };
+    pipeline_run_ids?: {
+      [key: string]: string;
+    };
+    user?: ModelUser;
+  };
 }
 
 export interface ModelVersionsData {

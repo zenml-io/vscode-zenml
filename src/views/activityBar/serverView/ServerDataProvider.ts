@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
+import * as vscode from 'vscode';
 import { EventEmitter, TreeDataProvider, TreeItem } from 'vscode';
 import { State } from 'vscode-languageclient';
 import { checkServerStatus, isServerStatus } from '../../../commands/server/utils';
@@ -94,11 +95,29 @@ export class ServerDataProvider implements TreeDataProvider<TreeItem> {
   private zenmlClientStateChangeHandler = (isInitialized: boolean) => {
     this.zenmlClientReady = isInitialized;
     if (!isInitialized) {
-      this.triggerLoadingState('zenmlClient');
+      this.currentStatus = [
+        this.createInitialMessage(
+          'ZenML client not initialized. See Environment view for details.'
+        ),
+      ];
+      this._onDidChangeTreeData.fire(undefined);
     } else {
       this.refresh();
     }
   };
+
+  /**
+   * Creates an informational message tree item.
+   *
+   * @param {string} message The message to display
+   * @returns {TreeItem} The tree item with the message
+   */
+  private createInitialMessage(message: string): TreeItem {
+    const treeItem = new TreeItem(message);
+    treeItem.iconPath = new vscode.ThemeIcon('info');
+    treeItem.contextValue = 'serverMessage';
+    return treeItem;
+  }
 
   /**
    * Updates the server status to the provided status (used for tests).
@@ -107,6 +126,31 @@ export class ServerDataProvider implements TreeDataProvider<TreeItem> {
    */
   public updateStatus(status: ServerStatus): void {
     this.currentStatus = status;
+  }
+
+  /**
+   * Displays a command error in the server view.
+   *
+   * @param {TreeItem} errorItem The error item to display.
+   */
+  public showCommandError(errorItem: TreeItem): void {
+    this.currentStatus = [errorItem];
+    this._onDidChangeTreeData.fire(undefined);
+  }
+
+  /**
+   * Displays a command success message in the server view temporarily.
+   *
+   * @param {TreeItem} successItem The success item to display.
+   */
+  public showCommandSuccess(successItem: TreeItem): void {
+    this.currentStatus = [successItem];
+    this._onDidChangeTreeData.fire(undefined);
+
+    // Clear the success message after 3 seconds and refresh
+    setTimeout(() => {
+      this.refresh();
+    }, 3000);
   }
 
   /**
@@ -119,7 +163,12 @@ export class ServerDataProvider implements TreeDataProvider<TreeItem> {
     this.triggerLoadingState('server');
 
     if (!this.zenmlClientReady) {
-      this.triggerLoadingState('zenmlClient');
+      this.currentStatus = [
+        this.createInitialMessage(
+          'ZenML client not initialized. See Environment view for details.'
+        ),
+      ];
+      this._onDidChangeTreeData.fire(undefined);
       return;
     }
 

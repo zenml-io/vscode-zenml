@@ -136,9 +136,87 @@ export class MockLSClient {
           return Promise.resolve({ error: 'Failed to set active stack' });
         }
       }
+
+      case `getPipelineRuns`: {
+        // Default mock response for pipeline runs
+        return Promise.resolve({
+          runs: [
+            {
+              id: 'mock-run-1',
+              name: 'mock-pipeline-run',
+              status: 'completed',
+              created: '2024-01-01T00:00:00Z',
+            },
+          ],
+          total: 1,
+          page: 1,
+          size: 20,
+        });
+      }
+
+      case `list_pipeline_runs`: {
+        // Alternative command name for pipeline runs
+        return Promise.resolve({
+          runs: [
+            {
+              id: 'mock-run-1',
+              name: 'mock-pipeline-run',
+              status: 'completed',
+              created: '2024-01-01T00:00:00Z',
+            },
+          ],
+          total: 1,
+          page: 1,
+          size: 20,
+        });
+      }
+
+      case `getPipelineRunDag`: {
+        // Mock DAG data for pipeline runs
+        return Promise.resolve({
+          nodes: [
+            { id: 'step1', name: 'Step 1', status: 'completed' },
+            { id: 'step2', name: 'Step 2', status: 'completed' },
+          ],
+          edges: [{ source: 'step1', target: 'step2' }],
+          status: 'completed',
+          name: 'test-pipeline',
+        });
+      }
+
+      case `getPipelineRunStep`: {
+        // Mock step data
+        const [stepId] = args;
+        return Promise.resolve({
+          id: stepId,
+          name: `Mock Step ${stepId}`,
+          status: 'completed',
+          start_time: '2024-01-01T00:00:00Z',
+          end_time: '2024-01-01T00:01:00Z',
+        });
+      }
+
+      case `getPipelineRunArtifact`: {
+        // Mock artifact data
+        const [artifactId] = args;
+        return Promise.resolve({
+          id: artifactId,
+          name: `Mock Artifact ${artifactId}`,
+          type: 'DataArtifact',
+          uri: '/mock/path/to/artifact',
+        });
+      }
+
       default:
         return Promise.reject(new Error(`Unmocked command: ${command}`));
     }
+  }
+
+  /**
+   * Alias for sendLsClientRequest to match the LSClient interface.
+   */
+  async sendLSClientRequest<T = any>(command: string, args: any[] = []): Promise<T> {
+    return this.sendLsClientRequest(command, args);
   }
 
   /**

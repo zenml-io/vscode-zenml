@@ -20,6 +20,10 @@ import {
 import { updateServerUrlAndToken } from '../../utils/global';
 import { refreshUtils } from '../../utils/refresh';
 import { ServerDataProvider } from '../../views/activityBar';
+import {
+  createCommandErrorItem,
+  createCommandSuccessItem,
+} from '../../views/activityBar/common/ErrorTreeItem';
 import { promptAndStoreServerUrl } from './utils';
 
 /**
@@ -43,11 +47,15 @@ const selectConnectionType = async (): Promise<{ type: string; url?: string } | 
     placeHolder: 'Select a ZenML server connection type',
   });
 
-  if (!selection) return undefined;
+  if (!selection) {
+    return undefined;
+  }
 
   if (selection.value === 'remote') {
     const url = await promptAndStoreServerUrl();
-    if (!url) return undefined;
+    if (!url) {
+      return undefined;
+    }
     return { type: 'remote', url };
   }
 
@@ -64,7 +72,9 @@ const promptLocalServerOptions = async (): Promise<object | undefined> => {
     placeHolder: 'Run in Docker container?',
   });
 
-  if (!useDocker) return undefined;
+  if (!useDocker) {
+    return undefined;
+  }
 
   const docker = useDocker === 'Yes';
 
@@ -72,7 +82,9 @@ const promptLocalServerOptions = async (): Promise<object | undefined> => {
     prompt: 'Enter port number (optional)',
     placeHolder: 'Leave empty for default port',
     validateInput: value => {
-      if (!value) return null;
+      if (!value) {
+        return null;
+      }
       const port = parseInt(value);
       if (isNaN(port) || port < 1 || port > 65535) {
         return 'Please enter a valid port number (1-65535)';
@@ -81,7 +93,9 @@ const promptLocalServerOptions = async (): Promise<object | undefined> => {
     },
   });
 
-  if (portInput === undefined) return undefined;
+  if (portInput === undefined) {
+    return undefined;
+  }
 
   const port = portInput ? parseInt(portInput) : undefined;
 
@@ -96,7 +110,9 @@ const promptLocalServerOptions = async (): Promise<object | undefined> => {
  */
 const connectServer = async (): Promise<boolean> => {
   const selection = await selectConnectionType();
-  if (!selection) return false;
+  if (!selection) {
+    return false;
+  }
 
   let url: string;
   let connectionType: string;
@@ -110,7 +126,9 @@ const connectServer = async (): Promise<boolean> => {
     case 'local': {
       connectionType = 'local';
       const localOptions = await promptLocalServerOptions();
-      if (!localOptions) return false;
+      if (!localOptions) {
+        return false;
+      }
       options = localOptions;
       break;
     }
@@ -151,11 +169,18 @@ const connectServer = async (): Promise<boolean> => {
           }
 
           await refreshUtils.refreshUIComponents();
+
+          // Show success message in tree view
+          const serverProvider = ServerDataProvider.getInstance();
+          serverProvider.showCommandSuccess(createCommandSuccessItem('connected to server'));
           resolve(true);
         } catch (error) {
           console.error('Failed to connect to ZenML server:', error);
-          vscode.window.showErrorMessage(
-            `Failed to connect to ZenML server: ${(error as Error).message}`
+
+          // Show error in tree view instead of notification
+          const serverProvider = ServerDataProvider.getInstance();
+          serverProvider.showCommandError(
+            createCommandErrorItem('connect to server', (error as Error).message)
           );
           resolve(false);
         }
@@ -173,7 +198,6 @@ const disconnectServer = async (): Promise<void> => {
   await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
-      title: 'Disconnecting from ZenML server...',
       cancellable: true,
     },
     async () => {
@@ -184,10 +208,17 @@ const disconnectServer = async (): Promise<void> => {
           throw result;
         }
         await refreshUtils.refreshUIComponents();
+
+        // Show success message in tree view
+        const serverProvider = ServerDataProvider.getInstance();
+        serverProvider.showCommandSuccess(createCommandSuccessItem('disconnected from server'));
       } catch (error: any) {
         console.error('Failed to disconnect from ZenML server:', error);
-        vscode.window.showErrorMessage(
-          'Failed to disconnect from ZenML server: ' + error.message || error
+
+        // Show error in tree view instead of notification
+        const serverProvider = ServerDataProvider.getInstance();
+        serverProvider.showCommandError(
+          createCommandErrorItem('disconnect from server', error.message || error)
         );
       }
     }
@@ -203,7 +234,6 @@ const refreshServerStatus = async (): Promise<void> => {
   await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Window,
-      title: 'Refreshing server status...',
       cancellable: false,
     },
     async () => {
