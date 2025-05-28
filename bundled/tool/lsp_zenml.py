@@ -42,6 +42,7 @@ class ZenLanguageServer(LanguageServer):
         super().__init__(*args, **kwargs)
         self.python_interpreter = sys.executable
         self.zenml_client = None
+        self._wrapper_cache: Dict[str, Any] = {}
         # self.register_commands()
 
     async def is_zenml_installed(self) -> bool:
@@ -135,9 +136,6 @@ class ZenLanguageServer(LanguageServer):
 
                 # Cache wrapper instances to avoid repeated getattr calls
                 if wrapper_name:
-                    if not hasattr(self, "_wrapper_cache"):
-                        self._wrapper_cache: Dict[str, Any] = {}
-
                     if wrapper_name not in self._wrapper_cache:
                         wrapper_instance = getattr(self.zenml_client, wrapper_name, None)
                         if not wrapper_instance:
