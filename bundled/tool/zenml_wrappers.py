@@ -48,6 +48,37 @@ from zenml_serializers import (
 
 
 # =============================================================================
+# Utility Functions for Performance Optimization
+# =============================================================================
+def _get_field_from_response(obj, field_name, default=None):
+    """Helper to efficiently get field from body or resources location.
+
+    Optimizes dual-location lookup for ZenML 0.83.0+ response structure.
+
+    Args:
+        obj: The response object to search
+        field_name: Name of the field to retrieve
+        default: Default value if field not found
+
+    Returns:
+        Field value from body or resources, or default if not found
+    """
+    # First try direct access (body location)
+    if hasattr(obj, field_name):
+        value = getattr(obj, field_name)
+        if value is not None:
+            return value
+
+    # Then try resources location
+    if hasattr(obj, "resources") and hasattr(obj.resources, field_name):
+        value = getattr(obj.resources, field_name)
+        if value is not None:
+            return value
+
+    return default
+
+
+# =============================================================================
 # 1. GlobalConfigWrapper
 # =============================================================================
 class GlobalConfigWrapper:
@@ -469,7 +500,7 @@ class PipelineRunsWrapper:
                 "sort_by": "desc:updated",
                 "page": page,
                 "size": max_size,
-                "hydrate": True,
+                "hydrate": False,
             }
 
             if project_name:
@@ -479,46 +510,51 @@ class PipelineRunsWrapper:
 
             runs_data = []
             for run in runs_page.items:
+                # Optimized data extraction - avoid repeated hasattr calls
+                stack = getattr(run, "stack", None)
+                pipeline = getattr(run, "pipeline", None)
+
                 run_data = {
                     "id": str(run.id),
                     "name": run.name,
                     "status": str(run.status),
-                    "stackName": run.stack.name
-                    if hasattr(run, "stack") and run.stack
-                    else "unknown",
-                    "pipelineName": run.pipeline.name
-                    if hasattr(run, "pipeline") and run.pipeline
-                    else "unknown",
-                    "runMetadata": run.run_metadata if hasattr(run, "run_metadata") else None,
-                    "startTime": (run.start_time.isoformat() if run.start_time else None),
-                    "endTime": (run.end_time.isoformat() if run.end_time else None),
+                    "stackName": stack.name if stack else "unknown",
+                    "pipelineName": pipeline.name if pipeline else "unknown",
+                    "runMetadata": getattr(run, "run_metadata", None),
+                    "startTime": run.start_time.isoformat() if run.start_time else None,
+                    "endTime": run.end_time.isoformat() if run.end_time else None,
                 }
 
-                if hasattr(run, "config") and run.config:
+                # Simplified config handling
+                config = getattr(run, "config", None)
+                if config:
                     run_data["config"] = {
-                        "enable_cache": run.config.enable_cache,
-                        "enable_artifact_metadata": run.config.enable_artifact_metadata,
-                        "enable_artifact_visualization": run.config.enable_artifact_visualization,
-                        "enable_step_logs": run.config.enable_step_logs,
+                        "enable_cache": getattr(config, "enable_cache", False),
+                        "enable_artifact_metadata": getattr(
+                            config, "enable_artifact_metadata", False
+                        ),
+                        "enable_artifact_visualization": getattr(
+                            config, "enable_artifact_visualization", False
+                        ),
+                        "enable_step_logs": getattr(config, "enable_step_logs", False),
                     }
 
-                    if hasattr(run.config, "model") and run.config.model:
+                    model = getattr(config, "model", None)
+                    if model:
                         run_data["config"]["model"] = {
-                            "name": run.config.model.name,
-                            "description": run.config.model.description,
-                            "tags": run.config.model.tags,
-                            "version": run.config.model.version,
-                            "save_models_to_registry": run.config.model.save_models_to_registry,
-                            "license": run.config.model.license,
+                            "name": getattr(model, "name", ""),
+                            "description": getattr(model, "description", ""),
+                            "tags": getattr(model, "tags", []),
+                            "version": getattr(model, "version", ""),
+                            "save_models_to_registry": getattr(
+                                model, "save_models_to_registry", False
+                            ),
+                            "license": getattr(model, "license", ""),
                         }
 
-                # Steps may not be included in optimized responses
-                # Only include if explicitly available
-                if hasattr(run, "steps") and run.steps:
-                    run_data["steps"] = self._extract_steps_data(run.steps)
-                else:
-                    # Mark that steps data is not available in this response
-                    run_data["steps"] = None
+                # Optimized steps handling - avoid expensive extraction for list view
+                steps = getattr(run, "steps", None)
+                run_data["steps"] = None if not steps else "available"
 
                 runs_data.append(run_data)
 
@@ -603,39 +639,37 @@ class PipelineRunsWrapper:
         """
         try:
             run_id = args[0]
-            # Get pipeline run with hydration to ensure we have step data
-            run = self.client.get_pipeline_run(run_id, hydrate=True)
 
-            # Check if steps are available for graph generation
-            # In ZenML 0.83.0+, steps are no longer included in pipeline run responses
-            # for performance optimization. We need to fetch them separately if needed.
-            if not hasattr(run, "steps") or not run.steps:
-                try:
-                    # Try to fetch steps separately using list_run_steps
-                    # This is the recommended approach for ZenML 0.83.0+
-                    StepRunFilter = self.lazy_import("zenml.models", "StepRunFilter")
-
-                    step_filter = StepRunFilter(pipeline_run_id=run.id)
-                    steps_page = self.client.list_run_steps(step_filter)
-
-                    if steps_page and steps_page.items:
-                        # Simulate the old structure by adding steps to run object
-                        run.steps = {step.name: step for step in steps_page.items}
-                    else:
-                        # No steps found - return empty graph
+            # Try ZenML 0.83.0+ optimized DAG endpoint first
+            try:
+                # Check if new DAG endpoint is available
+                if hasattr(self.client.zen_store, "get_pipeline_run_dag"):
+                    dag_data = self.client.zen_store.get_pipeline_run_dag(run_id)
+                    if dag_data and hasattr(dag_data, "nodes") and hasattr(dag_data, "edges"):
                         return {
-                            "nodes": [],
-                            "edges": [],
-                            "status": run.status._value_
-                            if hasattr(run.status, "_value_")
-                            else str(run.status),
-                            "name": run.pipeline.name
-                            if hasattr(run, "pipeline") and run.pipeline
-                            else "unknown",
-                            "message": "No steps found for this pipeline run",
+                            "nodes": dag_data.nodes,
+                            "edges": dag_data.edges,
+                            "status": getattr(dag_data, "status", "unknown"),
+                            "name": getattr(dag_data, "name", "unknown"),
                         }
-                except Exception:
-                    # Fall back to empty graph if step fetching fails
+            except (AttributeError, Exception):
+                # Fall back to manual step fetching if DAG endpoint not available
+                pass
+
+            # Fallback: Get pipeline run with minimal hydration
+            run = self.client.get_pipeline_run(run_id, hydrate=False)
+
+            # Try to fetch steps separately using list_run_steps (ZenML 0.83.0+ approach)
+            try:
+                StepRunFilter = self.lazy_import("zenml.models", "StepRunFilter")
+                step_filter = StepRunFilter(pipeline_run_id=run.id)
+                steps_page = self.client.list_run_steps(step_filter)
+
+                if steps_page and steps_page.items:
+                    # Simulate the old structure by adding steps to run object
+                    run.steps = {step.name: step for step in steps_page.items}
+                else:
+                    # No steps found - return empty graph
                     return {
                         "nodes": [],
                         "edges": [],
@@ -645,9 +679,31 @@ class PipelineRunsWrapper:
                         "name": run.pipeline.name
                         if hasattr(run, "pipeline") and run.pipeline
                         else "unknown",
-                        "message": (
-                            "Step data not available - may require different ZenML version"
-                        ),
+                        "message": "No steps found for this pipeline run",
+                    }
+            except Exception:
+                # Final fallback: try full hydration (slower but works with older ZenML)
+                try:
+                    run = self.client.get_pipeline_run(run_id, hydrate=True)
+                    if not hasattr(run, "steps") or not run.steps:
+                        return {
+                            "nodes": [],
+                            "edges": [],
+                            "status": run.status._value_
+                            if hasattr(run.status, "_value_")
+                            else str(run.status),
+                            "name": run.pipeline.name
+                            if hasattr(run, "pipeline") and run.pipeline
+                            else "unknown",
+                            "message": "Step data not available",
+                        }
+                except Exception:
+                    return {
+                        "nodes": [],
+                        "edges": [],
+                        "status": "unknown",
+                        "name": "unknown",
+                        "message": "Failed to fetch step data",
                     }
 
             graph = Grapher(run)
@@ -1182,7 +1238,7 @@ class StacksWrapper:
         active_stack_id = args[2]
 
         try:
-            # Use hydrate=False to avoid unique() constraint issues in ZenML 0.83.0+
+            # Use hydrate=False for better performance in ZenML 0.83.0+
             # Components data will still be available in the response structure
             stacks_page = self.client.list_stacks(page=page, size=max_size, hydrate=False)
             stacks_data = self.process_stacks(stacks_page.items)
@@ -1541,7 +1597,7 @@ class StacksWrapper:
 
         try:
             components = self.client.list_stack_components(
-                page=page, size=max_size, type=filter, hydrate=True
+                page=page, size=max_size, type=filter, hydrate=False
             )
 
             return {
@@ -1599,7 +1655,7 @@ class StacksWrapper:
             filter = args[2]
 
         try:
-            flavors = self.client.list_flavors(page=page, size=max_size, type=filter, hydrate=True)
+            flavors = self.client.list_flavors(page=page, size=max_size, type=filter, hydrate=False)
 
             return {
                 "index": flavors.index,
@@ -1689,15 +1745,22 @@ class ModelsWrapper:
 
             # This needs to use the underlying zen_store instead of client
             # since client doesn't expose list_models
-            # Determine project for filtering
+            # Determine project for filtering - cache active project for performance
             project_filter = None
             if project_name:
                 project_filter = project_name
             else:
-                active_project = self.projects_wrapper.get_active_project()
-                if active_project and not active_project.get("error"):
-                    if isinstance(active_project, dict):
-                        project_filter = active_project.get("id")
+                # Cache active project to avoid repeated calls
+                if not hasattr(self, "_cached_active_project"):
+                    active_project = self.projects_wrapper.get_active_project()
+                    if active_project and not active_project.get("error"):
+                        if isinstance(active_project, dict):
+                            self._cached_active_project = active_project.get("id")
+                        else:
+                            self._cached_active_project = None
+                    else:
+                        self._cached_active_project = None
+                project_filter = self._cached_active_project
 
             # Create ModelFilter with all parameters at once
             if project_filter:
@@ -1716,49 +1779,27 @@ class ModelsWrapper:
                     "name": model.name,
                 }
 
-                # Handle latest_version_name - may be in body or resources
-                latest_version_name = None
-                if hasattr(model, "latest_version_name") and model.latest_version_name:
-                    latest_version_name = model.latest_version_name
-                elif hasattr(model, "resources") and hasattr(
-                    model.resources, "latest_version_name"
-                ):
-                    latest_version_name = model.resources.latest_version_name
+                # Handle latest_version_name - optimized dual-location lookup
+                latest_version_name = _get_field_from_response(model, "latest_version_name")
                 model_data["latest_version_name"] = latest_version_name
 
-                # Handle latest_version_id - may be in body or resources
-                latest_version_id = None
-                if hasattr(model, "latest_version_id") and model.latest_version_id:
-                    latest_version_id = str(model.latest_version_id)
-                elif hasattr(model, "resources") and hasattr(model.resources, "latest_version_id"):
-                    latest_version_id = str(model.resources.latest_version_id)
+                # Handle latest_version_id - optimized dual-location lookup
+                latest_version_id = _get_field_from_response(model, "latest_version_id")
+                if latest_version_id:
+                    latest_version_id = str(latest_version_id)
                 model_data["latest_version_id"] = latest_version_id
 
-                # Handle tags - may be in body.tags or resources.tags
-                tags = []
-                if hasattr(model, "tags") and model.tags:
-                    tags = [tag.name if hasattr(tag, "name") else str(tag) for tag in model.tags]
-                elif (
-                    hasattr(model, "resources")
-                    and hasattr(model.resources, "tags")
-                    and model.resources.tags
-                ):
-                    tags = [
-                        tag.name if hasattr(tag, "name") else str(tag)
-                        for tag in model.resources.tags
-                    ]
+                # Handle tags - optimized dual-location lookup
+                tags_obj = _get_field_from_response(model, "tags", [])
+                tags = (
+                    [tag.name if hasattr(tag, "name") else str(tag) for tag in tags_obj]
+                    if tags_obj
+                    else []
+                )
                 model_data["tags"] = tags
 
-                # Handle user information - may be in body.user or resources.user
-                user_obj = None
-                if hasattr(model, "user") and model.user:
-                    user_obj = model.user
-                elif (
-                    hasattr(model, "resources")
-                    and hasattr(model.resources, "user")
-                    and model.resources.user
-                ):
-                    user_obj = model.resources.user
+                # Handle user information - optimized dual-location lookup
+                user_obj = _get_field_from_response(model, "user")
 
                 if user_obj:
                     model_data["user"] = {
@@ -1804,15 +1845,19 @@ class ModelsWrapper:
             size = args[2] if len(args) > 2 else 5
             project_name = args[3] if len(args) > 3 else None
 
-            # Determine project for filtering
+            # Use cached project filter to avoid repeated calls
             project_filter = None
             if project_name:
                 project_filter = project_name
             else:
-                active_project = self.projects_wrapper.get_active_project()
-                if active_project and not active_project.get("error"):
-                    if isinstance(active_project, dict):
-                        project_filter = active_project.get("id")
+                # Reuse cached project from list_models
+                project_filter = getattr(self, "_cached_active_project", None)
+                if project_filter is None:
+                    active_project = self.projects_wrapper.get_active_project()
+                    if active_project and not active_project.get("error"):
+                        if isinstance(active_project, dict):
+                            project_filter = active_project.get("id")
+                            self._cached_active_project = project_filter
 
             # Create ModelVersionFilter with all parameters at once
             if project_filter:
@@ -1832,57 +1877,46 @@ class ModelsWrapper:
 
             versions_data = []
             for version in versions_page.items:
+                # Optimized data extraction - cache frequently accessed attributes
+                created = getattr(version, "created", None)
+                updated = getattr(version, "updated", None)
+                stage = getattr(version, "stage", None)
+
                 version_data = {
                     "id": str(version.id),
                     "name": version.name,
-                    "created": version.created.isoformat() if version.created else None,
-                    "updated": version.updated.isoformat() if version.updated else None,
-                    "stage": str(version.stage) if version.stage else None,
+                    "created": created.isoformat() if created else None,
+                    "updated": updated.isoformat() if updated else None,
+                    "stage": str(stage) if stage else None,
                     "number": version.number,
-                    "run_metadata": version.run_metadata if version.run_metadata else None,
+                    "run_metadata": getattr(version, "run_metadata", None),
                 }
 
-                # Handle tags - may be in body.tags or resources.tags
-                tags = []
-                if hasattr(version, "tags") and version.tags:
-                    tags = [
-                        {"name": tag.name if hasattr(tag, "name") else str(tag)}
-                        for tag in version.tags
+                # Handle tags - optimized processing
+                tags_obj = _get_field_from_response(version, "tags", [])
+                if tags_obj:
+                    version_data["tags"] = [
+                        {"name": getattr(tag, "name", str(tag))} for tag in tags_obj
                     ]
-                elif (
-                    hasattr(version, "resources")
-                    and hasattr(version.resources, "tags")
-                    and version.resources.tags
-                ):
-                    tags = [
-                        {"name": tag.name if hasattr(tag, "name") else str(tag)}
-                        for tag in version.resources.tags
-                    ]
-                version_data["tags"] = tags
+                else:
+                    version_data["tags"] = []
 
-                # Handle model information
-                if hasattr(version, "model") and version.model:
+                # Simplified model information handling
+                model = getattr(version, "model", None)
+                if model:
                     model_data = {
-                        "id": str(version.model.id),
-                        "name": version.model.name,
+                        "id": str(model.id),
+                        "name": model.name,
                         "tags": [],
                     }
 
-                    # Handle model tags
-                    if hasattr(version.model, "tags") and version.model.tags:
-                        model_data["tags"] = [tag.name for tag in version.model.tags]
+                    # Handle model tags efficiently
+                    model_tags = getattr(model, "tags", None)
+                    if model_tags:
+                        model_data["tags"] = [getattr(tag, "name", str(tag)) for tag in model_tags]
 
-                    # Handle user information - may be in body.user or resources.user
-                    user_obj = None
-                    if hasattr(version.model, "user") and version.model.user:
-                        user_obj = version.model.user
-                    elif (
-                        hasattr(version.model, "resources")
-                        and hasattr(version.model.resources, "user")
-                        and version.model.resources.user
-                    ):
-                        user_obj = version.model.resources.user
-
+                    # Handle user information - optimized dual-location lookup
+                    user_obj = _get_field_from_response(model, "user")
                     if user_obj:
                         model_data["user"] = {
                             "id": str(user_obj.id),
@@ -1892,9 +1926,8 @@ class ModelsWrapper:
 
                     version_data["model"] = model_data
 
-                # Handle artifact IDs - these have been REMOVED from responses in v0.82+
-                # These fields are no longer available to reduce response size
-                # Set to None to maintain backward compatibility with frontend
+                # Skip artifact IDs completely for performance (removed in v0.82+)
+                # Frontend should handle these as null/undefined
                 version_data["data_artifact_ids"] = None
                 version_data["model_artifact_ids"] = None
                 version_data["deployment_artifact_ids"] = None
