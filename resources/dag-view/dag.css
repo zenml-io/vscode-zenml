@@ -505,3 +505,41 @@ body.vscode-dark .error-message {
 #retry-button:hover {
   background-color: #4f46e5;
 }
+
+/* === LOADING INDICATOR === */
+.loading-container {
+  padding: 60px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--vscode-progressBar-background, #e5e7eb);
+  border-top: 4px solid var(--vscode-progressBar-foreground, var(--color-indigo-500));
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 24px;
+}
+
+.loading-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--vscode-editor-foreground);
+}
+
+.loading-message {
+  font-size: 14px;
+  color: var(--vscode-descriptionForeground, var(--color-gray-500));
+  margin-bottom: 16px;
+}
+
+body.vscode-dark .loading-message {
+  color: var(--vscode-descriptionForeground, var(--color-gray-400));
+}
