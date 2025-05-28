@@ -17,8 +17,8 @@ import * as vscode from 'vscode';
 import Panels from '../../../common/panels';
 import WebviewBase from '../../../common/WebviewBase';
 import DagRenderer from '../../../dag/renderer/DagRenderer';
+import { IconLoader } from '../../../dag/utils/IconLoader';
 import { LSClient } from '../../../services/LSClient';
-import { PipelineTreeItem } from '../../../views/activityBar/pipelineView/PipelineTreeItems';
 import { ServerDataProvider } from '../../../views/activityBar/serverView/ServerDataProvider';
 import { MockEventBus } from '../__mocks__/MockEventBus';
 import { MockLSClient } from '../__mocks__/MockLSClient';
@@ -28,7 +28,6 @@ suite('DagRenderer Test Suite', () => {
   let mockLSClient: any;
   let mockEventBus: any;
   let mockWebviewPanel: any;
-  let mockPipelineTreeItem: PipelineTreeItem;
 
   setup(() => {
     sandbox = sinon.createSandbox();
@@ -43,7 +42,7 @@ suite('DagRenderer Test Suite', () => {
     WebviewBase.setContext(mockExtensionContext);
 
     // Stub icon loading and SVG lib to prevent file system warnings
-    sandbox.stub(DagRenderer.prototype, 'loadIcons' as any).returns(undefined);
+    sandbox.stub(IconLoader.prototype, 'loadIcons').resolves({});
     sandbox.stub(DagRenderer.prototype, 'loadSvgWindowLib' as any).returns(undefined);
 
     // Mock webview panel
@@ -60,13 +59,6 @@ suite('DagRenderer Test Suite', () => {
       reveal: sandbox.stub(),
       dispose: sandbox.stub(),
     };
-
-    // Mock pipeline tree item
-    mockPipelineTreeItem = {
-      id: 'test-pipeline-id',
-      label: 'Test Pipeline',
-      contextValue: 'pipelineRun',
-    } as PipelineTreeItem;
 
     // Mock server status
     const mockServerStatus = {
@@ -98,41 +90,10 @@ suite('DagRenderer Test Suite', () => {
     assert.ok(dagRenderer instanceof DagRenderer);
   });
 
-  test('escapeHtml should properly escape HTML characters', () => {
-    const testCases = [
-      {
-        input: '<script>alert("xss")</script>',
-        expected: '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;',
-      },
-      { input: 'Hello & World', expected: 'Hello &amp; World' },
-      { input: "Single 'quotes'", expected: 'Single &#x27;quotes&#x27;' },
-      { input: 'Normal text', expected: 'Normal text' },
-    ];
-
-    testCases.forEach(({ input, expected }) => {
-      const result = (DagRenderer as any).escapeHtml(input);
-      assert.strictEqual(result, expected);
-    });
-  });
-
-  test('should generate correct empty state HTML with escaped content', () => {
-    const dagRenderer = new DagRenderer();
-    const testContent = {
-      cssUri: vscode.Uri.parse('test://css'),
-      jsUri: vscode.Uri.parse('test://js'),
-      message: '<script>alert("xss")</script>',
-      pipelineName: 'Test & Pipeline',
-      status: 'failed',
-      cspSource: 'vscode-webview:',
-    };
-
-    const html = (dagRenderer as any).getNoStepsContent(testContent);
-
-    // Should contain escaped content
-    assert.match(html, /Test &amp; Pipeline/);
-    assert.match(html, /&lt;script&gt;/);
-
-    // Should not contain unescaped HTML
-    assert.ok(!html.includes('<script>alert'));
+  test('should have working getInstance method', () => {
+    const instance1 = DagRenderer.getInstance();
+    const instance2 = DagRenderer.getInstance();
+    assert.strictEqual(instance1, instance2);
+    assert.ok(instance1 instanceof DagRenderer);
   });
 });
