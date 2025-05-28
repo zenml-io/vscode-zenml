@@ -13,10 +13,6 @@
 import * as vscode from 'vscode';
 import { EventBus } from '../../services/EventBus';
 import { LSP_ZENML_PROJECT_CHANGED } from '../../utils/constants';
-import {
-  createCommandErrorItem,
-  createCommandSuccessItem,
-} from '../../views/activityBar/common/ErrorTreeItem';
 import { ProjectDataProvider } from '../../views/activityBar/projectView/ProjectDataProvider';
 import { ProjectTreeItem } from '../../views/activityBar/projectView/ProjectTreeItems';
 import { getProjectDashboardUrl, switchActiveProject } from './utils';
@@ -54,21 +50,12 @@ const setActiveProject = async (node: ProjectTreeItem): Promise<void> => {
         const result = await switchActiveProject(node.name);
         if (result) {
           EventBus.getInstance().emit(LSP_ZENML_PROJECT_CHANGED, node.name);
-          const projectProvider = ProjectDataProvider.getInstance();
-          projectProvider.showCommandSuccess(
-            createCommandSuccessItem('set active project', `Active project set to: ${node.name}`)
-          );
+          vscode.window.showInformationMessage(`Active project set to: ${node.name}`);
         }
       } catch (error) {
         console.log(error);
         const errorMessage = error instanceof Error ? error.message : String(error);
-        const projectProvider = ProjectDataProvider.getInstance();
-        projectProvider.showCommandError(
-          createCommandErrorItem(
-            'set active project',
-            `Failed to set active project: ${errorMessage}`
-          )
-        );
+        vscode.window.showErrorMessage(`Failed to set active project: ${errorMessage}`);
       }
     }
   );
@@ -89,19 +76,10 @@ const goToProjectUrl = (node: ProjectTreeItem) => {
       vscode.env.openExternal(parsedUrl);
     } catch (error) {
       console.log(error);
-      const projectProvider = ProjectDataProvider.getInstance();
-      projectProvider.showCommandError(
-        createCommandErrorItem('open project URL', `Failed to open project URL: ${error}`)
-      );
+      vscode.window.showErrorMessage(`Failed to open project URL: ${error}`);
     }
   } else {
-    const projectProvider = ProjectDataProvider.getInstance();
-    projectProvider.showCommandError(
-      createCommandErrorItem(
-        'open project URL',
-        `Could not determine URL for project: ${node.project.name}`
-      )
-    );
+    vscode.window.showErrorMessage(`Could not determine URL for project: ${node.project.name}`);
   }
 };
 

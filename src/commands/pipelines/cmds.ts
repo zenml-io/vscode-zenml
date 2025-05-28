@@ -14,10 +14,7 @@ import * as vscode from 'vscode';
 import DagRenderer from '../../dag/renderer/DagRenderer';
 import { LSClient } from '../../services/LSClient';
 import { PipelineTreeItem } from '../../views/activityBar';
-import {
-  createCommandErrorItem,
-  createCommandSuccessItem,
-} from '../../views/activityBar/common/ErrorTreeItem';
+import { createCommandErrorItem } from '../../views/activityBar/common/ErrorTreeItem';
 import { PipelineDataProvider } from '../../views/activityBar/pipelineView/PipelineDataProvider';
 import { getPipelineRunDashboardUrl } from './utils';
 
@@ -65,20 +62,11 @@ const deletePipelineRun = async (node: PipelineTreeItem): Promise<void> => {
           if (result && 'error' in result) {
             throw new Error(result.error);
           }
-          const pipelineProvider = PipelineDataProvider.getInstance();
-          pipelineProvider.showCommandSuccess(
-            createCommandSuccessItem('deleted pipeline run', 'Pipeline run deleted successfully')
-          );
+          vscode.window.showInformationMessage('Pipeline run deleted successfully');
           await refreshPipelineView();
         } catch (error: any) {
           console.error(`Error deleting pipeline run: ${error}`);
-          const pipelineProvider = PipelineDataProvider.getInstance();
-          pipelineProvider.showCommandError(
-            createCommandErrorItem(
-              'delete pipeline run',
-              `Failed to delete pipeline run: ${error.message}`
-            )
-          );
+          vscode.window.showErrorMessage(`Failed to delete pipeline run: ${error.message}`);
         }
       }
     );

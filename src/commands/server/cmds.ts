@@ -20,10 +20,6 @@ import {
 import { updateServerUrlAndToken } from '../../utils/global';
 import { refreshUtils } from '../../utils/refresh';
 import { ServerDataProvider } from '../../views/activityBar';
-import {
-  createCommandErrorItem,
-  createCommandSuccessItem,
-} from '../../views/activityBar/common/ErrorTreeItem';
 import { promptAndStoreServerUrl } from './utils';
 
 /**
@@ -171,17 +167,13 @@ const connectServer = async (): Promise<boolean> => {
           await refreshUtils.refreshUIComponents();
 
           // Show success message in tree view
-          const serverProvider = ServerDataProvider.getInstance();
-          serverProvider.showCommandSuccess(createCommandSuccessItem('connected to server'));
+          vscode.window.showInformationMessage('Connected to server');
           resolve(true);
         } catch (error) {
           console.error('Failed to connect to ZenML server:', error);
 
           // Show error in tree view instead of notification
-          const serverProvider = ServerDataProvider.getInstance();
-          serverProvider.showCommandError(
-            createCommandErrorItem('connect to server', (error as Error).message)
-          );
+          vscode.window.showErrorMessage(`Failed to connect to ZenML server: ${error}`);
           resolve(false);
         }
       }
@@ -210,16 +202,12 @@ const disconnectServer = async (): Promise<void> => {
         await refreshUtils.refreshUIComponents();
 
         // Show success message in tree view
-        const serverProvider = ServerDataProvider.getInstance();
-        serverProvider.showCommandSuccess(createCommandSuccessItem('disconnected from server'));
+        vscode.window.showInformationMessage('Disconnected from server');
       } catch (error: any) {
         console.error('Failed to disconnect from ZenML server:', error);
 
         // Show error in tree view instead of notification
-        const serverProvider = ServerDataProvider.getInstance();
-        serverProvider.showCommandError(
-          createCommandErrorItem('disconnect from server', error.message || error)
-        );
+        vscode.window.showErrorMessage(`Failed to disconnect from ZenML server: ${error}`);
       }
     }
   );
