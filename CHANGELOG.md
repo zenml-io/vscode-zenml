@@ -2,36 +2,13 @@
 
 All notable changes to the "zenml-vscode" extension will be documented in this file.
 
-## [0.0.21] - 2025-01-28
+## [0.0.21] - 2025-01-28 - ZenML 0.83.0 Compatibility
 
 ### Added
 
 - Loading spinner for DAG rendering to eliminate blank screen during data fetching
 - 30-second TTL request caching for pipeline data provider to improve responsiveness
 - Wrapper instance caching in LSP server to reduce repeated getattr calls
-
-### Changed
-
-- Optimized model versions fetch from 10 to 5 items for 30% performance improvement
-- Improved ZenML wrappers with optimized getattr usage and reduced hasattr calls
-- Enhanced error logging consistency across all command modules
-
-### Fixed
-
-- Removed expensive object introspection from serialize_object for better performance
-- Fixed failing tests for pipeline caching and DAG renderer functionality
-
-### Dependencies
-
-- Updated dependencies:
-  - @types/node (22.15.19 → 22.15.21)
-  - @vscode/vsce (3.4.0 → 3.4.2)
-  - webpack (5.99.8 → 5.99.9)
-
-## [Unreleased] - ZenML 0.83.0 Compatibility
-
-### Added
-
 - Improved DAG view with node highlighting, step durations, and artifact type labels
 - New `DagRenderer` test suite with HTML escaping and XSS protection validation
 - New `PipelineDataProvider` test suite for data fetching, error handling, and singleton pattern testing
@@ -41,8 +18,21 @@ All notable changes to the "zenml-vscode" extension will be documented in this f
 - Enhanced `MockLSClient` with `getPipelineRunDag`, `getPipelineRunStep`, and `getPipelineRunArtifact` command support
 - Added `getEventHandlers` method to MockEventBus for better test infrastructure
 
+### Changed
+
+- Optimized model versions fetch from 10 to 5 items for 30% performance improvement
+- Improved ZenML wrappers with optimized getattr usage and reduced hasattr calls
+- Enhanced error logging consistency across all command modules
+- Updated ZenML wrapper implementations for 0.83.0 API compatibility
+- Consolidated activity bar provider interfaces for consistency
+- Removed ZenExtension prompt for interpreter (replaced with message in tree view)
+- Removed progress notifications for extension initialization and background operations
+- Errors now appear in tree view or console instead of popup notifications
+
 ### Fixed
 
+- Removed expensive object introspection from serialize_object for better performance
+- Fixed failing tests for pipeline caching and DAG renderer functionality
 - Fixed DAG visualization for ZenML 0.83.0: steps are now fetched separately due to API performance optimizations
 - Fixed XSS vulnerabilities in DAG error messages through proper HTML escaping
 - Fixed Content Security Policy violation by moving retry button logic from inline script to bundled JavaScript
@@ -50,25 +40,16 @@ All notable changes to the "zenml-vscode" extension will be documented in this f
 - Fixed circular dependency issues in LSP module that caused import errors
 - Fixed data provider pagination and error boundary handling across all activity bar views
 
-### Changed
-
-- Updated ZenML wrapper implementations for 0.83.0 API compatibility
-- Consolidated activity bar provider interfaces for consistency
-- Removed ZenExtension prompt for interpreter (replaced with message in tree view)
-- Removed progress notifications for extension initialization and background operations
-- Errors now appear in tree view or console instead of popup notifications
-
 ### Dependencies
 
-- Updated multiple dependencies for security and compatibility:
+- Updated dependencies:
   - @eslint/js (9.26.0 → 9.27.0)
-  - @types/node (22.15.3 → 22.15.19)
-  - @types/vscode (1.99.1 → 1.100.0)
-  - @vscode/vsce (3.3.2 → 3.4.0)
+  - @types/node (22.15.3 → 22.15.21)
+  - @vscode/vsce (3.3.2 → 3.4.2)
   - eslint (9.26.0 → 9.27.0)
   - eslint-config-prettier (10.1.2 → 10.1.5)
   - typescript-eslint (8.31.1 → 8.32.1)
-  - webpack (5.99.7 → 5.99.8)
+  - webpack (5.99.7 → 5.99.9)
 
 ## [0.0.20] - 2025-05-05
 
