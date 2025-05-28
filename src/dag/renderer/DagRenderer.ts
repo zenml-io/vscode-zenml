@@ -102,6 +102,10 @@ export default class DagRenderer extends WebviewBase {
 
     panel.webview.onDidReceiveMessage(this.createMessageHandler(panel, node));
 
+    // Show loading state immediately
+    this.showLoadingState(panel, node);
+
+    // Then render the actual DAG
     await this.renderDag(panel, node);
   }
 
@@ -121,6 +125,7 @@ export default class DagRenderer extends WebviewBase {
     return async (message: { command: string; id: string }): Promise<void> => {
       switch (message.command) {
         case 'update':
+          this.showLoadingState(panel, node);
           this.renderDag(panel, node);
           break;
 
@@ -219,6 +224,18 @@ export default class DagRenderer extends WebviewBase {
         'Dashboard is only available when connected to a remote ZenML server.'
       );
     }
+  }
+
+  private showLoadingState(panel: vscode.WebviewPanel, node: PipelineTreeItem): void {
+    const cssUri = panel.webview.asWebviewUri(this.css);
+    const jsUri = panel.webview.asWebviewUri(this.javaScript);
+
+    panel.webview.html = HtmlTemplateBuilder.buildLoadingContent({
+      cssUri,
+      jsUri,
+      pipelineName: node.label as string,
+      cspSource: panel.webview.cspSource,
+    });
   }
 
   private async renderDag(panel: vscode.WebviewPanel, node: PipelineTreeItem) {

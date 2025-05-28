@@ -131,8 +131,14 @@ suite('PipelineDataProvider Test Suite', () => {
     const sendRequestStub = sandbox.stub().resolves(mockData);
     mockLSClient.sendLsClientRequest = sendRequestStub;
 
+    // Clear cache to ensure fresh requests
+    (pipelineDataProvider as any).requestCache.clear();
+
     // First call
     await pipelineDataProvider.refresh();
+
+    // Clear cache again to force second request
+    (pipelineDataProvider as any).requestCache.clear();
 
     // Refresh again
     await pipelineDataProvider.refresh();

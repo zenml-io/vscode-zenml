@@ -36,6 +36,10 @@ export interface NoStepsContentOptions extends BaseTemplateOptions {
   status: string;
 }
 
+export interface LoadingContentOptions extends BaseTemplateOptions {
+  pipelineName: string;
+}
+
 export class HtmlTemplateBuilder {
   /**
    * Escapes HTML characters to prevent XSS
@@ -175,6 +179,32 @@ export class HtmlTemplateBuilder {
       jsUri,
       cspSource,
       title: 'DAG - No Steps',
+      bodyContent,
+    });
+  }
+
+  /**
+   * Generates HTML for loading state
+   */
+  static buildLoadingContent(options: LoadingContentOptions): string {
+    const { cssUri, jsUri, pipelineName, cspSource } = options;
+
+    const escapedPipelineName = HtmlTemplateBuilder.escapeHtml(pipelineName);
+
+    const bodyContent = `
+    <div id="update">
+      <p>${escapedPipelineName}</p>
+    </div>
+    <div class="loading-container">
+      <div class="loading-spinner"></div>
+      <div class="loading-title">Loading DAG visualization...</div>
+    </div>`;
+
+    return HtmlTemplateBuilder.buildBaseTemplate({
+      cssUri,
+      jsUri,
+      cspSource,
+      title: 'DAG - Loading',
       bodyContent,
     });
   }

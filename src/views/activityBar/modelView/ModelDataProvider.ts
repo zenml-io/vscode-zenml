@@ -52,6 +52,8 @@ export class ModelDataProvider extends PaginatedDataProvider {
   private zenmlClientReady = false;
   private lsClientReady = false;
   private modelVersionsCache: Map<string, ModelVersion[]> = new Map();
+  private requestCache = new Map<string, { data: any; timestamp: number }>();
+  private readonly CACHE_TTL = 30000; // 30 seconds
 
   constructor() {
     super();
@@ -143,12 +145,13 @@ export class ModelDataProvider extends PaginatedDataProvider {
     if (projectName && projectName !== this.activeProjectName) {
       this.activeProjectName = projectName;
       this.modelVersionsCache.clear(); // Clear cache when project changes
+      this.requestCache.clear(); // Clear request cache on project change
       this.refresh(projectName);
     }
   };
 
   /**
-   * Gets the model versions for a specific model.
+   * Gets the model versions for a specific model with optimized caching.
    *
    * @param {string} modelId The model ID.
    * @returns {Promise<ModelVersion[]>} The model versions.
@@ -159,16 +162,26 @@ export class ModelDataProvider extends PaginatedDataProvider {
       return this.modelVersionsCache.get(modelId)!;
     }
 
-    // If not, fetch them from the server
+    // If not, fetch them from the server with optimized parameters
     try {
-      const result = await this.getModelVersionsData(modelId);
+      // Use smaller page size for faster initial load, can load more on demand
+      const result = await this.getModelVersionsData(modelId, 1, 5);
       if (Array.isArray(result) && result.length > 0 && 'error' in result[0]) {
         return [];
       }
 
       if ('items' in result) {
-        // Store in cache
+        // Store in cache with TTL
         this.modelVersionsCache.set(modelId, result.items);
+
+        // Limit cache size to prevent memory issues
+        if (this.modelVersionsCache.size > 50) {
+          const firstKey = this.modelVersionsCache.keys().next().value;
+          if (firstKey) {
+            this.modelVersionsCache.delete(firstKey);
+          }
+        }
+
         return result.items;
       }
       return [];
@@ -250,7 +263,7 @@ export class ModelDataProvider extends PaginatedDataProvider {
   }
 
   /**
-   * Fetches models data from the server.
+   * Fetches models data from the server with caching.
    *
    * @param {number} page - The page number to fetch.
    * @param {number} itemsPerPage - The number of items per page.
@@ -262,16 +275,45 @@ export class ModelDataProvider extends PaginatedDataProvider {
     itemsPerPage: number,
     projectName?: string
   ): Promise<ModelsResponse> {
+    const cacheKey = `models-${page}-${itemsPerPage}-${projectName || 'default'}`;
+    const now = Date.now();
+
+    // Check cache first
+    const cached = this.requestCache.get(cacheKey);
+    if (cached && now - cached.timestamp < this.CACHE_TTL) {
+      return cached.data;
+    }
+
     const lsClient = LSClient.getInstance();
-    return await lsClient.sendLsClientRequest<ModelsResponse>(`listModels`, [
+    const data = await lsClient.sendLsClientRequest<ModelsResponse>(`listModels`, [
       page,
       itemsPerPage,
       projectName,
     ]);
+
+    // Cache the result
+    this.requestCache.set(cacheKey, { data, timestamp: now });
+
+    // Clean old cache entries
+    this.cleanCache();
+
+    return data;
   }
 
   /**
-   * Fetches model versions data from the server for a specific model.
+   * Cleans expired cache entries.
+   */
+  private cleanCache(): void {
+    const now = Date.now();
+    for (const [key, value] of this.requestCache.entries()) {
+      if (now - value.timestamp > this.CACHE_TTL) {
+        this.requestCache.delete(key);
+      }
+    }
+  }
+
+  /**
+   * Fetches model versions data from the server with caching.
    *
    * @param {string} modelId - The model ID to fetch versions for.
    * @param {number} page - The page number to fetch.
@@ -282,16 +324,33 @@ export class ModelDataProvider extends PaginatedDataProvider {
   private async getModelVersionsData(
     modelId: string,
     page: number = 1,
-    itemsPerPage: number = 10,
+    itemsPerPage: number = 5,
     projectName?: string
   ): Promise<ModelVersionsResponse> {
+    const cacheKey = `model-versions-${modelId}-${page}-${itemsPerPage}-${projectName || 'default'}`;
+    const now = Date.now();
+
+    // Check cache first
+    const cached = this.requestCache.get(cacheKey);
+    if (cached && now - cached.timestamp < this.CACHE_TTL) {
+      return cached.data;
+    }
+
     const lsClient = LSClient.getInstance();
-    return await lsClient.sendLsClientRequest<ModelVersionsResponse>(`listModelVersions`, [
+    const data = await lsClient.sendLsClientRequest<ModelVersionsResponse>(`listModelVersions`, [
       modelId,
       page,
       itemsPerPage,
       projectName,
     ]);
+
+    // Cache the result
+    this.requestCache.set(cacheKey, { data, timestamp: now });
+
+    // Clean old cache entries
+    this.cleanCache();
+
+    return data;
   }
 
   /**

@@ -22,6 +22,7 @@ import asyncio
 import subprocess
 import sys
 from functools import wraps
+from typing import Any, Dict
 
 import lsprotocol.types as lsp
 from constants import IS_ZENML_INSTALLED, MIN_ZENML_VERSION, TOOL_MODULE_NAME
@@ -41,6 +42,7 @@ class ZenLanguageServer(LanguageServer):
         super().__init__(*args, **kwargs)
         self.python_interpreter = sys.executable
         self.zenml_client = None
+        self._wrapper_cache: Dict[str, Any] = {}
         # self.register_commands()
 
     async def is_zenml_installed(self) -> bool:
@@ -128,17 +130,29 @@ class ZenLanguageServer(LanguageServer):
                 if not client:
                     self.log_to_output("ZenML client not found in ZenLanguageServer.")
                     return zenml_init_error
-                self.log_to_output(f"Executing command with wrapper: {wrapper_name}")
+                # Reduce logging overhead for performance
                 if not client.initialized:
                     return zenml_init_error
 
-                with suppress_stdout_temporarily():
-                    if wrapper_name:
+                # Cache wrapper instances to avoid repeated getattr calls
+                if wrapper_name:
+                    if wrapper_name not in self._wrapper_cache:
                         wrapper_instance = getattr(self.zenml_client, wrapper_name, None)
                         if not wrapper_instance:
                             return {"error": f"Wrapper '{wrapper_name}' not found."}
+                        self._wrapper_cache[wrapper_name] = wrapper_instance
+
+                    wrapper_instance = self._wrapper_cache[wrapper_name]
+
+                    # Only suppress stdout for operations that might generate output
+                    if wrapper_name in ["pipeline_runs_wrapper", "models_wrapper"]:
                         return func(wrapper_instance, *args, **kwargs)
-                    return func(self.zenml_client, *args, **kwargs)
+                    else:
+                        with suppress_stdout_temporarily():
+                            return func(wrapper_instance, *args, **kwargs)
+                else:
+                    with suppress_stdout_temporarily():
+                        return func(self.zenml_client, *args, **kwargs)
 
             return wrapper
 

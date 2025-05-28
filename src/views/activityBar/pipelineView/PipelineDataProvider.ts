@@ -49,6 +49,8 @@ export class PipelineDataProvider extends PaginatedDataProvider {
   private eventBus = EventBus.getInstance();
   private zenmlClientReady = false;
   private lsClientReady = false;
+  private requestCache = new Map<string, { data: any; timestamp: number }>();
+  private readonly CACHE_TTL = 30000; // 30 seconds
 
   constructor() {
     super();
@@ -111,6 +113,7 @@ export class PipelineDataProvider extends PaginatedDataProvider {
   private projectChangeHandler = (projectName?: string) => {
     if (projectName && projectName !== this.activeProjectName) {
       this.activeProjectName = projectName;
+      this.requestCache.clear(); // Clear cache on project change
       this.refresh(projectName);
     }
   };
@@ -229,7 +232,7 @@ export class PipelineDataProvider extends PaginatedDataProvider {
   }
 
   /**
-   * Fetches pipeline runs data from the server.
+   * Fetches pipeline runs data from the server with caching.
    *
    * @param {number} page - The page number to fetch.
    * @param {number} itemsPerPage - The number of items per page.
@@ -241,12 +244,41 @@ export class PipelineDataProvider extends PaginatedDataProvider {
     itemsPerPage: number,
     projectName?: string
   ): Promise<PipelineRunsResponse | any> {
+    const cacheKey = `pipeline-runs-${page}-${itemsPerPage}-${projectName || 'default'}`;
+    const now = Date.now();
+
+    // Check cache first
+    const cached = this.requestCache.get(cacheKey);
+    if (cached && now - cached.timestamp < this.CACHE_TTL) {
+      return cached.data;
+    }
+
     const lsClient = LSClient.getInstance();
-    return await lsClient.sendLsClientRequest<PipelineRunsResponse>('getPipelineRuns', [
+    const data = await lsClient.sendLsClientRequest<PipelineRunsResponse>('getPipelineRuns', [
       page,
       itemsPerPage,
       projectName,
     ]);
+
+    // Cache the result
+    this.requestCache.set(cacheKey, { data, timestamp: now });
+
+    // Clean old cache entries
+    this.cleanCache();
+
+    return data;
+  }
+
+  /**
+   * Cleans expired cache entries.
+   */
+  private cleanCache(): void {
+    const now = Date.now();
+    for (const [key, value] of this.requestCache.entries()) {
+      if (now - value.timestamp > this.CACHE_TTL) {
+        this.requestCache.delete(key);
+      }
+    }
   }
 
   /**

@@ -18,10 +18,6 @@ import { LSClient } from '../../services/LSClient';
 import { ComponentTypesResponse, Flavor } from '../../types/StackTypes';
 import { ComponentDataProvider } from '../../views/activityBar/componentView/ComponentDataProvider';
 import { StackComponentTreeItem } from '../../views/activityBar/componentView/ComponentTreeItems';
-import {
-  createCommandErrorItem,
-  createCommandSuccessItem,
-} from '../../views/activityBar/common/ErrorTreeItem';
 import ComponentForm from './ComponentsForm';
 
 /**
@@ -39,10 +35,7 @@ const refreshComponentView = async () => {
       }
     );
   } catch (e) {
-    const componentProvider = ComponentDataProvider.getInstance();
-    componentProvider.showCommandError(
-      createCommandErrorItem('refresh component view', `Failed to refresh component view: ${e}`)
-    );
+    vscode.window.showErrorMessage(`Failed to refresh component view: ${e}`);
     traceError(`Failed to refresh component view: ${e}`);
     console.error(`Failed to refresh component view: ${e}`);
   }
@@ -85,10 +78,7 @@ const registerComponent = async () => {
     const flavor = flavors.find(flavor => selectedFlavor === flavor.name);
     await ComponentForm.getInstance().registerForm(flavor as Flavor);
   } catch (e) {
-    const componentProvider = ComponentDataProvider.getInstance();
-    componentProvider.showCommandError(
-      createCommandErrorItem('register component', `Unable to open component form: ${e}`)
-    );
+    vscode.window.showErrorMessage(`Unable to open component form: ${e}`);
     traceError(e);
     console.error(e);
   }
@@ -105,10 +95,7 @@ const updateComponent = async (node: StackComponentTreeItem) => {
       node.component.config
     );
   } catch (e) {
-    const componentProvider = ComponentDataProvider.getInstance();
-    componentProvider.showCommandError(
-      createCommandErrorItem('update component', `Unable to open component form: ${e}`)
-    );
+    vscode.window.showErrorMessage(`Unable to open component form: ${e}`);
     traceError(e);
     console.error(e);
   }
@@ -146,19 +133,10 @@ const deleteComponent = async (node: StackComponentTreeItem) => {
         if ('error' in resp) {
           throw resp.error;
         }
-
-        const componentProvider = ComponentDataProvider.getInstance();
-        componentProvider.showCommandSuccess(
-          createCommandSuccessItem('deleted component', `${node.component.name} deleted`)
-        );
         traceInfo(`${node.component.name} deleted`);
-
-        componentProvider.refresh();
+        await refreshComponentView();
       } catch (e) {
-        const componentProvider = ComponentDataProvider.getInstance();
-        componentProvider.showCommandError(
-          createCommandErrorItem('delete component', `Failed to delete component: ${e}`)
-        );
+        vscode.window.showErrorMessage(`Failed to delete component: ${e}`);
         traceError(e);
         console.error(e);
       }

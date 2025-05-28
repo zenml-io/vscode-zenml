@@ -6,7 +6,8 @@ This file serves as a reference for ZenML extension version compatibility with d
 
 | Extension Version | ZenML Library Version | Notes                                                         |
 | ----------------- | --------------------- | ------------------------------------------------------------- |
-| 0.0.20            | 0.80.x - 0.82.x       | Latest version with Models tree view and stability improvements |
+| 0.0.21            | 0.83.x                | Performance optimizations, DAG loading spinner, TTL caching |
+| 0.0.20            | 0.80.x - 0.82.x       | Models tree view and stability improvements |
 | 0.0.16            | 0.80.x                | Includes stability fixes and DAG view improvements |
 | 0.0.15            | 0.80.0                | Adds stability fixes and improves project management          |
 | 0.0.13 – 0.0.14   | 0.80.0                | Includes Project View and full project management support     |
