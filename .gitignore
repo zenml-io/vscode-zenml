@@ -44,3 +44,5 @@ bundled/libs/
 
 # Project Files
 .zen
+.beads/
+.gitattributes
