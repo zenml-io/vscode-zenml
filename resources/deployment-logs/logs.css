@@ -1,0 +1,424 @@
+/* Deployment Log Viewer - ZenML VS Code Extension
+ * Industrial Terminal aesthetic with modern dashboard polish
+ */
+
+/* ═══════════════════════════════════════════════════════════
+   CSS Custom Properties - Layered on VS Code theme variables
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* Spacing scale */
+  --log-space-xs: 4px;
+  --log-space-sm: 8px;
+  --log-space-md: 12px;
+  --log-space-lg: 16px;
+  --log-space-xl: 24px;
+
+  /* Timing */
+  --log-transition-fast: 120ms;
+  --log-transition-normal: 200ms;
+  --log-transition-slow: 400ms;
+
+  /* Line numbers */
+  --log-line-number-width: 48px;
+
+  /* Border radius - subtle, not rounded */
+  --log-radius-sm: 3px;
+  --log-radius-md: 5px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Base Layout
+   ═══════════════════════════════════════════════════════════ */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  color: var(--vscode-foreground);
+  background: var(--vscode-editor-background);
+  display: flex;
+  flex-direction: column;
+  line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Header - Control Panel Style
+   ═══════════════════════════════════════════════════════════ */
+
+.log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--log-space-md) var(--log-space-lg);
+  background: var(--vscode-sideBar-background);
+  border-bottom: 1px solid var(--vscode-panel-border);
+  flex-shrink: 0;
+  gap: var(--log-space-lg);
+}
+
+.log-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--log-space-md);
+  min-width: 0;
+  flex: 1;
+}
+
+.log-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--log-space-md);
+  flex-shrink: 0;
+}
+
+/* Status indicator - subtle pulse when loading */
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--vscode-terminal-ansiGreen);
+  flex-shrink: 0;
+  transition: background var(--log-transition-normal);
+}
+
+.status-indicator.loading {
+  background: var(--vscode-terminal-ansiYellow);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.status-indicator.error {
+  background: var(--vscode-terminal-ansiRed);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Deployment title */
+.deployment-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--vscode-foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.01em;
+}
+
+/* Timestamp - subtle secondary info */
+.timestamp {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
+  opacity: 0.8;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Controls - Dashboard Buttons
+   ═══════════════════════════════════════════════════════════ */
+
+.log-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--log-space-sm);
+}
+
+/* Icon button - refined, not flashy */
+.icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--log-radius-sm);
+  background: transparent;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  transition: background var(--log-transition-fast),
+              color var(--log-transition-fast);
+  opacity: 0.8;
+}
+
+.icon-button:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+  opacity: 1;
+}
+
+.icon-button:active {
+  background: var(--vscode-toolbar-activeBackground);
+}
+
+.icon-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.icon-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Refresh button spinning state */
+.icon-button.spinning svg {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Checkbox toggle - custom styled */
+.toggle-control {
+  display: flex;
+  align-items: center;
+  gap: var(--log-space-xs);
+  cursor: pointer;
+  user-select: none;
+  padding: var(--log-space-xs) var(--log-space-sm);
+  border-radius: var(--log-radius-sm);
+  transition: background var(--log-transition-fast);
+}
+
+.toggle-control:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.toggle-control input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--vscode-focusBorder);
+  cursor: pointer;
+}
+
+.toggle-control span {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Log Container - Main Content Area
+   ═══════════════════════════════════════════════════════════ */
+
+.log-container {
+  flex: 1;
+  overflow: auto;
+  background: var(--vscode-editor-background);
+  position: relative;
+}
+
+/* Log content wrapper */
+.log-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: var(--log-space-sm) 0;
+}
+
+/* Individual log line */
+.log-line {
+  display: flex;
+  font-family: var(--vscode-editor-font-family, 'SF Mono', 'Consolas', 'Liberation Mono', monospace);
+  font-size: var(--vscode-editor-font-size, 12px);
+  line-height: 1.6;
+  transition: background var(--log-transition-fast);
+}
+
+.log-line:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+/* Line number gutter */
+.log-line-number {
+  width: var(--log-line-number-width);
+  padding: 0 var(--log-space-sm);
+  text-align: right;
+  color: var(--vscode-editorLineNumber-foreground);
+  background: var(--vscode-editorGutter-background, transparent);
+  user-select: none;
+  flex-shrink: 0;
+  border-right: 1px solid var(--vscode-editorIndentGuide-background, transparent);
+  font-variant-numeric: tabular-nums;
+}
+
+.log-line:hover .log-line-number {
+  color: var(--vscode-editorLineNumber-activeForeground);
+}
+
+/* Log text content */
+.log-line-text {
+  flex: 1;
+  padding: 0 var(--log-space-md);
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--vscode-editor-foreground);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   States - Loading, Error, Empty
+   ═══════════════════════════════════════════════════════════ */
+
+.state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: var(--log-space-xl);
+  text-align: center;
+  animation: fadeIn var(--log-transition-slow) ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Loading spinner */
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--vscode-panel-border);
+  border-top-color: var(--vscode-focusBorder);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: var(--log-space-lg);
+}
+
+.state-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--vscode-foreground);
+  margin-bottom: var(--log-space-xs);
+}
+
+.state-message {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  max-width: 300px;
+  line-height: 1.5;
+}
+
+/* Error state */
+.state-container.error .state-title {
+  color: var(--vscode-errorForeground);
+}
+
+.error-icon {
+  width: 32px;
+  height: 32px;
+  margin-bottom: var(--log-space-lg);
+  color: var(--vscode-errorForeground);
+}
+
+/* Empty state */
+.empty-icon {
+  width: 32px;
+  height: 32px;
+  margin-bottom: var(--log-space-lg);
+  color: var(--vscode-descriptionForeground);
+  opacity: 0.6;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Footer - Optional Status Bar
+   ═══════════════════════════════════════════════════════════ */
+
+.log-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--log-space-xs) var(--log-space-lg);
+  background: var(--vscode-statusBar-background);
+  border-top: 1px solid var(--vscode-panel-border);
+  font-size: 11px;
+  color: var(--vscode-statusBar-foreground);
+  flex-shrink: 0;
+}
+
+.log-count {
+  opacity: 0.8;
+}
+
+.log-footer-hint {
+  opacity: 0.6;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Scrollbar Styling
+   ═══════════════════════════════════════════════════════════ */
+
+.log-container::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.log-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.log-container::-webkit-scrollbar-thumb {
+  background: var(--vscode-scrollbarSlider-background);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.log-container::-webkit-scrollbar-thumb:hover {
+  background: var(--vscode-scrollbarSlider-hoverBackground);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.log-container::-webkit-scrollbar-thumb:active {
+  background: var(--vscode-scrollbarSlider-activeBackground);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Utilities
+   ═══════════════════════════════════════════════════════════ */
+
+.hidden {
+  display: none !important;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+/* Focus visible for accessibility */
+.icon-button:focus-visible,
+.toggle-control input:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder);
+  outline-offset: 1px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Transitions for state changes
+   ═══════════════════════════════════════════════════════════ */
+
+.log-content {
+  animation: fadeIn var(--log-transition-normal) ease-out;
+}

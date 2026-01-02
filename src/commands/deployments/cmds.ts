@@ -11,18 +11,14 @@
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
-import {
-  DeploymentInvokeResponse,
-  DeploymentLogsResponse,
-  DeploymentOperationResponse,
-} from '../../types/DeploymentTypes';
+import { DeploymentInvokeResponse, DeploymentOperationResponse } from '../../types/DeploymentTypes';
 import { DeploymentDataProvider } from '../../views/activityBar/deploymentView/DeploymentDataProvider';
 import { DeploymentTreeItem } from '../../views/activityBar/deploymentView/DeploymentTreeItems';
+import DeploymentLogPanel from './DeploymentLogPanel';
 import {
   deleteDeployment as deleteDeploymentRequest,
   deprovisionDeployment as deprovisionDeploymentRequest,
   getDeploymentDashboardUrl,
-  getDeploymentLogs as getDeploymentLogsRequest,
   invokeDeployment as invokeDeploymentRequest,
   provisionDeployment as provisionDeploymentRequest,
   refreshDeploymentStatus as refreshDeploymentStatusRequest,
@@ -37,7 +33,7 @@ const isVersionMismatchResponse = (
 };
 
 const getErrorMessage = (
-  result: DeploymentOperationResponse | DeploymentInvokeResponse | DeploymentLogsResponse
+  result: DeploymentOperationResponse | DeploymentInvokeResponse
 ): string | undefined => {
   if (!result) {
     return 'No response from server.';
@@ -272,35 +268,12 @@ const openDeploymentUrl = (node: DeploymentTreeItem): void => {
 };
 
 const viewDeploymentLogs = async (node: DeploymentTreeItem): Promise<void> => {
-  const deploymentName = getDeploymentLabel(node);
-
-  await vscode.window.withProgress(
-    {
-      location: vscode.ProgressLocation.Window,
-      title: `Fetching logs for ${deploymentName}...`,
-    },
-    async () => {
-      try {
-        const result = await getDeploymentLogsRequest(node.deployment.id);
-        const errorMessage = getErrorMessage(result);
-        if (errorMessage) {
-          throw new Error(errorMessage);
-        }
-
-        if (!('logs' in result)) {
-          throw new Error('Logs were not returned by the server.');
-        }
-
-        const logs = result.logs.length > 0 ? result.logs : ['No logs available.'];
-        const header = `Deployment Logs: ${result.deploymentName || deploymentName}`;
-        showOutput(header, logs);
-      } catch (error: any) {
-        vscode.window.showErrorMessage(
-          `Failed to fetch deployment logs: ${error.message ?? error}`
-        );
-      }
-    }
-  );
+  try {
+    await DeploymentLogPanel.getInstance().show(node);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    vscode.window.showErrorMessage(`Failed to open deployment logs: ${errorMessage}`);
+  }
 };
 
 const invokeDeployment = async (node: DeploymentTreeItem): Promise<void> => {
