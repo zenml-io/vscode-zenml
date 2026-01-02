@@ -42,6 +42,10 @@ nox --session build_package # Full build for publishing
 ### Debug
 Press F5 in VS Code to launch extension in debug mode with a new VS Code window.
 
+## Task Tracking
+
+IMPORTANT: Use 'bd' CLI for task tracking (or the built-in plugin).
+
 ## Architecture
 
 ### Extension Entry Flow
