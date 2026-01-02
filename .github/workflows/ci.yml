@@ -1,6 +1,9 @@
 ---
 name: VSCode Extension CI
-on: [push, pull_request]
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
 jobs:
   lint:
     name: Lint

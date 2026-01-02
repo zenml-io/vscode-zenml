@@ -640,7 +640,7 @@ class PipelineRunsWrapper:
                 # Simplified config handling
                 config = getattr(run, "config", None)
                 if config:
-                    run_data["config"] = {
+                    config_data = {
                         "enable_cache": getattr(config, "enable_cache", False),
                         "enable_artifact_metadata": getattr(
                             config, "enable_artifact_metadata", False
@@ -653,7 +653,7 @@ class PipelineRunsWrapper:
 
                     model = getattr(config, "model", None)
                     if model:
-                        run_data["config"]["model"] = {
+                        config_data["model"] = {
                             "name": getattr(model, "name", ""),
                             "description": getattr(model, "description", ""),
                             "tags": getattr(model, "tags", []),
@@ -663,6 +663,8 @@ class PipelineRunsWrapper:
                             ),
                             "license": getattr(model, "license", ""),
                         }
+
+                    run_data["config"] = config_data
 
                 # Optimized steps handling - avoid expensive extraction for list view
                 steps = getattr(run, "steps", None)
