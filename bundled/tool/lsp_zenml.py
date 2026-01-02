@@ -19,10 +19,10 @@ updating Python interpreter paths.
 """
 
 import asyncio
+import inspect
 import subprocess
 import sys
 from datetime import datetime, date, time
-from functools import wraps
 from typing import Any, Dict
 from uuid import UUID
 
@@ -30,7 +30,11 @@ import lsprotocol.types as lsp
 from constants import IS_ZENML_INSTALLED, MIN_ZENML_VERSION, TOOL_MODULE_NAME
 from lazy_import import suppress_stdout_temporarily
 from packaging.version import parse as parse_version
-from pygls.server import LanguageServer
+try:
+    # pygls <= 1.2
+    from pygls.server import LanguageServer
+except ImportError:  # pragma: no cover - fallback for newer pygls
+    from pygls.lsp.server import LanguageServer
 from zen_watcher import ZenConfigWatcher
 from zenml_client import ZenMLClient
 
@@ -70,7 +74,40 @@ class ZenLanguageServer(LanguageServer):
         self.python_interpreter = sys.executable
         self.zenml_client = None
         self._wrapper_cache: Dict[str, Any] = {}
+        self._commands_registered = False
         # self.register_commands()
+
+    @staticmethod
+    def _normalize_message_type(
+        msg_type: lsp.MessageType | int | None, default: lsp.MessageType
+    ) -> lsp.MessageType:
+        if msg_type is None:
+            return default
+        if isinstance(msg_type, lsp.MessageType):
+            return msg_type
+        return lsp.MessageType(msg_type)
+
+    def show_message_log(self, message: str, msg_type: lsp.MessageType | int | None = None) -> None:
+        """Compatibility shim for pygls<=1.2 show_message_log."""
+        self.window_log_message(
+            lsp.LogMessageParams(
+                type=self._normalize_message_type(msg_type, lsp.MessageType.Log),
+                message=message,
+            )
+        )
+
+    def show_message(self, message: str, msg_type: lsp.MessageType | int | None = None) -> None:
+        """Compatibility shim for pygls<=1.2 show_message."""
+        self.window_show_message(
+            lsp.ShowMessageParams(
+                type=self._normalize_message_type(msg_type, lsp.MessageType.Info),
+                message=message,
+            )
+        )
+
+    def send_notification(self, method: str, params: Any | None = None) -> None:
+        """Compatibility shim for pygls<=1.2 send_notification."""
+        self.protocol.notify(method, params)
 
     async def is_zenml_installed(self) -> bool:
         """Asynchronously checks if ZenML is installed."""
@@ -151,8 +188,7 @@ class ZenLanguageServer(LanguageServer):
         """
 
         def decorator(func):
-            @wraps(func)
-            def wrapper(*args, **kwargs):
+            def wrapper(*args):
                 client = self.zenml_client
                 if not client:
                     self.log_to_output("ZenML client not found in ZenLanguageServer.")
@@ -160,6 +196,15 @@ class ZenLanguageServer(LanguageServer):
                 # Reduce logging overhead for performance
                 if not client.initialized:
                     return zenml_init_error
+
+                call_args = args
+                params = list(inspect.signature(func).parameters.values())
+                if len(params) > 1:
+                    second = params[1]
+                    if second.kind == inspect.Parameter.VAR_POSITIONAL:
+                        call_args = args
+                    elif second.name == "args":
+                        call_args = (list(args),)
 
                 # Cache wrapper instances to avoid repeated getattr calls
                 if wrapper_name:
@@ -173,13 +218,13 @@ class ZenLanguageServer(LanguageServer):
 
                     # Only suppress stdout for operations that might generate output
                     if wrapper_name in ["pipeline_runs_wrapper", "models_wrapper"]:
-                        result = func(wrapper_instance, *args, **kwargs)
+                        result = func(wrapper_instance, *call_args)
                     else:
                         with suppress_stdout_temporarily():
-                            result = func(wrapper_instance, *args, **kwargs)
+                            result = func(wrapper_instance, *call_args)
                 else:
                     with suppress_stdout_temporarily():
-                        result = func(self.zenml_client, *args, **kwargs)
+                        result = func(self.zenml_client, *call_args)
 
                 # Ensure all datetime/UUID objects are serialized for JSON
                 return _serialize_for_json(result)
@@ -246,6 +291,9 @@ class ZenLanguageServer(LanguageServer):
 
     def register_commands(self):
         """Registers ZenML Python Tool commands."""
+        if self._commands_registered:
+            return
+        self._commands_registered = True
 
         @self.command(f"{TOOL_MODULE_NAME}.getGlobalConfig")
         @self.zenml_command(wrapper_name="config_wrapper")
