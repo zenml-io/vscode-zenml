@@ -52,3 +52,4 @@ bundled/libs/
 
 # bv (beads viewer) local config and caches
 .bv/
+.claude/
