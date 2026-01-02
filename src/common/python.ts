@@ -11,7 +11,6 @@
 // or implied.See the License for the specific language governing
 // permissions and limitations under the License.
 
-/* eslint-disable @typescript-eslint/naming-convention */
 import { commands, Disposable, Event, EventEmitter, Uri } from 'vscode';
 import { traceError, traceLog } from './log/logging';
 import { PythonExtension, ResolvedEnvironment } from '@vscode/python-extension';
@@ -45,7 +44,8 @@ export async function initializePython(disposables: Disposable[]): Promise<void>
     if (api) {
       disposables.push(
         api.environments.onDidChangeActiveEnvironmentPath(e => {
-          onDidChangePythonInterpreterEvent.fire({ path: [e.path], resource: e.resource?.uri });
+          const resource = e.resource && 'uri' in e.resource ? e.resource.uri : e.resource;
+          onDidChangePythonInterpreterEvent.fire({ path: [e.path], resource });
         })
       );
 
