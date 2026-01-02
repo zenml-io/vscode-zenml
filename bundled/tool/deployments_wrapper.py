@@ -212,8 +212,8 @@ class DeploymentsWrapper:
                 "deployments": deployments,
                 "total": response.total,
                 "total_pages": response.total_pages,
-                "current_page": response.page,
-                "items_per_page": response.size,
+                "current_page": response.index,
+                "items_per_page": response.max_size,
             }
 
         except self.ZenMLBaseException as e:
@@ -355,32 +355,43 @@ class DeploymentsWrapper:
             return {"error": f"Failed to refresh deployment status: {str(e)}"}
 
     @serialize_response
-    def get_deployment_logs(self, args: Tuple[str]) -> Union[DeploymentLogsResponse, ErrorResponse]:
+    def get_deployment_logs(
+        self, args: Tuple[str, Optional[int]]
+    ) -> Union[DeploymentLogsResponse, ErrorResponse]:
         """Get logs from a deployment.
 
         Args:
-            args: Tuple containing (deployment_id,)
+            args: Tuple containing (deployment_id, tail_lines)
+                  tail_lines: Number of lines from end (None for all)
 
         Returns:
             DeploymentLogsResponse or ErrorResponse
         """
-        (deployment_id,) = args
+        deployment_id = args[0]
+        tail_lines = args[1] if len(args) > 1 else 500  # Default to last 500 lines
 
         try:
             # Get deployment first for name
             deployment = self.client.get_deployment(deployment_id, hydrate=True)
             deployment_name = getattr(deployment, "name", "Unknown")
 
-            # Try to get logs - this may vary based on ZenML version
+            # Get logs - returns a Generator, so we need to consume it
             logs = []
             if hasattr(self.client, "get_deployment_logs"):
-                log_response = self.client.get_deployment_logs(deployment_id)
-                if isinstance(log_response, str):
-                    logs = log_response.split("\n")
-                elif isinstance(log_response, list):
-                    logs = log_response
-                elif hasattr(log_response, "logs"):
-                    logs = log_response.logs
+                import re
+
+                # Regex to strip ANSI escape codes (colors, formatting)
+                ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+
+                # get_deployment_logs returns Generator[str, bool, None]
+                # We consume it into a list, with optional tail limit
+                log_generator = self.client.get_deployment_logs(
+                    name_id_or_prefix=deployment_id,
+                    follow=False,
+                    tail=tail_lines,
+                )
+                # Consume the generator and strip ANSI codes
+                logs = [ansi_escape.sub("", line) for line in log_generator]
 
             return {
                 "logs": logs,
@@ -410,13 +421,21 @@ class DeploymentsWrapper:
         try:
             import time
 
+            # Import the invoke utility function from ZenML
+            try:
+                from zenml.deployers.utils import invoke_deployment as zenml_invoke
+            except ImportError:
+                return {"error": "Deployment invocation is not supported in this ZenML version"}
+
             start_time = time.time()
 
-            # Invoke the deployment
-            if hasattr(self.client, "invoke_deployment"):
-                response = self.client.invoke_deployment(deployment_id, data=payload)
-            else:
-                return {"error": "Deployment invocation is not supported in this ZenML version"}
+            # Invoke the deployment - payload keys become kwargs
+            # The invoke_deployment function expects **kwargs for parameters
+            response = zenml_invoke(
+                deployment_name_or_id=deployment_id,
+                timeout=300,  # 5 minute timeout
+                **payload,
+            )
 
             execution_time = time.time() - start_time
 
