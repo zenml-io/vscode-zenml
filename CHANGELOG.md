@@ -2,6 +2,28 @@
 
 All notable changes to the "zenml-vscode" extension will be documented in this file.
 
+## [0.0.22] - 2026-01-02 - Maintenance & CI Modernization
+
+### Changed
+
+- Updated GitHub Actions to latest versions (checkout@v4, setup-node@v4, setup-python@v5, cache@v4)
+- Bumped CI Python version from 3.8 (EOL) to 3.11
+- Consolidated mypy configuration into pyproject.toml (removed separate mypy.ini)
+- Added github-actions ecosystem to Dependabot for automatic action updates
+
+### Fixed
+
+- Fixed Python linting issues (import sorting, unused variables, line length)
+- Fixed mypy type checking errors for Python 3.11 compatibility
+- Fixed prettier formatting issues in VS Code settings
+- Fixed duplicate CI workflow runs on pull requests
+- Stabilized LSP initialization and command handling
+
+### Dependencies
+
+- Updated major npm dev dependencies
+- ZenML 0.93.0 API compatibility improvements
+
 ## [0.0.21] - 2025-01-28 - ZenML 0.83.0 Compatibility
 
 ### Added
