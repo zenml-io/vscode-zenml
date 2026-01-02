@@ -1,511 +1,511 @@
 {
-    "name": "zenml-vscode",
-    "publisher": "ZenML",
-    "displayName": "ZenML Studio",
-    "description": "Integrates ZenML directly into VS Code, enhancing machine learning workflow with support for pipelines, stacks, server management and DAG visualization.",
-    "version": "0.0.11",
-    "icon": "resources/extension-logo.png",
-    "preview": false,
-    "license": "Apache-2.0",
-    "categories": [
-        "Machine Learning",
-        "Visualization"
-    ],
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/zenml-io/vscode-zenml"
-    },
-    "keywords": [
-        "zenml",
-        "ml",
-        "machine learning",
-        "mlops",
-        "stack management",
-        "pipeline management",
-        "development tools"
-    ],
-    "engines": {
-        "vscode": "^1.86.0"
-    },
-    "activationEvents": [
-        "onStartupFinished",
-        "onLanguage:python",
-        "workspaceContains:*.py"
-    ],
-    "extensionDependencies": [
-        "ms-python.python"
-    ],
-    "capabilities": {
-        "virtualWorkspaces": {
-            "supported": false,
-            "description": "Virtual Workspaces are not supported with <pytool-display-name>."
-        }
-    },
-    "main": "./dist/extension.js",
-    "serverInfo": {
-        "name": "ZenML",
-        "module": "zenml-python"
-    },
-    "scripts": {
-        "compile": "webpack",
-        "compile-tests": "tsc -p . --outDir out",
-        "deploy": "vsce publish",
-        "format": "prettier --ignore-path .gitignore --write \"**/*.+(ts|json)\"",
-        "format-check": "prettier --ignore-path .gitignore --check \"**/*.+(ts|json)\"",
-        "install": "pip install -r requirements.txt --target bundled/libs",
-        "lint": "eslint src --ext ts",
-        "package": "webpack --mode production --devtool source-map --config ./webpack.config.js",
-        "pretest": "npm run compile-tests && npm run compile && npm run lint",
-        "test": "vscode-test",
-        "vsce-package": "vsce package -o zenml.vsix",
-        "vscode:prepublish": "npm run package",
-        "watch": "webpack --watch",
-        "watch-tests": "tsc -p . -w --outDir out"
-    },
-    "contributes": {
-        "configuration": {
-            "title": "ZenML",
-            "properties": {
-                "zenml-python.args": {
-                    "default": [],
-                    "description": "Arguments passed in. Each argument is a separate item in the array.",
-                    "items": {
-                        "type": "string"
-                    },
-                    "scope": "resource",
-                    "type": "array"
-                },
-                "zenml-python.path": {
-                    "default": [],
-                    "scope": "resource",
-                    "items": {
-                        "type": "string"
-                    },
-                    "type": "array"
-                },
-                "zenml-python.importStrategy": {
-                    "default": "useBundled",
-                    "enum": [
-                        "useBundled",
-                        "fromEnvironment"
-                    ],
-                    "enumDescriptions": [
-                        "Always use the bundled version of `<pytool-module>`.",
-                        "Use `<pytool-module>` from environment, fallback to bundled version only if `<pytool-module>` not available in the environment."
-                    ],
-                    "scope": "window",
-                    "type": "string"
-                },
-                "zenml-python.interpreter": {
-                    "default": [],
-                    "description": "When set to a path to python executable, extension will use that to launch the server and any subprocess.",
-                    "scope": "resource",
-                    "items": {
-                        "type": "string"
-                    },
-                    "type": "array"
-                },
-                "zenml-python.showNotifications": {
-                    "default": "off",
-                    "description": "Controls when notifications are shown by this extension.",
-                    "enum": [
-                        "off",
-                        "onError",
-                        "onWarning",
-                        "always"
-                    ],
-                    "enumDescriptions": [
-                        "All notifications are turned off, any errors or warning are still available in the logs.",
-                        "Notifications are shown only in the case of an error.",
-                        "Notifications are shown for errors and warnings.",
-                        "Notifications are show for anything that the server chooses to show."
-                    ],
-                    "scope": "machine",
-                    "type": "string"
-                },
-                "zenml.serverUrl": {
-                    "type": "string",
-                    "default": "",
-                    "description": "ZenML Server URL"
-                },
-                "zenml.accessToken": {
-                    "type": "string",
-                    "default": "",
-                    "description": "Access token for the ZenML server"
-                },
-                "zenml.activeStackId": {
-                    "type": "string",
-                    "default": "",
-                    "description": "Active stack id for the ZenML server"
-                }
-            }
-        },
-        "commands": [
-            {
-                "command": "zenml.promptForInterpreter",
-                "title": "Select Python Interpreter",
-                "category": "ZenML"
-            },
-            {
-                "command": "zenml-python.restart",
-                "title": "Restart LSP Server",
-                "category": "ZenML"
-            },
-            {
-                "command": "zenml.connectServer",
-                "title": "Connect",
-                "category": "ZenML Server"
-            },
-            {
-                "command": "zenml.disconnectServer",
-                "title": "Disconnect",
-                "category": "ZenML Server"
-            },
-            {
-                "command": "zenml.refreshServerStatus",
-                "title": "Refresh Server Status",
-                "icon": "$(refresh)",
-                "category": "ZenML Server"
-            },
-            {
-                "command": "zenml.setStackItemsPerPage",
-                "title": "Set Stacks Per Page",
-                "icon": "$(layers)",
-                "category": "ZenML Stacks"
-            },
-            {
-                "command": "zenml.refreshStackView",
-                "title": "Refresh Stack View",
-                "icon": "$(refresh)",
-                "category": "ZenML Stacks"
-            },
-            {
-                "command": "zenml.getActiveStack",
-                "title": "Get Active Stack",
-                "category": "ZenML Stacks"
-            },
-            {
-                "command": "zenml.registerStack",
-                "title": "Register New Stack",
-                "icon": "$(add)",
-                "category": "ZenML Stacks"
-            },
-            {
-                "command": "zenml.updateStack",
-                "title": "Update Stack",
-                "icon": "$(edit)",
-                "category": "ZenML Stacks"
-            },
-            {
-                "command": "zenml.setActiveStack",
-                "title": "Set Active Stack",
-                "icon": "$(check)",
-                "category": "ZenML Stacks"
-            },
-            {
-                "command": "zenml.copyStack",
-                "title": "Copy Stack",
-                "icon": "$(copy)",
-                "category": "ZenML Stacks"
-            },
-            {
-                "command": "zenml.goToStackUrl",
-                "title": "Go to URL",
-                "icon": "$(globe)",
-                "category": "ZenML Stacks"
-            },
-            {
-                "command": "zenml.deleteStack",
-                "title": "Delete Stack",
-                "icon": "$(trash)",
-                "category": "ZenML Stacks"
-            },
-            {
-                "command": "zenml.setComponentItemsPerPage",
-                "title": "Set Components Per Page",
-                "icon": "$(layers)",
-                "category": "ZenML Components"
-            },
-            {
-                "command": "zenml.refreshComponentView",
-                "title": "Refresh Component View",
-                "icon": "$(refresh)",
-                "category": "ZenML Components"
-            },
-            {
-                "command": "zenml.registerComponent",
-                "title": "Register New Component",
-                "icon": "$(add)",
-                "category": "ZenML Components"
-            },
-            {
-                "command": "zenml.updateComponent",
-                "title": "Update Component",
-                "icon": "$(edit)",
-                "category": "ZenML Components"
-            },
-            {
-                "command": "zenml.deleteComponent",
-                "title": "Delete Component",
-                "icon": "$(trash)",
-                "category": "ZenML Components"
-            },
-            {
-                "command": "zenml.setPipelineRunsPerPage",
-                "title": "Set Runs Per Page",
-                "icon": "$(layers)",
-                "category": "ZenML Pipeline Runs"
-            },
-            {
-                "command": "zenml.refreshPipelineView",
-                "title": "Refresh Pipeline View",
-                "icon": "$(refresh)",
-                "category": "ZenML Pipeline Runs"
-            },
-            {
-                "command": "zenml.deletePipelineRun",
-                "title": "Delete Pipeline Run",
-                "icon": "$(trash)",
-                "category": "ZenML Pipeline Runs"
-            },
-            {
-                "command": "zenml.goToPipelineUrl",
-                "title": "Go to URL",
-                "icon": "$(globe)",
-                "category": "ZenML Pipeline Runs"
-            },
-            {
-                "command": "zenml.renderDag",
-                "title": "Render DAG",
-                "icon": "$(type-hierarchy)",
-                "category": "ZenML Pipeline Runs"
-            },
-            {
-                "command": "zenml.refreshEnvironmentView",
-                "title": "Refresh Environment View",
-                "icon": "$(refresh)",
-                "category": "ZenML Environment"
-            },
-            {
-                "command": "zenml.setPythonInterpreter",
-                "title": "Switch Python Interpreter",
-                "icon": "$(arrow-swap)",
-                "category": "ZenML Environment"
-            },
-            {
-                "command": "zenml.restartLspServer",
-                "title": "Restart LSP Server",
-                "icon": "$(debug-restart)",
-                "category": "ZenML Environment"
-            }
-        ],
-        "viewsContainers": {
-            "activitybar": [
-                {
-                    "id": "zenml",
-                    "title": "ZenML",
-                    "icon": "resources/logo.png"
-                }
-            ],
-            "panel": [
-                {
-                    "id": "zenmlPanel",
-                    "title": "ZenML",
-                    "icon": "resources/logo.png"
-                }
-            ]
-        },
-        "views": {
-            "zenml": [
-                {
-                    "id": "zenmlServerView",
-                    "name": "Server",
-                    "icon": "$(vm)"
-                },
-                {
-                    "id": "zenmlStackView",
-                    "name": "Stacks",
-                    "icon": "$(layers)"
-                },
-                {
-                    "id": "zenmlComponentView",
-                    "name": "Stack Components",
-                    "icon": "$(extensions)"
-                },
-                {
-                    "id": "zenmlPipelineView",
-                    "name": "Pipeline Runs",
-                    "icon": "$(beaker)"
-                },
-                {
-                    "id": "zenmlEnvironmentView",
-                    "name": "Environment",
-                    "icon": "$(server-environment)"
-                }
-            ],
-            "zenmlPanel": [
-                {
-                    "id": "zenmlPanelView",
-                    "name": "ZenML"
-                }
-            ]
-        },
-        "menus": {
-            "view/title": [
-                {
-                    "when": "serverCommandsRegistered && view == zenmlServerView",
-                    "command": "zenml.connectServer",
-                    "group": "navigation"
-                },
-                {
-                    "when": "serverCommandsRegistered && view == zenmlServerView",
-                    "command": "zenml.disconnectServer",
-                    "group": "navigation"
-                },
-                {
-                    "when": "serverCommandsRegistered && view == zenmlServerView",
-                    "command": "zenml.refreshServerStatus",
-                    "group": "navigation"
-                },
-                {
-                    "when": "stackCommandsRegistered && view == zenmlStackView",
-                    "command": "zenml.registerStack",
-                    "group": "navigation@1"
-                },
-                {
-                    "when": "stackCommandsRegistered && view == zenmlStackView",
-                    "command": "zenml.setStackItemsPerPage",
-                    "group": "navigation@2"
-                },
-                {
-                    "when": "stackCommandsRegistered && view == zenmlStackView",
-                    "command": "zenml.refreshStackView",
-                    "group": "navigation@3"
-                },
-                {
-                    "when": "componentCommandsRegistered && view == zenmlComponentView",
-                    "command": "zenml.registerComponent",
-                    "group": "navigation@1"
-                },
-                {
-                    "when": "componentCommandsRegistered && view == zenmlComponentView",
-                    "command": "zenml.setComponentItemsPerPage",
-                    "group": "navigation@2"
-                },
-                {
-                    "when": "componentCommandsRegistered && view == zenmlComponentView",
-                    "command": "zenml.refreshComponentView",
-                    "group": "navigation@3"
-                },
-                {
-                    "when": "pipelineCommandsRegistered && view == zenmlPipelineView",
-                    "command": "zenml.setPipelineRunsPerPage",
-                    "group": "navigation@1"
-                },
-                {
-                    "when": "pipelineCommandsRegistered && view == zenmlPipelineView",
-                    "command": "zenml.refreshPipelineView",
-                    "group": "navigation@2"
-                },
-                {
-                    "when": "environmentCommandsRegistered && view == zenmlEnvironmentView",
-                    "command": "zenml.restartLspServer",
-                    "group": "navigation"
-                }
-            ],
-            "view/item/context": [
-                {
-                    "when": "stackCommandsRegistered && view == zenmlStackView && viewItem == stack",
-                    "command": "zenml.setActiveStack",
-                    "group": "inline@1"
-                },
-                {
-                    "when": "stackCommandsRegistered && view == zenmlStackView && viewItem == stack",
-                    "command": "zenml.updateStack",
-                    "group": "inline@2"
-                },
-                {
-                    "when": "stackCommandsRegistered && view == zenmlStackView && viewItem == stack",
-                    "command": "zenml.copyStack",
-                    "group": "inline@3"
-                },
-                {
-                    "when": "stackCommandsRegistered && view == zenmlStackView && viewItem == stack",
-                    "command": "zenml.goToStackUrl",
-                    "group": "inline@4"
-                },
-                {
-                    "when": "stackCommandsRegistered && view == zenmlStackView && viewItem == stack",
-                    "command": "zenml.deleteStack",
-                    "group": "inline@5"
-                },
-                {
-                    "when": "componentCommandsRegistered && view == zenmlComponentView && viewItem == stackComponent",
-                    "command": "zenml.updateComponent",
-                    "group": "inline@1"
-                },
-                {
-                    "when": "componentCommandsRegistered && view == zenmlComponentView && viewItem == stackComponent",
-                    "command": "zenml.deleteComponent",
-                    "group": "inline@2"
-                },
-                {
-                    "when": "pipelineCommandsRegistered && view == zenmlPipelineView && viewItem == pipelineRun",
-                    "command": "zenml.deletePipelineRun",
-                    "group": "inline@2"
-                },
-                {
-                    "when": "pipelineCommandsRegistered && view == zenmlPipelineView && viewItem == pipelineRun",
-                    "command": "zenml.goToPipelineUrl",
-                    "group": "inline@3"
-                },
-                {
-                    "when": "pipelineCommandsRegistered && view == zenmlPipelineView && viewItem == pipelineRun",
-                    "command": "zenml.renderDag",
-                    "group": "inline@1"
-                },
-                {
-                    "when": "environmentCommandsRegistered && view == zenmlEnvironmentView && viewItem == interpreter",
-                    "command": "zenml.setPythonInterpreter",
-                    "group": "inline"
-                }
-            ]
-        }
-    },
-    "devDependencies": {
-        "@types/dagre": "^0.7.53",
-        "@types/fs-extra": "^11.0.4",
-        "@types/hbs": "^4.0.5",
-        "@types/mocha": "^10.0.10",
-        "@types/node": "^22.5.4",
-        "@types/sinon": "^21.0.0",
-        "@types/svgdom": "^0.1.2",
-        "@types/vscode": "^1.92.0",
-        "@types/webpack": "^5.28.5",
-        "@typescript-eslint/eslint-plugin": "^8.51.0",
-        "@typescript-eslint/parser": "^8.51.0",
-        "@vscode/test-cli": "^0.0.12",
-        "@vscode/test-electron": "^2.5.2",
-        "@vscode/vsce": "^3.7.1",
-        "eslint": "^9.39.2",
-        "eslint-config-prettier": "^10.1.8",
-        "prettier": "^3.7.4",
-        "sinon": "^21.0.1",
-        "ts-loader": "^9.5.4",
-        "ts-node": "^10.9.2",
-        "typescript": "^5.9.3",
-        "webpack": "^5.104.1",
-        "webpack-cli": "^6.0.1"
-    },
-    "dependencies": {
-        "@svgdotjs/svg.js": "^3.2.5",
-        "@vscode/python-extension": "^1.0.6",
-        "axios": "^1.13.2",
-        "dagre": "^0.8.5",
-        "fs-extra": "^11.3.3",
-        "hbs": "^4.2.0",
-        "svg-pan-zoom": "^3.6.2",
-        "svgdom": "^0.1.22",
-        "vscode-languageclient": "^9.0.1"
+  "name": "zenml-vscode",
+  "publisher": "ZenML",
+  "displayName": "ZenML Studio",
+  "description": "Integrates ZenML directly into VS Code, enhancing machine learning workflow with support for pipelines, stacks, server management and DAG visualization.",
+  "version": "0.0.11",
+  "icon": "resources/extension-logo.png",
+  "preview": false,
+  "license": "Apache-2.0",
+  "categories": [
+    "Machine Learning",
+    "Visualization"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zenml-io/vscode-zenml"
+  },
+  "keywords": [
+    "zenml",
+    "ml",
+    "machine learning",
+    "mlops",
+    "stack management",
+    "pipeline management",
+    "development tools"
+  ],
+  "engines": {
+    "vscode": "^1.86.0"
+  },
+  "activationEvents": [
+    "onStartupFinished",
+    "onLanguage:python",
+    "workspaceContains:*.py"
+  ],
+  "extensionDependencies": [
+    "ms-python.python"
+  ],
+  "capabilities": {
+    "virtualWorkspaces": {
+      "supported": false,
+      "description": "Virtual Workspaces are not supported with <pytool-display-name>."
     }
+  },
+  "main": "./dist/extension.js",
+  "serverInfo": {
+    "name": "ZenML",
+    "module": "zenml-python"
+  },
+  "scripts": {
+    "compile": "webpack",
+    "compile-tests": "tsc -p . --outDir out",
+    "deploy": "vsce publish",
+    "format": "prettier --ignore-path .gitignore --write \"**/*.+(ts|json)\"",
+    "format-check": "prettier --ignore-path .gitignore --check \"**/*.+(ts|json)\"",
+    "install": "pip install -r requirements.txt --target bundled/libs",
+    "lint": "eslint src --ext ts",
+    "package": "webpack --mode production --devtool source-map --config ./webpack.config.js",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "test": "vscode-test",
+    "vsce-package": "vsce package -o zenml.vsix",
+    "vscode:prepublish": "npm run package",
+    "watch": "webpack --watch",
+    "watch-tests": "tsc -p . -w --outDir out"
+  },
+  "contributes": {
+    "configuration": {
+      "title": "ZenML",
+      "properties": {
+        "zenml-python.args": {
+          "default": [],
+          "description": "Arguments passed in. Each argument is a separate item in the array.",
+          "items": {
+            "type": "string"
+          },
+          "scope": "resource",
+          "type": "array"
+        },
+        "zenml-python.path": {
+          "default": [],
+          "scope": "resource",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "zenml-python.importStrategy": {
+          "default": "useBundled",
+          "enum": [
+            "useBundled",
+            "fromEnvironment"
+          ],
+          "enumDescriptions": [
+            "Always use the bundled version of `<pytool-module>`.",
+            "Use `<pytool-module>` from environment, fallback to bundled version only if `<pytool-module>` not available in the environment."
+          ],
+          "scope": "window",
+          "type": "string"
+        },
+        "zenml-python.interpreter": {
+          "default": [],
+          "description": "When set to a path to python executable, extension will use that to launch the server and any subprocess.",
+          "scope": "resource",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "zenml-python.showNotifications": {
+          "default": "off",
+          "description": "Controls when notifications are shown by this extension.",
+          "enum": [
+            "off",
+            "onError",
+            "onWarning",
+            "always"
+          ],
+          "enumDescriptions": [
+            "All notifications are turned off, any errors or warning are still available in the logs.",
+            "Notifications are shown only in the case of an error.",
+            "Notifications are shown for errors and warnings.",
+            "Notifications are show for anything that the server chooses to show."
+          ],
+          "scope": "machine",
+          "type": "string"
+        },
+        "zenml.serverUrl": {
+          "type": "string",
+          "default": "",
+          "description": "ZenML Server URL"
+        },
+        "zenml.accessToken": {
+          "type": "string",
+          "default": "",
+          "description": "Access token for the ZenML server"
+        },
+        "zenml.activeStackId": {
+          "type": "string",
+          "default": "",
+          "description": "Active stack id for the ZenML server"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "zenml.promptForInterpreter",
+        "title": "Select Python Interpreter",
+        "category": "ZenML"
+      },
+      {
+        "command": "zenml-python.restart",
+        "title": "Restart LSP Server",
+        "category": "ZenML"
+      },
+      {
+        "command": "zenml.connectServer",
+        "title": "Connect",
+        "category": "ZenML Server"
+      },
+      {
+        "command": "zenml.disconnectServer",
+        "title": "Disconnect",
+        "category": "ZenML Server"
+      },
+      {
+        "command": "zenml.refreshServerStatus",
+        "title": "Refresh Server Status",
+        "icon": "$(refresh)",
+        "category": "ZenML Server"
+      },
+      {
+        "command": "zenml.setStackItemsPerPage",
+        "title": "Set Stacks Per Page",
+        "icon": "$(layers)",
+        "category": "ZenML Stacks"
+      },
+      {
+        "command": "zenml.refreshStackView",
+        "title": "Refresh Stack View",
+        "icon": "$(refresh)",
+        "category": "ZenML Stacks"
+      },
+      {
+        "command": "zenml.getActiveStack",
+        "title": "Get Active Stack",
+        "category": "ZenML Stacks"
+      },
+      {
+        "command": "zenml.registerStack",
+        "title": "Register New Stack",
+        "icon": "$(add)",
+        "category": "ZenML Stacks"
+      },
+      {
+        "command": "zenml.updateStack",
+        "title": "Update Stack",
+        "icon": "$(edit)",
+        "category": "ZenML Stacks"
+      },
+      {
+        "command": "zenml.setActiveStack",
+        "title": "Set Active Stack",
+        "icon": "$(check)",
+        "category": "ZenML Stacks"
+      },
+      {
+        "command": "zenml.copyStack",
+        "title": "Copy Stack",
+        "icon": "$(copy)",
+        "category": "ZenML Stacks"
+      },
+      {
+        "command": "zenml.goToStackUrl",
+        "title": "Go to URL",
+        "icon": "$(globe)",
+        "category": "ZenML Stacks"
+      },
+      {
+        "command": "zenml.deleteStack",
+        "title": "Delete Stack",
+        "icon": "$(trash)",
+        "category": "ZenML Stacks"
+      },
+      {
+        "command": "zenml.setComponentItemsPerPage",
+        "title": "Set Components Per Page",
+        "icon": "$(layers)",
+        "category": "ZenML Components"
+      },
+      {
+        "command": "zenml.refreshComponentView",
+        "title": "Refresh Component View",
+        "icon": "$(refresh)",
+        "category": "ZenML Components"
+      },
+      {
+        "command": "zenml.registerComponent",
+        "title": "Register New Component",
+        "icon": "$(add)",
+        "category": "ZenML Components"
+      },
+      {
+        "command": "zenml.updateComponent",
+        "title": "Update Component",
+        "icon": "$(edit)",
+        "category": "ZenML Components"
+      },
+      {
+        "command": "zenml.deleteComponent",
+        "title": "Delete Component",
+        "icon": "$(trash)",
+        "category": "ZenML Components"
+      },
+      {
+        "command": "zenml.setPipelineRunsPerPage",
+        "title": "Set Runs Per Page",
+        "icon": "$(layers)",
+        "category": "ZenML Pipeline Runs"
+      },
+      {
+        "command": "zenml.refreshPipelineView",
+        "title": "Refresh Pipeline View",
+        "icon": "$(refresh)",
+        "category": "ZenML Pipeline Runs"
+      },
+      {
+        "command": "zenml.deletePipelineRun",
+        "title": "Delete Pipeline Run",
+        "icon": "$(trash)",
+        "category": "ZenML Pipeline Runs"
+      },
+      {
+        "command": "zenml.goToPipelineUrl",
+        "title": "Go to URL",
+        "icon": "$(globe)",
+        "category": "ZenML Pipeline Runs"
+      },
+      {
+        "command": "zenml.renderDag",
+        "title": "Render DAG",
+        "icon": "$(type-hierarchy)",
+        "category": "ZenML Pipeline Runs"
+      },
+      {
+        "command": "zenml.refreshEnvironmentView",
+        "title": "Refresh Environment View",
+        "icon": "$(refresh)",
+        "category": "ZenML Environment"
+      },
+      {
+        "command": "zenml.setPythonInterpreter",
+        "title": "Switch Python Interpreter",
+        "icon": "$(arrow-swap)",
+        "category": "ZenML Environment"
+      },
+      {
+        "command": "zenml.restartLspServer",
+        "title": "Restart LSP Server",
+        "icon": "$(debug-restart)",
+        "category": "ZenML Environment"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "zenml",
+          "title": "ZenML",
+          "icon": "resources/logo.png"
+        }
+      ],
+      "panel": [
+        {
+          "id": "zenmlPanel",
+          "title": "ZenML",
+          "icon": "resources/logo.png"
+        }
+      ]
+    },
+    "views": {
+      "zenml": [
+        {
+          "id": "zenmlServerView",
+          "name": "Server",
+          "icon": "$(vm)"
+        },
+        {
+          "id": "zenmlStackView",
+          "name": "Stacks",
+          "icon": "$(layers)"
+        },
+        {
+          "id": "zenmlComponentView",
+          "name": "Stack Components",
+          "icon": "$(extensions)"
+        },
+        {
+          "id": "zenmlPipelineView",
+          "name": "Pipeline Runs",
+          "icon": "$(beaker)"
+        },
+        {
+          "id": "zenmlEnvironmentView",
+          "name": "Environment",
+          "icon": "$(server-environment)"
+        }
+      ],
+      "zenmlPanel": [
+        {
+          "id": "zenmlPanelView",
+          "name": "ZenML"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "when": "serverCommandsRegistered && view == zenmlServerView",
+          "command": "zenml.connectServer",
+          "group": "navigation"
+        },
+        {
+          "when": "serverCommandsRegistered && view == zenmlServerView",
+          "command": "zenml.disconnectServer",
+          "group": "navigation"
+        },
+        {
+          "when": "serverCommandsRegistered && view == zenmlServerView",
+          "command": "zenml.refreshServerStatus",
+          "group": "navigation"
+        },
+        {
+          "when": "stackCommandsRegistered && view == zenmlStackView",
+          "command": "zenml.registerStack",
+          "group": "navigation@1"
+        },
+        {
+          "when": "stackCommandsRegistered && view == zenmlStackView",
+          "command": "zenml.setStackItemsPerPage",
+          "group": "navigation@2"
+        },
+        {
+          "when": "stackCommandsRegistered && view == zenmlStackView",
+          "command": "zenml.refreshStackView",
+          "group": "navigation@3"
+        },
+        {
+          "when": "componentCommandsRegistered && view == zenmlComponentView",
+          "command": "zenml.registerComponent",
+          "group": "navigation@1"
+        },
+        {
+          "when": "componentCommandsRegistered && view == zenmlComponentView",
+          "command": "zenml.setComponentItemsPerPage",
+          "group": "navigation@2"
+        },
+        {
+          "when": "componentCommandsRegistered && view == zenmlComponentView",
+          "command": "zenml.refreshComponentView",
+          "group": "navigation@3"
+        },
+        {
+          "when": "pipelineCommandsRegistered && view == zenmlPipelineView",
+          "command": "zenml.setPipelineRunsPerPage",
+          "group": "navigation@1"
+        },
+        {
+          "when": "pipelineCommandsRegistered && view == zenmlPipelineView",
+          "command": "zenml.refreshPipelineView",
+          "group": "navigation@2"
+        },
+        {
+          "when": "environmentCommandsRegistered && view == zenmlEnvironmentView",
+          "command": "zenml.restartLspServer",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "when": "stackCommandsRegistered && view == zenmlStackView && viewItem == stack",
+          "command": "zenml.setActiveStack",
+          "group": "inline@1"
+        },
+        {
+          "when": "stackCommandsRegistered && view == zenmlStackView && viewItem == stack",
+          "command": "zenml.updateStack",
+          "group": "inline@2"
+        },
+        {
+          "when": "stackCommandsRegistered && view == zenmlStackView && viewItem == stack",
+          "command": "zenml.copyStack",
+          "group": "inline@3"
+        },
+        {
+          "when": "stackCommandsRegistered && view == zenmlStackView && viewItem == stack",
+          "command": "zenml.goToStackUrl",
+          "group": "inline@4"
+        },
+        {
+          "when": "stackCommandsRegistered && view == zenmlStackView && viewItem == stack",
+          "command": "zenml.deleteStack",
+          "group": "inline@5"
+        },
+        {
+          "when": "componentCommandsRegistered && view == zenmlComponentView && viewItem == stackComponent",
+          "command": "zenml.updateComponent",
+          "group": "inline@1"
+        },
+        {
+          "when": "componentCommandsRegistered && view == zenmlComponentView && viewItem == stackComponent",
+          "command": "zenml.deleteComponent",
+          "group": "inline@2"
+        },
+        {
+          "when": "pipelineCommandsRegistered && view == zenmlPipelineView && viewItem == pipelineRun",
+          "command": "zenml.deletePipelineRun",
+          "group": "inline@2"
+        },
+        {
+          "when": "pipelineCommandsRegistered && view == zenmlPipelineView && viewItem == pipelineRun",
+          "command": "zenml.goToPipelineUrl",
+          "group": "inline@3"
+        },
+        {
+          "when": "pipelineCommandsRegistered && view == zenmlPipelineView && viewItem == pipelineRun",
+          "command": "zenml.renderDag",
+          "group": "inline@1"
+        },
+        {
+          "when": "environmentCommandsRegistered && view == zenmlEnvironmentView && viewItem == interpreter",
+          "command": "zenml.setPythonInterpreter",
+          "group": "inline"
+        }
+      ]
+    }
+  },
+  "devDependencies": {
+    "@types/dagre": "^0.7.53",
+    "@types/fs-extra": "^11.0.4",
+    "@types/hbs": "^4.0.5",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.5.4",
+    "@types/sinon": "^21.0.0",
+    "@types/svgdom": "^0.1.2",
+    "@types/vscode": "^1.92.0",
+    "@types/webpack": "^5.28.5",
+    "@typescript-eslint/eslint-plugin": "^8.51.0",
+    "@typescript-eslint/parser": "^8.51.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.7.1",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.7.4",
+    "sinon": "^21.0.1",
+    "ts-loader": "^9.5.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3",
+    "webpack": "^5.104.1",
+    "webpack-cli": "^6.0.1"
+  },
+  "dependencies": {
+    "@svgdotjs/svg.js": "^3.2.5",
+    "@vscode/python-extension": "^1.0.6",
+    "axios": "^1.13.2",
+    "dagre": "^0.8.5",
+    "fs-extra": "^11.3.3",
+    "hbs": "^4.2.0",
+    "svg-pan-zoom": "^3.6.2",
+    "svgdom": "^0.1.22",
+    "vscode-languageclient": "^9.0.1"
+  }
 }
