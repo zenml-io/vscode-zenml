@@ -81,13 +81,13 @@ jobs:
           cat RELEASE_NOTES.md
           echo "=============================="
       - name: Upload Extension Package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: zenml-vscode-${{ steps.get_version.outputs.version }}
           path: zenml.vsix
           retention-days: 7
       - name: Upload Changelog
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: changelog-and-release-notes
           path: |
