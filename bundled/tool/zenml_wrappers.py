@@ -883,7 +883,13 @@ class PipelineRunsWrapper:
         try:
             step_run_id = args[0]
             step = self.client.get_run_step(step_run_id, hydrate=True)
-            run = self.client.get_pipeline_run(step.metadata.pipeline_run_id, hydrate=True)
+
+            # Get pipeline_run_id from metadata (with None check)
+            pipeline_run_id = step.metadata.pipeline_run_id if step.metadata else None
+            if not pipeline_run_id:
+                return {"error": "Step metadata not available - cannot retrieve pipeline run info"}
+
+            run = self.client.get_pipeline_run(pipeline_run_id, hydrate=True)
 
             step_data = {
                 "name": step.name,
@@ -962,8 +968,9 @@ class PipelineRunsWrapper:
             artifact = self.client.get_artifact_version(artifact_id, hydrate=True)
 
             metadata = {}
-            for key in artifact.metadata.run_metadata:
-                metadata[key] = artifact.metadata.run_metadata[key]
+            if artifact.metadata and artifact.metadata.run_metadata:
+                for key in artifact.metadata.run_metadata:
+                    metadata[key] = artifact.metadata.run_metadata[key]
 
             artifact_data = {
                 "name": artifact.artifact.name,
@@ -1719,7 +1726,7 @@ class StacksWrapper:
                         "name": item.name,
                         "flavor": serialize_flavor(item.flavor) if hasattr(item, 'flavor') else _get_flavor_name(item.body) if hasattr(item, 'body') else None,
                         "type": str(item.type) if hasattr(item, 'type') else str(item.body.type) if hasattr(item, 'body') else None,
-                        "config": item.metadata.configuration,
+                        "config": item.metadata.configuration if item.metadata else None,
                     }
                     for item in components.items
                 ],
@@ -1776,12 +1783,12 @@ class StacksWrapper:
                         "name": flavor.name,
                         "type": flavor.type,
                         "logo_url": flavor.logo_url,
-                        "config_schema": flavor.metadata.config_schema,
-                        "docs_url": flavor.metadata.docs_url,
-                        "sdk_docs_url": flavor.metadata.sdk_docs_url,
-                        "connector_type": flavor.metadata.connector_type,
-                        "connector_resource_type": flavor.metadata.connector_resource_type,
-                        "connector_resource_id_attr": flavor.metadata.connector_resource_id_attr,
+                        "config_schema": flavor.metadata.config_schema if flavor.metadata else None,
+                        "docs_url": flavor.metadata.docs_url if flavor.metadata else None,
+                        "sdk_docs_url": flavor.metadata.sdk_docs_url if flavor.metadata else None,
+                        "connector_type": flavor.metadata.connector_type if flavor.metadata else None,
+                        "connector_resource_type": flavor.metadata.connector_resource_type if flavor.metadata else None,
+                        "connector_resource_id_attr": flavor.metadata.connector_resource_id_attr if flavor.metadata else None,
                     }
                     for flavor in flavors.items
                 ],
