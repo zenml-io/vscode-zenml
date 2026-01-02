@@ -35,9 +35,21 @@ dag-packed.js.map
 # From vscode-python-tools-extension-template
 *.vsix
 .venv/
+.venv-test/
 .vs/
 .nox/
 bundled/libs/
 **/__pycache__
 **/.pytest_cache
 **/.vs
+
+# Project Files
+.zen
+.beads/*
+!.beads/issues.jsonl
+!.beads/interactions.jsonl
+.gitattributes
+
+# bv (beads viewer) local config and caches
+.bv/
+.claude/

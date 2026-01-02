@@ -12,7 +12,7 @@
 // permissions and limitations under the License.
 
 import { PythonExtension, ResolvedEnvironment } from '@vscode/python-extension';
-import { commands, Disposable, Event, EventEmitter, Uri } from 'vscode';
+import { commands, Disposable, Event, EventEmitter, Uri, WorkspaceFolder } from 'vscode';
 import { traceError, traceLog } from './log/logging';
 export interface IInterpreterDetails {
   path?: string[];
@@ -22,6 +22,14 @@ export interface IInterpreterDetails {
 const onDidChangePythonInterpreterEvent = new EventEmitter<IInterpreterDetails>();
 export const onDidChangePythonInterpreter: Event<IInterpreterDetails> =
   onDidChangePythonInterpreterEvent.event;
+
+function getResourceUri(resource: Uri | WorkspaceFolder | undefined): Uri | undefined {
+  if (!resource) {
+    return undefined;
+  }
+
+  return 'uri' in resource ? resource.uri : resource;
+}
 
 let _api: PythonExtension | undefined;
 async function getPythonExtensionAPI(): Promise<PythonExtension | undefined> {
@@ -44,7 +52,10 @@ export async function initializePython(disposables: Disposable[]): Promise<void>
     if (api) {
       disposables.push(
         api.environments.onDidChangeActiveEnvironmentPath(e => {
-          onDidChangePythonInterpreterEvent.fire({ path: [e.path], resource: e.resource?.uri });
+          onDidChangePythonInterpreterEvent.fire({
+            path: [e.path],
+            resource: getResourceUri(e.resource),
+          });
         })
       );
 

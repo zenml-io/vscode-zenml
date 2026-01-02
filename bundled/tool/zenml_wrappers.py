@@ -23,7 +23,9 @@ The file is organized into sections for each wrapper class:
 """
 
 import pathlib
+from datetime import date, datetime, time
 from typing import Any, Dict, List, Optional, Tuple, Union
+from uuid import UUID
 
 from type_hints import (
     ErrorResponse,
@@ -46,10 +48,12 @@ from zenml_serializers import (
     serialize_response,
 )
 
+# =============================================================================
+# Helper functions for ZenML model compatibility (0.80.0 - 0.93.0+)
+# These provide backward-compatible access to fields that moved between versions
+# =============================================================================
 
-# =============================================================================
-# Utility Functions for Performance Optimization
-# =============================================================================
+
 def _get_field_from_response(obj, field_name, default=None):
     """Helper to efficiently get field from body or resources location.
 
@@ -76,6 +80,115 @@ def _get_field_from_response(obj, field_name, default=None):
             return value
 
     return default
+
+
+def _get_run_pipeline_name(run) -> Optional[str]:
+    """Get the pipeline name from a run, handling model structure changes.
+
+    In ZenML 0.93.0+, pipeline info moved from run.body.pipeline to run.resources.pipeline.
+    Falls back through multiple locations for compatibility.
+    """
+    # Try new location first (0.93.0+): run.resources.pipeline.name
+    if hasattr(run, "resources") and run.resources is not None:
+        pipeline = getattr(run.resources, "pipeline", None)
+        if pipeline is not None and hasattr(pipeline, "name"):
+            return pipeline.name
+
+    # Try direct attribute (run.pipeline)
+    if hasattr(run, "pipeline") and run.pipeline is not None:
+        return run.pipeline.name
+
+    # Try old location: run.body.pipeline.name
+    if hasattr(run, "body") and run.body is not None:
+        pipeline = getattr(run.body, "pipeline", None)
+        if pipeline is not None and hasattr(pipeline, "name"):
+            return pipeline.name
+
+    # Final fallback: use the run's own name (contains pipeline name)
+    return getattr(run, "name", None)
+
+
+def _get_run_stack_name(run) -> Optional[str]:
+    """Get the stack name from a run, handling model structure changes.
+
+    In ZenML 0.93.0+, stack info moved from run.body.stack to run.resources.stack.
+    """
+    # Try new location first (0.93.0+): run.resources.stack.name
+    if hasattr(run, "resources") and run.resources is not None:
+        stack = getattr(run.resources, "stack", None)
+        if stack is not None and hasattr(stack, "name"):
+            return stack.name
+
+    # Try direct attribute (run.stack)
+    if hasattr(run, "stack") and run.stack is not None:
+        return run.stack.name
+
+    # Try old location: run.body.stack.name
+    if hasattr(run, "body") and run.body is not None:
+        stack = getattr(run.body, "stack", None)
+        if stack is not None and hasattr(stack, "name"):
+            return stack.name
+
+    return None
+
+
+def _get_run_status(run) -> Optional[str]:
+    """Get the status from a run, handling model structure changes."""
+    # Try direct attribute first (run.status)
+    status = getattr(run, "status", None)
+    if status is not None:
+        # Handle enum
+        if hasattr(status, "_value_"):
+            return status._value_
+        return str(status)
+
+    # Try run.body.status
+    if hasattr(run, "body") and run.body is not None:
+        status = getattr(run.body, "status", None)
+        if status is not None:
+            if hasattr(status, "_value_"):
+                return status._value_
+            return str(status)
+
+    return None
+
+
+def _get_flavor_name(component_body) -> Optional[str]:
+    """Get the flavor name from a component body, handling field rename.
+
+    In ZenML 0.93.0+, 'flavor' was renamed to 'flavor_name'.
+    """
+    # Try new field name first (0.93.0+)
+    flavor_name = getattr(component_body, "flavor_name", None)
+    if flavor_name is not None:
+        return flavor_name
+
+    # Fall back to old field name
+    return getattr(component_body, "flavor", None)
+
+
+def _serialize_for_json(obj: Any) -> Any:
+    """Recursively serialize an object for JSON, handling datetime and UUID types.
+
+    This ensures all datetime objects are converted to ISO format strings
+    and UUIDs are converted to strings before JSON serialization.
+    """
+    if obj is None:
+        return None
+    if isinstance(obj, (datetime, date, time)):
+        return obj.isoformat()
+    if isinstance(obj, UUID):
+        return str(obj)
+    if isinstance(obj, dict):
+        return {key: _serialize_for_json(value) for key, value in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_serialize_for_json(item) for item in obj]
+    if isinstance(obj, (str, int, float, bool)):
+        return obj
+    # For enum types, return the value
+    if hasattr(obj, "value"):
+        return obj.value
+    return obj
 
 
 # =============================================================================
@@ -511,15 +624,14 @@ class PipelineRunsWrapper:
             runs_data = []
             for run in runs_page.items:
                 # Optimized data extraction - avoid repeated hasattr calls
-                stack = getattr(run, "stack", None)
                 pipeline = getattr(run, "pipeline", None)
 
                 run_data = {
                     "id": str(run.id),
-                    "name": run.name,
-                    "status": str(run.status),
-                    "stackName": stack.name if stack else "unknown",
-                    "pipelineName": pipeline.name if pipeline else "unknown",
+                    "name": _get_run_pipeline_name(run),
+                    "status": _get_run_status(run),
+                    "stackName": _get_run_stack_name(run),
+                    "pipelineName": pipeline.name if pipeline else _get_run_pipeline_name(run),
                     "runMetadata": getattr(run, "run_metadata", None),
                     "startTime": run.start_time.isoformat() if run.start_time else None,
                     "endTime": run.end_time.isoformat() if run.end_time else None,
@@ -528,7 +640,7 @@ class PipelineRunsWrapper:
                 # Simplified config handling
                 config = getattr(run, "config", None)
                 if config:
-                    run_data["config"] = {
+                    config_data = {
                         "enable_cache": getattr(config, "enable_cache", False),
                         "enable_artifact_metadata": getattr(
                             config, "enable_artifact_metadata", False
@@ -541,7 +653,7 @@ class PipelineRunsWrapper:
 
                     model = getattr(config, "model", None)
                     if model:
-                        run_data["config"]["model"] = {
+                        config_data["model"] = {
                             "name": getattr(model, "name", ""),
                             "description": getattr(model, "description", ""),
                             "tags": getattr(model, "tags", []),
@@ -552,20 +664,24 @@ class PipelineRunsWrapper:
                             "license": getattr(model, "license", ""),
                         }
 
+                    run_data["config"] = config_data
+
                 # Optimized steps handling - avoid expensive extraction for list view
                 steps = getattr(run, "steps", None)
                 run_data["steps"] = None if not steps else "available"
 
                 runs_data.append(run_data)
 
-            return {
-                "runs": runs_data,
-                "total": runs_page.total,
-                "total_pages": runs_page.total_pages,
-                "current_page": page,
-                "items_per_page": max_size,
-                "project_name": project_name,
-            }
+            return _serialize_for_json(
+                {
+                    "runs": runs_data,
+                    "total": runs_page.total,
+                    "total_pages": runs_page.total_pages,
+                    "current_page": page,
+                    "items_per_page": max_size,
+                    "project_name": project_name,
+                }
+            )
         except self.ValidationError as e:
             return {"error": "ValidationError", "message": str(e)}
         except self.ZenMLBaseException as e:
@@ -606,11 +722,9 @@ class PipelineRunsWrapper:
             env = getattr(meta, "client_environment", {}) or {}
             run_data = {
                 "id": str(run.id),
-                "name": run.pipeline.name
-                if hasattr(run, "pipeline") and run.pipeline
-                else "unknown",
-                "status": run.status._value_ if hasattr(run.status, "_value_") else str(run.status),
-                "stackName": run.stack.name if hasattr(run, "stack") and run.stack else "unknown",
+                "name": _get_run_pipeline_name(run),
+                "status": _get_run_status(run),
+                "stackName": _get_run_stack_name(run),
                 "startTime": start_time.isoformat() if start_time else None,
                 "endTime": end_time.isoformat() if end_time else None,
                 "os": env.get("os", "unknown"),
@@ -624,7 +738,7 @@ class PipelineRunsWrapper:
             else:
                 run_data["steps"] = None
 
-            return run_data
+            return _serialize_for_json(run_data)
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve pipeline run: {str(e)}"}
 
@@ -771,7 +885,13 @@ class PipelineRunsWrapper:
         try:
             step_run_id = args[0]
             step = self.client.get_run_step(step_run_id, hydrate=True)
-            run = self.client.get_pipeline_run(step.metadata.pipeline_run_id, hydrate=True)
+
+            # Get pipeline_run_id from metadata (with None check)
+            pipeline_run_id = step.metadata.pipeline_run_id if step.metadata else None
+            if not pipeline_run_id:
+                return {"error": "Step metadata not available - cannot retrieve pipeline run info"}
+
+            run = self.client.get_pipeline_run(pipeline_run_id, hydrate=True)
 
             step_data = {
                 "name": step.name,
@@ -810,15 +930,11 @@ class PipelineRunsWrapper:
                     if step.end_time and step.start_time
                     else None
                 ),
-                "stackName": run.stack.name if hasattr(run, "stack") and run.stack else "unknown",
+                "stackName": _get_run_stack_name(run),
                 "orchestrator": {"runId": self._get_orchestrator_run_id(run)},
                 "pipeline": {
-                    "name": run.pipeline.name
-                    if hasattr(run, "pipeline") and run.pipeline
-                    else "unknown",
-                    "status": run.status._value_
-                    if hasattr(run.status, "_value_")
-                    else str(run.status),
+                    "name": _get_run_pipeline_name(run),
+                    "status": _get_run_status(run),
                 },
                 "cacheKey": step.metadata.cache_key
                 if hasattr(step, "metadata")
@@ -837,7 +953,7 @@ class PipelineRunsWrapper:
                 and step.metadata.logs
                 else "",
             }
-            return step_data
+            return _serialize_for_json(step_data)
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve pipeline run step: {str(e)}"}
 
@@ -854,8 +970,9 @@ class PipelineRunsWrapper:
             artifact = self.client.get_artifact_version(artifact_id, hydrate=True)
 
             metadata = {}
-            for key in artifact.metadata.run_metadata:
-                metadata[key] = artifact.metadata.run_metadata[key]
+            if artifact.metadata and artifact.metadata.run_metadata:
+                for key in artifact.metadata.run_metadata:
+                    metadata[key] = artifact.metadata.run_metadata[key]
 
             artifact_data = {
                 "name": artifact.artifact.name,
@@ -1600,22 +1717,36 @@ class StacksWrapper:
                 page=page, size=max_size, type=filter, hydrate=False
             )
 
-            return {
-                "index": components.index,
-                "max_size": components.max_size,
-                "total_pages": components.total_pages,
-                "total": components.total,
-                "items": [
-                    {
-                        "id": str(item.id),
-                        "name": item.name,
-                        "flavor": serialize_flavor(item.flavor),
-                        "type": str(item.type),
-                        "config": item.metadata.configuration,
-                    }
-                    for item in components.items
-                ],
-            }
+            return _serialize_for_json(
+                {
+                    "index": components.index,
+                    "max_size": components.max_size,
+                    "total_pages": components.total_pages,
+                    "total": components.total,
+                    "items": [
+                        {
+                            "id": str(item.id),
+                            "name": item.name,
+                            "flavor": (
+                                serialize_flavor(item.flavor)
+                                if hasattr(item, "flavor")
+                                else _get_flavor_name(item.body)
+                                if hasattr(item, "body")
+                                else None
+                            ),
+                            "type": (
+                                str(item.type)
+                                if hasattr(item, "type")
+                                else str(item.body.type)
+                                if hasattr(item, "body")
+                                else None
+                            ),
+                            "config": item.metadata.configuration if item.metadata else None,
+                        }
+                        for item in components.items
+                    ],
+                }
+            )
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve list of stack components: {str(e)}"}
 
@@ -1668,12 +1799,20 @@ class StacksWrapper:
                         "name": flavor.name,
                         "type": flavor.type,
                         "logo_url": flavor.logo_url,
-                        "config_schema": flavor.metadata.config_schema,
-                        "docs_url": flavor.metadata.docs_url,
-                        "sdk_docs_url": flavor.metadata.sdk_docs_url,
-                        "connector_type": flavor.metadata.connector_type,
-                        "connector_resource_type": flavor.metadata.connector_resource_type,
-                        "connector_resource_id_attr": flavor.metadata.connector_resource_id_attr,
+                        "config_schema": (
+                            flavor.metadata.config_schema if flavor.metadata else None
+                        ),
+                        "docs_url": flavor.metadata.docs_url if flavor.metadata else None,
+                        "sdk_docs_url": (flavor.metadata.sdk_docs_url if flavor.metadata else None),
+                        "connector_type": (
+                            flavor.metadata.connector_type if flavor.metadata else None
+                        ),
+                        "connector_resource_type": (
+                            flavor.metadata.connector_resource_type if flavor.metadata else None
+                        ),
+                        "connector_resource_id_attr": (
+                            flavor.metadata.connector_resource_id_attr if flavor.metadata else None
+                        ),
                     }
                     for flavor in flavors.items
                 ],

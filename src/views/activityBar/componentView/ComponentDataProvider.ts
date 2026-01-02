@@ -93,7 +93,7 @@ export class ComponentDataProvider extends PaginatedDataProvider {
   /**
    * Retrieves the singleton instance of ComponentDataProvider
    *
-   * @returns {ComponentDataProvider} The signleton instance.
+   * @returns {ComponentDataProvider} The singleton instance.
    */
   public static getInstance(): ComponentDataProvider {
     if (!ComponentDataProvider.instance) {

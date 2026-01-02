@@ -14,3 +14,12 @@ updates:
         patterns:
           - '*'  # This will group all dependencies together
         update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns:
+          - '*'
+        update-types: [minor, patch]

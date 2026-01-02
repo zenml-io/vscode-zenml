@@ -24,6 +24,9 @@ mypy $PYTHON_SRC
 echo "Linting TypeScript files with eslint..."
 npm run lint
 
+echo "Checking TypeScript/JSON formatting with prettier..."
+npm run format-check
+
 echo "Checking yaml files with yamlfix..."
 yamlfix .github/workflows/*.yml --check
 

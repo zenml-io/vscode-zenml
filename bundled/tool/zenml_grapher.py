@@ -12,16 +12,46 @@
 #  permissions and limitations under the License.
 """This module contains a tool to mimic LineageGraph output for pipeline runs"""
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from type_hints import GraphEdge, GraphNode, GraphResponse, StepArtifact
+
+
+def _get_run_status(run) -> Optional[str]:
+    """Get the status from a run, handling model structure changes."""
+    if hasattr(run, "body") and run.body is not None:
+        status = getattr(run.body, "status", None)
+        if status is not None:
+            return status
+    return getattr(run, "status", None)
+
+
+def _get_run_pipeline_name(run) -> Optional[str]:
+    """Get the pipeline name from a run, handling model structure changes."""
+    # Try new location first (0.93.0+): run.resources.pipeline.name
+    if hasattr(run, "resources") and run.resources is not None:
+        pipeline = getattr(run.resources, "pipeline", None)
+        if pipeline is not None and hasattr(pipeline, "name"):
+            return pipeline.name
+
+    # Try old location: run.body.pipeline.name
+    if hasattr(run, "body") and run.body is not None:
+        pipeline = getattr(run.body, "pipeline", None)
+        if pipeline is not None and hasattr(pipeline, "name"):
+            return pipeline.name
+
+    # Final fallback: use the run's own name
+    return getattr(run, "name", None)
 
 
 class Grapher:
     """Quick and dirty implementation of ZenML/LineageGraph to reduce number of api calls"""
 
-    def __init__(self, run):
+    def __init__(self, run, run_name: Optional[str] = None, run_status: Optional[str] = None):
         self.run = run
+        # Allow explicit override of name/status for compatibility
+        self._run_name = run_name
+        self._run_status = run_status
         self.nodes: List[GraphNode] = []
         self.edges: List[GraphEdge] = []
         self.artifacts: Dict[str, bool] = {}
@@ -246,11 +276,15 @@ class Grapher:
 
     def to_dict(self) -> GraphResponse:
         """Returns dictionary containing graph data"""
+        # Use explicit overrides if provided, otherwise use helper functions
+        raw_status = self._run_status if self._run_status is not None else _get_run_status(self.run)
+        # Convert enum to string if needed
+        status = self._extract_enum_value(raw_status, "unknown") if raw_status else "unknown"
+        name = self._run_name if self._run_name is not None else _get_run_pipeline_name(self.run)
+
         return {
             "nodes": self.nodes,
             "edges": self.edges,
-            "status": self._extract_enum_value(self.run.status, "unknown"),
-            "name": self.run.pipeline.name
-            if hasattr(self.run, "pipeline") and self.run.pipeline
-            else "unknown",
+            "status": status,
+            "name": name if name else "unknown",
         }

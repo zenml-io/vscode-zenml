@@ -31,3 +31,14 @@ known-first-party = ["zenml"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+check_untyped_defs = true
+disallow_untyped_defs = false
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = "bundled.tool.*"
+ignore_errors = false

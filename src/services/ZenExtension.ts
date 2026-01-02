@@ -152,25 +152,30 @@ export class ZenExtension {
   private static subscribeToCoreEvents(): void {
     this.context.subscriptions.push(
       onDidChangePythonInterpreter(async (interpreterDetails: IInterpreterDetails) => {
-        this.interpreterCheckInProgress = true;
-        if (interpreterDetails.path) {
-          const resolvedEnv = await resolveInterpreter(interpreterDetails.path);
-          const { isSupported, message } = isPythonVersionSupported(resolvedEnv);
-          if (!isSupported) {
-            vscode.window.showErrorMessage(`Interpreter not supported: ${message}`);
-            this.interpreterCheckInProgress = false;
-            return;
-          }
-          await runServer();
-          if (!this.lsClient.isZenMLReady) {
-            console.log('ZenML Client is not initialized yet.');
-            // Let Environment view handle the detailed messaging
-          } else {
-            console.log('🚀 ZenML installation found. Ready to use.');
-            await refreshUIComponents();
-          }
+        if (this.interpreterCheckInProgress) {
+          return;
         }
-        this.interpreterCheckInProgress = false;
+        this.interpreterCheckInProgress = true;
+        try {
+          if (interpreterDetails.path) {
+            const resolvedEnv = await resolveInterpreter(interpreterDetails.path);
+            const { isSupported, message } = isPythonVersionSupported(resolvedEnv);
+            if (!isSupported) {
+              vscode.window.showErrorMessage(`Interpreter not supported: ${message}`);
+              return;
+            }
+            await runServer();
+            if (!this.lsClient.isZenMLReady) {
+              console.log('ZenML Client is not initialized yet.');
+              // Let Environment view handle the detailed messaging
+            } else {
+              console.log('🚀 ZenML installation found. Ready to use.');
+              await refreshUIComponents();
+            }
+          }
+        } finally {
+          this.interpreterCheckInProgress = false;
+        }
       }),
       registerCommand(`${this.serverId}.showLogs`, async () => {
         this.outputChannel.show();
