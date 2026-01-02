@@ -66,7 +66,6 @@ export const MOCK_REST_SERVER_DETAILS: ZenServerDetails = {
     password: null,
     api_key: 'api_key',
     verify_ssl: true,
-    pool_pre_ping: true,
     http_timeout: 30,
   },
 };
@@ -103,9 +102,7 @@ export const MOCK_SQL_SERVER_DETAILS: ZenServerDetails = {
     backup_secrets_store: null,
     username: null,
     password: null,
-    verify_ssl: false,
     pool_pre_ping: true,
-    http_timeout: 30,
     driver: '',
     database: '',
     ssl_ca: '',

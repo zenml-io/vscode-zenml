@@ -16,6 +16,7 @@ import { State } from 'vscode-languageclient';
 import { getActiveProjectNameFromConfig } from '../../../commands/projects/utils';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
+import { TtlCache } from '../../../utils/ttlCache';
 import {
   PipelineModel,
   PipelineRun,
@@ -49,8 +50,7 @@ export class PipelineDataProvider extends PaginatedDataProvider {
   private eventBus = EventBus.getInstance();
   private zenmlClientReady = false;
   private lsClientReady = false;
-  private requestCache = new Map<string, { data: any; timestamp: number }>();
-  private readonly CACHE_TTL = 30000; // 30 seconds
+  private readonly requestCache = new TtlCache<PipelineRunsResponse>(30000);
 
   constructor() {
     super();
@@ -245,12 +245,10 @@ export class PipelineDataProvider extends PaginatedDataProvider {
     projectName?: string
   ): Promise<PipelineRunsResponse | any> {
     const cacheKey = `pipeline-runs-${page}-${itemsPerPage}-${projectName || 'default'}`;
-    const now = Date.now();
-
     // Check cache first
     const cached = this.requestCache.get(cacheKey);
-    if (cached && now - cached.timestamp < this.CACHE_TTL) {
-      return cached.data;
+    if (cached) {
+      return cached;
     }
 
     const lsClient = LSClient.getInstance();
@@ -261,24 +259,9 @@ export class PipelineDataProvider extends PaginatedDataProvider {
     ]);
 
     // Cache the result
-    this.requestCache.set(cacheKey, { data, timestamp: now });
-
-    // Clean old cache entries
-    this.cleanCache();
+    this.requestCache.set(cacheKey, data);
 
     return data;
-  }
-
-  /**
-   * Cleans expired cache entries.
-   */
-  private cleanCache(): void {
-    const now = Date.now();
-    for (const [key, value] of this.requestCache.entries()) {
-      if (now - value.timestamp > this.CACHE_TTL) {
-        this.requestCache.delete(key);
-      }
-    }
   }
 
   /**

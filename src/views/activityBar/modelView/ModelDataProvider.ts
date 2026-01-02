@@ -16,6 +16,7 @@ import { State } from 'vscode-languageclient';
 import { getActiveProjectNameFromConfig } from '../../../commands/projects/utils';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
+import { TtlCache } from '../../../utils/ttlCache';
 import {
   Model,
   ModelsResponse,
@@ -52,8 +53,7 @@ export class ModelDataProvider extends PaginatedDataProvider {
   private zenmlClientReady = false;
   private lsClientReady = false;
   private modelVersionsCache: Map<string, ModelVersion[]> = new Map();
-  private requestCache = new Map<string, { data: any; timestamp: number }>();
-  private readonly CACHE_TTL = 30000; // 30 seconds
+  private readonly requestCache = new TtlCache<ModelsResponse | ModelVersionsResponse>(30000);
 
   constructor() {
     super();
@@ -276,12 +276,10 @@ export class ModelDataProvider extends PaginatedDataProvider {
     projectName?: string
   ): Promise<ModelsResponse> {
     const cacheKey = `models-${page}-${itemsPerPage}-${projectName || 'default'}`;
-    const now = Date.now();
-
     // Check cache first
     const cached = this.requestCache.get(cacheKey);
-    if (cached && now - cached.timestamp < this.CACHE_TTL) {
-      return cached.data;
+    if (cached) {
+      return cached as ModelsResponse;
     }
 
     const lsClient = LSClient.getInstance();
@@ -292,24 +290,9 @@ export class ModelDataProvider extends PaginatedDataProvider {
     ]);
 
     // Cache the result
-    this.requestCache.set(cacheKey, { data, timestamp: now });
-
-    // Clean old cache entries
-    this.cleanCache();
+    this.requestCache.set(cacheKey, data);
 
     return data;
-  }
-
-  /**
-   * Cleans expired cache entries.
-   */
-  private cleanCache(): void {
-    const now = Date.now();
-    for (const [key, value] of this.requestCache.entries()) {
-      if (now - value.timestamp > this.CACHE_TTL) {
-        this.requestCache.delete(key);
-      }
-    }
   }
 
   /**
@@ -328,12 +311,10 @@ export class ModelDataProvider extends PaginatedDataProvider {
     projectName?: string
   ): Promise<ModelVersionsResponse> {
     const cacheKey = `model-versions-${modelId}-${page}-${itemsPerPage}-${projectName || 'default'}`;
-    const now = Date.now();
-
     // Check cache first
     const cached = this.requestCache.get(cacheKey);
-    if (cached && now - cached.timestamp < this.CACHE_TTL) {
-      return cached.data;
+    if (cached) {
+      return cached as ModelVersionsResponse;
     }
 
     const lsClient = LSClient.getInstance();
@@ -345,10 +326,7 @@ export class ModelDataProvider extends PaginatedDataProvider {
     ]);
 
     // Cache the result
-    this.requestCache.set(cacheKey, { data, timestamp: now });
-
-    // Clean old cache entries
-    this.cleanCache();
+    this.requestCache.set(cacheKey, data);
 
     return data;
   }
