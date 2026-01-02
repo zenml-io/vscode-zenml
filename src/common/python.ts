@@ -8,13 +8,12 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-/* eslint-disable @typescript-eslint/naming-convention */
-import { commands, Disposable, Event, EventEmitter, Uri } from 'vscode';
-import { traceError, traceLog } from './log/logging';
 import { PythonExtension, ResolvedEnvironment } from '@vscode/python-extension';
+import { commands, Disposable, Event, EventEmitter, Uri, WorkspaceFolder } from 'vscode';
+import { traceError, traceLog } from './log/logging';
 export interface IInterpreterDetails {
   path?: string[];
   resource?: Uri;
@@ -23,6 +22,14 @@ export interface IInterpreterDetails {
 const onDidChangePythonInterpreterEvent = new EventEmitter<IInterpreterDetails>();
 export const onDidChangePythonInterpreter: Event<IInterpreterDetails> =
   onDidChangePythonInterpreterEvent.event;
+
+function getResourceUri(resource: Uri | WorkspaceFolder | undefined): Uri | undefined {
+  if (!resource) {
+    return undefined;
+  }
+
+  return 'uri' in resource ? resource.uri : resource;
+}
 
 let _api: PythonExtension | undefined;
 async function getPythonExtensionAPI(): Promise<PythonExtension | undefined> {
@@ -45,7 +52,10 @@ export async function initializePython(disposables: Disposable[]): Promise<void>
     if (api) {
       disposables.push(
         api.environments.onDidChangeActiveEnvironmentPath(e => {
-          onDidChangePythonInterpreterEvent.fire({ path: [e.path], resource: e.resource?.uri });
+          onDidChangePythonInterpreterEvent.fire({
+            path: [e.path],
+            resource: getResourceUri(e.resource),
+          });
         })
       );
 

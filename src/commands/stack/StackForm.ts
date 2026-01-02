@@ -8,18 +8,18 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-import * as vscode from 'vscode';
-import WebviewBase from '../../common/WebviewBase';
 import { handlebars } from 'hbs';
-import Panels from '../../common/panels';
+import * as vscode from 'vscode';
 import { getAllFlavors, getAllStackComponents } from '../../common/api';
-import { Flavor, StackComponent } from '../../types/StackTypes';
-import { LSClient } from '../../services/LSClient';
-import { StackDataProvider } from '../../views/activityBar';
 import { traceError, traceInfo } from '../../common/log/logging';
+import Panels from '../../common/panels';
+import WebviewBase from '../../common/WebviewBase';
+import { LSClient } from '../../services/LSClient';
+import { Flavor, StackComponent } from '../../types/StackTypes';
+import { StackDataProvider } from '../../views/activityBar';
 
 type MixedComponent = { name: string; id: string; url: string };
 
@@ -80,7 +80,7 @@ export default class StackForm extends WebviewBase {
    * Opens a webview panel with a form to update a specified stack
    * @param {string} id The id of the specified stack
    * @param {string} name The current name of the specified stack
-   * @param {object} components The component settings of the sepcified stack
+   * @param {object} components The component settings of the specified stack
    */
   public async updateForm(id: string, name: string, components: { [type: string]: string }) {
     const panel = await this.display();
@@ -118,12 +118,18 @@ export default class StackForm extends WebviewBase {
         switch (message.command) {
           case 'register':
             success = await this.registerStack(name, data);
+            if (success) {
+              vscode.window.showInformationMessage('Stack registered successfully.');
+            }
             break;
           case 'update': {
             const updateData = Object.fromEntries(
               Object.entries(data).map(([type, id]) => [type, [id]])
             );
             success = await this.updateStack(id, name, updateData);
+            if (success) {
+              vscode.window.showInformationMessage('Stack updated successfully.');
+            }
             break;
           }
         }
@@ -215,21 +221,18 @@ export default class StackForm extends WebviewBase {
     panel.webview.html = this.template({ options, js, css, cspSource });
   }
 
+  // Updated convertComponents method to match your existing types
   private convertComponents(
     flavors: Flavor[],
     components: { [type: string]: StackComponent[] }
   ): { [type: string]: MixedComponent[] } {
     const out: { [type: string]: MixedComponent[] } = {};
-
-    Object.keys(components).forEach(key => {
-      out[key] = components[key].map(component => {
+    Object.keys(components).forEach(componentType => {
+      out[componentType] = components[componentType].map(component => {
         return {
           name: component.name,
           id: component.id,
-          url:
-            flavors.find(
-              flavor => flavor.type === component.type && flavor.name === component.flavor
-            )?.logo_url ?? '',
+          url: component.flavor.logo_url || '',
         };
       });
     });

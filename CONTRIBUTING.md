@@ -68,6 +68,42 @@ npm run test
 - **VSCode Debug Console**: Utilize the debug console in the VSCode development window for troubleshooting and inspecting values.
 - **Extension Host Logs**: Review the extension host logs for runtime errors or unexpected behavior.
 
+### Spellchecking
+
+The project uses [typos](https://github.com/crate-ci/typos) for spellchecking with a standardized configuration. Run the spellcheck script with the following command:
+
+```bash
+./scripts/spellcheck.sh
+```
+
+The script automatically uses the repository's default config file `.typos.toml` in the root of the repository. Custom configurations are not supported to ensure consistent spell checking across all contributions. All arguments passed to the script (except `-c/--config`) are forwarded directly to `typos`.
+
+### Formatting and Linting
+
+We use automatic formatting and linting tools to keep our code consistent.
+
+#### Quick Commands
+
+| Task              | Command               | What it does                                         |
+| ----------------- | --------------------- | ---------------------------------------------------- |
+| Format everything | `./scripts/format.sh` | Formats all Python, TypeScript, JSON, and YAML files |
+| Lint everything   | `./scripts/lint.sh`   | Checks all files for style/quality issues            |
+
+#### Individual Tools
+
+- **Python**: `ruff` for formatting/linting, `mypy` for type checking
+- **TypeScript/JSON**: `prettier` for formatting, `eslint` for linting
+- **YAML**: `yamlfix` for formatting and checking
+
+#### NPM Scripts
+
+For frontend code only:
+
+- `npm run format` - Format TypeScript and JSON files
+- `npm run lint` - Lint TypeScript files
+
+Please run these commands before submitting your PR.
+
 ## Contributing Changes
 
 1. **Create a Branch**: Make your changes in a new git branch based on the `develop` branch.
@@ -92,6 +128,15 @@ git push origin feature/your-feature-name
 - Reset your development environment if encountering persistent issues by re-running `nox` setup commands and reinstalling dependencies.
 - You can also run the `scripts/clear_and_compile.sh` script, which will delete the cache, `dist` folder, and recompile automatically.
 - Check the [ZenML documentation](https://docs.zenml.io) and [GitHub issues](https://github.com/zenml-io/zenml/issues) for common problems and solutions.
+
+## Release Process
+
+For maintainers who need to publish new versions of the extension, please refer to our detailed [Release Process Guide](./RELEASE.md). This document covers:
+
+- Testing release workflows before publishing
+- Creating and tagging new releases
+- Publishing to the VS Code Marketplace
+- Troubleshooting common release issues
 
 ### Additional Resources
 

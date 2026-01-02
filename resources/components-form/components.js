@@ -8,8 +8,11 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
+/* eslint-env browser */
+/* global acquireVsCodeApi, document, window, HTMLTextAreaElement, HTMLButtonElement, FormData */
+
 const form = document.querySelector('form');
 const submit = document.querySelector('input[type="submit"]');
 const spinner = document.querySelector('.loader');
@@ -67,7 +70,7 @@ const setValues = (name, config) => {
 
     if (inputs[key].classList.contains('hidden')) {
       inputs[key].classList.toggle('hidden');
-      button = document.querySelector(`[data-id="${inputs[key].id}"]`);
+      const button = document.querySelector(`[data-id="${inputs[key].id}"]`);
       button.textContent = '-';
     }
   }

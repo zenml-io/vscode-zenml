@@ -11,6 +11,7 @@
 #  or implied. See the License for the specific language governing
 #  permissions and limitations under the License.
 """Implementation of tool support over LSP."""
+
 from __future__ import annotations
 
 import json
@@ -52,6 +53,7 @@ from pygls import uris, workspace  # noqa: E402
 
 WORKSPACE_SETTINGS: Dict[str, Any] = {}
 GLOBAL_SETTINGS: Dict[str, Any] = {}
+INITIALIZATION_SETTINGS: Optional[Any] = None
 RUNNER = pathlib.Path(__file__).parent / "lsp_runner.py"
 
 MAX_WORKERS = 5
@@ -76,10 +78,7 @@ VERSION_LOOKUP: Dict[str, Tuple[int, int, int]] = {}
 async def initialize(params: lsp.InitializeParams) -> None:
     """LSP handler for initialize request."""
     # pylint: disable=global-statement
-    log_to_output(f"CWD Server: {os.getcwd()}")
-
-    paths = "\r\n   ".join(sys.path)
-    log_to_output(f"sys.path used to run Server:\r\n   {paths}")
+    global INITIALIZATION_SETTINGS
 
     # Check if initialization_options is a dictionary and update GLOBAL_SETTINGS safely
     if isinstance(params.initialization_options, dict):
@@ -91,9 +90,22 @@ async def initialize(params: lsp.InitializeParams) -> None:
         settings = params.initialization_options.get("settings")
         if settings is not None:
             _update_workspace_settings(settings)
-            log_to_output(
-                f"Settings used to run Server:\r\n{json.dumps(settings, indent=4, ensure_ascii=False)}\r\n"
-            )
+            INITIALIZATION_SETTINGS = settings
+
+
+@LSP_SERVER.feature(lsp.INITIALIZED)
+async def on_initialized(_params: lsp.InitializedParams) -> None:
+    """Runs after the client has finished the initialize handshake."""
+    log_to_output(f"CWD Server: {os.getcwd()}")
+
+    paths = "\r\n   ".join(sys.path)
+    log_to_output(f"sys.path used to run Server:\r\n   {paths}")
+
+    if INITIALIZATION_SETTINGS is not None:
+        log_to_output(
+            f"Settings used to run Server:\r\n"
+            f"{json.dumps(INITIALIZATION_SETTINGS, indent=4, ensure_ascii=False)}\r\n"
+        )
 
     log_to_output(
         f"Global settings:\r\n{json.dumps(GLOBAL_SETTINGS, indent=4, ensure_ascii=False)}\r\n"
@@ -105,14 +117,10 @@ async def initialize(params: lsp.InitializeParams) -> None:
     log_to_output("ZenML LSP is initializing.")
     LSP_SERVER.send_custom_notification("sanityCheck", "ZenML LSP is initializing.")
 
-    # Below is not needed as the interpreter path gets automatically updated when changed in vscode.
-    # interpreter_path = WORKSPACE_SETTINGS[os.getcwd()]["interpreter"][0]
-    # LSP_SERVER.update_python_interpreter(interpreter_path)
-
     # Check install status and initialize ZenML client if ZenML is installed.
     await LSP_SERVER.initialize_zenml_client()
 
-    # Wait for 5 secondsto allow the language client to setup and settle down client side.
+    # Allow the client to settle before emitting readiness.
     ready_status = {"ready": True} if LSP_SERVER.zenml_client else {"ready": False}
     LSP_SERVER.send_custom_notification(ZENML_CLIENT_INITIALIZED, ready_status)
 

@@ -8,7 +8,7 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import { EventEmitter } from 'events';
 
@@ -17,6 +17,7 @@ export class EventBus extends EventEmitter {
 
   constructor() {
     super();
+    this.setMaxListeners(20);
   }
 
   /**
@@ -29,5 +30,20 @@ export class EventBus extends EventEmitter {
       EventBus.instance = new EventBus();
     }
     return EventBus.instance;
+  }
+
+  /**
+   * Cleans up event listeners for a specific event and handler.
+   * This is important to prevent memory leaks and MaxListenersExceededWarnings.
+   *
+   * @param {string} event - The event name to clean up
+   * @param {Function} [handler] - Optional specific handler to remove
+   */
+  public cleanupEventListener(event: string, handler?: (...args: any[]) => void): void {
+    if (handler) {
+      this.off(event, handler);
+    } else {
+      this.removeAllListeners(event);
+    }
   }
 }

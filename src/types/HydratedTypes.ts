@@ -8,8 +8,14 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
+
+/**
+ * This file mainly serves as a quick reference to how the hydrated types look like.
+ * A lot of these aren't used in the extension, but are kept here for future reference.
+ * For that reason, these types aren't maintained as much, so they might be out of date.
+ */
 
 /************************************************************************************************
  * Hydrated User types from the ZenML Client.
@@ -77,6 +83,7 @@ interface WorkspaceBody {
 /************************************************************************************************
  * Hydrated Stack / Components types from the ZenML Client.
  ************************************************************************************************/
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface HydratedStack {
   id: string;
   name: string;
@@ -138,4 +145,4 @@ interface HydratedComponents {
   image_builder?: HydratedStackComponent[];
 }
 
-export { Workspace, WorkspaceBody, User, UserBody, UserMetadata };
+export { User, UserBody, UserMetadata, Workspace, WorkspaceBody };

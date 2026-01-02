@@ -8,15 +8,15 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
-import { LSClient } from '../../services/LSClient';
-import { showErrorMessage, showInformationMessage } from '../../utils/notifications';
-import { PipelineTreeItem } from '../../views/activityBar';
-import { PipelineDataProvider } from '../../views/activityBar/pipelineView/PipelineDataProvider';
 import * as vscode from 'vscode';
+import DagRenderer from '../../dag/renderer/DagRenderer';
+import { LSClient } from '../../services/LSClient';
+import { PipelineTreeItem } from '../../views/activityBar';
+import { createCommandErrorItem } from '../../views/activityBar/common/ErrorTreeItem';
+import { PipelineDataProvider } from '../../views/activityBar/pipelineView/PipelineDataProvider';
 import { getPipelineRunDashboardUrl } from './utils';
-import DagRenderer from './DagRender';
 
 /**
  * Triggers a refresh of the pipeline view within the UI components.
@@ -27,7 +27,6 @@ const refreshPipelineView = async (): Promise<void> => {
   await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Window,
-      title: 'Refreshing server status...',
     },
     async () => {
       await PipelineDataProvider.getInstance().refresh();
@@ -63,11 +62,11 @@ const deletePipelineRun = async (node: PipelineTreeItem): Promise<void> => {
           if (result && 'error' in result) {
             throw new Error(result.error);
           }
-          showInformationMessage('Pipeline run deleted successfully.');
+          vscode.window.showInformationMessage('Pipeline run deleted successfully');
           await refreshPipelineView();
         } catch (error: any) {
           console.error(`Error deleting pipeline run: ${error}`);
-          showErrorMessage(`Failed to delete pipeline run: ${error.message}`);
+          vscode.window.showErrorMessage(`Failed to delete pipeline run: ${error.message}`);
         }
       }
     );
@@ -87,10 +86,12 @@ const goToPipelineUrl = (node: PipelineTreeItem): void => {
       const parsedUrl = vscode.Uri.parse(url);
 
       vscode.env.openExternal(parsedUrl);
-      vscode.window.showInformationMessage(`Opening: ${url}`);
     } catch (error) {
       console.log(error);
-      vscode.window.showErrorMessage(`Failed to open pipeline run URL: ${error}`);
+      const pipelineProvider = PipelineDataProvider.getInstance();
+      pipelineProvider.showCommandError(
+        createCommandErrorItem('open pipeline URL', `Failed to open pipeline run URL: ${error}`)
+      );
     }
   }
 };

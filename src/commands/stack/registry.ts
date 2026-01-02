@@ -8,14 +8,13 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
-import { StackDataProvider, StackTreeItem } from '../../views/activityBar';
-import { stackCommands } from './cmds';
+import { ExtensionContext, commands } from 'vscode';
 import { registerCommand } from '../../common/vscodeapi';
 import { ZenExtension } from '../../services/ZenExtension';
-import { ExtensionContext, commands, window } from 'vscode';
-import { node } from 'webpack';
+import { StackDataProvider, StackTreeItem } from '../../views/activityBar';
+import { stackCommands } from './cmds';
 
 /**
  * Registers stack-related commands for the extension.
@@ -26,38 +25,28 @@ export const registerStackCommands = (context: ExtensionContext) => {
   const stackDataProvider = StackDataProvider.getInstance();
   try {
     const registeredCommands = [
-      registerCommand(
-        'zenml.setStackItemsPerPage',
-        async () => await stackDataProvider.updateItemsPerPage()
+      registerCommand('zenml.setStackItemsPerPage', async () =>
+        stackDataProvider.updateItemsPerPage()
       ),
-      registerCommand('zenml.refreshStackView', async () => await stackCommands.refreshStackView()),
-      registerCommand(
-        'zenml.refreshActiveStack',
-        async () => await stackCommands.refreshActiveStack()
-      ),
+      registerCommand('zenml.refreshStackView', async () => stackCommands.refreshStackView()),
       registerCommand('zenml.registerStack', async () => stackCommands.registerStack()),
       registerCommand('zenml.updateStack', async (node: StackTreeItem) =>
         stackCommands.updateStack(node)
       ),
-      registerCommand(
-        'zenml.deleteStack',
-        async (node: StackTreeItem) => await stackCommands.deleteStack(node)
+      registerCommand('zenml.deleteStack', async (node: StackTreeItem) =>
+        stackCommands.deleteStack(node)
       ),
-      registerCommand(
-        'zenml.renameStack',
-        async (node: StackTreeItem) => await stackCommands.renameStack(node)
+      registerCommand('zenml.renameStack', async (node: StackTreeItem) =>
+        stackCommands.renameStack(node)
       ),
-      registerCommand(
-        'zenml.setActiveStack',
-        async (node: StackTreeItem) => await stackCommands.setActiveStack(node)
+      registerCommand('zenml.setActiveStack', async (node: StackTreeItem) =>
+        stackCommands.setActiveStack(node)
       ),
-      registerCommand(
-        'zenml.goToStackUrl',
-        async (node: StackTreeItem) => await stackCommands.goToStackUrl(node)
+      registerCommand('zenml.goToStackUrl', (node: StackTreeItem) =>
+        stackCommands.goToStackUrl(node)
       ),
-      registerCommand(
-        'zenml.copyStack',
-        async (node: StackTreeItem) => await stackCommands.copyStack(node)
+      registerCommand('zenml.copyStack', async (node: StackTreeItem) =>
+        stackCommands.copyStack(node)
       ),
       registerCommand('zenml.nextStackPage', async () => stackDataProvider.goToNextPage()),
       registerCommand('zenml.previousStackPage', async () => stackDataProvider.goToPreviousPage()),

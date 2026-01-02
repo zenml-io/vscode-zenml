@@ -8,7 +8,7 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import * as fsapi from 'fs-extra';
 import * as vscode from 'vscode';
@@ -104,64 +104,82 @@ async function createServer(
 }
 
 let _disposables: Disposable[] = [];
+let restartInProgress = false;
+let pendingWorkspaceSetting: ISettings | undefined;
 export async function restartServer(
   workspaceSetting: ISettings
 ): Promise<LanguageClient | undefined> {
+  if (restartInProgress) {
+    pendingWorkspaceSetting = workspaceSetting;
+    traceInfo('Server: Restart already in progress. Coalescing latest settings.');
+    const existingClient = LSClient.getInstance().getLanguageClient();
+    return existingClient ?? undefined;
+  }
+  restartInProgress = true;
   const lsClientInstance = LSClient.getInstance();
   const lsClient = lsClientInstance.getLanguageClient();
-  if (lsClient) {
-    traceInfo(`Server: Stop requested`);
-    try {
-      await lsClient.stop();
-    } catch (e) {
-      traceInfo(`Server: Stop failed - ${e}`, '\nContinuing to attempt to start');
-    }
-    _disposables.forEach(d => d.dispose());
-    _disposables = [];
-  }
-  updateStatus(undefined, LanguageStatusSeverity.Information, true);
-
-  const newLSClient = await createServer(
-    workspaceSetting,
-    ZenExtension.serverId,
-    ZenExtension.serverName,
-    ZenExtension.outputChannel,
-    {
-      settings: await getExtensionSettings(ZenExtension.serverId, true),
-      globalSettings: await getGlobalSettings(ZenExtension.serverId, true),
-    }
-  );
-
-  lsClientInstance.updateClient(newLSClient);
-
-  traceInfo(`Server: Start requested.`);
-  _disposables.push(
-    newLSClient.onDidChangeState(e => {
-      EventBus.getInstance().emit(LSCLIENT_STATE_CHANGED, e.newState);
-      switch (e.newState) {
-        case State.Stopped:
-          traceVerbose(`Server State: Stopped`);
-          break;
-        case State.Starting:
-          traceVerbose(`Server State: Starting`);
-          break;
-        case State.Running:
-          traceVerbose(`Server State: Running`);
-          updateStatus(undefined, LanguageStatusSeverity.Information, false);
-          break;
-      }
-    })
-  );
   try {
-    await ZenExtension.lsClient.startLanguageClient();
-  } catch (ex) {
-    updateStatus(l10n.t('Server failed to start.'), LanguageStatusSeverity.Error);
-    traceError(`Server: Start failed: ${ex}`);
+    if (lsClient) {
+      traceInfo(`Server: Stop requested`);
+      try {
+        await lsClient.stop();
+      } catch (e) {
+        traceInfo(`Server: Stop failed - ${e}`, '\nContinuing to attempt to start');
+      }
+      _disposables.forEach(d => d.dispose());
+      _disposables = [];
+    }
+    updateStatus(undefined, LanguageStatusSeverity.Information, true);
+
+    const newLSClient = await createServer(
+      workspaceSetting,
+      ZenExtension.serverId,
+      ZenExtension.serverName,
+      ZenExtension.outputChannel,
+      {
+        settings: await getExtensionSettings(ZenExtension.serverId, true),
+        globalSettings: await getGlobalSettings(ZenExtension.serverId, true),
+      }
+    );
+
+    lsClientInstance.updateClient(newLSClient);
+
+    traceInfo(`Server: Start requested.`);
+    _disposables.push(
+      newLSClient.onDidChangeState(e => {
+        EventBus.getInstance().emit(LSCLIENT_STATE_CHANGED, e.newState);
+        switch (e.newState) {
+          case State.Stopped:
+            traceVerbose(`Server State: Stopped`);
+            break;
+          case State.Starting:
+            traceVerbose(`Server State: Starting`);
+            break;
+          case State.Running:
+            traceVerbose(`Server State: Running`);
+            updateStatus(undefined, LanguageStatusSeverity.Information, false);
+            break;
+        }
+      })
+    );
+    try {
+      await ZenExtension.lsClient.startLanguageClient();
+    } catch (ex) {
+      updateStatus(l10n.t('Server failed to start.'), LanguageStatusSeverity.Error);
+      traceError(`Server: Start failed: ${ex}`);
+    }
+    await newLSClient.setTrace(
+      getLSClientTraceLevel(ZenExtension.outputChannel.logLevel, env.logLevel)
+    );
+    return newLSClient;
+  } finally {
+    restartInProgress = false;
+    if (pendingWorkspaceSetting) {
+      const queuedSetting = pendingWorkspaceSetting;
+      pendingWorkspaceSetting = undefined;
+      void restartServer(queuedSetting);
+    }
   }
-  await newLSClient.setTrace(
-    getLSClientTraceLevel(ZenExtension.outputChannel.logLevel, env.logLevel)
-  );
-  return newLSClient;
 }
 
 export async function runServer() {

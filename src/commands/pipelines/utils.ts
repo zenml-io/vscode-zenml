@@ -8,11 +8,11 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
 import { ServerDataProvider } from '../../views/activityBar';
-import { isServerStatus } from '../server/utils';
+import { buildWorkspaceProjectUrl, getBaseUrl, isServerStatus } from '../server/utils';
 
 /**
  * Gets the Dashboard URL for the corresponding ZenML pipeline run
@@ -21,15 +21,21 @@ import { isServerStatus } from '../server/utils';
  * @returns {string} - The URL corresponding to the pipeline run in the ZenML Dashboard
  */
 export const getPipelineRunDashboardUrl = (id: string): string => {
-  const status = ServerDataProvider.getInstance().getCurrentStatus();
-
-  if (!isServerStatus(status) || status.deployment_type === 'other') {
+  if (!id) {
     return '';
   }
 
-  const currentServerUrl = status.dashboard_url;
+  const status = ServerDataProvider.getInstance().getCurrentStatus();
+  if (!status || !isServerStatus(status) || status.deployment_type === 'other') {
+    return '';
+  }
 
-  return `${currentServerUrl}/runs/${id}`;
+  const baseUrl = getBaseUrl(status.dashboard_url);
+  const suffix = `/runs/${id}?tab=overview`;
+
+  const url = buildWorkspaceProjectUrl(baseUrl, status, suffix);
+
+  return url;
 };
 
 const pipelineUtils = {

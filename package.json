@@ -3,7 +3,7 @@
   "publisher": "ZenML",
   "displayName": "ZenML Studio",
   "description": "Integrates ZenML directly into VS Code, enhancing machine learning workflow with support for pipelines, stacks, server management and DAG visualization.",
-  "version": "0.0.11",
+  "version": "0.0.22",
   "icon": "resources/extension-logo.png",
   "preview": false,
   "license": "Apache-2.0",
@@ -25,7 +25,7 @@
     "development tools"
   ],
   "engines": {
-    "vscode": "^1.86.0"
+    "vscode": "^1.93.0"
   },
   "activationEvents": [
     "onStartupFinished",
@@ -49,15 +49,15 @@
   "scripts": {
     "compile": "webpack",
     "compile-tests": "tsc -p . --outDir out",
-    "deploy": "vsce publish",
+    "deploy": "npx @vscode/vsce publish",
     "format": "prettier --ignore-path .gitignore --write \"**/*.+(ts|json)\"",
     "format-check": "prettier --ignore-path .gitignore --check \"**/*.+(ts|json)\"",
     "install": "pip install -r requirements.txt --target bundled/libs",
     "lint": "eslint src --ext ts",
-    "package": "webpack --mode production --devtool source-map --config ./webpack.config.js",
+    "package": "webpack --mode production --devtool source-map --config ./webpack.config.mjs",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "test": "vscode-test",
-    "vsce-package": "vsce package -o zenml.vsix",
+    "vsce-package": "npx @vscode/vsce package -o zenml.vsix",
     "vscode:prepublish": "npm run package",
     "watch": "webpack --watch",
     "watch-tests": "tsc -p . -w --outDir out"
@@ -137,19 +137,43 @@
           "type": "string",
           "default": "",
           "description": "Active stack id for the ZenML server"
+        },
+        "zenml.activeProjectName": {
+          "type": "string",
+          "default": "",
+          "description": "Active project name for the ZenML server"
         }
       }
     },
     "commands": [
       {
-        "command": "zenml.promptForInterpreter",
-        "title": "Select Python Interpreter",
-        "category": "ZenML"
-      },
-      {
         "command": "zenml-python.restart",
         "title": "Restart LSP Server",
         "category": "ZenML"
+      },
+      {
+        "command": "zenml.setProjectItemsPerPage",
+        "title": "Set Projects Per Page",
+        "icon": "$(layers)",
+        "category": "ZenML Projects"
+      },
+      {
+        "command": "zenml.refreshProjectView",
+        "title": "Refresh Project View",
+        "icon": "$(refresh)",
+        "category": "ZenML Projects"
+      },
+      {
+        "command": "zenml.setActiveProject",
+        "title": "Set Active Project",
+        "icon": "$(check)",
+        "category": "ZenML Projects"
+      },
+      {
+        "command": "zenml.goToProjectUrl",
+        "title": "Go to URL",
+        "icon": "$(globe)",
+        "category": "ZenML Projects"
       },
       {
         "command": "zenml.connectServer",
@@ -263,6 +287,18 @@
         "category": "ZenML Pipeline Runs"
       },
       {
+        "command": "zenml.setModelsPerPage",
+        "title": "Set Models Per Page",
+        "icon": "$(layers)",
+        "category": "ZenML Models"
+      },
+      {
+        "command": "zenml.refreshModelView",
+        "title": "Refresh Models View",
+        "icon": "$(refresh)",
+        "category": "ZenML Models"
+      },
+      {
         "command": "zenml.deletePipelineRun",
         "title": "Delete Pipeline Run",
         "icon": "$(trash)",
@@ -304,14 +340,14 @@
         {
           "id": "zenml",
           "title": "ZenML",
-          "icon": "resources/logo.png"
+          "icon": "resources/logo.svg"
         }
       ],
       "panel": [
         {
           "id": "zenmlPanel",
           "title": "ZenML",
-          "icon": "resources/logo.png"
+          "icon": "resources/logo.svg"
         }
       ]
     },
@@ -328,6 +364,11 @@
           "icon": "$(layers)"
         },
         {
+          "id": "zenmlProjectView",
+          "name": "Projects",
+          "icon": "$(symbol-method)"
+        },
+        {
           "id": "zenmlComponentView",
           "name": "Stack Components",
           "icon": "$(extensions)"
@@ -335,7 +376,12 @@
         {
           "id": "zenmlPipelineView",
           "name": "Pipeline Runs",
-          "icon": "$(beaker)"
+          "icon": "$(symbol-interface)"
+        },
+        {
+          "id": "zenmlModelView",
+          "name": "Models",
+          "icon": "$(chip)"
         },
         {
           "id": "zenmlEnvironmentView",
@@ -366,6 +412,16 @@
           "when": "serverCommandsRegistered && view == zenmlServerView",
           "command": "zenml.refreshServerStatus",
           "group": "navigation"
+        },
+        {
+          "when": "projectCommandsRegistered && view == zenmlProjectView",
+          "command": "zenml.setProjectItemsPerPage",
+          "group": "navigation@1"
+        },
+        {
+          "when": "projectCommandsRegistered && view == zenmlProjectView",
+          "command": "zenml.refreshProjectView",
+          "group": "navigation@2"
         },
         {
           "when": "stackCommandsRegistered && view == zenmlStackView",
@@ -408,12 +464,32 @@
           "group": "navigation@2"
         },
         {
+          "when": "modelCommandsRegistered && view == zenmlModelView",
+          "command": "zenml.setModelsPerPage",
+          "group": "navigation@1"
+        },
+        {
+          "when": "modelCommandsRegistered && view == zenmlModelView",
+          "command": "zenml.refreshModelView",
+          "group": "navigation@2"
+        },
+        {
           "when": "environmentCommandsRegistered && view == zenmlEnvironmentView",
           "command": "zenml.restartLspServer",
           "group": "navigation"
         }
       ],
       "view/item/context": [
+        {
+          "when": "projectCommandsRegistered && view == zenmlProjectView && viewItem == project",
+          "command": "zenml.setActiveProject",
+          "group": "inline@1"
+        },
+        {
+          "when": "projectCommandsRegistered && view == zenmlProjectView && viewItem == project",
+          "command": "zenml.goToProjectUrl",
+          "group": "inline@2"
+        },
         {
           "when": "stackCommandsRegistered && view == zenmlStackView && viewItem == stack",
           "command": "zenml.setActiveStack",
@@ -473,39 +549,40 @@
     }
   },
   "devDependencies": {
+    "@eslint/js": "^9.27.0",
     "@types/dagre": "^0.7.52",
     "@types/fs-extra": "^11.0.4",
     "@types/hbs": "^4.0.4",
-    "@types/mocha": "^10.0.6",
-    "@types/node": "^18.19.18",
-    "@types/sinon": "^17.0.3",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^25.0.3",
+    "@types/sinon": "^21.0.0",
     "@types/svgdom": "^0.1.2",
-    "@types/vscode": "^1.86.0",
+    "@types/vscode": "^1.93.0",
     "@types/webpack": "^5.28.5",
-    "@typescript-eslint/eslint-plugin": "^6.19.1",
-    "@typescript-eslint/parser": "^6.19.1",
-    "@vscode/test-cli": "^0.0.4",
-    "@vscode/test-electron": "^2.3.9",
-    "@vscode/vsce": "^2.24.0",
-    "eslint": "^8.56.0",
-    "eslint-config-prettier": "^9.1.0",
-    "prettier": "^3.2.5",
-    "sinon": "^17.0.1",
-    "ts-loader": "^9.5.1",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.4.2",
+    "eslint": "^9.27.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-prettier": "^5.3.1",
+    "prettier": "^3.5.3",
+    "sinon": "^21.0.1",
+    "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3",
-    "webpack": "^5.90.0",
-    "webpack-cli": "^5.1.4"
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.32.1",
+    "webpack": "^5.99.9",
+    "webpack-cli": "^6.0.1"
   },
   "dependencies": {
     "@svgdotjs/svg.js": "^3.2.4",
     "@vscode/python-extension": "^1.0.5",
-    "axios": "^1.6.7",
+    "axios": "^1.9.0",
     "dagre": "^0.8.5",
-    "fs-extra": "^11.2.0",
+    "fs-extra": "^11.3.0",
     "hbs": "^4.2.0",
     "svg-pan-zoom": "github:bumbu/svg-pan-zoom",
-    "svgdom": "^0.1.19",
+    "svgdom": "^0.1.21",
     "vscode-languageclient": "^9.0.1"
   }
 }

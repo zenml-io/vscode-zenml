@@ -8,19 +8,18 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
+import { registerEnvironmentCommands } from './commands/environment/registry';
+import DagRenderer from './dag/renderer/DagRenderer';
+import WebviewBase from './common/WebviewBase';
 import { EventBus } from './services/EventBus';
 import { LSClient } from './services/LSClient';
 import { ZenExtension } from './services/ZenExtension';
-import { refreshUIComponents } from './utils/refresh';
-import { EnvironmentDataProvider } from './views/activityBar/environmentView/EnvironmentDataProvider';
-import { registerEnvironmentCommands } from './commands/environment/registry';
 import { LSP_ZENML_CLIENT_INITIALIZED } from './utils/constants';
 import { toggleCommands } from './utils/global';
-import DagRenderer from './commands/pipelines/DagRender';
-import WebviewBase from './common/WebviewBase';
+import { EnvironmentDataProvider } from './views/activityBar/environmentView/EnvironmentDataProvider';
 
 export async function activate(context: vscode.ExtensionContext) {
   const eventBus = EventBus.getInstance();
@@ -30,7 +29,7 @@ export async function activate(context: vscode.ExtensionContext) {
     console.log('ZenML client initialized: ', isInitialized);
     if (isInitialized) {
       await toggleCommands(true);
-      await refreshUIComponents();
+      // await refreshUIComponents();
     }
   };
 

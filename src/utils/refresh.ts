@@ -8,12 +8,15 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
-import { EventBus } from '../services/EventBus';
 import { ZenServerDetails } from '../types/ServerInfoTypes';
-import { PipelineDataProvider, ServerDataProvider, StackDataProvider } from '../views/activityBar';
-import { REFRESH_SERVER_STATUS } from './constants';
+import {
+  PipelineDataProvider,
+  ProjectDataProvider,
+  ServerDataProvider,
+  StackDataProvider,
+} from '../views/activityBar';
 
 // Type definition for a refresh function that takes a global configuration object
 type RefreshFunction = (updatedServerConfig?: ZenServerDetails) => Promise<void>;
@@ -106,9 +109,7 @@ export async function refreshUIComponents(): Promise<void> {
   await ServerDataProvider.getInstance().refresh();
   await StackDataProvider.getInstance().refresh();
   await PipelineDataProvider.getInstance().refresh();
-  setTimeout(() => {
-    EventBus.getInstance().emit(REFRESH_SERVER_STATUS);
-  }, 500);
+  await ProjectDataProvider.getInstance().refresh();
 }
 
 export const refreshUtils = {

@@ -8,17 +8,42 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
 import { ErrorMessageResponse, VersionMismatchError } from './LSClientResponseTypes';
 
-interface PipelineRunsData {
+export interface PipelineRunsData {
   runs: PipelineRun[];
   total: number;
   total_pages: number;
   current_page: number;
   items_per_page: number;
+}
+
+export interface PipelineRunStep {
+  status: string;
+  start_time?: string;
+  end_time?: string;
+  id?: string;
+}
+
+export interface PipelineRunConfig {
+  enable_cache?: boolean;
+  enable_artifact_metadata?: boolean;
+  enable_artifact_visualization?: boolean;
+  enable_step_logs?: boolean;
+  name?: string;
+  model?: PipelineModel;
+}
+
+export interface PipelineModel {
+  name: string;
+  description?: string;
+  tags?: string[];
+  version?: string;
+  save_models_to_registry?: boolean;
+  license?: string;
 }
 
 export interface PipelineRun {
@@ -28,9 +53,12 @@ export interface PipelineRun {
   stackName: string;
   startTime: string;
   endTime: string;
-  os: string;
-  osVersion: string;
-  pythonVersion: string;
+  pipelineName: string;
+  runMetadata?: Record<string, any>;
+  config?: PipelineRunConfig;
+  steps?: {
+    [stepName: string]: PipelineRunStep;
+  } | null; // Steps may be null in optimized responses
 }
 
 export interface DagStep {
@@ -50,6 +78,7 @@ export interface DagArtifact {
     execution_id: string;
     name: string;
     artifact_type: string;
+    type?: string;
   };
 }
 
@@ -66,6 +95,7 @@ export interface PipelineRunDag {
   edges: Array<DagEdge>;
   status: string;
   name: string;
+  message?: string; // Optional message when step data is not available
 }
 
 export type PipelineRunsResponse = PipelineRunsData | ErrorMessageResponse | VersionMismatchError;

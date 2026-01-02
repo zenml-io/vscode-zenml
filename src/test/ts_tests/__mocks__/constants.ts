@@ -8,7 +8,7 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import * as sinon from 'sinon';
 import * as vscode from 'vscode';
@@ -18,7 +18,7 @@ export const MOCK_REST_SERVER_URL = 'https://zenml.example.com';
 export const MOCK_SQL_SERVER_URL = 'sqlite:///path/to/sqlite.db';
 export const MOCK_SERVER_ID = 'test-server';
 export const MOCK_AUTH_SCHEME = 'OAUTH2_PASSWORD_BEARER';
-export const MOCK_ZENML_VERSION = '0.55.5';
+export const MOCK_ZENML_VERSION = '0.63.0';
 export const MOCK_ACCESS_TOKEN = 'valid_token';
 
 export const MOCK_CONTEXT = {

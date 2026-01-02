@@ -16,12 +16,13 @@ ZenML Global Configuration Watcher.
 This module contains ZenConfigWatcher, a class that watches for changes
 in the ZenML global configuration file and triggers notifications accordingly.
 """
+
 import os
 from threading import Timer
 from typing import Any, Optional
 
 import yaml
-from constants import ZENML_SERVER_CHANGED, ZENML_STACK_CHANGED
+from constants import ZENML_PROJECT_CHANGED, ZENML_SERVER_CHANGED, ZENML_STACK_CHANGED
 from lazy_import import suppress_stdout_temporarily
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
@@ -43,6 +44,7 @@ class ZenConfigWatcher(FileSystemEventHandler):
         self._timer: Optional[Timer] = None
         self.last_known_url: str = ""
         self.last_known_stack_id: str = ""
+        self.last_known_project_name: str = ""
         self.show_notification: bool = os.getenv("LS_SHOW_NOTIFICATION", "off") in [
             "onError",
             "onWarning",
@@ -55,7 +57,6 @@ class ZenConfigWatcher(FileSystemEventHandler):
                 self.config_path = config_wrapper_instance.get_global_config_file_path()
         except Exception as e:
             self.log_error(f"Failed to retrieve global config file path: {e}")
-        
 
     def process_config_change(self, config_file_path: str):
         """Process the configuration file change."""
@@ -66,9 +67,12 @@ class ZenConfigWatcher(FileSystemEventHandler):
 
                     new_url = config.get("store", {}).get("url", "")
                     new_stack_id = config.get("active_stack_id", "")
+                    new_project_name = config.get("active_project_name", "")
 
                     url_changed = new_url != self.last_known_url
                     stack_id_changed = new_stack_id != self.last_known_stack_id
+                    project_name_changed = new_project_name != self.last_known_project_name
+
                     # Send ZENML_SERVER_CHANGED if url changed
                     if url_changed:
                         server_details = {
@@ -81,10 +85,18 @@ class ZenConfigWatcher(FileSystemEventHandler):
                             server_details,
                         )
                         self.last_known_url = new_url
+
                     # Send ZENML_STACK_CHANGED if stack_id changed
                     if stack_id_changed:
                         self.LSP_SERVER.send_custom_notification(ZENML_STACK_CHANGED, new_stack_id)
                         self.last_known_stack_id = new_stack_id
+
+                    # Send ZENML_PROJECT_CHANGED if project_name changed
+                    if project_name_changed and new_project_name:
+                        self.LSP_SERVER.send_custom_notification(
+                            ZENML_PROJECT_CHANGED, new_project_name
+                        )
+                        self.last_known_project_name = new_project_name
             except (FileNotFoundError, PermissionError) as e:
                 self.log_error(f"Configuration file access error: {e} - {config_file_path}")
             except yaml.YAMLError as e:
@@ -98,10 +110,10 @@ class ZenConfigWatcher(FileSystemEventHandler):
         """
         if event.src_path != self.config_path:
             return
-        
+
         if self._timer is not None:
             self._timer.cancel()
-        
+
         self._timer = Timer(self.debounce_interval, self.process_event, [event])
         self._timer.start()
 

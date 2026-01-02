@@ -8,10 +8,11 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
 import { ZenServerDetails } from './ServerInfoTypes';
+import { Components } from './StackTypes';
 
 /***** Generic Response Types *****/
 export interface SuccessMessageResponse {
@@ -48,7 +49,20 @@ export type ConnectServerResponse = RestServerConnectionResponse | ErrorMessageR
 export interface ActiveStackResponse {
   id: string;
   name: string;
+  components: Components;
 }
 
 export type SetActiveStackResponse = ActiveStackResponse | ErrorMessageResponse;
 export type GetActiveStackResponse = ActiveStackResponse | ErrorMessageResponse;
+
+/***** Project Response Types *****/
+export interface ActiveProjectResponse {
+  id: string;
+  name: string;
+  display_name?: string;
+  created?: string;
+  updated?: string;
+}
+
+export type SetActiveProjectResponse = ActiveProjectResponse | ErrorMessageResponse;
+export type GetActiveProjectResponse = ActiveProjectResponse | ErrorMessageResponse;

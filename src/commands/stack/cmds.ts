@@ -8,18 +8,17 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
-import { StackComponentTreeItem, StackDataProvider, StackTreeItem } from '../../views/activityBar';
-import ZenMLStatusBar from '../../views/statusBar';
-import { getStackDashboardUrl, switchActiveStack } from './utils';
-import { LSClient } from '../../services/LSClient';
-import { showInformationMessage } from '../../utils/notifications';
-import Panels from '../../common/panels';
-import { randomUUID } from 'crypto';
-import StackForm from './StackForm';
 import { traceError, traceInfo } from '../../common/log/logging';
+import { LSClient } from '../../services/LSClient';
+import { StackComponentTreeItem } from '../../views/activityBar/componentView/ComponentTreeItems';
+import { StackDataProvider } from '../../views/activityBar/stackView/StackDataProvider';
+import { StackTreeItem } from '../../views/activityBar/stackView/StackTreeItems';
+import ZenMLStatusBar from '../../views/statusBar';
+import StackForm from './StackForm';
+import { getStackDashboardUrl, switchActiveStack } from './utils';
 
 /**
  * Refreshes the stack view.
@@ -28,29 +27,10 @@ const refreshStackView = async () => {
   vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
-      title: 'Refreshing Stack View...',
       cancellable: false,
     },
-    async progress => {
+    async () => {
       await StackDataProvider.getInstance().refresh();
-    }
-  );
-};
-
-/**
- * Refreshes the active stack.
- */
-const refreshActiveStack = async () => {
-  const statusBar = ZenMLStatusBar.getInstance();
-
-  vscode.window.withProgress(
-    {
-      location: vscode.ProgressLocation.Notification,
-      title: 'Refreshing Active Stack...',
-      cancellable: false,
-    },
-    async progress => {
-      await statusBar.refreshActiveStack();
     }
   );
 };
@@ -80,15 +60,10 @@ const renameStack = async (node: StackTreeItem): Promise<void> => {
         if (result && 'error' in result) {
           throw new Error(result.error);
         }
-        showInformationMessage(`Stack ${label} successfully renamed to ${newStackName}.`);
-        await StackDataProvider.getInstance().refresh();
+        vscode.window.showInformationMessage(`${label} renamed to ${newStackName}`);
       } catch (error: any) {
-        if (error.response) {
-          vscode.window.showErrorMessage(`Failed to rename stack: ${error.response.data.message}`);
-        } else {
-          console.error('Failed to rename stack:', error);
-          vscode.window.showErrorMessage('Failed to rename stack');
-        }
+        console.error('Failed to rename stack:', error);
+        vscode.window.showErrorMessage(`Failed to rename stack: ${error}`);
       }
     }
   );
@@ -112,22 +87,18 @@ const copyStack = async (node: StackTreeItem) => {
       title: 'Copying Stack...',
       cancellable: false,
     },
-    async progress => {
+    async () => {
       try {
         const lsClient = LSClient.getInstance();
         const result = await lsClient.sendLsClientRequest('copyStack', [node.id, newStackName]);
         if ('error' in result && result.error) {
           throw new Error(result.error);
         }
-        showInformationMessage('Stack copied successfully.');
-        await StackDataProvider.getInstance().refresh();
+        vscode.window.showInformationMessage(`${node.label} copied to ${newStackName}`);
+        await refreshStackView();
       } catch (error: any) {
-        if (error.response && error.response.data && error.response.data.message) {
-          vscode.window.showErrorMessage(`Failed to copy stack: ${error.response.data.message}`);
-        } else {
-          console.error('Failed to copy stack:', error);
-          vscode.window.showErrorMessage(`Failed to copy stack: ${error.message || error}`);
-        }
+        console.error('Failed to copy stack:', error);
+        vscode.window.showErrorMessage(`Failed to copy stack: ${error}`);
       }
     }
   );
@@ -151,7 +122,12 @@ const setActiveStack = async (node: StackTreeItem): Promise<void> => {
         const result = await switchActiveStack(node.id);
         if (result) {
           const { id, name } = result;
-          showInformationMessage(`Active stack set to: ${name}`);
+
+          StackDataProvider.getInstance().updateActiveStack(id);
+          const statusBar = ZenMLStatusBar.getInstance();
+          statusBar.refreshActiveStack({ id, name });
+
+          vscode.window.showInformationMessage(`Active stack set to: ${name}`);
         }
       } catch (error) {
         console.log(error);
@@ -166,15 +142,13 @@ const setActiveStack = async (node: StackTreeItem): Promise<void> => {
  *
  * @param {StackTreeItem} node The stack to open.
  */
-const goToStackUrl = (node: StackTreeItem) => {
+const goToStackUrl = (node: StackTreeItem): void => {
   const url = getStackDashboardUrl(node.id);
 
   if (url) {
     try {
       const parsedUrl = vscode.Uri.parse(url);
-
       vscode.env.openExternal(parsedUrl);
-      vscode.window.showInformationMessage(`Opening: ${url}`);
     } catch (error) {
       console.log(error);
       vscode.window.showErrorMessage(`Failed to open stack URL: ${error}`);
@@ -243,10 +217,8 @@ const deleteStack = async (node: StackTreeItem) => {
 
         vscode.window.showInformationMessage(`${node.label} deleted`);
         traceInfo(`${node.label} deleted`);
-
-        StackDataProvider.getInstance().refresh();
       } catch (e) {
-        vscode.window.showErrorMessage(`Failed to delete component: ${e}`);
+        vscode.window.showErrorMessage(`Failed to delete stack: ${e}`);
         traceError(e);
         console.error(e);
       }
@@ -256,7 +228,6 @@ const deleteStack = async (node: StackTreeItem) => {
 
 export const stackCommands = {
   refreshStackView,
-  refreshActiveStack,
   renameStack,
   copyStack,
   setActiveStack,

@@ -8,32 +8,49 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
-import { EventEmitter, TreeDataProvider, TreeItem, window } from 'vscode';
+import * as vscode from 'vscode';
+import { TreeItem } from 'vscode';
 import { State } from 'vscode-languageclient';
+import { getActiveProjectNameFromConfig } from '../../../commands/projects/utils';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
-import { PipelineRun, PipelineRunsResponse } from '../../../types/PipelineTypes';
 import {
-  ITEMS_PER_PAGE_OPTIONS,
+  PipelineModel,
+  PipelineRun,
+  PipelineRunConfig,
+  PipelineRunsData,
+  PipelineRunsResponse,
+  PipelineRunStep,
+} from '../../../types/PipelineTypes';
+import {
   LSCLIENT_STATE_CHANGED,
   LSP_ZENML_CLIENT_INITIALIZED,
-  LSP_ZENML_STACK_CHANGED,
+  LSP_ZENML_PROJECT_CHANGED,
 } from '../../../utils/constants';
-import { ErrorTreeItem, createErrorItem, createAuthErrorItem } from '../common/ErrorTreeItem';
+import {
+  createAuthErrorItem,
+  createErrorItem,
+  createServicesNotAvailableItem,
+  ErrorTreeItem,
+} from '../common/ErrorTreeItem';
 import { LOADING_TREE_ITEMS } from '../common/LoadingTreeItem';
-import { PipelineRunTreeItem, PipelineTreeItem } from './PipelineTreeItems';
-import { CommandTreeItem } from '../common/PaginationTreeItems';
 import { PaginatedDataProvider } from '../common/PaginatedDataProvider';
+import { TreeItemWithChildren } from '../common/TreeItemWithChildren';
+import { PipelineRunTreeItem, PipelineTreeItem } from './PipelineTreeItems';
 
 /**
  * Provides data for the pipeline run tree view, displaying detailed information about each pipeline run.
  */
 export class PipelineDataProvider extends PaginatedDataProvider {
   private static instance: PipelineDataProvider | null = null;
+  private activeProjectName: string | undefined;
   private eventBus = EventBus.getInstance();
   private zenmlClientReady = false;
+  private lsClientReady = false;
+  private requestCache = new Map<string, { data: any; timestamp: number }>();
+  private readonly CACHE_TTL = 30000; // 30 seconds
 
   constructor() {
     super();
@@ -43,35 +60,7 @@ export class PipelineDataProvider extends PaginatedDataProvider {
   }
 
   /**
-   * Subscribes to relevant events to trigger a refresh of the tree view.
-   */
-  public subscribeToEvents(): void {
-    this.eventBus.on(LSCLIENT_STATE_CHANGED, (newState: State) => {
-      if (newState === State.Running) {
-        this.refresh();
-      } else {
-        this.items = [LOADING_TREE_ITEMS.get('lsClient')!];
-        this._onDidChangeTreeData.fire(undefined);
-      }
-    });
-
-    this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, (isInitialized: boolean) => {
-      this.zenmlClientReady = isInitialized;
-
-      if (!isInitialized) {
-        this.items = [LOADING_TREE_ITEMS.get('pipelineRuns')!];
-        this._onDidChangeTreeData.fire(undefined);
-        return;
-      }
-
-      this.refresh();
-      this.eventBus.off(LSP_ZENML_STACK_CHANGED, () => this.refresh());
-      this.eventBus.on(LSP_ZENML_STACK_CHANGED, () => this.refresh());
-    });
-  }
-
-  /**
-   * Retrieves the singleton instance of ServerDataProvider.
+   * Retrieves the singleton instance of PipelineDataProvider.
    *
    * @returns {PipelineDataProvider} The singleton instance.
    */
@@ -83,18 +72,109 @@ export class PipelineDataProvider extends PaginatedDataProvider {
   }
 
   /**
+   * Creates an informational message tree item.
+   *
+   * @param {string} message The message to display
+   * @returns {TreeItem} The tree item with the message
+   */
+  private createInitialMessage(message: string): TreeItem {
+    const treeItem = new TreeItem(message);
+    treeItem.iconPath = new vscode.ThemeIcon('info');
+    treeItem.contextValue = 'pipelineMessage';
+    return treeItem;
+  }
+
+  /**
+   * Subscribes to relevant events to trigger a refresh of the tree view.
+   */
+  public subscribeToEvents(): void {
+    this.eventBus.off(LSCLIENT_STATE_CHANGED, this.lsClientStateChangeHandler);
+    this.eventBus.off(LSP_ZENML_CLIENT_INITIALIZED, this.zenmlClientStateChangeHandler);
+
+    this.eventBus.on(LSCLIENT_STATE_CHANGED, this.lsClientStateChangeHandler);
+    this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, this.zenmlClientStateChangeHandler);
+  }
+
+  /**
+   * Triggers the loading state for a given entity.
+   *
+   * @param {string} entity The entity to trigger the loading state for.
+   */
+  private triggerLoadingState = (entity: string) => {
+    this.items = [LOADING_TREE_ITEMS.get(entity)!];
+    this._onDidChangeTreeData.fire(undefined);
+  };
+
+  /**
+   * Handles the change in the project.
+   *
+   * @param {string} projectName The new project name.
+   */
+  private projectChangeHandler = (projectName?: string) => {
+    if (projectName && projectName !== this.activeProjectName) {
+      this.activeProjectName = projectName;
+      this.requestCache.clear(); // Clear cache on project change
+      this.refresh(projectName);
+    }
+  };
+
+  /**
+   * Handles the change in the LSP client state.
+   *
+   * @param {State} status The new LSP client state.
+   */
+  private lsClientStateChangeHandler = (status: State) => {
+    if (status !== State.Running) {
+      this.lsClientReady = false;
+      this.items = [createServicesNotAvailableItem()];
+      this._onDidChangeTreeData.fire(undefined);
+    } else {
+      this.lsClientReady = true;
+      this.refresh();
+    }
+  };
+
+  /**
+   * Handles the change in the ZenML client state.
+   *
+   * @param {boolean} isInitialized The new ZenML client state.
+   */
+  private zenmlClientStateChangeHandler = (isInitialized: boolean) => {
+    this.zenmlClientReady = isInitialized;
+    if (!isInitialized) {
+      this.items = [
+        this.createInitialMessage(
+          'ZenML client not initialized. See Environment view for details.'
+        ),
+      ];
+      this._onDidChangeTreeData.fire(undefined);
+    } else {
+      this.refresh();
+
+      this.eventBus.off(LSP_ZENML_PROJECT_CHANGED, this.projectChangeHandler);
+      this.eventBus.on(LSP_ZENML_PROJECT_CHANGED, this.projectChangeHandler);
+    }
+  };
+
+  /**
    * Refreshes the "Pipeline Runs" view by fetching the latest pipeline run data and updating the view.
    *
+   * @param {string} projectName - (Optional) The name of the project to fetch runs for.
    * @returns A promise resolving to void.
    */
-  public async refresh(): Promise<void> {
+  public async refresh(projectName?: string): Promise<void> {
     this.items = [LOADING_TREE_ITEMS.get('pipelineRuns')!];
     this._onDidChangeTreeData.fire(undefined);
     const page = this.pagination.currentPage;
     const itemsPerPage = this.pagination.itemsPerPage;
 
+    if (!this.activeProjectName && !projectName) {
+      const activeProjectName = getActiveProjectNameFromConfig();
+      this.activeProjectName = activeProjectName;
+    }
+
     try {
-      const newPipelineData = await this.fetchPipelineRuns(page, itemsPerPage);
+      const newPipelineData = await this.fetchPipelineRuns(page, itemsPerPage, projectName);
       this.items = newPipelineData;
     } catch (error: any) {
       this.items = createErrorItem(error);
@@ -106,60 +186,36 @@ export class PipelineDataProvider extends PaginatedDataProvider {
   /**
    * Fetches pipeline runs from the server and maps them to tree items for display.
    *
-   * @returns A promise resolving to an array of PipelineTreeItems representing fetched pipeline runs.
+   * @param {number} page - The page number to fetch.
+   * @param {number} itemsPerPage - The number of items per page.
+   * @param {string} projectName - (Optional) The name of the project to fetch runs for.
+   * @returns {Promise<TreeItem[]>} A promise resolving to an array of PipelineTreeItems representing fetched pipeline runs.
    */
-  async fetchPipelineRuns(page: number = 1, itemsPerPage: number = 20): Promise<TreeItem[]> {
-    if (!this.zenmlClientReady) {
-      return [LOADING_TREE_ITEMS.get('zenmlClient')!];
+  async fetchPipelineRuns(
+    page: number = 1,
+    itemsPerPage: number = 20,
+    projectName?: string
+  ): Promise<TreeItem[]> {
+    if (!this.lsClientReady || !this.zenmlClientReady) {
+      return [createServicesNotAvailableItem()];
     }
+
     try {
-      const lsClient = LSClient.getInstance();
-      const result = await lsClient.sendLsClientRequest<PipelineRunsResponse>('getPipelineRuns', [
-        page,
-        itemsPerPage,
-      ]);
+      const result = await this.getPipelineRunsData(page, itemsPerPage, projectName);
 
-      if (Array.isArray(result) && result.length === 1 && 'error' in result[0]) {
-        const errorMessage = result[0].error;
-        if (errorMessage.includes('Authentication error')) {
-          return createAuthErrorItem(errorMessage);
-        }
-      }
-
-      if (!result || 'error' in result) {
-        if ('clientVersion' in result && 'serverVersion' in result) {
-          return createErrorItem(result);
-        } else {
-          console.error(`Failed to fetch pipeline runs: ${result.error}`);
-          return [];
-        }
+      if (this.isErrorResponse(result)) {
+        return this.handleErrorResponse(result);
       }
 
       if ('runs' in result) {
-        const { runs, total, total_pages, current_page, items_per_page } = result;
+        this.updatePagination(result);
 
-        this.pagination = {
-          currentPage: current_page,
-          itemsPerPage: items_per_page,
-          totalItems: total,
-          totalPages: total_pages,
-        };
+        if (result.runs.length === 0) {
+          return this.createNoRunsFoundItem();
+        }
 
-        return runs.map((run: PipelineRun) => {
-          const formattedStartTime = new Date(run.startTime).toLocaleString();
-          const formattedEndTime = run.endTime ? new Date(run.endTime).toLocaleString() : 'N/A';
-
-          const children = [
-            new PipelineRunTreeItem('run name', run.name),
-            new PipelineRunTreeItem('stack', run.stackName),
-            new PipelineRunTreeItem('start time', formattedStartTime),
-            new PipelineRunTreeItem('end time', formattedEndTime),
-            new PipelineRunTreeItem('os', `${run.os} ${run.osVersion}`),
-            new PipelineRunTreeItem('python version', run.pythonVersion),
-          ];
-
-          return new PipelineTreeItem(run, run.id, children);
-        });
+        const groupedByPipeline = this.groupRunsByPipeline(result.runs);
+        return this.createPipelineTreeItems(groupedByPipeline);
       } else {
         console.error(`Unexpected response format:`, result);
         return [];
@@ -173,5 +229,428 @@ export class PipelineDataProvider extends PaginatedDataProvider {
         ),
       ];
     }
+  }
+
+  /**
+   * Fetches pipeline runs data from the server with caching.
+   *
+   * @param {number} page - The page number to fetch.
+   * @param {number} itemsPerPage - The number of items per page.
+   * @param {string} projectName - The name of the project to fetch runs for.
+   * @returns {Promise<PipelineRunsResponse | any>} A promise resolving to the pipeline runs data.
+   */
+  private async getPipelineRunsData(
+    page: number,
+    itemsPerPage: number,
+    projectName?: string
+  ): Promise<PipelineRunsResponse | any> {
+    const cacheKey = `pipeline-runs-${page}-${itemsPerPage}-${projectName || 'default'}`;
+    const now = Date.now();
+
+    // Check cache first
+    const cached = this.requestCache.get(cacheKey);
+    if (cached && now - cached.timestamp < this.CACHE_TTL) {
+      return cached.data;
+    }
+
+    const lsClient = LSClient.getInstance();
+    const data = await lsClient.sendLsClientRequest<PipelineRunsResponse>('getPipelineRuns', [
+      page,
+      itemsPerPage,
+      projectName,
+    ]);
+
+    // Cache the result
+    this.requestCache.set(cacheKey, { data, timestamp: now });
+
+    // Clean old cache entries
+    this.cleanCache();
+
+    return data;
+  }
+
+  /**
+   * Cleans expired cache entries.
+   */
+  private cleanCache(): void {
+    const now = Date.now();
+    for (const [key, value] of this.requestCache.entries()) {
+      if (now - value.timestamp > this.CACHE_TTL) {
+        this.requestCache.delete(key);
+      }
+    }
+  }
+
+  /**
+   * Checks if the response is an error.
+   *
+   * @param {any} result - The response to check.
+   * @returns {boolean} True if the response is an error, false otherwise.
+   */
+  private isErrorResponse(result: any): boolean {
+    return (
+      (Array.isArray(result) && result.length === 1 && 'error' in result[0]) ||
+      !result ||
+      'error' in result ||
+      ('clientVersion' in result && 'serverVersion' in result)
+    );
+  }
+
+  /**
+   * Handles error responses from the server.
+   *
+   * @param {any} result - The response to handle.
+   * @returns {TreeItem[]} A tree item for the error.
+   */
+  private handleErrorResponse(result: any): TreeItem[] {
+    if (Array.isArray(result) && result.length === 1 && 'error' in result[0]) {
+      const errorMessage = result[0].error;
+      if (errorMessage.includes('Authentication error')) {
+        return createAuthErrorItem(errorMessage);
+      }
+      return createErrorItem({
+        errorType: errorMessage.includes('Not authorized') ? 'AuthorizationException' : 'Error',
+        message: errorMessage,
+      });
+    }
+
+    if (!result || 'error' in result) {
+      if (result?.message?.includes('No project')) {
+        return createErrorItem({
+          errorType: 'RuntimeError',
+          message: 'No project found. Register a project to see it listed here.',
+        });
+      }
+      if ('clientVersion' in result && 'serverVersion' in result) {
+        return createErrorItem(result);
+      }
+      if (result.error.includes('Not authorized')) {
+        return createErrorItem({
+          errorType: 'AuthorizationException',
+          message: result.error,
+        });
+      }
+    }
+
+    return createErrorItem({ message: 'Unknown error occurred' });
+  }
+
+  /**
+   * Updates pagination based on the response.
+   *
+   * @param {PipelineRunsData} result - The response to update pagination from.
+   */
+  private updatePagination(result: PipelineRunsData): void {
+    const { total, total_pages, current_page, items_per_page } = result;
+    this.pagination = {
+      currentPage: current_page,
+      itemsPerPage: items_per_page,
+      totalItems: total,
+      totalPages: total_pages,
+    };
+  }
+
+  /**
+   * Creates a TreeItem for when no runs are found.
+   *
+   * @returns {TreeItem[]} A tree item for when no runs are found.
+   */
+  private createNoRunsFoundItem(): TreeItem[] {
+    const noRunsItem = new TreeItem('No pipeline runs found for this project');
+    noRunsItem.contextValue = 'noRuns';
+    noRunsItem.iconPath = new vscode.ThemeIcon('info');
+    noRunsItem.tooltip = 'Run a pipeline in this project to see it listed here';
+    return [noRunsItem];
+  }
+
+  /**
+   * Groups pipeline runs by pipeline name.
+   *
+   * @param {PipelineRun[]} runs - The pipeline runs to group.
+   * @returns {Object} The pipeline runs grouped by pipeline name.
+   */
+  private groupRunsByPipeline(runs: PipelineRun[]): { [key: string]: PipelineRun[] } {
+    const groupedByPipeline: { [key: string]: PipelineRun[] } = {};
+
+    for (const run of runs) {
+      const pipelineId = run.pipelineName;
+      if (!groupedByPipeline[pipelineId]) {
+        groupedByPipeline[pipelineId] = [];
+      }
+      groupedByPipeline[pipelineId].push(run);
+    }
+
+    return groupedByPipeline;
+  }
+
+  /**
+   * Creates tree items for each pipeline and its runs.
+   *
+   * @param {Object} groupedByPipeline - The pipeline runs grouped by pipeline name.
+   * @returns {TreeItem[]} A tree item for each pipeline and its runs.
+   */
+  private createPipelineTreeItems(groupedByPipeline: { [key: string]: PipelineRun[] }): TreeItem[] {
+    return Object.entries(groupedByPipeline).map(([pipelineName, pipelineRuns]) => {
+      const pipelineItem = new TreeItem(
+        pipelineName,
+        vscode.TreeItemCollapsibleState.Expanded
+      ) as TreeItemWithChildren;
+
+      pipelineItem.contextValue = 'pipeline';
+      pipelineItem.iconPath = new vscode.ThemeIcon('symbol-interface');
+      pipelineItem.tooltip = `Pipeline: ${pipelineName}`;
+      pipelineItem.children = pipelineRuns.map(run => this.createPipelineRunTreeItem(run));
+
+      return pipelineItem;
+    });
+  }
+
+  /**
+   * Creates a tree item for a single pipeline run.
+   *
+   * @param {PipelineRun} run - The pipeline run to create a tree item for.
+   * @returns {PipelineTreeItem} A tree item for the pipeline run.
+   */
+  private createPipelineRunTreeItem(run: PipelineRun): PipelineTreeItem {
+    const formattedStartTime = new Date(run.startTime).toLocaleString();
+    const formattedEndTime = run.endTime ? new Date(run.endTime).toLocaleString() : 'N/A';
+    const children: PipelineRunTreeItem[] = [];
+
+    // steps - may not be available in optimized responses
+    if (run.steps && typeof run.steps === 'object' && Object.keys(run.steps).length > 0) {
+      children.push(this.createStepsTreeItem(run.steps));
+    } else if (run.steps === null) {
+      // Steps data not available in this response
+      children.push(
+        new PipelineRunTreeItem(
+          'steps',
+          'Not available (optimized response)',
+          vscode.TreeItemCollapsibleState.None
+        )
+      );
+    }
+
+    // model
+    if (run.config?.model) {
+      children.push(this.createModelTreeItem(run.config.model));
+    }
+
+    // config
+    if (run.config) {
+      children.push(this.createConfigTreeItem(run.config));
+    }
+
+    // run metadata
+    if (run.runMetadata && Object.keys(run.runMetadata).length > 0) {
+      children.push(this.createRunMetadataTreeItem(run.runMetadata));
+    }
+
+    children.push(
+      new PipelineRunTreeItem('id', run.id),
+      new PipelineRunTreeItem('name', run.name),
+      new PipelineRunTreeItem('pipeline', run.pipelineName),
+      new PipelineRunTreeItem('stack', run.stackName),
+      new PipelineRunTreeItem('start_time', formattedStartTime),
+      new PipelineRunTreeItem('end_time', formattedEndTime),
+      new PipelineRunTreeItem('status', run.status)
+    );
+
+    return new PipelineTreeItem(run, run.id, children);
+  }
+
+  /**
+   * Creates a tree item for run metadata.
+   *
+   * @param {Record<string, any>} metadata - The metadata to create a tree item for.
+   * @returns {PipelineRunTreeItem} A tree item for the metadata.
+   */
+  private createRunMetadataTreeItem(metadata: Record<string, any>): PipelineRunTreeItem {
+    const metadataItem = new PipelineRunTreeItem(
+      'metadata',
+      '',
+      vscode.TreeItemCollapsibleState.Collapsed
+    );
+
+    const metadataChildren: PipelineRunTreeItem[] = [];
+
+    for (const [key, value] of Object.entries(metadata)) {
+      metadataChildren.push(this.createValueTreeItem(key, value));
+    }
+
+    metadataItem.children = metadataChildren;
+    return metadataItem;
+  }
+
+  /**
+   * Creates a tree item for pipeline steps.
+   *
+   * @param {Object} steps - The steps to create a tree item for.
+   * @returns {PipelineRunTreeItem} A tree item for the steps.
+   */
+  private createStepsTreeItem(steps: { [stepName: string]: PipelineRunStep }): PipelineRunTreeItem {
+    const stepsItem = new PipelineRunTreeItem(
+      'steps',
+      '',
+      vscode.TreeItemCollapsibleState.Collapsed
+    );
+
+    const stepsChildren: PipelineRunTreeItem[] = [];
+
+    for (const [stepName, stepData] of Object.entries(steps)) {
+      const stepItem = new PipelineRunTreeItem(
+        stepName,
+        `status: ${stepData.status}`,
+        vscode.TreeItemCollapsibleState.Collapsed
+      );
+
+      const stepChildren: PipelineRunTreeItem[] = [];
+      stepChildren.push(new PipelineRunTreeItem('status', stepData.status));
+
+      if (stepData.start_time) {
+        stepChildren.push(
+          new PipelineRunTreeItem('start_time', new Date(stepData.start_time).toLocaleString())
+        );
+      }
+
+      if (stepData.end_time) {
+        stepChildren.push(
+          new PipelineRunTreeItem('end_time', new Date(stepData.end_time).toLocaleString())
+        );
+      }
+
+      stepItem.children = stepChildren;
+      stepsChildren.push(stepItem);
+    }
+
+    stepsItem.children = stepsChildren;
+    return stepsItem;
+  }
+
+  /**
+   * Creates a tree item for model information.
+   *
+   * @param {PipelineModel} model - The model to create a tree item for.
+   * @returns {PipelineRunTreeItem} A tree item for the model.
+   */
+  private createModelTreeItem(model: PipelineModel): PipelineRunTreeItem {
+    const modelItem = new PipelineRunTreeItem(
+      'model',
+      model?.name || '',
+      vscode.TreeItemCollapsibleState.Collapsed
+    );
+
+    const modelChildren: PipelineRunTreeItem[] = [];
+
+    for (const [key, value] of Object.entries(model)) {
+      if (key !== 'name' && value !== undefined) {
+        modelChildren.push(this.createValueTreeItem(key, value));
+      }
+    }
+
+    modelItem.children = modelChildren;
+    return modelItem;
+  }
+
+  /**
+   * Creates a tree item for config information.
+   *
+   * @param {PipelineRunConfig} config - The config to create a tree item for.
+   * @returns {PipelineRunTreeItem} A tree item for the config.
+   */
+  private createConfigTreeItem(config: PipelineRunConfig): PipelineRunTreeItem {
+    const configItem = new PipelineRunTreeItem(
+      'config',
+      '',
+      vscode.TreeItemCollapsibleState.Collapsed
+    );
+
+    const configChildren: PipelineRunTreeItem[] = [];
+
+    for (const [key, value] of Object.entries(config)) {
+      if (key !== 'model' && value !== undefined) {
+        configChildren.push(this.createValueTreeItem(key, value));
+      }
+    }
+
+    configItem.children = configChildren;
+    return configItem;
+  }
+
+  /**
+   * Creates a tree item for a key-value pair.
+   *
+   * @param {string} key - The key to create a tree item for.
+   * @param {any} value - The value to create a tree item for.
+   * @returns {PipelineRunTreeItem} A tree item for the key-value pair.
+   */
+  private createValueTreeItem(key: string, value: any): PipelineRunTreeItem {
+    if (Array.isArray(value)) {
+      const arrayItem = new PipelineRunTreeItem(
+        key,
+        `(${value.length} items)`,
+        vscode.TreeItemCollapsibleState.Collapsed
+      );
+
+      const arrayChildren: PipelineRunTreeItem[] = value.map((item, index) => {
+        if (typeof item === 'object' && item !== null) {
+          return this.createNestedObjectTreeItem(`[${index}]`, item);
+        } else {
+          return new PipelineRunTreeItem(`[${index}]`, String(item));
+        }
+      });
+
+      arrayItem.children = arrayChildren;
+      return arrayItem;
+    } else if (typeof value === 'object' && value !== null) {
+      return this.createNestedObjectTreeItem(key, value);
+    } else {
+      return new PipelineRunTreeItem(key, String(value));
+    }
+  }
+
+  /**
+   * Creates a tree item for a nested object.
+   *
+   * @param {string} key - The key to create a tree item for.
+   * @param {any} obj - The nested object to create a tree item for.
+   * @returns {PipelineRunTreeItem} A tree item for the nested object.
+   */
+  private createNestedObjectTreeItem(key: string, obj: any): PipelineRunTreeItem {
+    const objectItem = new PipelineRunTreeItem(key, '', vscode.TreeItemCollapsibleState.Collapsed);
+
+    const objectChildren: PipelineRunTreeItem[] = [];
+
+    for (const [childKey, childValue] of Object.entries(obj)) {
+      objectChildren.push(this.createValueTreeItem(childKey, childValue));
+    }
+
+    objectItem.children = objectChildren;
+    return objectItem;
+  }
+
+  /**
+   * Shows a command error in the tree view.
+   * @param errorItem The error tree item to display
+   */
+  public showCommandError(errorItem: ErrorTreeItem): void {
+    this.items = [errorItem];
+    this._onDidChangeTreeData.fire(undefined);
+
+    setTimeout(() => {
+      this.refresh();
+    }, 5000);
+  }
+
+  /**
+   * Shows a command success message in the tree view.
+   * @param successItem The success tree item to display
+   */
+  public showCommandSuccess(successItem: ErrorTreeItem): void {
+    this.items = [successItem];
+    this._onDidChangeTreeData.fire(undefined);
+
+    setTimeout(() => {
+      this.refresh();
+    }, 3000);
   }
 }

@@ -1,6 +1,7 @@
 // Place your settings in this file to overwrite default and user settings.
 {
-  "python.defaultInterpreterPath": "",
+  // Set your Python interpreter path in your User Settings, not here.
+  // Example: "python.defaultInterpreterPath": "~/.pyenv/versions/3.11.6/envs/vscode-zenml/bin/python"
   "files.exclude": {
     "out": false, // set this to true to hide the "out" folder with the compiled JS files
     "dist": false // set this to true to hide the "dist" folder with the compiled JS files
@@ -15,5 +16,7 @@
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true,
   "python.testing.cwd": "${workspaceFolder}",
-  "python.analysis.extraPaths": ["bundled/libs", "bundled/tool"]
+  "python.analysis.extraPaths": ["bundled/libs", "bundled/tool"],
+  "python.analysis.typeCheckingMode": "off",
+  "python-envs.pythonProjects": []
 }

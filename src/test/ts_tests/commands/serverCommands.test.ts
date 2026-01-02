@@ -8,8 +8,9 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
+
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import * as vscode from 'vscode';
@@ -26,20 +27,27 @@ suite('Server Commands Tests', () => {
   let sandbox: sinon.SinonSandbox;
   let showErrorMessageStub: sinon.SinonStub;
   let mockLSClient: any;
-  let mockEventBus = new MockEventBus();
-  let emitSpy: sinon.SinonSpy;
   let configurationMock: any;
   let showInputBoxStub: sinon.SinonStub;
   let refreshUIComponentsStub: sinon.SinonStub;
+  const mockEventBus = new MockEventBus();
 
   setup(() => {
     sandbox = sinon.createSandbox();
     mockLSClient = new MockLSClient(mockEventBus);
-    emitSpy = sandbox.spy(mockEventBus, 'emit');
     sandbox.stub(LSClient, 'getInstance').returns(mockLSClient);
     sandbox.stub(EventBus, 'getInstance').returns(mockEventBus);
     showInputBoxStub = sandbox.stub(vscode.window, 'showInputBox');
     showErrorMessageStub = sandbox.stub(vscode.window, 'showErrorMessage');
+
+    // Mock the showQuickPick to simulate selecting "Connect to Remote ZenML Server"
+    // We need to customize the mock to include a custom property expected by the implementation
+    const quickPickMock = {
+      label: '$(globe) Connect to Remote ZenML Server',
+    };
+    // Add the custom 'value' property
+    Object.defineProperty(quickPickMock, 'value', { value: 'remote' });
+    sandbox.stub(vscode.window, 'showQuickPick').resolves(quickPickMock as any);
 
     configurationMock = {
       get: sandbox.stub().withArgs('serverUrl').returns(MOCK_REST_SERVER_URL),
@@ -69,13 +77,19 @@ suite('Server Commands Tests', () => {
 
   test('connectServer successfully connects to the server', async () => {
     showInputBoxStub.resolves(MOCK_REST_SERVER_URL);
-    sandbox
-      .stub(mockLSClient, 'sendLsClientRequest')
-      .withArgs('connect', [MOCK_REST_SERVER_URL])
-      .resolves({
-        message: 'Connected successfully',
-        access_token: MOCK_ACCESS_TOKEN,
-      });
+    const connectStub = sandbox.stub(mockLSClient, 'sendLsClientRequest');
+
+    // Handle both formats of the request (the one in the command implementation)
+    connectStub.withArgs('connect', ['remote', MOCK_REST_SERVER_URL, {}, true]).resolves({
+      message: 'Connected successfully',
+      access_token: MOCK_ACCESS_TOKEN,
+    });
+
+    // Handle the original test format too
+    connectStub.withArgs('connect', [MOCK_REST_SERVER_URL]).resolves({
+      message: 'Connected successfully',
+      access_token: MOCK_ACCESS_TOKEN,
+    });
 
     const result = await serverCommands.connectServer();
 
@@ -108,10 +122,15 @@ suite('Server Commands Tests', () => {
 
   test('connectServer fails with incorrect URL', async () => {
     showInputBoxStub.resolves('invalid.url');
-    sandbox
-      .stub(mockLSClient, 'sendLsClientRequest')
-      .withArgs('connect', ['invalid.url'])
+    const connectStub = sandbox.stub(mockLSClient, 'sendLsClientRequest');
+
+    // Handle both formats of the request (the one in the command implementation)
+    connectStub
+      .withArgs('connect', ['remote', 'invalid.url', {}, true])
       .rejects(new Error('Failed to connect'));
+
+    // Handle the original test format too
+    connectStub.withArgs('connect', ['invalid.url']).rejects(new Error('Failed to connect'));
 
     const result = await serverCommands.connectServer();
     assert.strictEqual(result, false, 'Should fail to connect to the server with incorrect URL');

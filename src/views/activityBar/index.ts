@@ -1,6 +1,28 @@
 // /src/views/treeViews/index.ts
-export * from './stackView/StackDataProvider';
-export * from './serverView/ServerDataProvider';
-export * from './stackView/StackTreeItems';
+
+// Component View
+export * from './componentView/ComponentDataProvider';
+export * from './componentView/ComponentTreeItems';
+
+// Pipeline View
 export * from './pipelineView/PipelineDataProvider';
 export * from './pipelineView/PipelineTreeItems';
+
+// Project View
+export * from './projectView/ProjectDataProvider';
+export * from './projectView/ProjectTreeItems';
+
+// Server View
+export * from './serverView/ServerDataProvider';
+export * from './serverView/ServerTreeItems';
+
+// Stack View
+export * from './stackView/StackDataProvider';
+export * from './stackView/StackTreeItems';
+
+// Model View
+export * from './modelView/ModelDataProvider';
+export * from './modelView/ModelTreeItems';
+
+// Environment View
+export * from './environmentView/EnvironmentDataProvider';
