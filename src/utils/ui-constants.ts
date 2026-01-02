@@ -94,6 +94,14 @@ export const TREE_ICONS: Record<string, ThemeIcon> = {
   PIPELINE: new ThemeIcon('symbol-interface'),
   PIPELINE_RUN: new ThemeIcon('beaker'),
   ENVIRONMENT: new ThemeIcon('server-environment'),
+  // Deployment icons
+  DEPLOYMENT: new ThemeIcon('rocket'),
+  DEPLOYMENT_RUNNING: new ThemeIcon('play-circle', ZENML_COLORS.SUCCESS),
+  DEPLOYMENT_PENDING: new ThemeIcon('sync~spin'),
+  DEPLOYMENT_ERROR: new ThemeIcon('error', ZENML_COLORS.ERROR),
+  DEPLOYMENT_ABSENT: new ThemeIcon('circle-outline'),
+  DEPLOYMENT_UNKNOWN: new ThemeIcon('question', ZENML_COLORS.WARNING),
+
   // Model icons
   MODEL: new ThemeIcon('chip', ZENML_COLORS.PURPLE),
   MODEL_VERSION: new ThemeIcon('chip'),
@@ -157,6 +165,17 @@ export const MODEL_VERSION_SECTION_ICONS: Record<string, ThemeIcon> = {
 };
 
 /**
+ * Deployment Status Icons - Icons for different deployment statuses
+ */
+export const DEPLOYMENT_STATUS_ICONS: Record<string, ThemeIcon> = {
+  running: TREE_ICONS.DEPLOYMENT_RUNNING,
+  pending: TREE_ICONS.DEPLOYMENT_PENDING,
+  error: TREE_ICONS.DEPLOYMENT_ERROR,
+  absent: TREE_ICONS.DEPLOYMENT_ABSENT,
+  unknown: TREE_ICONS.DEPLOYMENT_UNKNOWN,
+};
+
+/**
  * Tooltip Formatters - Functions to format tooltips consistently
  */
 export const TOOLTIPS = {
@@ -209,6 +228,16 @@ export const CONTEXT_VALUES = {
 
   // Environment context values
   INTERPRETER: 'interpreter',
+
+  // Deployment context values
+  DEPLOYMENT: 'deployment',
+  DEPLOYMENT_RUNNING: 'deploymentRunning',
+  DEPLOYMENT_PENDING: 'deploymentPending',
+  DEPLOYMENT_ERROR: 'deploymentError',
+  DEPLOYMENT_ABSENT: 'deploymentAbsent',
+  DEPLOYMENT_UNKNOWN: 'deploymentUnknown',
+  DEPLOYMENT_DETAIL: 'deploymentDetail',
+  NO_DEPLOYMENTS: 'noDeployments',
 };
 
 /**

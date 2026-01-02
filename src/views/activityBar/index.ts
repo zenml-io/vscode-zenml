@@ -26,3 +26,7 @@ export * from './modelView/ModelTreeItems';
 
 // Environment View
 export * from './environmentView/EnvironmentDataProvider';
+
+// Deployment View
+export * from './deploymentView/DeploymentDataProvider';
+export * from './deploymentView/DeploymentTreeItems';

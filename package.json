@@ -142,6 +142,13 @@
           "type": "string",
           "default": "",
           "description": "Active project name for the ZenML server"
+        },
+        "zenml.deployments.refreshInterval": {
+          "type": "number",
+          "default": 15,
+          "minimum": 0,
+          "maximum": 300,
+          "description": "Auto-refresh interval in seconds for deployment status (0 to disable, 5-300)"
         }
       }
     },
@@ -333,6 +340,66 @@
         "title": "Restart LSP Server",
         "icon": "$(debug-restart)",
         "category": "ZenML Environment"
+      },
+      {
+        "command": "zenml.refreshDeploymentsView",
+        "title": "Refresh Deployments",
+        "icon": "$(refresh)",
+        "category": "ZenML Deployments"
+      },
+      {
+        "command": "zenml.setDeploymentsPerPage",
+        "title": "Set Deployments Per Page",
+        "icon": "$(layers)",
+        "category": "ZenML Deployments"
+      },
+      {
+        "command": "zenml.provisionDeployment",
+        "title": "Provision",
+        "icon": "$(play)",
+        "category": "ZenML Deployments"
+      },
+      {
+        "command": "zenml.deprovisionDeployment",
+        "title": "Deprovision",
+        "icon": "$(primitive-square)",
+        "category": "ZenML Deployments"
+      },
+      {
+        "command": "zenml.deleteDeployment",
+        "title": "Delete",
+        "icon": "$(trash)",
+        "category": "ZenML Deployments"
+      },
+      {
+        "command": "zenml.refreshDeploymentStatus",
+        "title": "Refresh Status",
+        "icon": "$(sync)",
+        "category": "ZenML Deployments"
+      },
+      {
+        "command": "zenml.copyDeploymentUrl",
+        "title": "Copy URL",
+        "icon": "$(copy)",
+        "category": "ZenML Deployments"
+      },
+      {
+        "command": "zenml.openDeploymentUrl",
+        "title": "Open in Browser",
+        "icon": "$(globe)",
+        "category": "ZenML Deployments"
+      },
+      {
+        "command": "zenml.viewDeploymentLogs",
+        "title": "View Logs",
+        "icon": "$(output)",
+        "category": "ZenML Deployments"
+      },
+      {
+        "command": "zenml.invokeDeployment",
+        "title": "Invoke",
+        "icon": "$(run)",
+        "category": "ZenML Deployments"
       }
     ],
     "viewsContainers": {
@@ -387,6 +454,11 @@
           "id": "zenmlEnvironmentView",
           "name": "Environment",
           "icon": "$(server-environment)"
+        },
+        {
+          "id": "zenmlDeploymentView",
+          "name": "Deployments",
+          "icon": "$(rocket)"
         }
       ],
       "zenmlPanel": [
@@ -477,6 +549,16 @@
           "when": "environmentCommandsRegistered && view == zenmlEnvironmentView",
           "command": "zenml.restartLspServer",
           "group": "navigation"
+        },
+        {
+          "when": "deploymentCommandsRegistered && view == zenmlDeploymentView",
+          "command": "zenml.setDeploymentsPerPage",
+          "group": "navigation@1"
+        },
+        {
+          "when": "deploymentCommandsRegistered && view == zenmlDeploymentView",
+          "command": "zenml.refreshDeploymentsView",
+          "group": "navigation@2"
         }
       ],
       "view/item/context": [
@@ -544,6 +626,66 @@
           "when": "environmentCommandsRegistered && view == zenmlEnvironmentView && viewItem == interpreter",
           "command": "zenml.setPythonInterpreter",
           "group": "inline"
+        },
+        {
+          "when": "deploymentCommandsRegistered && view == zenmlDeploymentView && viewItem == deploymentRunning",
+          "command": "zenml.invokeDeployment",
+          "group": "inline@1"
+        },
+        {
+          "when": "deploymentCommandsRegistered && view == zenmlDeploymentView && viewItem == deploymentRunning",
+          "command": "zenml.copyDeploymentUrl",
+          "group": "inline@2"
+        },
+        {
+          "when": "deploymentCommandsRegistered && view == zenmlDeploymentView && viewItem == deploymentRunning",
+          "command": "zenml.openDeploymentUrl",
+          "group": "inline@3"
+        },
+        {
+          "when": "deploymentCommandsRegistered && view == zenmlDeploymentView && viewItem == deploymentRunning",
+          "command": "zenml.viewDeploymentLogs",
+          "group": "inline@4"
+        },
+        {
+          "when": "deploymentCommandsRegistered && view == zenmlDeploymentView && viewItem == deploymentRunning",
+          "command": "zenml.deprovisionDeployment",
+          "group": "inline@5"
+        },
+        {
+          "when": "deploymentCommandsRegistered && view == zenmlDeploymentView && viewItem == deploymentAbsent",
+          "command": "zenml.provisionDeployment",
+          "group": "inline@1"
+        },
+        {
+          "when": "deploymentCommandsRegistered && view == zenmlDeploymentView && viewItem == deploymentAbsent",
+          "command": "zenml.deleteDeployment",
+          "group": "inline@2"
+        },
+        {
+          "when": "deploymentCommandsRegistered && view == zenmlDeploymentView && viewItem == deploymentError",
+          "command": "zenml.viewDeploymentLogs",
+          "group": "inline@1"
+        },
+        {
+          "when": "deploymentCommandsRegistered && view == zenmlDeploymentView && viewItem == deploymentError",
+          "command": "zenml.provisionDeployment",
+          "group": "inline@2"
+        },
+        {
+          "when": "deploymentCommandsRegistered && view == zenmlDeploymentView && viewItem == deploymentError",
+          "command": "zenml.deleteDeployment",
+          "group": "inline@3"
+        },
+        {
+          "when": "deploymentCommandsRegistered && view == zenmlDeploymentView && viewItem == deploymentPending",
+          "command": "zenml.refreshDeploymentStatus",
+          "group": "inline@1"
+        },
+        {
+          "when": "deploymentCommandsRegistered && view == zenmlDeploymentView && viewItem == deploymentPending",
+          "command": "zenml.viewDeploymentLogs",
+          "group": "inline@2"
         }
       ]
     }

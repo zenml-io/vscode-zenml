@@ -503,3 +503,55 @@ class ZenLanguageServer(LanguageServer):
         def list_model_versions(wrapper_instance, args):
             """Lists versions for a specific model"""
             return wrapper_instance.list_model_versions(args)
+
+        # =====================================================================
+        # Deployment Commands
+        # =====================================================================
+
+        @self.command(f"{TOOL_MODULE_NAME}.listDeployments")
+        @self.zenml_command(wrapper_name="deployments_wrapper")
+        def list_deployments(wrapper_instance, args):
+            """Lists deployments with pagination"""
+            return wrapper_instance.list_deployments(args)
+
+        @self.command(f"{TOOL_MODULE_NAME}.getDeployment")
+        @self.zenml_command(wrapper_name="deployments_wrapper")
+        def get_deployment(wrapper_instance, args):
+            """Gets a specific deployment by ID"""
+            return wrapper_instance.get_deployment(args)
+
+        @self.command(f"{TOOL_MODULE_NAME}.provisionDeployment")
+        @self.zenml_command(wrapper_name="deployments_wrapper")
+        def provision_deployment(wrapper_instance, args):
+            """Provisions (starts) a deployment"""
+            return wrapper_instance.provision_deployment(args)
+
+        @self.command(f"{TOOL_MODULE_NAME}.deprovisionDeployment")
+        @self.zenml_command(wrapper_name="deployments_wrapper")
+        def deprovision_deployment(wrapper_instance, args):
+            """Deprovisions (stops) a deployment"""
+            return wrapper_instance.deprovision_deployment(args)
+
+        @self.command(f"{TOOL_MODULE_NAME}.deleteDeployment")
+        @self.zenml_command(wrapper_name="deployments_wrapper")
+        def delete_deployment(wrapper_instance, args):
+            """Deletes a deployment permanently"""
+            return wrapper_instance.delete_deployment(args)
+
+        @self.command(f"{TOOL_MODULE_NAME}.refreshDeploymentStatus")
+        @self.zenml_command(wrapper_name="deployments_wrapper")
+        def refresh_deployment_status(wrapper_instance, args):
+            """Refreshes the status of a deployment"""
+            return wrapper_instance.refresh_deployment_status(args)
+
+        @self.command(f"{TOOL_MODULE_NAME}.getDeploymentLogs")
+        @self.zenml_command(wrapper_name="deployments_wrapper")
+        def get_deployment_logs(wrapper_instance, args):
+            """Gets logs from a deployment"""
+            return wrapper_instance.get_deployment_logs(args)
+
+        @self.command(f"{TOOL_MODULE_NAME}.invokeDeployment")
+        @self.zenml_command(wrapper_name="deployments_wrapper")
+        def invoke_deployment(wrapper_instance, args):
+            """Invokes a deployment with parameters"""
+            return wrapper_instance.invoke_deployment(args)

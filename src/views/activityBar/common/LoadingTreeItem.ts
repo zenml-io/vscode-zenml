@@ -28,6 +28,7 @@ export const LOADING_TREE_ITEMS = new Map<string, LoadingTreeItem>([
   ['environment', new LoadingTreeItem('Refreshing Environments...')],
   ['projects', new LoadingTreeItem('Refreshing Projects View...')],
   ['models', new LoadingTreeItem('Refreshing Models...')],
+  ['deployments', new LoadingTreeItem('Refreshing Deployments...')],
   ['lsClient', new LoadingTreeItem('Waiting for Language Server to start...', '')],
   ['zenmlClient', new LoadingTreeItem('Waiting for ZenML Client to initialize...', '')],
 ]);

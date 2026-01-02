@@ -273,3 +273,52 @@ class ListModelVersionsResponse(TypedDict):
     total_pages: int
     total: int
     items: List[ModelVersion]
+
+
+# Deployment Types
+class DeploymentSnapshot(TypedDict):
+    id: str
+    name: str
+    createdAt: Optional[str]
+    version: Optional[str]
+
+
+class Deployment(TypedDict):
+    id: str
+    name: str
+    url: Optional[str]
+    status: str  # 'unknown' | 'pending' | 'running' | 'absent' | 'error'
+    pipelineName: Optional[str]
+    snapshot: Optional[DeploymentSnapshot]
+    stackName: Optional[str]
+    deployerName: Optional[str]
+    createdAt: str
+    updatedAt: str
+    userId: Optional[str]
+    userName: Optional[str]
+
+
+class ListDeploymentsResponse(TypedDict):
+    deployments: List[Deployment]
+    total: int
+    total_pages: int
+    current_page: int
+    items_per_page: int
+
+
+class DeploymentLogsResponse(TypedDict):
+    logs: List[str]
+    deploymentId: str
+    deploymentName: str
+
+
+class DeploymentOperationResponse(TypedDict):
+    success: bool
+    message: str
+    deploymentId: str
+
+
+class DeploymentInvokeResponse(TypedDict):
+    success: bool
+    response: Dict[str, Any]
+    executionTime: float

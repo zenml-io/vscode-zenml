@@ -15,6 +15,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { registerComponentCommands } from '../commands/components/registry';
+import { registerDeploymentCommands } from '../commands/deployments/registry';
 import { registerModelCommands } from '../commands/models/registry';
 import { registerPipelineCommands } from '../commands/pipelines/registry';
 import { registerProjectCommands } from '../commands/projects/registry';
@@ -43,6 +44,7 @@ import { toggleCommands } from '../utils/global';
 import { refreshUIComponents } from '../utils/refresh';
 import {
   ComponentDataProvider,
+  DeploymentDataProvider,
   EnvironmentDataProvider,
   ModelDataProvider,
   PipelineDataProvider,
@@ -78,6 +80,7 @@ export class ZenExtension {
     ['zenmlProjectView', ProjectDataProvider.getInstance()],
     ['zenmlModelView', ModelDataProvider.getInstance()],
     ['zenmlEnvironmentView', EnvironmentDataProvider.getInstance()],
+    ['zenmlDeploymentView', DeploymentDataProvider.getInstance()],
     ['zenmlPanelView', PanelDataProvider.getInstance()],
   ]);
 
@@ -88,6 +91,7 @@ export class ZenExtension {
     registerPipelineCommands,
     registerProjectCommands,
     registerModelCommands,
+    registerDeploymentCommands,
   ];
 
   /**

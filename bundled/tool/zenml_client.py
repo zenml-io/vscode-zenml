@@ -22,6 +22,7 @@ class ZenMLClient:
         server interactions, stacks, and pipeline runs.
         """
         # pylint: disable=wrong-import-position,import-error
+        from deployments_wrapper import DeploymentsWrapper
         from lazy_import import lazy_import, suppress_stdout_temporarily
         from zenml_wrappers import (
             GlobalConfigWrapper,
@@ -45,4 +46,5 @@ class ZenMLClient:
         self.projects_wrapper = ProjectsWrapper(self.client)
         self.models_wrapper = ModelsWrapper(self.client, self.projects_wrapper)
         self.zen_server_wrapper = ZenServerWrapper(self.config_wrapper, self.projects_wrapper)
+        self.deployments_wrapper = DeploymentsWrapper(self.client)
         self.initialized = True
