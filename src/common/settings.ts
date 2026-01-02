@@ -8,22 +8,18 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import {
   ConfigurationChangeEvent,
   ConfigurationScope,
-  ConfigurationTarget,
   WorkspaceConfiguration,
   WorkspaceFolder,
-  workspace,
 } from 'vscode';
-import { getInterpreterDetails } from './python';
-import { getConfiguration, getWorkspaceFolders } from './vscodeapi';
-import path from 'path';
-import * as fs from 'fs';
 import { PYTOOL_MODULE } from '../utils/constants';
+import { getInterpreterDetails } from './python';
 import { getProjectRoot } from './utilities';
+import { getConfiguration, getWorkspaceFolders } from './vscodeapi';
 
 export interface ISettings {
   cwd: string;

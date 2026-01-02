@@ -8,22 +8,33 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
-import path from 'path';
-import { ThemeColor, ThemeIcon, TreeItem, TreeItemCollapsibleState } from 'vscode';
+import * as path from 'path';
+import { ThemeColor, ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri } from 'vscode';
 
 export class EnvironmentItem extends TreeItem {
+  pythonLogo = path.join(__dirname, '..', 'resources', 'python.png');
+  zenmlLogo = path.join(__dirname, '..', 'resources', 'logo.png');
+
   constructor(
     public readonly label: string,
     public readonly description?: string,
     public readonly collapsibleState: TreeItemCollapsibleState = TreeItemCollapsibleState.None,
     private readonly customIcon?: string,
-    public readonly contextValue?: string
+    public readonly contextValue?: string,
+    public readonly customTooltip?: string
   ) {
     super(label, collapsibleState);
     this.iconPath = this.determineIcon(label);
     this.contextValue = contextValue;
+
+    // Use custom tooltip if provided, otherwise use description for tooltip if it's long enough to be truncated
+    if (customTooltip) {
+      this.tooltip = customTooltip;
+    } else if (description && description.length > 60) {
+      this.tooltip = description;
+    }
   }
 
   /**
@@ -32,7 +43,9 @@ export class EnvironmentItem extends TreeItem {
    * @param label The label of the tree item.
    * @returns The icon for the tree item.
    */
-  private determineIcon(label: string): { light: string; dark: string } | ThemeIcon | undefined {
+  private determineIcon(
+    label: string
+  ): string | Uri | { light: Uri; dark: Uri } | ThemeIcon | undefined {
     if (this.customIcon) {
       switch (this.customIcon) {
         case 'check':
@@ -57,17 +70,15 @@ export class EnvironmentItem extends TreeItem {
       case 'Python Version':
       case 'Path':
       case 'EnvType':
-        const pythonLogo = path.join(__dirname, '..', 'resources', 'python.png');
         return {
-          light: pythonLogo,
-          dark: pythonLogo,
+          light: Uri.file(this.pythonLogo),
+          dark: Uri.file(this.pythonLogo),
         };
       case 'ZenML Local':
       case 'ZenML Client':
-        const zenmlLogo = path.join(__dirname, '..', 'resources', 'logo.png');
         return {
-          light: zenmlLogo,
-          dark: zenmlLogo,
+          light: Uri.file(this.zenmlLogo),
+          dark: Uri.file(this.zenmlLogo),
         };
       default:
         return undefined;

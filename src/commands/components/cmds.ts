@@ -8,20 +8,17 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
 
-import ZenMLStatusBar from '../../views/statusBar';
-import { LSClient } from '../../services/LSClient';
-import { showInformationMessage } from '../../utils/notifications';
-import Panels from '../../common/panels';
-import { ComponentDataProvider } from '../../views/activityBar/componentView/ComponentDataProvider';
-import { ComponentTypesResponse, Flavor, FlavorListResponse } from '../../types/StackTypes';
 import { getFlavor, getFlavorsOfType } from '../../common/api';
-import ComponentForm from './ComponentsForm';
-import { StackComponentTreeItem } from '../../views/activityBar';
 import { traceError, traceInfo } from '../../common/log/logging';
+import { LSClient } from '../../services/LSClient';
+import { ComponentTypesResponse, Flavor } from '../../types/StackTypes';
+import { ComponentDataProvider } from '../../views/activityBar/componentView/ComponentDataProvider';
+import { StackComponentTreeItem } from '../../views/activityBar/componentView/ComponentTreeItems';
+import ComponentForm from './ComponentsForm';
 
 /**
  * Refreshes the stack component view.
@@ -31,10 +28,9 @@ const refreshComponentView = async () => {
     await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
-        title: 'Refreshing Component View...',
         cancellable: false,
       },
-      async progress => {
+      async () => {
         await ComponentDataProvider.getInstance().refresh();
       }
     );
@@ -90,7 +86,7 @@ const registerComponent = async () => {
 
 const updateComponent = async (node: StackComponentTreeItem) => {
   try {
-    const flavor = await getFlavor(node.component.flavor);
+    const flavor = await getFlavor(node.component.flavor.name);
 
     await ComponentForm.getInstance().updateForm(
       flavor,
@@ -124,7 +120,7 @@ const deleteComponent = async (node: StackComponentTreeItem) => {
 
   await vscode.window.withProgress(
     {
-      location: vscode.ProgressLocation.Window,
+      location: vscode.ProgressLocation.Notification,
       title: `Deleting stack component ${node.component.name}...`,
     },
     async () => {
@@ -137,11 +133,8 @@ const deleteComponent = async (node: StackComponentTreeItem) => {
         if ('error' in resp) {
           throw resp.error;
         }
-
-        vscode.window.showInformationMessage(`${node.component.name} deleted`);
         traceInfo(`${node.component.name} deleted`);
-
-        ComponentDataProvider.getInstance().refresh();
+        await refreshComponentView();
       } catch (e) {
         vscode.window.showErrorMessage(`Failed to delete component: ${e}`);
         traceError(e);

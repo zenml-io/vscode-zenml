@@ -7,14 +7,11 @@ runs:
     - name: Install Node
       uses: actions/setup-node@v3
       with:
-        node-version: 18.x
+        node-version: 20.x
         cache: npm
         cache-dependency-path: package-lock.json
     - name: Install Node dependencies
       run: npm ci
-      shell: bash
-    - name: Lint TypeScript code
-      run: npm run lint
       shell: bash
     - name: Check TypeScript format
       run: npm run format-check

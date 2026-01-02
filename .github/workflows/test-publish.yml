@@ -1,0 +1,108 @@
+---
+name: Test VSCode Extension Release
+on:
+  workflow_dispatch:
+jobs:
+  test-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Get Extension Version
+        id: get_version
+        run: echo "version=$(jq -r .version package.json)" >> $GITHUB_OUTPUT
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run headless tests
+        uses: coactions/setup-xvfb@v1
+        with:
+          run: npm test
+      - name: Build Extension
+        run: npm run package
+      - name: Package Extension
+        run: npm run vsce-package
+      - name: Verify Package
+        run: |
+          echo "=== VSIX Package Verification ==="
+          # List contents of the VSIX package
+          echo "Listing package contents:"
+          npx @vscode/vsce ls
+
+          # Validate the package.json
+          echo -e "\nValidating package.json:"
+          if jq -e '.name and .publisher and .version and .engines.vscode' package.json > /dev/null; then
+            echo "✅ package.json contains all required fields"
+          else
+            echo "❌ package.json is missing required fields"
+            exit 1
+          fi
+
+          # Simulate publishing without actually publishing
+          echo -e "\nSimulating publication process:"
+          echo "This would publish version ${{ steps.get_version.outputs.version }} to the VS Code Marketplace"
+          echo "Command that would be used: npx @vscode/vsce publish"
+      - name: Generate Changelog
+        run: |
+          # Get the latest tag
+          LATEST_TAG=$(git describe --tags --abbrev=0 || echo "")
+          if [ -z "$LATEST_TAG" ]; then
+            # If no tags found, use the first commit
+            echo "# Changes since beginning of the repository" > CHANGELOG.txt
+            git log --oneline > CHANGELOG.txt
+          else
+            echo "# Changes since $LATEST_TAG" > CHANGELOG.txt
+            git log $LATEST_TAG..HEAD --oneline >> CHANGELOG.txt
+          fi
+          echo "=== CHANGELOG PREVIEW ==="
+          cat CHANGELOG.txt
+          echo "==========================="
+      - name: Prepare Release Notes
+        run: |
+          VERSION="${{ steps.get_version.outputs.version }}"
+
+          # Create header for release notes
+          cat > RELEASE_NOTES.md << EOF
+          ## Test Release for version ${VERSION}
+          This is a test release for version ${VERSION}. This release was generated via the test-publish workflow.
+
+          ### Changes included in this version:
+          EOF
+
+          # Extract just the current version section from CHANGELOG.md
+          sed -n "/## \[${VERSION}\]/,/## \[/p" CHANGELOG.md | sed '$d' >> RELEASE_NOTES.md
+
+          # Preview the release notes
+          echo "=== RELEASE NOTES PREVIEW ==="
+          cat RELEASE_NOTES.md
+          echo "=============================="
+      - name: Upload Extension Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: zenml-vscode-${{ steps.get_version.outputs.version }}
+          path: zenml.vsix
+          retention-days: 7
+      - name: Upload Changelog
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog-and-release-notes
+          path: |
+            CHANGELOG.txt
+            RELEASE_NOTES.md
+          retention-days: 7
+      - name: Summary
+        run: |-
+          echo "## Test Release Completed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Extension built and packaged successfully" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Changelog generated" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Extension package uploaded as workflow artifact" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "1. Download the extension package from the workflow artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "2. Install and test the extension in VS Code using: \`code --install-extension zenml.vsix\`" >> $GITHUB_STEP_SUMMARY
+          echo "3. If everything looks good, proceed with the actual release" >> $GITHUB_STEP_SUMMARY

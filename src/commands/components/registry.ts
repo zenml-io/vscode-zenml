@@ -8,14 +8,14 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
-import { componentCommands } from './cmds';
+import { ExtensionContext, commands } from 'vscode';
 import { registerCommand } from '../../common/vscodeapi';
 import { ZenExtension } from '../../services/ZenExtension';
-import { ExtensionContext, commands } from 'vscode';
 import { ComponentDataProvider } from '../../views/activityBar/componentView/ComponentDataProvider';
-import { StackComponentTreeItem } from '../../views/activityBar';
+import { StackComponentTreeItem } from '../../views/activityBar/componentView/ComponentTreeItems';
+import { componentCommands } from './cmds';
 
 /**
  * Registers stack component-related commands for the extension.
@@ -26,33 +26,22 @@ export const registerComponentCommands = (context: ExtensionContext) => {
   const componentDataProvider = ComponentDataProvider.getInstance();
   try {
     const registeredCommands = [
-      registerCommand(
-        'zenml.setComponentItemsPerPage',
-        async () => await componentDataProvider.updateItemsPerPage()
+      registerCommand('zenml.setComponentItemsPerPage', async () =>
+        componentDataProvider.updateItemsPerPage()
       ),
-      registerCommand(
-        'zenml.refreshComponentView',
-        async () => await componentCommands.refreshComponentView()
+      registerCommand('zenml.refreshComponentView', async () =>
+        componentCommands.refreshComponentView()
       ),
-      registerCommand(
-        'zenml.registerComponent',
-        async () => await componentCommands.registerComponent()
+      registerCommand('zenml.registerComponent', async () => componentCommands.registerComponent()),
+      registerCommand('zenml.updateComponent', async (node: StackComponentTreeItem) =>
+        componentCommands.updateComponent(node)
       ),
-      registerCommand(
-        'zenml.updateComponent',
-        async (node: StackComponentTreeItem) => await componentCommands.updateComponent(node)
+      registerCommand('zenml.deleteComponent', async (node: StackComponentTreeItem) =>
+        componentCommands.deleteComponent(node)
       ),
-      registerCommand(
-        'zenml.deleteComponent',
-        async (node: StackComponentTreeItem) => await componentCommands.deleteComponent(node)
-      ),
-      registerCommand(
-        'zenml.nextComponentPage',
-        async () => await componentDataProvider.goToNextPage()
-      ),
-      registerCommand(
-        'zenml.previousComponentPage',
-        async () => await componentDataProvider.goToPreviousPage()
+      registerCommand('zenml.nextComponentPage', async () => componentDataProvider.goToNextPage()),
+      registerCommand('zenml.previousComponentPage', async () =>
+        componentDataProvider.goToPreviousPage()
       ),
     ];
 

@@ -8,10 +8,11 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
-import { ThemeColor, ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri } from 'vscode';
+import { TreeItem, TreeItemCollapsibleState, Uri } from 'vscode';
 import { ServerStatus } from '../../../types/ServerInfoTypes';
+import { TREE_ICONS } from '../../../utils/ui-constants';
 
 /**
  * A specialized TreeItem for displaying details about a server's status.
@@ -24,10 +25,12 @@ class ServerDetailTreeItem extends TreeItem {
    * @param {string} detail The detail value.
    * @param {string} [iconName] The name of the icon to display.
    */
-  constructor(label: string, detail: string, iconName?: string) {
-    super(`${label}: ${detail}`, TreeItemCollapsibleState.None);
+  constructor(label: string, detail: string, iconName: string) {
+    super(label, TreeItemCollapsibleState.None);
+    this.description = detail;
+
     if (iconName) {
-      this.iconPath = new ThemeIcon(iconName);
+      this.iconPath = TREE_ICONS[iconName];
     }
 
     if (detail.startsWith('http://') || detail.startsWith('https://')) {
@@ -36,7 +39,6 @@ class ServerDetailTreeItem extends TreeItem {
         command: 'vscode.open',
         arguments: [Uri.parse(detail)],
       };
-      this.iconPath = new ThemeIcon('link', new ThemeColor('textLink.foreground'));
       this.tooltip = `Click to open ${detail}`;
     }
   }
@@ -68,12 +70,29 @@ export class ServerTreeItem extends TreeItem {
     const children: ServerDetailTreeItem[] = [
       new ServerDetailTreeItem('URL', this.serverStatus.url, 'link'),
       new ServerDetailTreeItem('Dashboard URL', this.serverStatus.dashboard_url, 'link'),
+    ];
+
+    if (this.serverStatus.active_workspace_id || this.serverStatus.active_workspace_name) {
+      const wsName = this.serverStatus.active_workspace_name;
+      const wsId = this.serverStatus.active_workspace_id;
+      const workspaceIdentifier = wsName || wsId || 'Unknown';
+      children.push(new ServerDetailTreeItem('Workspace', workspaceIdentifier, 'symbol-variable'));
+    }
+
+    // if (this.serverStatus.active_project_id || this.serverStatus.active_project_name) {
+    //   const projName = this.serverStatus.active_project_name;
+    //   const projId = this.serverStatus.active_project_id;
+    //   const projectIdentifier = projName || projId || 'Unknown';
+    //   children.push(new ServerDetailTreeItem('Project', projectIdentifier, 'symbol-method'));
+    // }
+
+    children.push(
       new ServerDetailTreeItem('Version', this.serverStatus.version, 'versions'),
       new ServerDetailTreeItem('Store Type', this.serverStatus.store_type || 'N/A', 'database'),
       new ServerDetailTreeItem('Deployment Type', this.serverStatus.deployment_type, 'rocket'),
       new ServerDetailTreeItem('Database Type', this.serverStatus.database_type, 'database'),
-      new ServerDetailTreeItem('Secrets Store Type', this.serverStatus.secrets_store_type, 'lock'),
-    ];
+      new ServerDetailTreeItem('Secrets Store Type', this.serverStatus.secrets_store_type, 'lock')
+    );
 
     // Conditional children based on server status type
     if (this.serverStatus.id) {
@@ -82,6 +101,7 @@ export class ServerTreeItem extends TreeItem {
     if (this.serverStatus.username) {
       children.push(new ServerDetailTreeItem('Username', this.serverStatus.username, 'account'));
     }
+
     if (this.serverStatus.debug !== undefined) {
       children.push(
         new ServerDetailTreeItem('Debug', this.serverStatus.debug ? 'true' : 'false', 'bug')
@@ -92,6 +112,7 @@ export class ServerTreeItem extends TreeItem {
         new ServerDetailTreeItem('Auth Scheme', this.serverStatus.auth_scheme, 'shield')
       );
     }
+
     // Specific to SQL Server Status
     if (this.serverStatus.database) {
       children.push(new ServerDetailTreeItem('Database', this.serverStatus.database, 'database'));

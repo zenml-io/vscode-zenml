@@ -8,12 +8,12 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
-import { registerCommand } from '../../common/vscodeapi';
-import { environmentCommands } from './cmds';
-import { ZenExtension } from '../../services/ZenExtension';
 import { ExtensionContext, commands } from 'vscode';
+import { registerCommand } from '../../common/vscodeapi';
+import { ZenExtension } from '../../services/ZenExtension';
+import { environmentCommands } from './cmds';
 
 /**
  * Registers pipeline-related commands for the extension.
@@ -23,18 +23,13 @@ import { ExtensionContext, commands } from 'vscode';
 export const registerEnvironmentCommands = (context: ExtensionContext) => {
   try {
     const registeredCommands = [
-      registerCommand(
-        'zenml.setPythonInterpreter',
-        async () => await environmentCommands.setPythonInterpreter()
+      registerCommand('zenml.setPythonInterpreter', async () =>
+        environmentCommands.setPythonInterpreter()
       ),
-      registerCommand(
-        'zenml.refreshEnvironmentView',
-        async () => await environmentCommands.refreshEnvironmentView()
+      registerCommand('zenml.refreshEnvironmentView', async () =>
+        environmentCommands.refreshEnvironmentView()
       ),
-      registerCommand(
-        'zenml.restartLspServer',
-        async () => await environmentCommands.restartLSPServer()
-      ),
+      registerCommand('zenml.restartLspServer', async () => environmentCommands.restartLSPServer()),
     ];
 
     registeredCommands.forEach(cmd => {

@@ -8,15 +8,19 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
+import { registerComponentCommands } from '../commands/components/registry';
+import { registerModelCommands } from '../commands/models/registry';
 import { registerPipelineCommands } from '../commands/pipelines/registry';
+import { registerProjectCommands } from '../commands/projects/registry';
 import { registerServerCommands } from '../commands/server/registry';
 import { registerStackCommands } from '../commands/stack/registry';
+
 import { EXTENSION_ROOT_DIR } from '../common/constants';
 import { registerLogger, traceLog, traceVerbose } from '../common/log/logging';
 import {
@@ -35,14 +39,20 @@ import {
   onDidChangeConfiguration,
   registerCommand,
 } from '../common/vscodeapi';
+import { toggleCommands } from '../utils/global';
 import { refreshUIComponents } from '../utils/refresh';
-import { PipelineDataProvider, ServerDataProvider, StackDataProvider } from '../views/activityBar';
+import {
+  ComponentDataProvider,
+  EnvironmentDataProvider,
+  ModelDataProvider,
+  PipelineDataProvider,
+  ProjectDataProvider,
+  ServerDataProvider,
+  StackDataProvider,
+} from '../views/activityBar';
+import { PanelDataProvider } from '../views/panel/panelView/PanelDataProvider';
 import ZenMLStatusBar from '../views/statusBar';
 import { LSClient } from './LSClient';
-import { toggleCommands } from '../utils/global';
-import { PanelDataProvider } from '../views/panel/panelView/PanelDataProvider';
-import { ComponentDataProvider } from '../views/activityBar/componentView/ComponentDataProvider';
-import { registerComponentCommands } from '../commands/components/registry';
 
 export interface IServerInfo {
   name: string;
@@ -65,6 +75,9 @@ export class ZenExtension {
     ['zenmlStackView', StackDataProvider.getInstance()],
     ['zenmlComponentView', ComponentDataProvider.getInstance()],
     ['zenmlPipelineView', PipelineDataProvider.getInstance()],
+    ['zenmlProjectView', ProjectDataProvider.getInstance()],
+    ['zenmlModelView', ModelDataProvider.getInstance()],
+    ['zenmlEnvironmentView', EnvironmentDataProvider.getInstance()],
     ['zenmlPanelView', PanelDataProvider.getInstance()],
   ]);
 
@@ -73,6 +86,8 @@ export class ZenExtension {
     registerStackCommands,
     registerComponentCommands,
     registerPipelineCommands,
+    registerProjectCommands,
+    registerModelCommands,
   ];
 
   /**
@@ -149,9 +164,9 @@ export class ZenExtension {
           await runServer();
           if (!this.lsClient.isZenMLReady) {
             console.log('ZenML Client is not initialized yet.');
-            await this.promptForPythonInterpreter();
+            // Let Environment view handle the detailed messaging
           } else {
-            vscode.window.showInformationMessage('🚀 ZenML installation found. Ready to use.');
+            console.log('🚀 ZenML installation found. Ready to use.');
             await refreshUIComponents();
           }
         }
@@ -169,44 +184,8 @@ export class ZenExtension {
       registerCommand(`${this.serverId}.restart`, async () => {
         await runServer();
       }),
-      registerCommand(`zenml.promptForInterpreter`, async () => {
-        if (!this.interpreterCheckInProgress && !this.lsClient.isZenMLReady) {
-          await this.promptForPythonInterpreter();
-        }
-      }),
       registerLanguageStatusItem(this.serverId, this.serverName, `${this.serverId}.showLogs`)
     );
-  }
-
-  /**
-   * Prompts the user to select a Python interpreter.
-   *
-   * @returns {Promise<void>} A promise that resolves to void.
-   */
-  static async promptForPythonInterpreter(): Promise<void> {
-    if (this.interpreterCheckInProgress) {
-      console.log('Interpreter check already in progress. Skipping prompt.');
-      return;
-    }
-    if (this.lsClient.isZenMLReady) {
-      console.log('ZenML is already installed, no need to prompt for interpreter.');
-      return;
-    }
-    try {
-      const selected = await vscode.window.showInformationMessage(
-        'ZenML not found with the current Python interpreter. Would you like to select a different interpreter?',
-        'Select Interpreter',
-        'Cancel'
-      );
-      if (selected === 'Select Interpreter') {
-        await vscode.commands.executeCommand('python.setInterpreter');
-        console.log('Interpreter selection completed.');
-      } else {
-        console.log('Interpreter selection cancelled.');
-      }
-    } catch (err) {
-      console.error('Error selecting Python interpreter:', err);
-    }
   }
 
   /**

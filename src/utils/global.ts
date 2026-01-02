@@ -8,7 +8,7 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
 import { PYTOOL_MODULE } from './constants';
@@ -127,4 +127,5 @@ export async function toggleCommands(state: boolean): Promise<void> {
   await vscode.commands.executeCommand('setContext', 'serverCommandsRegistered', state);
   await vscode.commands.executeCommand('setContext', 'pipelineCommandsRegistered', state);
   await vscode.commands.executeCommand('setContext', 'environmentCommandsRegistered', state);
+  await vscode.commands.executeCommand('setContext', 'projectCommandsRegistered', state);
 }

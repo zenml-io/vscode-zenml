@@ -8,9 +8,9 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
-import { TreeItem, TreeItemCollapsibleState, ThemeIcon } from 'vscode';
+import { ThemeIcon, TreeItem, TreeItemCollapsibleState } from 'vscode';
 
 export class LoadingTreeItem extends TreeItem {
   constructor(message: string, description: string = 'Refreshing...') {
@@ -26,6 +26,8 @@ export const LOADING_TREE_ITEMS = new Map<string, LoadingTreeItem>([
   ['components', new LoadingTreeItem('Refreshing Components View...')],
   ['pipelineRuns', new LoadingTreeItem('Refreshing Pipeline Runs...')],
   ['environment', new LoadingTreeItem('Refreshing Environments...')],
+  ['projects', new LoadingTreeItem('Refreshing Projects View...')],
+  ['models', new LoadingTreeItem('Refreshing Models...')],
   ['lsClient', new LoadingTreeItem('Waiting for Language Server to start...', '')],
   ['zenmlClient', new LoadingTreeItem('Waiting for ZenML Client to initialize...', '')],
 ]);

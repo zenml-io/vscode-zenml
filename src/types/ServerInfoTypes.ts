@@ -8,7 +8,7 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 export interface ServerStatus {
   isConnected: boolean;
@@ -26,6 +26,18 @@ export interface ServerStatus {
   debug?: boolean;
   id?: string;
   username?: string | null;
+
+  // Added for ZenML 0.80.0 support:
+  active_workspace_id?: string;
+  active_workspace_name?: string;
+  active_project_id?: string;
+  active_project_name?: string;
+  organization_id?: string;
+}
+
+export interface StatusBarServerStatus {
+  isConnected: boolean;
+  serverUrl: string;
 }
 
 /************************************************************************************************
@@ -56,6 +68,14 @@ export interface ZenServerStoreInfo {
   base_url?: string;
   metadata?: any;
   dashboard_url: string;
+
+  // Added for ZenML 0.80.0 support:
+  organization_id?: string;
+  organization_name?: string;
+  active_workspace_id?: string;
+  active_workspace_name?: string;
+  active_project_id?: string;
+  active_project_name?: string;
 }
 
 /************************************************************************************************

@@ -8,17 +8,17 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import { TreeItemCollapsibleState } from 'vscode';
-import { EnvironmentItem } from './EnvironmentItem';
+import { State } from 'vscode-languageclient';
 import { getInterpreterDetails, resolveInterpreter } from '../../../common/python';
 import { getWorkspaceSettings } from '../../../common/settings';
-import { PYTOOL_MODULE } from '../../../utils/constants';
 import { getProjectRoot } from '../../../common/utilities';
 import { LSClient } from '../../../services/LSClient';
-import { State } from 'vscode-languageclient';
 import { LSNotificationIsZenMLInstalled } from '../../../types/LSNotificationTypes';
+import { PYTOOL_MODULE } from '../../../utils/constants';
+import { EnvironmentItem } from './EnvironmentItem';
 
 /**
  * Creates the LSP client item for the environment view.
@@ -28,7 +28,7 @@ import { LSNotificationIsZenMLInstalled } from '../../../types/LSNotificationTyp
 export function createLSClientItem(lsClientStatus: State): EnvironmentItem {
   const statusMappings = {
     [State.Running]: { description: 'Running', icon: 'globe' },
-    [State.Starting]: { description: 'Initializing…', icon: 'sync~spin' },
+    [State.Starting]: { description: 'Starting...', icon: 'sync~spin' },
     [State.Stopped]: { description: 'Stopped', icon: 'close' },
   };
 
@@ -48,14 +48,36 @@ export function createLSClientItem(lsClientStatus: State): EnvironmentItem {
  *
  * @returns {EnvironmentItem} The ZenML status items.
  */
-export function createZenMLClientStatusItem(zenmlClientReady: boolean): EnvironmentItem {
+export function createZenMLClientStatusItem(
+  zenmlClientReady: boolean,
+  lsClientStatus: State
+): EnvironmentItem {
   const localZenML = LSClient.getInstance().localZenML;
+  const lsClientRunning = lsClientStatus === State.Running;
 
   const zenMLClientStatusItem = new EnvironmentItem(
     'ZenML Client',
-    !localZenML.is_installed ? '' : zenmlClientReady ? 'Initialized' : 'Awaiting Initialization',
+    !lsClientRunning
+      ? 'Language server not running'
+      : !localZenML.is_installed
+        ? 'Not found in current environment'
+        : zenmlClientReady
+          ? 'Initialized'
+          : 'Awaiting Initialization',
     TreeItemCollapsibleState.None,
-    !localZenML.is_installed ? 'warning' : zenmlClientReady ? 'check' : 'sync~spin'
+    !lsClientRunning
+      ? 'close'
+      : !localZenML.is_installed
+        ? 'warning'
+        : zenmlClientReady
+          ? 'check'
+          : 'sync~spin',
+    undefined, // contextValue
+    !lsClientRunning
+      ? undefined
+      : !localZenML.is_installed
+        ? 'ZenML not found in the current Python environment.\n\nTo fix this:\n1. Select a Python interpreter that has ZenML installed\n2. Use Command Palette: "Python: Select Interpreter"\n3. Choose an environment with ZenML\n\nThe extension will automatically refresh when you change interpreters.'
+        : undefined
   );
 
   return zenMLClientStatusItem;
@@ -68,8 +90,20 @@ export function createZenMLClientStatusItem(zenmlClientReady: boolean): Environm
  * @returns {EnvironmentItem} The ZenML installation item.
  */
 export function createZenMLInstallationItem(
-  installationStatus: LSNotificationIsZenMLInstalled | null
+  installationStatus: LSNotificationIsZenMLInstalled | null,
+  lsClientStatus: State
 ): EnvironmentItem {
+  const lsClientRunning = lsClientStatus === State.Running;
+
+  if (!lsClientRunning) {
+    return new EnvironmentItem(
+      'ZenML Local Installation',
+      'Language server not running',
+      TreeItemCollapsibleState.None,
+      'close'
+    );
+  }
+
   if (!installationStatus) {
     return new EnvironmentItem(
       'ZenML Local Installation',

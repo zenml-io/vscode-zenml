@@ -8,7 +8,7 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
 import { ErrorMessageResponse, VersionMismatchError } from './LSClientResponseTypes';
@@ -18,6 +18,7 @@ import { ErrorMessageResponse, VersionMismatchError } from './LSClientResponseTy
  * Hydrated types are in the HydratedTypes.ts file.
  ************************************************************************************************/
 interface StacksData {
+  active_stack: Stack;
   stacks: Stack[];
   total: number;
   total_pages: number;
@@ -38,7 +39,7 @@ interface Components {
 interface StackComponent {
   id: string;
   name: string;
-  flavor: string;
+  flavor: Flavor;
   type: string;
   config: { [key: string]: any };
 }
@@ -62,6 +63,8 @@ interface Flavor {
   id: string;
   name: string;
   type: string;
+  integration: string | null;
+  source: string | null;
   logo_url: string;
   config_schema: { [key: string]: any };
   docs_url: string | null;
@@ -69,6 +72,9 @@ interface Flavor {
   connector_type: string | null;
   connector_resource_type: string | null;
   connector_resource_id_attr: string | null;
+  created: string | null;
+  updated: string | null;
+  is_custom: boolean;
 }
 
 interface FlavorListData {
@@ -86,11 +92,11 @@ type ComponentTypes = string[];
 export type ComponentTypesResponse = ComponentTypes | VersionMismatchError | ErrorMessageResponse;
 
 export {
-  Stack,
   Components,
+  ComponentsListData,
+  ComponentTypes,
+  Flavor,
+  Stack,
   StackComponent,
   StacksData,
-  ComponentsListData,
-  Flavor,
-  ComponentTypes,
 };

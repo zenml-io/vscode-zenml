@@ -8,13 +8,13 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 // permissions and limitations under the License.
-import { pipelineCommands } from './cmds';
+import { ExtensionContext, commands } from 'vscode';
 import { registerCommand } from '../../common/vscodeapi';
 import { ZenExtension } from '../../services/ZenExtension';
 import { PipelineDataProvider, PipelineTreeItem } from '../../views/activityBar';
-import { ExtensionContext, commands } from 'vscode';
+import { pipelineCommands } from './cmds';
 
 /**
  * Registers pipeline-related commands for the extension.
@@ -26,21 +26,17 @@ export const registerPipelineCommands = (context: ExtensionContext) => {
 
   try {
     const registeredCommands = [
-      registerCommand(
-        'zenml.refreshPipelineView',
-        async () => await pipelineCommands.refreshPipelineView()
+      registerCommand('zenml.refreshPipelineView', async () =>
+        pipelineCommands.refreshPipelineView()
       ),
-      registerCommand(
-        'zenml.deletePipelineRun',
-        async (node: PipelineTreeItem) => await pipelineCommands.deletePipelineRun(node)
+      registerCommand('zenml.deletePipelineRun', async (node: PipelineTreeItem) =>
+        pipelineCommands.deletePipelineRun(node)
       ),
-      registerCommand(
-        'zenml.goToPipelineUrl',
-        async (node: PipelineTreeItem) => await pipelineCommands.goToPipelineUrl(node)
+      registerCommand('zenml.goToPipelineUrl', async (node: PipelineTreeItem) =>
+        pipelineCommands.goToPipelineUrl(node)
       ),
-      registerCommand(
-        'zenml.renderDag',
-        async (node: PipelineTreeItem) => await pipelineCommands.renderDag(node)
+      registerCommand('zenml.renderDag', async (node: PipelineTreeItem) =>
+        pipelineCommands.renderDag(node)
       ),
       registerCommand('zenml.nextPipelineRunsPage', async () =>
         pipelineDataProvider.goToNextPage()
@@ -48,9 +44,8 @@ export const registerPipelineCommands = (context: ExtensionContext) => {
       registerCommand('zenml.previousPipelineRunsPage', async () =>
         pipelineDataProvider.goToPreviousPage()
       ),
-      registerCommand(
-        'zenml.setPipelineRunsPerPage',
-        async () => await pipelineDataProvider.updateItemsPerPage()
+      registerCommand('zenml.setPipelineRunsPerPage', async () =>
+        pipelineDataProvider.updateItemsPerPage()
       ),
     ];
 

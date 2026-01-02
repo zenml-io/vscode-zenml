@@ -13,11 +13,11 @@
 
 """Light-weight JSON-RPC over standard IO."""
 
-
 import atexit
 import io
 import json
 import pathlib
+import re
 import subprocess
 import threading
 import uuid
@@ -25,6 +25,8 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, date, time
 from typing import BinaryIO, Dict, Optional, Sequence, Union, cast
 from uuid import UUID
+
+ANSI_ESCAPE_PATTERN = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
 
 CONTENT_LENGTH = "Content-Length: "
 
@@ -48,7 +50,13 @@ RUNNER_SCRIPT = str(pathlib.Path(__file__).parent / "lsp_runner.py")
 
 def to_str(text) -> str:
     """Convert bytes to string as needed."""
-    return text.decode("utf-8") if isinstance(text, bytes) else text
+    result = text.decode("utf-8") if isinstance(text, bytes) else text
+    return result
+
+
+def strip_ansi_codes(text: str) -> str:
+    """Remove ANSI escape sequences from text."""
+    return ANSI_ESCAPE_PATTERN.sub("", text)
 
 
 class StreamClosedException(Exception):
@@ -76,13 +84,30 @@ class JsonWriter:
             raise StreamClosedException()
 
         with self._lock:
-            content = json.dumps(data, default=_json_default)
+            # Clean ANSI codes from string values in dict
+            if isinstance(data, dict):
+                clean_data = self._clean_ansi_in_data(data)
+            else:
+                clean_data = data
+
+            # Use custom JSON serializer for datetime/UUID types
+            content = json.dumps(clean_data, default=_json_default)
             length = len(content.encode("utf-8"))
-            self._writer.write(f"{CONTENT_LENGTH}{length}\r\n\r\n{content}")
-            # self._writer.write(
-            #     f"{CONTENT_LENGTH}{length}\r\n\r\n{content}".encode("utf-8")
-            # )
+            # Make sure we're writing a string, not bytes, to the TextIOWrapper
+            message = f"{CONTENT_LENGTH}{length}\r\n\r\n{content}"
+            self._writer.write(message)
             self._writer.flush()
+
+    def _clean_ansi_in_data(self, data):
+        """Recursively clean ANSI codes from string values in data structure."""
+        if isinstance(data, dict):
+            return {k: self._clean_ansi_in_data(v) for k, v in data.items()}
+        elif isinstance(data, list):
+            return [self._clean_ansi_in_data(item) for item in data]
+        elif isinstance(data, str):
+            return strip_ansi_codes(data)
+        else:
+            return data
 
 
 class JsonReader:
@@ -111,13 +136,18 @@ class JsonReader:
             line = to_str(self._readline()).strip()
 
         content = to_str(self._reader.read(length))
-        return json.loads(content)
+        # clean any ANSI escape sequences that might cause JSON parsing issues
+        clean_content = strip_ansi_codes(content)
+        return json.loads(clean_content)
 
     def _readline(self):
         line = self._reader.readline()
         if not line:
             raise EOFError
-        return line
+        # strip any ANSI color codes that might interfere with header parsing
+        if isinstance(line, bytes):
+            return line
+        return strip_ansi_codes(line)
 
 
 class JsonRpc:

@@ -8,7 +8,7 @@
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-// or implied.See the License for the specific language governing
+// or implied. See the License for the specific language governing
 import { MockEventBus } from './MockEventBus';
 import { MOCK_ACCESS_TOKEN, MOCK_REST_SERVER_DETAILS, MOCK_REST_SERVER_URL } from './constants';
 
@@ -80,12 +80,25 @@ export class MockLSClient {
   async sendLsClientRequest(command: string, args: any[] = []): Promise<any> {
     switch (command) {
       case 'connect':
-        if (args[0] === MOCK_REST_SERVER_URL) {
+        // Debug logging for test failures
+        console.log(`Mock sendLsClientRequest called with args:`, JSON.stringify(args));
+
+        if (args.length >= 4 && args[0] === 'remote' && args[1] === MOCK_REST_SERVER_URL) {
           return Promise.resolve({
             message: 'Connected successfully',
             access_token: MOCK_ACCESS_TOKEN,
           });
+        } else if (args.length === 1 && args[0] === MOCK_REST_SERVER_URL) {
+          // Handle legacy test case format
+          return Promise.resolve({
+            message: 'Connected successfully',
+            access_token: MOCK_ACCESS_TOKEN,
+          });
+        } else if (args.length >= 2 && args[0] === 'remote' && args[1] === 'invalid.url') {
+          // For the fail test case
+          return Promise.reject(new Error('Failed to connect with incorrect URL'));
         } else {
+          console.log(`Mock LSClient rejecting connect request with args:`, JSON.stringify(args));
           return Promise.reject(new Error('Failed to connect with incorrect URL'));
         }
       case 'disconnect':
@@ -93,7 +106,7 @@ export class MockLSClient {
       case `serverInfo`:
         return Promise.resolve(MOCK_REST_SERVER_DETAILS);
 
-      case `renameStack`:
+      case `renameStack`: {
         const [renameStackId, newStackName] = args;
         if (renameStackId && newStackName) {
           return Promise.resolve({
@@ -102,8 +115,9 @@ export class MockLSClient {
         } else {
           return Promise.resolve({ error: 'Failed to rename stack' });
         }
+      }
 
-      case `copyStack`:
+      case `copyStack`: {
         const [copyStackId, copyNewStackName] = args;
         if (copyStackId && copyNewStackName) {
           return Promise.resolve({
@@ -112,18 +126,97 @@ export class MockLSClient {
         } else {
           return Promise.resolve({ error: 'Failed to copy stack' });
         }
+      }
 
-      case `switchActiveStack`:
+      case `switchActiveStack`: {
         const [stackNameOrId] = args;
         if (stackNameOrId) {
           return Promise.resolve({ message: `Active stack set to: ${stackNameOrId}` });
         } else {
           return Promise.resolve({ error: 'Failed to set active stack' });
         }
+      }
+
+      case `getPipelineRuns`: {
+        // Default mock response for pipeline runs
+        return Promise.resolve({
+          runs: [
+            {
+              id: 'mock-run-1',
+              name: 'mock-pipeline-run',
+              status: 'completed',
+              created: '2024-01-01T00:00:00Z',
+            },
+          ],
+          total: 1,
+          page: 1,
+          size: 20,
+        });
+      }
+
+      case `list_pipeline_runs`: {
+        // Alternative command name for pipeline runs
+        return Promise.resolve({
+          runs: [
+            {
+              id: 'mock-run-1',
+              name: 'mock-pipeline-run',
+              status: 'completed',
+              created: '2024-01-01T00:00:00Z',
+            },
+          ],
+          total: 1,
+          page: 1,
+          size: 20,
+        });
+      }
+
+      case `getPipelineRunDag`: {
+        // Mock DAG data for pipeline runs
+        return Promise.resolve({
+          nodes: [
+            { id: 'step1', name: 'Step 1', status: 'completed' },
+            { id: 'step2', name: 'Step 2', status: 'completed' },
+          ],
+          edges: [{ source: 'step1', target: 'step2' }],
+          status: 'completed',
+          name: 'test-pipeline',
+        });
+      }
+
+      case `getPipelineRunStep`: {
+        // Mock step data
+        const [stepId] = args;
+        return Promise.resolve({
+          id: stepId,
+          name: `Mock Step ${stepId}`,
+          status: 'completed',
+          start_time: '2024-01-01T00:00:00Z',
+          end_time: '2024-01-01T00:01:00Z',
+        });
+      }
+
+      case `getPipelineRunArtifact`: {
+        // Mock artifact data
+        const [artifactId] = args;
+        return Promise.resolve({
+          id: artifactId,
+          name: `Mock Artifact ${artifactId}`,
+          type: 'DataArtifact',
+          uri: '/mock/path/to/artifact',
+        });
+      }
 
       default:
         return Promise.reject(new Error(`Unmocked command: ${command}`));
     }
+  }
+
+  /**
+   * Alias for sendLsClientRequest to match the LSClient interface.
+   */
+  async sendLSClientRequest<T = any>(command: string, args: any[] = []): Promise<T> {
+    return this.sendLsClientRequest(command, args);
   }
 
   /**
