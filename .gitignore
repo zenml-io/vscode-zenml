@@ -44,5 +44,10 @@ bundled/libs/
 
 # Project Files
 .zen
-.beads/
+.beads/*
+!.beads/issues.jsonl
+!.beads/interactions.jsonl
 .gitattributes
+
+# bv (beads viewer) local config and caches
+.bv/
