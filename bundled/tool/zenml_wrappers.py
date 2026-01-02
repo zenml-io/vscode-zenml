@@ -48,7 +48,6 @@ from zenml_serializers import (
     serialize_response,
 )
 
-
 # =============================================================================
 # Helper functions for ZenML model compatibility (0.80.0 - 0.93.0+)
 # These provide backward-compatible access to fields that moved between versions
@@ -625,7 +624,6 @@ class PipelineRunsWrapper:
             runs_data = []
             for run in runs_page.items:
                 # Optimized data extraction - avoid repeated hasattr calls
-                stack = getattr(run, "stack", None)
                 pipeline = getattr(run, "pipeline", None)
 
                 run_data = {
@@ -672,14 +670,16 @@ class PipelineRunsWrapper:
 
                 runs_data.append(run_data)
 
-            return _serialize_for_json({
-                "runs": runs_data,
-                "total": runs_page.total,
-                "total_pages": runs_page.total_pages,
-                "current_page": page,
-                "items_per_page": max_size,
-                "project_name": project_name,
-            })
+            return _serialize_for_json(
+                {
+                    "runs": runs_data,
+                    "total": runs_page.total,
+                    "total_pages": runs_page.total_pages,
+                    "current_page": page,
+                    "items_per_page": max_size,
+                    "project_name": project_name,
+                }
+            )
         except self.ValidationError as e:
             return {"error": "ValidationError", "message": str(e)}
         except self.ZenMLBaseException as e:
@@ -1715,22 +1715,36 @@ class StacksWrapper:
                 page=page, size=max_size, type=filter, hydrate=False
             )
 
-            return _serialize_for_json({
-                "index": components.index,
-                "max_size": components.max_size,
-                "total_pages": components.total_pages,
-                "total": components.total,
-                "items": [
-                    {
-                        "id": str(item.id),
-                        "name": item.name,
-                        "flavor": serialize_flavor(item.flavor) if hasattr(item, 'flavor') else _get_flavor_name(item.body) if hasattr(item, 'body') else None,
-                        "type": str(item.type) if hasattr(item, 'type') else str(item.body.type) if hasattr(item, 'body') else None,
-                        "config": item.metadata.configuration if item.metadata else None,
-                    }
-                    for item in components.items
-                ],
-            })
+            return _serialize_for_json(
+                {
+                    "index": components.index,
+                    "max_size": components.max_size,
+                    "total_pages": components.total_pages,
+                    "total": components.total,
+                    "items": [
+                        {
+                            "id": str(item.id),
+                            "name": item.name,
+                            "flavor": (
+                                serialize_flavor(item.flavor)
+                                if hasattr(item, "flavor")
+                                else _get_flavor_name(item.body)
+                                if hasattr(item, "body")
+                                else None
+                            ),
+                            "type": (
+                                str(item.type)
+                                if hasattr(item, "type")
+                                else str(item.body.type)
+                                if hasattr(item, "body")
+                                else None
+                            ),
+                            "config": item.metadata.configuration if item.metadata else None,
+                        }
+                        for item in components.items
+                    ],
+                }
+            )
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve list of stack components: {str(e)}"}
 
@@ -1783,12 +1797,20 @@ class StacksWrapper:
                         "name": flavor.name,
                         "type": flavor.type,
                         "logo_url": flavor.logo_url,
-                        "config_schema": flavor.metadata.config_schema if flavor.metadata else None,
+                        "config_schema": (
+                            flavor.metadata.config_schema if flavor.metadata else None
+                        ),
                         "docs_url": flavor.metadata.docs_url if flavor.metadata else None,
-                        "sdk_docs_url": flavor.metadata.sdk_docs_url if flavor.metadata else None,
-                        "connector_type": flavor.metadata.connector_type if flavor.metadata else None,
-                        "connector_resource_type": flavor.metadata.connector_resource_type if flavor.metadata else None,
-                        "connector_resource_id_attr": flavor.metadata.connector_resource_id_attr if flavor.metadata else None,
+                        "sdk_docs_url": (flavor.metadata.sdk_docs_url if flavor.metadata else None),
+                        "connector_type": (
+                            flavor.metadata.connector_type if flavor.metadata else None
+                        ),
+                        "connector_resource_type": (
+                            flavor.metadata.connector_resource_type if flavor.metadata else None
+                        ),
+                        "connector_resource_id_attr": (
+                            flavor.metadata.connector_resource_id_attr if flavor.metadata else None
+                        ),
                     }
                     for flavor in flavors.items
                 ],

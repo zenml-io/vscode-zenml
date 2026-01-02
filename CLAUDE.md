@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ZenML Studio is a VS Code extension that integrates the ZenML MLOps framework into Visual Studio Code. It provides pipeline visualization (DAG), stack management, server connections, and environment management through a bundled Python LSP server.
 
-**Requirements**: VS Code ^1.86.0, Python 3.8+, ZenML 0.63.0+
+**Requirements**: VS Code ^1.86.0, Python 3.9+, ZenML 0.63.0+
 
 ## Common Commands
 
@@ -29,7 +29,13 @@ nox --session tests         # Run Python LSP server tests (pytest)
 
 ### Full Lint (TypeScript + Python)
 ```bash
-nox --session lint          # Runs pylint, black, isort, and npm lint
+./scripts/lint.sh           # Runs ruff, mypy, eslint, and yamlfix
+```
+
+### Pre-Commit Checklist
+**IMPORTANT**: Always run linting before committing:
+```bash
+./scripts/lint.sh
 ```
 
 ### Packaging & Publishing
@@ -110,7 +116,7 @@ Commands use VS Code context (`setContext`) to control when they appear in menus
 
 - **TypeScript**: ESLint with `@typescript-eslint`, camelCase/PascalCase naming
 - **Formatting**: Prettier (100 char width, single quotes, trailing commas)
-- **Python**: pylint, black, isort
+- **Python**: ruff (linting + formatting), mypy (type checking)
 
 ## Settings Namespace
 

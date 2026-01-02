@@ -19,29 +19,29 @@ from type_hints import GraphEdge, GraphNode, GraphResponse, StepArtifact
 
 def _get_run_status(run) -> Optional[str]:
     """Get the status from a run, handling model structure changes."""
-    if hasattr(run, 'body') and run.body is not None:
-        status = getattr(run.body, 'status', None)
+    if hasattr(run, "body") and run.body is not None:
+        status = getattr(run.body, "status", None)
         if status is not None:
             return status
-    return getattr(run, 'status', None)
+    return getattr(run, "status", None)
 
 
 def _get_run_pipeline_name(run) -> Optional[str]:
     """Get the pipeline name from a run, handling model structure changes."""
     # Try new location first (0.93.0+): run.resources.pipeline.name
-    if hasattr(run, 'resources') and run.resources is not None:
-        pipeline = getattr(run.resources, 'pipeline', None)
-        if pipeline is not None and hasattr(pipeline, 'name'):
+    if hasattr(run, "resources") and run.resources is not None:
+        pipeline = getattr(run.resources, "pipeline", None)
+        if pipeline is not None and hasattr(pipeline, "name"):
             return pipeline.name
 
     # Try old location: run.body.pipeline.name
-    if hasattr(run, 'body') and run.body is not None:
-        pipeline = getattr(run.body, 'pipeline', None)
-        if pipeline is not None and hasattr(pipeline, 'name'):
+    if hasattr(run, "body") and run.body is not None:
+        pipeline = getattr(run.body, "pipeline", None)
+        if pipeline is not None and hasattr(pipeline, "name"):
             return pipeline.name
 
     # Final fallback: use the run's own name
-    return getattr(run, 'name', None)
+    return getattr(run, "name", None)
 
 
 class Grapher:

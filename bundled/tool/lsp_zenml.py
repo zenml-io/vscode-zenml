@@ -22,7 +22,7 @@ import asyncio
 import inspect
 import subprocess
 import sys
-from datetime import datetime, date, time
+from datetime import date, datetime, time
 from typing import Any, Dict
 from uuid import UUID
 
@@ -30,6 +30,7 @@ import lsprotocol.types as lsp
 from constants import IS_ZENML_INSTALLED, MIN_ZENML_VERSION, TOOL_MODULE_NAME
 from lazy_import import suppress_stdout_temporarily
 from packaging.version import parse as parse_version
+
 try:
     # pygls <= 1.2
     from pygls.server import LanguageServer
@@ -58,7 +59,7 @@ def _serialize_for_json(obj: Any) -> Any:
     if isinstance(obj, (str, int, float, bool)):
         return obj
     # For enum types, return the value
-    if hasattr(obj, 'value'):
+    if hasattr(obj, "value"):
         return obj.value
     return obj
 

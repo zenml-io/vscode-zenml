@@ -21,7 +21,7 @@ Use 'bd' CLI for task tracking.
 - `npm run format` formats TS/JSON with Prettier.
 - `nox --session setup` creates the Python tool environment for the bundled server.
 - `nox --session tests` runs pytest in `src/test/python_tests/`.
-- `nox --session lint` runs Python lint/format checks.
+- `./scripts/lint.sh` runs full lint suite (ruff, mypy, eslint, yamlfix) - **run before commits**
 - `scripts/clear_and_compile.sh` clears caches and recompiles if the build gets stuck.
 
 ## Coding Style & Naming Conventions
@@ -50,7 +50,7 @@ Use 'bd' CLI for task tracking.
 **MANDATORY WORKFLOW:**
 
 1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
+2. **Run quality gates** (if code changed) - Run `./scripts/lint.sh` before committing
 3. **Update issue status** - Close finished work, update in-progress items
 4. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
@@ -115,6 +115,7 @@ bd sync               # Commit and push changes
 
 ```bash
 git status              # Check what changed
+./scripts/lint.sh       # Run linters before committing
 git add <files>         # Stage code changes
 bd sync                 # Commit beads changes
 git commit -m "..."     # Commit code
