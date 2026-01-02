@@ -13,7 +13,9 @@
 """This module provides wrappers for ZenML configuration and operations."""
 
 import pathlib
+from datetime import datetime, date, time
 from typing import Any, Tuple, Union, List, Optional, Dict
+from uuid import UUID
 from zenml_grapher import Grapher
 from type_hints import (
     GraphResponse, 
@@ -25,6 +27,103 @@ from type_hints import (
     ListComponentsResponse,
     ListFlavorsResponse
 )
+
+
+# =============================================================================
+# Helper functions for ZenML model compatibility (0.63.0 - 0.93.0+)
+# These provide backward-compatible access to fields that moved between versions
+# =============================================================================
+
+def _get_run_pipeline_name(run) -> Optional[str]:
+    """Get the pipeline name from a run, handling model structure changes.
+    
+    In ZenML 0.93.0+, pipeline info moved from run.body.pipeline to run.resources.pipeline.
+    Falls back through multiple locations for compatibility.
+    """
+    # Try new location first (0.93.0+): run.resources.pipeline.name
+    if hasattr(run, 'resources') and run.resources is not None:
+        pipeline = getattr(run.resources, 'pipeline', None)
+        if pipeline is not None and hasattr(pipeline, 'name'):
+            return pipeline.name
+    
+    # Try old location: run.body.pipeline.name
+    if hasattr(run, 'body') and run.body is not None:
+        pipeline = getattr(run.body, 'pipeline', None)
+        if pipeline is not None and hasattr(pipeline, 'name'):
+            return pipeline.name
+    
+    # Final fallback: use the run's own name (contains pipeline name)
+    return getattr(run, 'name', None)
+
+
+def _get_run_stack_name(run) -> Optional[str]:
+    """Get the stack name from a run, handling model structure changes.
+    
+    In ZenML 0.93.0+, stack info moved from run.body.stack to run.resources.stack.
+    """
+    # Try new location first (0.93.0+): run.resources.stack.name
+    if hasattr(run, 'resources') and run.resources is not None:
+        stack = getattr(run.resources, 'stack', None)
+        if stack is not None and hasattr(stack, 'name'):
+            return stack.name
+    
+    # Try old location: run.body.stack.name
+    if hasattr(run, 'body') and run.body is not None:
+        stack = getattr(run.body, 'stack', None)
+        if stack is not None and hasattr(stack, 'name'):
+            return stack.name
+    
+    return None
+
+
+def _get_run_status(run) -> Optional[str]:
+    """Get the status from a run, handling model structure changes."""
+    # Try run.body.status (works in both old and new versions)
+    if hasattr(run, 'body') and run.body is not None:
+        status = getattr(run.body, 'status', None)
+        if status is not None:
+            return status
+    
+    # Fallback to top-level status if it exists
+    return getattr(run, 'status', None)
+
+
+def _get_flavor_name(component_body) -> Optional[str]:
+    """Get the flavor name from a component body, handling field rename.
+    
+    In ZenML 0.93.0+, 'flavor' was renamed to 'flavor_name'.
+    """
+    # Try new field name first (0.93.0+)
+    flavor_name = getattr(component_body, 'flavor_name', None)
+    if flavor_name is not None:
+        return flavor_name
+    
+    # Fall back to old field name
+    return getattr(component_body, 'flavor', None)
+
+
+def _serialize_for_json(obj: Any) -> Any:
+    """Recursively serialize an object for JSON, handling datetime and UUID types.
+    
+    This ensures all datetime objects are converted to ISO format strings
+    and UUIDs are converted to strings before JSON serialization.
+    """
+    if obj is None:
+        return None
+    if isinstance(obj, (datetime, date, time)):
+        return obj.isoformat()
+    if isinstance(obj, UUID):
+        return str(obj)
+    if isinstance(obj, dict):
+        return {key: _serialize_for_json(value) for key, value in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_serialize_for_json(item) for item in obj]
+    if isinstance(obj, (str, int, float, bool)):
+        return obj
+    # For enum types, return the value
+    if hasattr(obj, 'value'):
+        return obj.value
+    return obj
 
 
 class GlobalConfigWrapper:
@@ -326,9 +425,9 @@ class PipelineRunsWrapper:
             runs_data = [
                 {
                     "id": str(run.id),
-                    "name": run.body.pipeline.name,
-                    "status": run.body.status,
-                    "stackName": run.body.stack.name,
+                    "name": _get_run_pipeline_name(run),
+                    "status": _get_run_status(run),
+                    "stackName": _get_run_stack_name(run),
                     "startTime": (
                         run.metadata.start_time.isoformat()
                         if run.metadata.start_time
@@ -353,13 +452,13 @@ class PipelineRunsWrapper:
                 for run in runs_page.items
             ]
 
-            return {
+            return _serialize_for_json({
                 "runs": runs_data,
                 "total": runs_page.total,
                 "total_pages": runs_page.total_pages,
                 "current_page": page,
                 "items_per_page": max_size,
-            }
+            })
         except self.ValidationError as e:
             return {"error": "ValidationError", "message": str(e)}
         except self.ZenMLBaseException as e:
@@ -393,9 +492,9 @@ class PipelineRunsWrapper:
             run = self.client.get_pipeline_run(run_id, hydrate=True)
             run_data = {
                 "id": str(run.id),
-                "name": run.body.pipeline.name,
-                "status": run.body.status,
-                "stackName": run.body.stack.name,
+                "name": _get_run_pipeline_name(run),
+                "status": _get_run_status(run),
+                "stackName": _get_run_stack_name(run),
                 "startTime": (
                     run.metadata.start_time.isoformat()
                     if run.metadata.start_time
@@ -416,7 +515,7 @@ class PipelineRunsWrapper:
                 ),
             }
 
-            return run_data
+            return _serialize_for_json(run_data)
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve pipeline run: {str(e)}"}
 
@@ -478,17 +577,17 @@ class PipelineRunsWrapper:
                     if step.metadata.end_time and step.metadata.start_time
                     else None
                 ),
-                "stackName": run.body.stack.name,
+                "stackName": _get_run_stack_name(run),
                 "orchestrator": {"runId": str(run.metadata.orchestrator_run_id)},
                 "pipeline": {
-                    "name": run.body.pipeline.name,
-                    "status": run.body.status,
+                    "name": _get_run_pipeline_name(run),
+                    "status": _get_run_status(run),
                 },
                 "cacheKey": step.metadata.cache_key,
                 "sourceCode": step.metadata.source_code,
                 "logsUri": step.metadata.logs.body.uri,
             }
-            return step_data
+            return _serialize_for_json(step_data)
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve pipeline run step: {str(e)}"}
 
@@ -607,7 +706,7 @@ class StacksWrapper:
                         {
                             "id": str(component.id),
                             "name": component.name,
-                            "flavor": component.flavor,
+                            "flavor": getattr(component, 'flavor_name', None) or getattr(component, 'flavor', None),
                             "type": component.type,
                         }
                         for component in components
@@ -853,7 +952,7 @@ class StacksWrapper:
         try:
             components = self.client.list_stack_components(page=page, size=max_size, type=filter, hydrate=True)
 
-            return {
+            return _serialize_for_json({
                 "index": components.index,
                 "max_size": components.max_size,
                 "total_pages": components.total_pages,
@@ -862,13 +961,13 @@ class StacksWrapper:
                     {
                         "id": str(item.id),
                         "name": item.name,
-                        "flavor": item.body.flavor,
+                        "flavor": _get_flavor_name(item.body),
                         "type": item.body.type,
                         "config": item.metadata.configuration,
                     }
                     for item in components.items
                 ],
-            }
+            })
         except self.ZenMLBaseException as e:
             return {"error": f"Failed to retrieve list of stack components: {str(e)}"}
 

@@ -22,9 +22,27 @@ import subprocess
 import threading
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, date, time
 from typing import BinaryIO, Dict, Optional, Sequence, Union, cast
+from uuid import UUID
 
 CONTENT_LENGTH = "Content-Length: "
+
+
+def _json_default(obj):
+    """Custom JSON serializer for datetime and UUID types.
+    
+    This ensures datetime objects are converted to ISO format strings
+    and UUIDs are converted to strings during JSON serialization.
+    """
+    if isinstance(obj, (datetime, date, time)):
+        return obj.isoformat()
+    if isinstance(obj, UUID):
+        return str(obj)
+    # For enum types, return the value
+    if hasattr(obj, 'value'):
+        return obj.value
+    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 RUNNER_SCRIPT = str(pathlib.Path(__file__).parent / "lsp_runner.py")
 
 
@@ -58,7 +76,7 @@ class JsonWriter:
             raise StreamClosedException()
 
         with self._lock:
-            content = json.dumps(data)
+            content = json.dumps(data, default=_json_default)
             length = len(content.encode("utf-8"))
             self._writer.write(f"{CONTENT_LENGTH}{length}\r\n\r\n{content}")
             # self._writer.write(

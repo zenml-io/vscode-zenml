@@ -22,7 +22,10 @@ updating Python interpreter paths.
 import asyncio
 import subprocess
 import sys
+from datetime import datetime, date, time
 from functools import wraps
+from typing import Any
+from uuid import UUID
 
 import lsprotocol.types as lsp
 from constants import IS_ZENML_INSTALLED, MIN_ZENML_VERSION, TOOL_MODULE_NAME
@@ -31,6 +34,30 @@ from packaging.version import parse as parse_version
 from pygls.server import LanguageServer
 from zen_watcher import ZenConfigWatcher
 from zenml_client import ZenMLClient
+
+
+def _serialize_for_json(obj: Any) -> Any:
+    """Recursively serialize an object for JSON, handling datetime and UUID types.
+    
+    This ensures all datetime objects are converted to ISO format strings
+    and UUIDs are converted to strings before JSON serialization by pygls.
+    """
+    if obj is None:
+        return None
+    if isinstance(obj, (datetime, date, time)):
+        return obj.isoformat()
+    if isinstance(obj, UUID):
+        return str(obj)
+    if isinstance(obj, dict):
+        return {key: _serialize_for_json(value) for key, value in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_serialize_for_json(item) for item in obj]
+    if isinstance(obj, (str, int, float, bool)):
+        return obj
+    # For enum types, return the value
+    if hasattr(obj, 'value'):
+        return obj.value
+    return obj
 
 zenml_init_error = {
     "error": "ZenML is not initialized. Please check ZenML version requirements."
@@ -144,8 +171,12 @@ class ZenLanguageServer(LanguageServer):
                         )
                         if not wrapper_instance:
                             return {"error": f"Wrapper '{wrapper_name}' not found."}
-                        return func(wrapper_instance, *args, **kwargs)
-                    return func(self.zenml_client, *args, **kwargs)
+                        result = func(wrapper_instance, *args, **kwargs)
+                    else:
+                        result = func(self.zenml_client, *args, **kwargs)
+                    
+                    # Ensure all datetime/UUID objects are serialized for JSON
+                    return _serialize_for_json(result)
 
             return wrapper
 

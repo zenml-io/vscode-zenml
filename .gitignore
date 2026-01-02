@@ -35,6 +35,7 @@ dag-packed.js.map
 # From vscode-python-tools-extension-template
 *.vsix
 .venv/
+.venv-test/
 .vs/
 .nox/
 bundled/libs/
