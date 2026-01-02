@@ -5,7 +5,7 @@ runs:
   using: composite
   steps:
     - name: Install Node
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: 20.x
         cache: npm
@@ -21,7 +21,7 @@ runs:
       with:
         python-version: '3.11'
     - name: Pip cache
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-lint-${{ hashFiles('**/requirements.txt') }}
