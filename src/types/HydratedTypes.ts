@@ -11,6 +11,8 @@
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
+import { JsonObject } from './JsonTypes';
+
 /**
  * This file mainly serves as a quick reference to how the hydrated types look like.
  * A lot of these aren't used in the extension, but are kept here for future reference.
@@ -53,23 +55,7 @@ interface Workspace {
   metadata?: {
     description?: string;
   };
-  resources?: any | null;
-  id: string;
-  permission_denied: boolean;
-  name: string;
-}
-
-interface WorkspaceBody {
-  created: string;
-  updated: string;
-}
-
-interface Workspace {
-  body: WorkspaceBody;
-  metadata?: {
-    description?: string;
-  };
-  resources?: any | null;
+  resources?: JsonObject | null;
   id: string;
   permission_denied: boolean;
   name: string;
@@ -83,7 +69,6 @@ interface WorkspaceBody {
 /************************************************************************************************
  * Hydrated Stack / Components types from the ZenML Client.
  ************************************************************************************************/
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface HydratedStack {
   id: string;
   name: string;
@@ -116,7 +101,7 @@ interface StackComponentBody {
 
 interface ComponentMetadata {
   workspace: Workspace;
-  configuration?: any;
+  configuration?: JsonObject | null;
   labels?: null;
   component_spec_path?: null;
   connector_resource_id?: null;

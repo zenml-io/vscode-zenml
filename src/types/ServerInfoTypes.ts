@@ -10,6 +10,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
+
+import { JsonObject, JsonValue } from './JsonTypes';
 export interface ServerStatus {
   isConnected: boolean;
   url: string;
@@ -40,6 +42,8 @@ export interface StatusBarServerStatus {
   serverUrl: string;
 }
 
+export type ZenServerStoreType = 'rest' | 'sql';
+
 /************************************************************************************************
  * This is the object returned by the @LSP_SERVER.command(zenml.serverInfo")
  ************************************************************************************************/
@@ -51,7 +55,7 @@ export interface ZenServerDetails {
 export interface ConfigUpdateDetails {
   url: string;
   api_token: string;
-  store_type: string;
+  store_type: ZenServerStoreType;
 }
 
 /************************************************************************************************
@@ -66,7 +70,7 @@ export interface ZenServerStoreInfo {
   secrets_store_type: string;
   auth_scheme: string;
   base_url?: string;
-  metadata?: any;
+  metadata?: JsonObject | null;
   dashboard_url: string;
 
   // Added for ZenML 0.80.0 support:
@@ -87,13 +91,13 @@ export type ZenServerStoreConfig = RestZenServerStoreConfig | SQLZenServerStoreC
  * REST Zen Server Store Config (type === 'rest')
  ************************************************************************************************/
 export interface RestZenServerStoreConfig {
-  type: string;
+  type: 'rest';
   url: string;
-  secrets_store: any;
-  backup_secrets_store: any;
+  secrets_store: JsonValue | null;
+  backup_secrets_store: JsonValue | null;
   username: string | null;
   password: string | null;
-  api_key: any;
+  api_key: string | null;
   api_token?: string;
   verify_ssl: boolean;
   http_timeout: number;
@@ -103,10 +107,10 @@ export interface RestZenServerStoreConfig {
  * SQL Zen Server Store Config (type === 'sql')
  ************************************************************************************************/
 export interface SQLZenServerStoreConfig {
-  type: string;
+  type: 'sql';
   url: string;
-  secrets_store: any;
-  backup_secrets_store: any;
+  secrets_store: JsonValue | null;
+  backup_secrets_store: JsonValue | null;
   driver: string;
   database: string;
   username: string | null;
