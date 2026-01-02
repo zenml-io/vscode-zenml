@@ -9,8 +9,8 @@
 # run the above commands manually.
 
 # Required packages
-pygls<2  # TODO: lift after LSP server is validated with pygls 2.x
-lsprotocol<2024  # keep in sync with pygls 1.x
+pygls>=2,<3
+lsprotocol>=2025,<2026  # keep in sync with pygls 2.x
 packaging
 # Tool-specific packages for ZenML extension
 watchdog
