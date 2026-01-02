@@ -44,7 +44,7 @@ bundled/libs/
 **/.vs
 
 # Project Files
-.zen
+.zen/
 .gitattributes
 design/
 
