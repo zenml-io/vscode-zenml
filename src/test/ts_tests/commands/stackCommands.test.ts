@@ -40,7 +40,7 @@ suite('Stack Commands Test Suite', () => {
   let mockServerDataProvider: MockServerDataProvider;
   let mockStatusBar: MockZenMLStatusBar;
   let switchActiveStackStub: sinon.SinonStub;
-  let setActiveStackStub: sinon.SinonStub; // eslint-disable-line @typescript-eslint/no-unused-vars
+  let setActiveStackStub: sinon.SinonStub;
 
   setup(() => {
     sandbox = sinon.createSandbox();

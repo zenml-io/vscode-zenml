@@ -12,11 +12,39 @@
 // permissions and limitations under the License.
 
 import { ErrorMessageResponse, VersionMismatchError } from './LSClientResponseTypes';
+import { JsonObject, JsonValue } from './JsonTypes';
 
 /************************************************************************************************
  * LSClient parses the JSON response from the ZenML Client, and returns the following types.
  * Hydrated types are in the HydratedTypes.ts file.
  ************************************************************************************************/
+
+type ComponentConfig = JsonObject;
+
+type FlavorConfigSchemaType =
+  | 'string'
+  | 'integer'
+  | 'boolean'
+  | 'object'
+  | 'array'
+  | 'number'
+  | 'null';
+
+interface FlavorConfigProperty {
+  title?: string;
+  description?: string;
+  type?: FlavorConfigSchemaType;
+  default?: JsonValue;
+  anyOf?: Array<{ type?: FlavorConfigSchemaType }>;
+}
+
+interface FlavorConfigSchema {
+  title?: string;
+  description?: string;
+  properties?: Record<string, FlavorConfigProperty>;
+  required?: string[];
+}
+
 interface StacksData {
   active_stack: Stack;
   stacks: Stack[];
@@ -41,7 +69,7 @@ interface StackComponent {
   name: string;
   flavor: Flavor;
   type: string;
-  config: { [key: string]: any };
+  config: ComponentConfig;
 }
 
 export type StacksResponse = StacksData | ErrorMessageResponse | VersionMismatchError;
@@ -66,7 +94,7 @@ interface Flavor {
   integration: string | null;
   source: string | null;
   logo_url: string;
-  config_schema: { [key: string]: any };
+  config_schema: FlavorConfigSchema;
   docs_url: string | null;
   sdk_docs_url: string | null;
   connector_type: string | null;
@@ -92,10 +120,13 @@ type ComponentTypes = string[];
 export type ComponentTypesResponse = ComponentTypes | VersionMismatchError | ErrorMessageResponse;
 
 export {
+  ComponentConfig,
   Components,
   ComponentsListData,
   ComponentTypes,
   Flavor,
+  FlavorConfigSchema,
+  FlavorConfigProperty,
   Stack,
   StackComponent,
   StacksData,

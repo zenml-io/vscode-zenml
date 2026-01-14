@@ -17,7 +17,13 @@ import { traceError, traceInfo } from '../../common/log/logging';
 import Panels from '../../common/panels';
 import WebviewBase from '../../common/WebviewBase';
 import { LSClient } from '../../services/LSClient';
-import { Flavor } from '../../types/StackTypes';
+import { JsonValue } from '../../types/JsonTypes';
+import {
+  ComponentConfig,
+  Flavor,
+  FlavorConfigProperty,
+  FlavorConfigSchema,
+} from '../../types/StackTypes';
 import { ComponentDataProvider } from '../../views/activityBar/componentView/ComponentDataProvider';
 
 const ROOT_PATH = ['resources', 'components-form'];
@@ -33,7 +39,7 @@ interface ComponentField {
   is_array?: boolean;
   is_optional?: boolean;
   is_required?: boolean;
-  defaultValue: any;
+  defaultValue?: string | number | boolean | null;
   title: string;
   key: string;
 }
@@ -79,7 +85,7 @@ export default class ComponentForm extends WebviewBase {
    */
   public async registerForm(flavor: Flavor) {
     const panel = await this.getPanel();
-    const description = flavor.config_schema.description.replaceAll('\n', '<br>');
+    const description = flavor.config_schema?.description?.replaceAll('\n', '<br>') ?? '';
     panel.webview.html = this.template({
       type: flavor.type,
       flavor: flavor.name,
@@ -105,14 +111,9 @@ export default class ComponentForm extends WebviewBase {
    * @param {object} config Current configuration settings of the selected
    * component
    */
-  public async updateForm(
-    flavor: Flavor,
-    name: string,
-    id: string,
-    config: { [key: string]: any }
-  ) {
+  public async updateForm(flavor: Flavor, name: string, id: string, config: ComponentConfig) {
     const panel = await this.getPanel();
-    const description = flavor.config_schema.description.replaceAll('\n', '<br>');
+    const description = flavor.config_schema?.description?.replaceAll('\n', '<br>') ?? '';
     panel.webview.html = this.template({
       type: flavor.type,
       flavor: flavor.name,
@@ -246,35 +247,32 @@ export default class ComponentForm extends WebviewBase {
     return true;
   }
 
-  private toFormFields(configSchema: { [key: string]: any }) {
-    const properties = configSchema.properties;
-    const required = configSchema.required ?? [];
+  private toFormFields(configSchema?: FlavorConfigSchema) {
+    const properties: Record<string, FlavorConfigProperty> = configSchema?.properties ?? {};
+    const required = configSchema?.required ?? [];
 
     const converted: Array<ComponentField> = [];
     for (const key in properties) {
+      const property = properties[key];
       const current: ComponentField = {
         key,
-        title: properties[key].title,
-        defaultValue: properties[key].default,
+        title: property.title ?? key,
+        defaultValue: this.formatDefaultValue(property.default),
       };
       converted.push(current);
 
-      if ('anyOf' in properties[key]) {
-        if (properties[key].anyOf.find((obj: { type: string }) => obj.type === 'null')) {
+      if (property.anyOf?.length) {
+        if (property.anyOf.some(option => option.type === 'null')) {
           current.is_optional = true;
         }
 
-        if (
-          properties[key].anyOf.find(
-            (obj: { type: string }) => obj.type === 'object' || obj.type === 'array'
-          )
-        ) {
+        if (property.anyOf.some(option => option.type === 'object' || option.type === 'array')) {
           current.is_json_object = true;
-        } else if (properties[key].anyOf[0].type === 'string') {
+        } else if (property.anyOf[0]?.type === 'string') {
           current.is_string = true;
-        } else if (properties[key].anyOf[0].type === 'integer') {
+        } else if (property.anyOf[0]?.type === 'integer') {
           current.is_integer = true;
-        } else if (properties[key].anyOf[0].type === 'boolean') {
+        } else if (property.anyOf[0]?.type === 'boolean') {
           current.is_boolean = true;
         }
       }
@@ -283,24 +281,42 @@ export default class ComponentForm extends WebviewBase {
         current.is_required = true;
       }
 
-      if (!properties[key].type) {
+      if (!property.type) {
         continue;
       }
 
-      current.is_boolean = properties[key].type === 'boolean';
-      current.is_string = properties[key].type === 'string';
-      current.is_integer = properties[key].type === 'integer';
-      if (properties[key].type === 'object' || properties[key].type === 'array') {
+      current.is_boolean = property.type === 'boolean';
+      current.is_string = property.type === 'string';
+      current.is_integer = property.type === 'integer';
+      if (property.type === 'object' || property.type === 'array') {
         current.is_json_object = true;
-        current.defaultValue = JSON.stringify(properties[key].default);
+        current.defaultValue = this.formatDefaultValue(property.default);
       }
 
-      if (properties[key].type === 'array') {
+      if (property.type === 'array') {
         current.is_array = true;
       }
     }
 
     return converted;
+  }
+
+  private formatDefaultValue(
+    value: JsonValue | undefined
+  ): string | number | boolean | null | undefined {
+    if (value === undefined) {
+      return undefined;
+    }
+
+    if (value === null) {
+      return null;
+    }
+
+    if (Array.isArray(value) || typeof value === 'object') {
+      return JSON.stringify(value);
+    }
+
+    return value;
   }
 
   private produceTemplate(): string {

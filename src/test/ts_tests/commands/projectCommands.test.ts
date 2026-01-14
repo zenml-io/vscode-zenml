@@ -42,7 +42,7 @@ suite('Project Commands Test Suite', () => {
   let mockStatusBar: MockZenMLStatusBar;
   let switchActiveProjectStub: sinon.SinonStub;
   let mockProject: Project;
-  let setActiveProjectStub: sinon.SinonStub; // eslint-disable-line @typescript-eslint/no-unused-vars
+  let setActiveProjectStub: sinon.SinonStub;
 
   setup(() => {
     sandbox = sinon.createSandbox();
