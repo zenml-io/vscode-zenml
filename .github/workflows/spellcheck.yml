@@ -1,6 +1,9 @@
 ---
 name: Spellcheck
 on: [pull_request]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 jobs:
   spellcheck:
     runs-on: ubuntu-latest
