@@ -2,6 +2,21 @@
 
 All notable changes to the "zenml-vscode" extension will be documented in this file.
 
+## [0.0.23] - 2026-01-14 - Technical Debt Reduction & CI Updates
+
+### Changed
+
+- Replaced broad `any` type usage with proper `JsonTypes` and focused schemas for better type safety
+- Added reusable TTL cache utility (`ttlCache.ts`) for consistent caching patterns
+- Refactored `ModelDataProvider` and `PipelineDataProvider` to use new TTL cache helper
+- Hardened component form schema handling with improved validation
+- Updated GitHub Actions to v5/v6 (checkout, setup-node, upload-artifact, cache)
+
+### Fixed
+
+- Improved type definitions in `HydratedTypes.ts`, `ServerInfoTypes.ts`, and `StackTypes.ts`
+- Cleaned up test mocks to remove redundant constants
+
 ## [0.0.22] - 2026-01-02 - Maintenance & CI Modernization
 
 ### Changed
