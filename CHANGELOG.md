@@ -17,6 +17,14 @@ All notable changes to the "zenml-vscode" extension will be documented in this f
 - Improved type definitions in `HydratedTypes.ts`, `ServerInfoTypes.ts`, and `StackTypes.ts`
 - Cleaned up test mocks to remove redundant constants
 
+### Dependencies
+
+- Downgraded Node.js from v22.14.0 to v20.18.2 LTS for better long-term stability (support until April 2026)
+- Updated TypeScript tooling:
+  - `@types/node`: 25.0.3 → 25.0.7
+  - `@types/vscode`: 1.107.0 → 1.108.1
+  - `typescript-eslint`: 8.51.0 → 8.53.0
+
 ## [0.0.22] - 2026-01-02 - Maintenance & CI Modernization
 
 ### Changed
