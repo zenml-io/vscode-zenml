@@ -38,6 +38,15 @@ nox --session tests         # Run Python LSP server tests (pytest)
 ./scripts/lint.sh
 ```
 
+### Commit & PR Messages
+Use plain, human-readable messages without conventional commit prefixes:
+- ✅ `Add concurrency rules to CI workflows`
+- ✅ `Fix @types/vscode version compatibility`
+- ❌ `chore: add concurrency rules to CI workflows`
+- ❌ `fix: @types/vscode version compatibility`
+
+Keep messages concise and descriptive of what changed.
+
 ### Packaging & Publishing
 ```bash
 npm run vsce-package        # Create zenml.vsix package
