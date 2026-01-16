@@ -211,14 +211,107 @@ export default class StackForm extends WebviewBase {
   }
 
   private async renderForm(panel: vscode.WebviewPanel) {
-    const flavors = await getAllFlavors();
-    const components = await getAllStackComponents();
-    const options = this.convertComponents(flavors, components);
-    const js = panel.webview.asWebviewUri(this.javaScript);
-    const css = panel.webview.asWebviewUri(this.css);
-    const cspSource = panel.webview.cspSource;
+    // Track if panel is disposed during loading
+    let disposed = false;
+    const disposalListener = panel.onDidDispose(() => {
+      disposed = true;
+    });
 
-    panel.webview.html = this.template({ options, js, css, cspSource });
+    try {
+      await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: 'Loading Stack Form',
+          cancellable: false,
+        },
+        async progress => {
+          progress.report({
+            message:
+              'Fetching flavors and components... (this may take a moment for large workspaces)',
+          });
+
+          // Fetch data concurrently for better performance
+          const [flavors, components] = await Promise.all([
+            getAllFlavors(),
+            getAllStackComponents(),
+          ]);
+
+          // Check if panel was closed during fetch
+          if (disposed) {
+            return;
+          }
+
+          progress.report({ message: 'Rendering form...' });
+
+          const options = this.convertComponents(flavors, components);
+          const js = panel.webview.asWebviewUri(this.javaScript);
+          const css = panel.webview.asWebviewUri(this.css);
+          const cspSource = panel.webview.cspSource;
+
+          panel.webview.html = this.template({ options, js, css, cspSource });
+        }
+      );
+    } catch (error) {
+      // Don't show error if panel was simply closed
+      if (disposed) {
+        return;
+      }
+
+      traceError(error);
+      console.error('Failed to load Stack Form:', error);
+      vscode.window.showErrorMessage(
+        'Failed to load Stack Form. Please check your connection and try again.'
+      );
+
+      // Show error state in the panel
+      panel.webview.html = this.getErrorHtml();
+    } finally {
+      disposalListener.dispose();
+    }
+  }
+
+  /**
+   * Returns HTML to display when the form fails to load
+   */
+  private getErrorHtml(): string {
+    return `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stack Form Error</title>
+    <style>
+      body {
+        font-family: var(--vscode-font-family);
+        color: var(--vscode-foreground);
+        background-color: var(--vscode-editor-background);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+        text-align: center;
+        padding: 20px;
+      }
+      h2 {
+        color: var(--vscode-errorForeground);
+        margin-bottom: 16px;
+      }
+      p {
+        margin-bottom: 8px;
+        max-width: 400px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Failed to Load Stack Form</h2>
+    <p>Unable to fetch stack components and flavors from the server.</p>
+    <p>Please check your ZenML server connection and try again.</p>
+  </body>
+</html>
+    `;
   }
 
   // Updated convertComponents method to match your existing types
