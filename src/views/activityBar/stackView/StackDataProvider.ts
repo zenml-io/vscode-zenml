@@ -44,6 +44,8 @@ export class StackDataProvider extends PaginatedDataProvider {
   private zenmlClientReady = false;
   private activeStackItem: StackTreeItem | undefined;
   private lsClientReady = false;
+  // Store pending active stack ID when event arrives during loading or when stack is outside current page
+  private pendingActiveStackId?: string;
 
   constructor() {
     super();
@@ -84,10 +86,13 @@ export class StackDataProvider extends PaginatedDataProvider {
     this.eventBus.off(LSCLIENT_STATE_CHANGED, this.lsClientStateChangeHandler);
     this.eventBus.off(LSP_ZENML_CLIENT_INITIALIZED, this.zenmlClientStateChangeHandler);
     this.eventBus.off(LSP_ZENML_PROJECT_CHANGED, this.projectChangeHandler);
+    this.eventBus.off(LSP_ZENML_STACK_CHANGED, this.stackChangeHandler);
 
     this.eventBus.on(LSCLIENT_STATE_CHANGED, this.lsClientStateChangeHandler);
     this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, this.zenmlClientStateChangeHandler);
     this.eventBus.on(LSP_ZENML_PROJECT_CHANGED, this.projectChangeHandler);
+    // Subscribe to stack changes early to avoid missing events during initialization
+    this.eventBus.on(LSP_ZENML_STACK_CHANGED, this.stackChangeHandler);
   }
 
   /**
@@ -148,6 +153,8 @@ export class StackDataProvider extends PaginatedDataProvider {
   private zenmlClientStateChangeHandler = async (isInitialized: boolean) => {
     this.zenmlClientReady = isInitialized;
     if (!isInitialized) {
+      // Clear pending state when client becomes uninitialized
+      this.pendingActiveStackId = undefined;
       this.items = [
         this.createInitialMessage(
           'ZenML client not initialized. See Environment view for details.'
@@ -163,12 +170,8 @@ export class StackDataProvider extends PaginatedDataProvider {
       }
 
       this.refresh();
-
-      this.eventBus.off(LSP_ZENML_STACK_CHANGED, this.stackChangeHandler);
-      this.eventBus.on(LSP_ZENML_STACK_CHANGED, this.stackChangeHandler);
-
-      this.eventBus.off(LSP_ZENML_PROJECT_CHANGED, this.projectChangeHandler);
-      this.eventBus.on(LSP_ZENML_PROJECT_CHANGED, this.projectChangeHandler);
+      // Note: LSP_ZENML_STACK_CHANGED and LSP_ZENML_PROJECT_CHANGED subscriptions
+      // are now in subscribeToEvents() to ensure we don't miss events during initialization
     }
   };
 
@@ -178,6 +181,15 @@ export class StackDataProvider extends PaginatedDataProvider {
    * @param {string} activeStackId The ID of the newly active stack.
    */
   private stackChangeHandler = async (activeStackId: string) => {
+    // Check if we have actual StackTreeItems to update
+    const hasStackItems = this.items?.some(item => item instanceof StackTreeItem);
+
+    if (!hasStackItems) {
+      // Store as pending - will be applied when items load in refresh()
+      this.pendingActiveStackId = activeStackId;
+      return;
+    }
+
     await this.updateActiveStack(activeStackId);
   };
 
@@ -191,13 +203,21 @@ export class StackDataProvider extends PaginatedDataProvider {
 
     const page = this.pagination.currentPage;
     const itemsPerPage = this.pagination.itemsPerPage;
+
+    // Use pending active stack ID if set (from events that arrived during loading or
+    // when the active stack changed to one outside the current page)
+    const requestedActiveStackId = this.pendingActiveStackId ?? this.activeStackId;
+
     try {
       const newStacksData = await this.fetchStacksWithComponents(
         page,
         itemsPerPage,
-        this.activeStackId
+        requestedActiveStackId
       );
       this.items = newStacksData;
+
+      // Clear pending state after successful refresh
+      this.pendingActiveStackId = undefined;
     } catch (error: any) {
       this.items = createErrorItem(error);
     }
@@ -331,6 +351,8 @@ export class StackDataProvider extends PaginatedDataProvider {
   /**
    * Updates the active stack status in the tree view without refetching all stacks.
    * This now updates items in-place without reordering, matching ProjectDataProvider behavior.
+   * If the active stack is not in the current page, triggers a full refresh to ensure the
+   * active stack is visible (the backend always returns active_stack separately).
    *
    * @param {string} activeStackId The ID of the newly active stack.
    */
@@ -338,6 +360,7 @@ export class StackDataProvider extends PaginatedDataProvider {
     // Check if we have any StackTreeItems to update
     const hasStackItems = this.items?.some(item => item instanceof StackTreeItem);
     if (!hasStackItems) {
+      this.pendingActiveStackId = activeStackId;
       return;
     }
 
@@ -348,6 +371,18 @@ export class StackDataProvider extends PaginatedDataProvider {
 
     // Update provider state
     this.activeStackId = activeStackId;
+
+    // If the target stack is not in the current page, trigger a full refresh.
+    // The backend always returns active_stack separately, so refresh will ensure
+    // the active stack is visible and marked correctly.
+    if (!targetStack) {
+      console.log(
+        `[StackDataProvider] Active stack ${activeStackId} not in current page - triggering refresh`
+      );
+      this.pendingActiveStackId = activeStackId;
+      await this.refresh();
+      return;
+    }
 
     // Toggle active state on all stack items in-place (no reordering)
     this.items.forEach(item => {
@@ -360,24 +395,12 @@ export class StackDataProvider extends PaginatedDataProvider {
       }
     });
 
-    // Update status bar - use existing item if available, otherwise fetch details
-    if (targetStack) {
-      this.activeStackItem = targetStack;
-      ZenMLStatusBar.getInstance().refreshActiveStack({
-        id: targetStack.id,
-        name: targetStack.name,
-      });
-    } else {
-      // Stack not in current page - fetch details for status bar update
-      try {
-        const activeStackDetails = await getStackById(activeStackId);
-        if (activeStackDetails && !('error' in activeStackDetails)) {
-          this.updateStatusBar(activeStackDetails);
-        }
-      } catch (error) {
-        console.error(`Failed to fetch active stack details: ${error}`);
-      }
-    }
+    // Update status bar with the target stack info
+    this.activeStackItem = targetStack;
+    ZenMLStatusBar.getInstance().refreshActiveStack({
+      id: targetStack.id,
+      name: targetStack.name,
+    });
 
     // Fire once for the entire tree (matches Project view's reliable pattern)
     this._onDidChangeTreeData.fire(undefined);
