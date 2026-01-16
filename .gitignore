@@ -54,3 +54,5 @@ design/
 .beads/*
 !.beads/issues.jsonl
 !.beads/interactions.jsonl
+
+.zen/
