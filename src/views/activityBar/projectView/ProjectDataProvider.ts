@@ -217,8 +217,17 @@ export class ProjectDataProvider extends PaginatedDataProvider {
         });
       }
 
-      if (!result || 'error' in result) {
+      if (!result) {
+        console.error('Failed to fetch projects: Empty response from server');
+        return createErrorItem({
+          errorType: 'Error',
+          message: 'Empty response from server.',
+        });
+      }
+
+      if ('error' in result) {
         console.error(`Failed to fetch projects:`, result);
+        // Check for version mismatch error (has both clientVersion and serverVersion)
         if ('clientVersion' in result && 'serverVersion' in result) {
           return createErrorItem(result);
         } else if (result.error.includes('Not authorized')) {
@@ -276,25 +285,10 @@ export class ProjectDataProvider extends PaginatedDataProvider {
     }
   }
 
-  /**
-   * Overrides the default getChildren method to return the children for a given TreeItem.
-   *
-   * @param element The TreeItem to get children for
-   * @returns Array of TreeItem children or undefined
-   */
-  public async getChildren(element?: TreeItem): Promise<TreeItem[] | undefined> {
-    if (!element) {
-      // Root level - return the main project items
-      return this.items;
-    }
-
-    // Return children for tree items that implement TreeItemWithChildren
-    if (element instanceof ProjectTreeItem && element.children) {
-      return element.children;
-    }
-
-    return undefined;
-  }
+  // Note: getChildren is inherited from PaginatedDataProvider, which:
+  // 1. At root level: returns items with pagination commands (Next/Previous Page)
+  // 2. For elements with children: returns the children array
+  // ProjectTreeItem implements TreeItemWithChildren, so this works automatically.
 
   /**
    * Helper method to determine if a project is the active project.
@@ -320,12 +314,14 @@ export class ProjectDataProvider extends PaginatedDataProvider {
    * This is more efficient than a full refresh when only the active project changes.
    * Uses the same pattern as StackDataProvider.updateActiveStack for reliability.
    *
-   * @param {string} activeProjectName The name of the newly active project.
+   * @param {string} activeProjectIdentifier The name or ID of the newly active project.
    */
   public updateActiveProject(activeProjectIdentifier: string): void {
     // Check if we have any ProjectTreeItems to update
     const hasProjectItems = this.items?.some(item => item instanceof ProjectTreeItem);
     if (!hasProjectItems) {
+      // Store as pending - will be applied when items load in refresh()
+      this.pendingActiveProjectName = activeProjectIdentifier;
       return;
     }
 
@@ -338,7 +334,28 @@ export class ProjectDataProvider extends PaginatedDataProvider {
           item.project.id === activeProjectIdentifier)
     ) as ProjectTreeItem | undefined;
 
+    // If the target project is not in the current page, we still need to:
+    // 1. Update provider state so isActiveProject() returns correct values
+    // 2. Clear any previously active project's visual state
+    // 3. Fire a tree change event to reflect the UI change
     if (!targetProject) {
+      console.log(
+        `[ProjectDataProvider] Active project ${activeProjectIdentifier} not in current page - updating state`
+      );
+
+      // Store the identifier for state (will be resolved on next refresh/fetch)
+      this.activeProjectName = activeProjectIdentifier;
+      this.pendingActiveProjectName = undefined;
+
+      // Clear the active state from any currently marked project
+      this.items.forEach(item => {
+        if (item instanceof ProjectTreeItem && item.isActive) {
+          item.setActive(false);
+        }
+      });
+
+      // Fire tree change event to update the UI
+      this._onDidChangeTreeData.fire(undefined);
       return;
     }
 

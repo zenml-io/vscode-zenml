@@ -14,7 +14,6 @@ import * as vscode from 'vscode';
 import { TreeItem } from 'vscode';
 import { State } from 'vscode-languageclient';
 import { getActiveProjectNameFromConfig } from '../../../commands/projects/utils';
-import { getStackById } from '../../../commands/stack/utils';
 import { EventBus } from '../../../services/EventBus';
 import { LSClient } from '../../../services/LSClient';
 import { Stack, StackComponent, StacksResponse } from '../../../types/StackTypes';
@@ -261,11 +260,19 @@ export class StackDataProvider extends PaginatedDataProvider {
         });
       }
 
-      if (!result || 'error' in result) {
+      if (!result) {
+        console.error('Failed to fetch stacks: Empty response from server');
+        return createErrorItem({
+          errorType: 'Error',
+          message: 'Empty response from server.',
+        });
+      }
+
+      if ('error' in result) {
         console.error(`Failed to fetch stacks:`, result);
 
         // If we failed because of a missing stack ID, try one more time without the active stack ID
-        if (activeStackId && result?.error?.includes('No stack with this ID found')) {
+        if (activeStackId && result.error?.includes('No stack with this ID found')) {
           console.log('Stack ID not found, retrying without active stack ID...');
           // Reset both active stack IDs to trigger a clean fetch
           this.activeStackId = '';
@@ -274,6 +281,7 @@ export class StackDataProvider extends PaginatedDataProvider {
           return this.items;
         }
 
+        // Check for version mismatch error (has both clientVersion and serverVersion)
         if ('clientVersion' in result && 'serverVersion' in result) {
           return createErrorItem(result);
         } else if (result.error?.includes('Not authorized')) {

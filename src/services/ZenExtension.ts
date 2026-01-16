@@ -220,15 +220,18 @@ export class ZenExtension {
     // Handler for visibility changes
     const handleVisibilityChange = async (visible: boolean) => {
       // Notify visibility-aware providers (like ComponentDataProvider)
+      // These providers manage their own loading via setViewVisible/maybeAutoLoad
       if (isVisibilityAware(provider)) {
         provider.setViewVisible(visible);
       }
 
-      // Trigger refresh on first visibility for refreshable providers
+      // Trigger refresh on first visibility for refreshable providers,
+      // but skip if the provider is visibility-aware (it manages its own loading)
       if (visible && !this.viewsLoadedOnce.has(viewId)) {
         this.viewsLoadedOnce.add(viewId);
 
-        if (isRefreshable(provider)) {
+        // Only force refresh for providers that don't manage their own visibility-driven loading
+        if (isRefreshable(provider) && !isVisibilityAware(provider)) {
           try {
             console.log(`[${viewId}] First visibility - triggering lazy load`);
             await provider.refresh();

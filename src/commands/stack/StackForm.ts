@@ -347,13 +347,13 @@ export default class StackForm extends WebviewBase {
   <body>
     <h2>Register Stack</h2>
     <form>
-      <label for="name" required><strong>Stack Name:</strong></label> <input type="text" name="name" id="name">
+      <label for="name"><strong>Stack Name:</strong></label> <input type="text" name="name" id="name" required>
       {{#each options}}
         <h3>{{capitalize @key}}</h3>
         <div class="options">
           {{#each this}}
             <div class="single-option">
-              <input type="radio" id="{{id}}" name="{{@../key}}" value={{id}}>
+              <input type="radio" id="{{id}}" name="{{@../key}}" value="{{id}}">
               <label for="{{id}}"><img src="{{url}}"><p>{{capitalize name}}</p></label>
             </div>
           {{/each}}

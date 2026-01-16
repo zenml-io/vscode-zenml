@@ -71,9 +71,10 @@ const deletePipelineRun = async (node: PipelineTreeItem): Promise<void> => {
           vscode.window.showInformationMessage('Pipeline run deleted successfully');
           trackEvent('pipeline_run.deleted', { success: true });
           await refreshPipelineView();
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error(`Error deleting pipeline run: ${error}`);
-          vscode.window.showErrorMessage(`Failed to delete pipeline run: ${error.message}`);
+          const message = error instanceof Error ? error.message : String(error);
+          vscode.window.showErrorMessage(`Failed to delete pipeline run: ${message}`);
         }
       }
     );

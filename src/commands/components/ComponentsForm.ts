@@ -413,15 +413,15 @@ export default class ComponentForm extends WebviewBase {
                   type="number"
                   name="{{key}}"
                   id="{{key}}"
-                  value="{{default_value}}"
+                  value="{{defaultValue}}"
                   class="input {{#if is_optional}}hidden{{/if}}"
                   {{#if is_required}}required{{/if}}
                 >
               {{/if}}
 
               {{#if is_json_object}}
-                <textarea 
-                  id={{key}}
+                <textarea
+                  id="{{key}}"
                   name="{{key}}"
                   class="input {{#if is_optional}}hidden{{/if}}"
                   {{#if is_array}}data-array="array"{{/if}}

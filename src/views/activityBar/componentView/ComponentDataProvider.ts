@@ -243,7 +243,15 @@ export class ComponentDataProvider extends PaginatedDataProvider {
         });
       }
 
-      if (!result || 'error' in result) {
+      if (!result) {
+        return createErrorItem({
+          errorType: 'Error',
+          message: 'Empty response from server.',
+        });
+      }
+
+      if ('error' in result) {
+        // Check for version mismatch error (has both clientVersion and serverVersion)
         if ('clientVersion' in result && 'serverVersion' in result) {
           return createErrorItem(result);
         }
@@ -253,6 +261,10 @@ export class ComponentDataProvider extends PaginatedDataProvider {
             message: result.error,
           });
         }
+        return createErrorItem({
+          errorType: 'Error',
+          message: result.error,
+        });
       }
 
       if ('items' in result) {
