@@ -267,8 +267,9 @@ export class StackDataProvider extends PaginatedDataProvider {
         // If we failed because of a missing stack ID, try one more time without the active stack ID
         if (activeStackId && result?.error?.includes('No stack with this ID found')) {
           console.log('Stack ID not found, retrying without active stack ID...');
-          // Reset the active stack ID to trigger a clean fetch
+          // Reset both active stack IDs to trigger a clean fetch
           this.activeStackId = '';
+          this.pendingActiveStackId = undefined;
           await this.refresh();
           return this.items;
         }
@@ -338,6 +339,7 @@ export class StackDataProvider extends PaginatedDataProvider {
       if (activeStackId && error.toString().includes('No stack with this ID found')) {
         console.log('Invalid active stack ID, retrying without it...');
         this.activeStackId = '';
+        this.pendingActiveStackId = undefined;
         await this.refresh();
         return this.items;
       }
