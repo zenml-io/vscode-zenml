@@ -29,6 +29,9 @@ export class ComponentDataProvider extends PaginatedDataProvider {
   private static instance: ComponentDataProvider | null = null;
   private eventBus = EventBus.getInstance();
   private zenmlClientReady = false;
+  // Visibility-aware auto-loading state
+  private viewVisible = false;
+  private hasAutoLoadedOnce = false;
 
   constructor() {
     super();
@@ -68,6 +71,8 @@ export class ComponentDataProvider extends PaginatedDataProvider {
       this.items = [this.createInitialMessage()];
       this._onDidChangeTreeData.fire(undefined);
     } else {
+      // Reset auto-load state when LS stops so we reload after reconnect
+      this.hasAutoLoadedOnce = false;
       this.items = [this.createInitialMessage('Language server not running')];
       this._onDidChangeTreeData.fire(undefined);
     }
@@ -81,14 +86,56 @@ export class ComponentDataProvider extends PaginatedDataProvider {
   private zenmlClientStateChangeHandler = (isInitialized: boolean) => {
     this.zenmlClientReady = isInitialized;
     if (!isInitialized) {
+      // Reset auto-load state when client becomes uninitialized
+      this.hasAutoLoadedOnce = false;
       this.items = [this.createInitialMessage('ZenML client not initialized')];
       this._onDidChangeTreeData.fire(undefined);
     } else {
-      // just show a message that components can be loaded
-      this.items = [this.createInitialMessage()];
-      this._onDidChangeTreeData.fire(undefined);
+      // Try to auto-load if the view is visible
+      void this.maybeAutoLoad();
     }
   };
+
+  /**
+   * Sets the visibility state of this view.
+   * Called by ZenExtension when the tree view visibility changes.
+   *
+   * @param {boolean} visible Whether the view is now visible.
+   */
+  public setViewVisible(visible: boolean): void {
+    this.viewVisible = visible;
+    if (visible) {
+      void this.maybeAutoLoad();
+    }
+  }
+
+  /**
+   * Attempts to auto-load components if conditions are met.
+   * Loads only when: visible, ZenML client ready, and hasn't auto-loaded yet.
+   */
+  private async maybeAutoLoad(): Promise<void> {
+    // Skip if not visible
+    if (!this.viewVisible) {
+      return;
+    }
+
+    // Skip if ZenML client not ready - show waiting message
+    if (!this.zenmlClientReady) {
+      this.items = [this.createInitialMessage()];
+      this._onDidChangeTreeData.fire(undefined);
+      return;
+    }
+
+    // Skip if already auto-loaded once this session
+    if (this.hasAutoLoadedOnce) {
+      return;
+    }
+
+    // All conditions met - auto-load
+    this.hasAutoLoadedOnce = true;
+    console.log('[ComponentDataProvider] Auto-loading components on first visibility');
+    await this.refresh();
+  }
 
   /**
    * Retrieves the singleton instance of ComponentDataProvider
@@ -104,13 +151,13 @@ export class ComponentDataProvider extends PaginatedDataProvider {
   }
 
   /**
-   * Creates the initial message tree item that tells users to refresh
+   * Creates the initial message tree item shown before components are loaded.
    *
    * @param {string} message - Optional custom message to display
    * @returns {vscode.TreeItem} The tree item with the message
    */
   private createInitialMessage(message?: string): vscode.TreeItem {
-    const defaultMessage = 'Click the refresh button to load stack components';
+    const defaultMessage = 'Waiting for ZenML client...';
     const treeItem = new vscode.TreeItem(message || defaultMessage);
     treeItem.iconPath = new vscode.ThemeIcon('info');
     treeItem.contextValue = 'componentMessage';

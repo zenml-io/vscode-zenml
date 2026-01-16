@@ -36,9 +36,30 @@ export async function activate(context: vscode.ExtensionContext) {
 
   eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, handleZenMLClientInitialized);
 
-  vscode.window.createTreeView('zenmlEnvironmentView', {
-    treeDataProvider: EnvironmentDataProvider.getInstance(),
+  // Create Environment view with lazy-load on visibility
+  const envProvider = EnvironmentDataProvider.getInstance();
+  const envView = vscode.window.createTreeView('zenmlEnvironmentView', {
+    treeDataProvider: envProvider,
   });
+
+  // Track if we've done the first refresh for the environment view
+  let envViewLoadedOnce = false;
+  const envVisibilityHandler = envView.onDidChangeVisibility(e => {
+    if (e.visible && !envViewLoadedOnce) {
+      envViewLoadedOnce = true;
+      console.log('[zenmlEnvironmentView] First visibility - triggering lazy load');
+      envProvider.refresh();
+    }
+  });
+
+  // Check initial visibility
+  if (envView.visible) {
+    envViewLoadedOnce = true;
+    envProvider.refresh();
+  }
+
+  context.subscriptions.push(envView, envVisibilityHandler);
+
   registerEnvironmentCommands(context);
 
   await ZenExtension.activate(context, lsClient);
