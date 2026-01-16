@@ -11,7 +11,7 @@
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-import { Event, EventEmitter, TreeDataProvider, TreeItem, window } from 'vscode';
+import { Event, EventEmitter, ProgressLocation, TreeDataProvider, TreeItem, window } from 'vscode';
 import { ITEMS_PER_PAGE_OPTIONS } from '../../../utils/constants';
 import { ErrorTreeItem } from './ErrorTreeItem';
 import { LoadingTreeItem } from './LoadingTreeItem';
@@ -46,7 +46,15 @@ export class PaginatedDataProvider implements TreeDataProvider<TreeItem> {
     try {
       if (this.pagination.currentPage < this.pagination.totalPages) {
         this.pagination.currentPage++;
-        await this.refresh();
+        await window.withProgress(
+          {
+            location: ProgressLocation.Window,
+            title: `Loading ${this.viewName || 'items'} (page ${this.pagination.currentPage})...`,
+          },
+          async () => {
+            await this.refresh();
+          }
+        );
       }
     } catch (e) {
       console.error(`Failed to go the next page: ${e}`);
@@ -60,7 +68,15 @@ export class PaginatedDataProvider implements TreeDataProvider<TreeItem> {
     try {
       if (this.pagination.currentPage > 1) {
         this.pagination.currentPage--;
-        await this.refresh();
+        await window.withProgress(
+          {
+            location: ProgressLocation.Window,
+            title: `Loading ${this.viewName || 'items'} (page ${this.pagination.currentPage})...`,
+          },
+          async () => {
+            await this.refresh();
+          }
+        );
       }
     } catch (e) {
       console.error(`Failed to go the previous page: ${e}`);
@@ -78,7 +94,15 @@ export class PaginatedDataProvider implements TreeDataProvider<TreeItem> {
       if (selected) {
         this.pagination.itemsPerPage = parseInt(selected, 10);
         this.pagination.currentPage = 1;
-        await this.refresh();
+        await window.withProgress(
+          {
+            location: ProgressLocation.Window,
+            title: `Loading ${this.viewName || 'items'}...`,
+          },
+          async () => {
+            await this.refresh();
+          }
+        );
       }
     } catch (e) {
       console.error(`Failed to update items per page: ${e}`);

@@ -11,14 +11,23 @@
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
+import * as vscode from 'vscode';
 import { ModelDataProvider } from '../../views/activityBar/modelView/ModelDataProvider';
 
 /**
  * Refreshes the Models view.
  */
 async function refreshModelView(): Promise<void> {
-  const modelProvider = ModelDataProvider.getInstance();
-  void modelProvider.refresh();
+  await vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Window,
+      title: 'Refreshing models...',
+    },
+    async () => {
+      const modelProvider = ModelDataProvider.getInstance();
+      await modelProvider.refresh();
+    }
+  );
 }
 
 export const modelCommands = {
