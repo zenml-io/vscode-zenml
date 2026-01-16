@@ -36,6 +36,11 @@ export class ProjectDataProvider extends PaginatedDataProvider {
   private static instance: ProjectDataProvider | null = null;
   private eventBus = EventBus.getInstance();
   private zenmlClientReady = false;
+  // Track active project in provider state for immediate UI updates
+  // (config writes are async and can lag behind)
+  private activeProjectName?: string;
+  // Store pending active project name when event arrives during loading
+  private pendingActiveProjectName?: string;
 
   constructor() {
     super();
@@ -50,9 +55,12 @@ export class ProjectDataProvider extends PaginatedDataProvider {
   public subscribeToEvents(): void {
     this.eventBus.off(LSCLIENT_STATE_CHANGED, this.lsClientStateChangeHandler);
     this.eventBus.off(LSP_ZENML_CLIENT_INITIALIZED, this.zenmlClientStateChangeHandler);
+    this.eventBus.off(LSP_ZENML_PROJECT_CHANGED, this.projectChangeHandler);
 
     this.eventBus.on(LSCLIENT_STATE_CHANGED, this.lsClientStateChangeHandler);
     this.eventBus.on(LSP_ZENML_CLIENT_INITIALIZED, this.zenmlClientStateChangeHandler);
+    // Subscribe to project changes early to avoid missing events during initialization
+    this.eventBus.on(LSP_ZENML_PROJECT_CHANGED, this.projectChangeHandler);
   }
 
   /**
@@ -95,19 +103,30 @@ export class ProjectDataProvider extends PaginatedDataProvider {
       this._onDidChangeTreeData.fire(undefined);
     } else {
       this.refresh();
-
-      this.eventBus.off(LSP_ZENML_PROJECT_CHANGED, this.projectChangeHandler);
-      this.eventBus.on(LSP_ZENML_PROJECT_CHANGED, this.projectChangeHandler);
+      // Note: LSP_ZENML_PROJECT_CHANGED subscription is now in subscribeToEvents()
+      // to ensure we don't miss events during initialization
     }
   };
 
   /**
    * Handles the change in the active project.
+   * The identifier can be either a project name (from local calls) or project ID (from LSP server).
    *
-   * @param {string} projectName The name of the newly active project.
+   * @param {string} projectIdentifier The name or ID of the newly active project.
    */
-  private projectChangeHandler = (projectName: string) => {
-    this.updateActiveProject(projectName);
+  private projectChangeHandler = (projectIdentifier: string) => {
+    // Check if we have actual ProjectTreeItems to update
+    const hasProjectItems = this.items?.some(item => item instanceof ProjectTreeItem);
+
+    if (!hasProjectItems) {
+      // Store as pending - will be applied when items load in refresh()
+      // Note: this could be a name or ID, updateActiveProject will resolve it later
+      this.pendingActiveProjectName = projectIdentifier;
+      return;
+    }
+
+    // updateActiveProject will resolve the identifier (name or ID) and update state
+    this.updateActiveProject(projectIdentifier);
   };
 
   /**
@@ -149,6 +168,14 @@ export class ProjectDataProvider extends PaginatedDataProvider {
     try {
       const newProjectsData = await this.fetchProjects(page, itemsPerPage);
       this.items = newProjectsData;
+
+      // Apply any pending active project that arrived while we were loading
+      if (this.pendingActiveProjectName) {
+        const pendingName = this.pendingActiveProjectName;
+        this.pendingActiveProjectName = undefined;
+        this.updateActiveProject(pendingName);
+        return; // updateActiveProject already fires the tree change event
+      }
     } catch (error: any) {
       this.items = createErrorItem(error);
     }
@@ -228,7 +255,11 @@ export class ProjectDataProvider extends PaginatedDataProvider {
 
         return projects.map(
           (project: Project) =>
-            new ProjectTreeItem(project, project.name, this.isActiveProject(project.name))
+            new ProjectTreeItem(
+              project,
+              project.name,
+              this.isActiveProject(project.name, project.id)
+            )
         );
       } else {
         console.error(`Unexpected response format:`, result);
@@ -267,48 +298,70 @@ export class ProjectDataProvider extends PaginatedDataProvider {
 
   /**
    * Helper method to determine if a project is the active project.
-   * Checks both by ID and by name to handle different notification scenarios.
+   * Prioritizes provider state over config to handle async config writes.
+   * Handles both name and ID since the LSP server sends IDs but local calls use names.
    *
    * @param {string} projectName The name of the project.
+   * @param {string} projectId The ID of the project.
    * @returns {boolean} True if the project is active; otherwise, false.
    */
-  private isActiveProject(projectName: string): boolean {
-    const activeProjectName = getActiveProjectNameFromConfig();
-    if (projectName === activeProjectName) {
-      return true;
-    }
-    return false;
+  private isActiveProject(projectName: string, projectId: string): boolean {
+    // Priority: pending state > provider state > config
+    // This ensures UI correctness even when config write is still in progress
+    const configValue = getActiveProjectNameFromConfig();
+    const activeIdentifier = this.pendingActiveProjectName ?? this.activeProjectName ?? configValue;
+
+    // The stored identifier could be either a name or an ID, so check both
+    return projectName === activeIdentifier || projectId === activeIdentifier;
   }
 
   /**
    * Updates the active project status in the tree view without refetching all projects.
    * This is more efficient than a full refresh when only the active project changes.
+   * Uses the same pattern as StackDataProvider.updateActiveStack for reliability.
    *
    * @param {string} activeProjectName The name of the newly active project.
    */
-  public updateActiveProject(activeProjectName: string): void {
-    if (!this.items || !this.items.length || !(this.items[0] instanceof ProjectTreeItem)) {
+  public updateActiveProject(activeProjectIdentifier: string): void {
+    // Check if we have any ProjectTreeItems to update
+    const hasProjectItems = this.items?.some(item => item instanceof ProjectTreeItem);
+    if (!hasProjectItems) {
       return;
     }
 
+    // Find the target project - could be identified by name OR id
+    // (LSP server sends ID, local calls send name)
+    const targetProject = this.items.find(
+      item =>
+        item instanceof ProjectTreeItem &&
+        (item.project.name === activeProjectIdentifier ||
+          item.project.id === activeProjectIdentifier)
+    ) as ProjectTreeItem | undefined;
+
+    if (!targetProject) {
+      return;
+    }
+
+    // Use the project name for state (consistent key)
+    const activeProjectName = targetProject.project.name;
+
+    // Update provider state with the resolved name
+    this.activeProjectName = activeProjectName;
+    this.pendingActiveProjectName = undefined;
+
+    // Update only the relevant items (old active and new active)
     this.items.forEach(item => {
       if (item instanceof ProjectTreeItem) {
-        const isActive = item.project.name === activeProjectName;
-
-        if (isActive) {
-          item.isActive = true;
-          item.iconPath = TREE_ICONS.ACTIVE_PROJECT;
-          item.description = 'Active';
-        } else {
-          item.isActive = false;
-          item.iconPath = TREE_ICONS.PROJECT;
-          item.description = '';
+        const shouldBeActive = item.project.name === activeProjectName;
+        // Only update if the state actually changed
+        if (item.isActive !== shouldBeActive) {
+          item.setActive(shouldBeActive);
         }
-
-        item.updateChildren();
-        this._onDidChangeTreeData.fire(item);
       }
     });
+
+    // Fire once for the entire tree (matches Stack view's reliable pattern)
+    this._onDidChangeTreeData.fire(undefined);
   }
 
   /**

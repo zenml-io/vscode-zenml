@@ -11,8 +11,6 @@
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
-import { EventBus } from '../../services/EventBus';
-import { LSP_ZENML_PROJECT_CHANGED } from '../../utils/constants';
 import { ProjectDataProvider } from '../../views/activityBar/projectView/ProjectDataProvider';
 import { ProjectTreeItem } from '../../views/activityBar/projectView/ProjectTreeItems';
 import { getProjectDashboardUrl, switchActiveProject } from './utils';
@@ -49,7 +47,8 @@ const setActiveProject = async (node: ProjectTreeItem): Promise<void> => {
       try {
         const result = await switchActiveProject(node.name);
         if (result) {
-          EventBus.getInstance().emit(LSP_ZENML_PROJECT_CHANGED, node.name);
+          // Note: switchActiveProject already emits LSP_ZENML_PROJECT_CHANGED,
+          // so we don't need to emit it again here
           vscode.window.showInformationMessage(`Active project set to: ${node.name}`);
         }
       } catch (error) {
