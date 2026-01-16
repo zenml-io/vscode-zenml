@@ -14,6 +14,7 @@ import * as vscode from 'vscode';
 import { registerEnvironmentCommands } from './commands/environment/registry';
 import DagRenderer from './dag/renderer/DagRenderer';
 import WebviewBase from './common/WebviewBase';
+import { AnalyticsService } from './services/AnalyticsService';
 import { EventBus } from './services/EventBus';
 import { LSClient } from './services/LSClient';
 import { ZenExtension } from './services/ZenExtension';
@@ -57,6 +58,9 @@ export async function activate(context: vscode.ExtensionContext) {
  * @returns {Promise<void>} A promise that resolves to void.
  */
 export async function deactivate(): Promise<void> {
+  // Dispose analytics first to flush any pending events
+  await AnalyticsService.getInstance().dispose();
+
   const lsClient = LSClient.getInstance().getLanguageClient();
 
   if (lsClient) {

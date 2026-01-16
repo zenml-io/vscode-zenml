@@ -11,16 +11,22 @@
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
+import { EventBus } from '../../services/EventBus';
 import { LSClient } from '../../services/LSClient';
 import {
   ConnectServerResponse,
   GenericLSClientResponse,
   RestServerConnectionResponse,
 } from '../../types/LSClientResponseTypes';
+import { ANALYTICS_TRACK } from '../../utils/constants';
 import { updateServerUrlAndToken } from '../../utils/global';
 import { refreshUtils } from '../../utils/refresh';
 import { ServerDataProvider } from '../../views/activityBar';
 import { promptAndStoreServerUrl } from './utils';
+
+const trackEvent = (event: string, properties?: Record<string, unknown>) => {
+  EventBus.getInstance().emit(ANALYTICS_TRACK, { event, properties });
+};
 
 /**
  * Shows a quick pick to select the type of ZenML server connection.
@@ -168,9 +174,11 @@ const connectServer = async (): Promise<boolean> => {
 
           // Show success message in tree view
           vscode.window.showInformationMessage('Connected to server');
+          trackEvent('server.connect_command', { connectionType, success: true });
           resolve(true);
         } catch (error) {
           console.error('Failed to connect to ZenML server:', error);
+          trackEvent('server.connect_command', { connectionType, success: false });
 
           // Show error in tree view instead of notification
           vscode.window.showErrorMessage(`Failed to connect to ZenML server: ${error}`);
@@ -203,8 +211,10 @@ const disconnectServer = async (): Promise<void> => {
 
         // Show success message in tree view
         vscode.window.showInformationMessage('Disconnected from server');
+        trackEvent('server.disconnect_command', { success: true });
       } catch (error: any) {
         console.error('Failed to disconnect from ZenML server:', error);
+        trackEvent('server.disconnect_command', { success: false });
 
         // Show error in tree view instead of notification
         vscode.window.showErrorMessage(`Failed to disconnect from ZenML server: ${error}`);

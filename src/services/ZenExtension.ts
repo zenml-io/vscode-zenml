@@ -14,6 +14,7 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
+import { registerAnalyticsCommands } from '../commands/analytics/registry';
 import { registerComponentCommands } from '../commands/components/registry';
 import { registerModelCommands } from '../commands/models/registry';
 import { registerPipelineCommands } from '../commands/pipelines/registry';
@@ -52,6 +53,8 @@ import {
 } from '../views/activityBar';
 import { PanelDataProvider } from '../views/panel/panelView/PanelDataProvider';
 import ZenMLStatusBar from '../views/statusBar';
+import { AnalyticsService } from './AnalyticsService';
+import { EventBus } from './EventBus';
 import { LSClient } from './LSClient';
 
 export interface IServerInfo {
@@ -88,6 +91,7 @@ export class ZenExtension {
     registerPipelineCommands,
     registerProjectCommands,
     registerModelCommands,
+    registerAnalyticsCommands,
   ];
 
   /**
@@ -103,8 +107,28 @@ export class ZenExtension {
     this.serverId = serverDefaults.module;
 
     this.setupLoggingAndTrace();
+    this.initializeAnalytics();
     this.subscribeToCoreEvents();
     this.deferredInitialize();
+  }
+
+  /**
+   * Initializes the analytics service and tracks activation.
+   */
+  private static initializeAnalytics(): void {
+    try {
+      const analytics = AnalyticsService.getInstance();
+      analytics.initialize(this.context);
+      analytics.registerEventBus(EventBus.getInstance());
+
+      // Track extension activation
+      analytics.track('extension.activated', {
+        extensionVersion: this.context.extension?.packageJSON?.version,
+      });
+    } catch {
+      // Analytics initialization should never break the extension
+      console.debug('[Analytics] Failed to initialize analytics');
+    }
   }
 
   /**

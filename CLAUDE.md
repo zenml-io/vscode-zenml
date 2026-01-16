@@ -133,4 +133,39 @@ Extension settings use `zenml.` and `zenml-python.` prefixes:
 - `zenml.serverUrl` - ZenML server URL
 - `zenml.accessToken` - Authentication token
 - `zenml.activeStackId` - Current active stack
+- `zenml.analyticsEnabled` - Enable/disable extension analytics
 - `zenml-python.interpreter` - Python interpreter path
+
+## Analytics
+
+The extension sends anonymous usage analytics to `https://analytics.zenml.io/batch` via the ZenML Analytics Server. See `src/services/AnalyticsService.ts`.
+
+### Local Testing
+Use the **"Run Extension (Analytics Debug)"** launch configuration in `.vscode/launch.json`. This sets:
+- `ZENML_ANALYTICS_VERBOSE=1` - Detailed console logging
+- `ZENML_ANALYTICS_DEBUG=1` - Routes events to dev Segment (not production)
+
+### Verifying Events in Cloud Run Logs
+The analytics server runs in a **separate GCP project** (`zenml-analytics-server`), not `zenml-core`:
+
+```bash
+# Query VS Code analytics events
+gcloud logging read 'resource.type="cloud_run_revision" AND textPayload=~"vscode"' \
+  --limit=10 \
+  --project=zenml-analytics-server \
+  --format="json"
+
+# List all recent analytics requests
+gcloud logging read 'resource.type="cloud_run_revision"' \
+  --limit=20 \
+  --project=zenml-analytics-server \
+  --format="table(timestamp,textPayload)"
+```
+
+### Event Flow
+```
+VS Code Extension → POST analytics.zenml.io/batch (Source-Context: vscode)
+                  → Cloud Run (zenml-analytics-server project)
+                  → Segment (debug=true → dev, debug=false → prod)
+                  → Mixpanel
+```
