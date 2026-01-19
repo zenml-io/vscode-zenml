@@ -102,8 +102,11 @@ suite('ZenExtension Test Suite', () => {
     } as any);
 
     // Mock tree view creation (not registerTreeDataProvider)
+    // Must include onDidChangeVisibility for lazy-loading feature
     sandbox.stub(vscode.window, 'createTreeView').returns({
       dispose: sandbox.stub(),
+      visible: false,
+      onDidChangeVisibility: sandbox.stub().returns({ dispose: sandbox.stub() }),
     } as any);
 
     // Should have setupViewsAndCommands method
