@@ -38,6 +38,11 @@ nox --session tests         # Run Python LSP server tests (pytest)
 ./scripts/lint.sh
 ```
 
+### Git Workflow
+- **Base branch for PRs**: `develop` (not `main`)
+- Feature branches should be created from and merged back to `develop`
+- `main` is only updated via releases from `develop`
+
 ### Commit & PR Messages
 Use plain, human-readable messages without conventional commit prefixes:
 - ✅ `Add concurrency rules to CI workflows`
