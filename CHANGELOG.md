@@ -2,6 +2,38 @@
 
 All notable changes to the "zenml-vscode" extension will be documented in this file.
 
+## [0.0.24] - 2026-01-19 - Analytics Integration & Bug Fixes
+
+### Added
+
+- Anonymous usage analytics integration with ZenML Analytics Server
+  - User-controllable via `zenml.analyticsEnabled` setting
+  - Tracks server connections, pipeline runs, and stack operations
+  - Debug launch configuration for local testing
+- Loading indicators for Stack Form, components, models, and pagination
+- Lazy-loading for tree views on first visibility (faster startup)
+- Comprehensive unit tests for AnalyticsService
+
+### Changed
+
+- Stack view ordering now consistent with project view
+- Improved error handling in tree view data providers
+- Added Git Workflow documentation to CLAUDE.md
+
+### Fixed
+
+- Stack update form not pre-populating existing components
+- Project active icon not updating immediately when setting active project
+- Tree view data provider null-check bugs
+- Pending active stack ID not cleared on invalid-stack retry
+- Stack view not refreshing when active stack is outside current page
+- ZenExtension test mock for lazy-loading feature
+
+### Removed
+
+- beads/beads_viewer references from repository
+- `.zen/` local config directory from git tracking
+
 ## [0.0.23] - 2026-01-14 - Technical Debt Reduction & CI Updates
 
 ### Changed
