@@ -40,6 +40,12 @@ export const REFRESH_ENVIRONMENT_VIEW = 'refreshEnvironmentView';
 export const SERVER_STATUS_UPDATED = 'serverStatusUpdated';
 export const ITEMS_PER_PAGE_OPTIONS = ['5', '10', '15', '20', '25', '30', '35', '40', '45', '50'];
 
+// Analytics constants
+export const ANALYTICS_ENDPOINT = 'https://analytics.zenml.io/batch';
+export const ANALYTICS_SOURCE_CONTEXT = 'vscode';
+export const ANALYTICS_ANONYMOUS_ID_KEY = 'zenml.analyticsAnonymousId';
+export const ANALYTICS_TRACK = 'analyticsTrack';
+
 export const INITIAL_ZENML_SERVER_STATUS: ServerStatus = {
   isConnected: false,
   url: '',

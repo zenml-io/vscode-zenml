@@ -14,6 +14,7 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
+import { registerAnalyticsCommands } from '../commands/analytics/registry';
 import { registerComponentCommands } from '../commands/components/registry';
 import { registerModelCommands } from '../commands/models/registry';
 import { registerPipelineCommands } from '../commands/pipelines/registry';
@@ -43,7 +44,6 @@ import { toggleCommands } from '../utils/global';
 import { refreshUIComponents } from '../utils/refresh';
 import {
   ComponentDataProvider,
-  EnvironmentDataProvider,
   ModelDataProvider,
   PipelineDataProvider,
   ProjectDataProvider,
@@ -52,11 +52,39 @@ import {
 } from '../views/activityBar';
 import { PanelDataProvider } from '../views/panel/panelView/PanelDataProvider';
 import ZenMLStatusBar from '../views/statusBar';
+import { AnalyticsService } from './AnalyticsService';
+import { EventBus } from './EventBus';
 import { LSClient } from './LSClient';
 
 export interface IServerInfo {
   name: string;
   module: string;
+}
+
+/**
+ * Type guard for providers that have a refresh() method.
+ */
+function isRefreshable(provider: unknown): provider is { refresh: () => Promise<void> | void } {
+  return (
+    typeof provider === 'object' &&
+    provider !== null &&
+    'refresh' in provider &&
+    typeof (provider as { refresh: unknown }).refresh === 'function'
+  );
+}
+
+/**
+ * Type guard for providers that are visibility-aware (have setViewVisible method).
+ */
+function isVisibilityAware(
+  provider: unknown
+): provider is { setViewVisible: (visible: boolean) => void } {
+  return (
+    typeof provider === 'object' &&
+    provider !== null &&
+    'setViewVisible' in provider &&
+    typeof (provider as { setViewVisible: unknown }).setViewVisible === 'function'
+  );
 }
 
 export class ZenExtension {
@@ -69,7 +97,10 @@ export class ZenExtension {
   public static serverName: string;
   private static viewsAndCommandsSetup = false;
   public static interpreterCheckInProgress = false;
+  // Track which views have been loaded once (for lazy-loading on first visibility)
+  private static viewsLoadedOnce = new Set<string>();
 
+  // Note: zenmlEnvironmentView is created separately in extension.ts to avoid duplicate TreeView instances
   private static dataProviders = new Map<string, vscode.TreeDataProvider<vscode.TreeItem>>([
     ['zenmlServerView', ServerDataProvider.getInstance()],
     ['zenmlStackView', StackDataProvider.getInstance()],
@@ -77,7 +108,6 @@ export class ZenExtension {
     ['zenmlPipelineView', PipelineDataProvider.getInstance()],
     ['zenmlProjectView', ProjectDataProvider.getInstance()],
     ['zenmlModelView', ModelDataProvider.getInstance()],
-    ['zenmlEnvironmentView', EnvironmentDataProvider.getInstance()],
     ['zenmlPanelView', PanelDataProvider.getInstance()],
   ]);
 
@@ -88,6 +118,7 @@ export class ZenExtension {
     registerPipelineCommands,
     registerProjectCommands,
     registerModelCommands,
+    registerAnalyticsCommands,
   ];
 
   /**
@@ -103,8 +134,28 @@ export class ZenExtension {
     this.serverId = serverDefaults.module;
 
     this.setupLoggingAndTrace();
+    this.initializeAnalytics();
     this.subscribeToCoreEvents();
     this.deferredInitialize();
+  }
+
+  /**
+   * Initializes the analytics service and tracks activation.
+   */
+  private static initializeAnalytics(): void {
+    try {
+      const analytics = AnalyticsService.getInstance();
+      analytics.initialize(this.context);
+      analytics.registerEventBus(EventBus.getInstance());
+
+      // Track extension activation
+      analytics.track('extension.activated', {
+        extensionVersion: this.context.extension?.packageJSON?.version,
+      });
+    } catch {
+      // Analytics initialization should never break the extension
+      console.debug('[Analytics] Failed to initialize analytics');
+    }
   }
 
   /**
@@ -140,10 +191,70 @@ export class ZenExtension {
     this.dataProviders.forEach((provider, viewId) => {
       const view = vscode.window.createTreeView(viewId, { treeDataProvider: provider });
       this.viewDisposables.push(view);
+
+      // Wire up lazy-loading on visibility change
+      const visibilityDisposables = this.attachLazyLoadOnVisibility(viewId, view, provider);
+      visibilityDisposables.forEach(d => this.viewDisposables.push(d));
     });
     this.registries.forEach(register => register(this.context));
     await toggleCommands(true);
     this.viewsAndCommandsSetup = true;
+  }
+
+  /**
+   * Attaches lazy-load behavior to a tree view based on visibility changes.
+   * This ensures views that were collapsed at startup load their data when first expanded.
+   *
+   * @param viewId The ID of the view (for tracking purposes)
+   * @param view The TreeView instance
+   * @param provider The TreeDataProvider for the view
+   * @returns Array of disposables to be cleaned up
+   */
+  private static attachLazyLoadOnVisibility(
+    viewId: string,
+    view: vscode.TreeView<vscode.TreeItem>,
+    provider: vscode.TreeDataProvider<vscode.TreeItem>
+  ): vscode.Disposable[] {
+    const disposables: vscode.Disposable[] = [];
+
+    // Handler for visibility changes
+    const handleVisibilityChange = async (visible: boolean) => {
+      // Notify visibility-aware providers (like ComponentDataProvider)
+      // These providers manage their own loading via setViewVisible/maybeAutoLoad
+      if (isVisibilityAware(provider)) {
+        provider.setViewVisible(visible);
+      }
+
+      // Trigger refresh on first visibility for refreshable providers,
+      // but skip if the provider is visibility-aware (it manages its own loading)
+      if (visible && !this.viewsLoadedOnce.has(viewId)) {
+        this.viewsLoadedOnce.add(viewId);
+
+        // Only force refresh for providers that don't manage their own visibility-driven loading
+        if (isRefreshable(provider) && !isVisibilityAware(provider)) {
+          try {
+            console.log(`[${viewId}] First visibility - triggering lazy load`);
+            await provider.refresh();
+          } catch (error) {
+            console.error(`[${viewId}] Failed to refresh on visibility:`, error);
+          }
+        }
+      }
+    };
+
+    // Subscribe to visibility changes
+    disposables.push(
+      view.onDidChangeVisibility(e => {
+        void handleVisibilityChange(e.visible);
+      })
+    );
+
+    // Check initial visibility state (in case view is already visible at startup)
+    if (view.visible) {
+      void handleVisibilityChange(true);
+    }
+
+    return disposables;
   }
 
   /**

@@ -13,6 +13,19 @@
       "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "preLaunchTask": "${defaultBuildTask}",
       "timeout": 20000
+    },
+    {
+      "name": "Run Extension (Analytics Debug)",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "preLaunchTask": "${defaultBuildTask}",
+      "timeout": 20000,
+      "env": {
+        "ZENML_ANALYTICS_VERBOSE": "1",
+        "ZENML_ANALYTICS_DEBUG": "1"
+      }
     }
   ]
 }

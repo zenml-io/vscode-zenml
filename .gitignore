@@ -48,9 +48,6 @@ bundled/libs/
 .gitattributes
 design/
 
-# bv (beads viewer) local config and caches and beads
 .bv/
 .claude/
-.beads/*
-!.beads/issues.jsonl
-!.beads/interactions.jsonl
+.zen/

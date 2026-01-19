@@ -129,3 +129,85 @@ export async function toggleCommands(state: boolean): Promise<void> {
   await vscode.commands.executeCommand('setContext', 'environmentCommandsRegistered', state);
   await vscode.commands.executeCommand('setContext', 'projectCommandsRegistered', state);
 }
+
+/**
+ * Retrieves the ZenML analytics enabled setting.
+ * @returns Whether analytics are enabled in ZenML settings.
+ */
+export const getZenMLAnalyticsEnabled = (): boolean => {
+  const config = vscode.workspace.getConfiguration('zenml');
+  return config.get<boolean>('analyticsEnabled', true);
+};
+
+/**
+ * Updates the ZenML analytics enabled setting.
+ * @param enabled Whether to enable analytics.
+ */
+export const updateZenMLAnalyticsEnabled = async (enabled: boolean): Promise<void> => {
+  const config = vscode.workspace.getConfiguration('zenml');
+  await config.update('analyticsEnabled', enabled, vscode.ConfigurationTarget.Global);
+};
+
+/**
+ * Server URL connection type for privacy-safe analytics.
+ */
+export type ServerConnectionType = 'local' | 'cloud' | 'remote' | 'unknown';
+
+/**
+ * Categorizes a server URL into a privacy-safe connection type.
+ * This function is exported for testability.
+ *
+ * @param url The server URL to categorize
+ * @returns A privacy-safe category: 'local', 'cloud', 'remote', or 'unknown'
+ */
+/**
+ * Checks if a hostname is in the 172.16.0.0/12 private range (172.16.0.0 - 172.31.255.255).
+ */
+const isIn172PrivateRange = (hostname: string): boolean => {
+  const match = hostname.match(/^172\.(\d+)\./);
+  if (!match) {
+    return false;
+  }
+  const secondOctet = parseInt(match[1], 10);
+  return secondOctet >= 16 && secondOctet <= 31;
+};
+
+export const categorizeServerUrl = (url?: string): ServerConnectionType => {
+  if (!url) {
+    return 'unknown';
+  }
+
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.toLowerCase();
+
+    // Check for local/private addresses:
+    // - localhost and common loopback addresses
+    // - IPv6 loopback (::1)
+    // - 10.0.0.0/8 private range
+    // - 172.16.0.0/12 private range (172.16.x.x - 172.31.x.x)
+    // - 192.168.0.0/16 private range
+    // - .local mDNS domain
+    if (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '0.0.0.0' ||
+      hostname === '[::1]' ||
+      hostname === '::1' ||
+      hostname.startsWith('192.168.') ||
+      hostname.startsWith('10.') ||
+      isIn172PrivateRange(hostname) ||
+      hostname.endsWith('.local')
+    ) {
+      return 'local';
+    }
+
+    if (hostname.includes('zenml.io') || hostname.includes('cloudapi.zenml')) {
+      return 'cloud';
+    }
+
+    return 'remote';
+  } catch {
+    return 'unknown';
+  }
+};

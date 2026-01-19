@@ -60,6 +60,20 @@ export class ProjectTreeItem extends vscode.TreeItem implements TreeItemWithChil
   }
 
   /**
+   * Updates the active state of this project item.
+   * This mirrors the StackTreeItem.setActive pattern for consistency.
+   *
+   * @param {boolean} isActive Whether the project is now active.
+   */
+  public setActive(isActive: boolean): void {
+    this.isActive = isActive;
+    this.iconPath = isActive ? TREE_ICONS.ACTIVE_PROJECT : TREE_ICONS.PROJECT;
+    this.description = isActive ? 'Active' : '';
+    this.contextValue = isActive ? CONTEXT_VALUES.ACTIVE_PROJECT : CONTEXT_VALUES.PROJECT;
+    this.updateChildren();
+  }
+
+  /**
    * Updates the children items when active status changes.
    */
   public updateChildren(): void {

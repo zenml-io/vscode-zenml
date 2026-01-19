@@ -12,13 +12,18 @@
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
 import { traceError, traceInfo } from '../../common/log/logging';
+import { EventBus } from '../../services/EventBus';
 import { LSClient } from '../../services/LSClient';
-import { StackComponentTreeItem } from '../../views/activityBar/componentView/ComponentTreeItems';
+import { ANALYTICS_TRACK } from '../../utils/constants';
 import { StackDataProvider } from '../../views/activityBar/stackView/StackDataProvider';
 import { StackTreeItem } from '../../views/activityBar/stackView/StackTreeItems';
 import ZenMLStatusBar from '../../views/statusBar';
 import StackForm from './StackForm';
 import { getStackDashboardUrl, switchActiveStack } from './utils';
+
+const trackEvent = (event: string, properties?: Record<string, unknown>) => {
+  EventBus.getInstance().emit(ANALYTICS_TRACK, { event, properties });
+};
 
 /**
  * Refreshes the stack view.
@@ -61,6 +66,7 @@ const renameStack = async (node: StackTreeItem): Promise<void> => {
           throw new Error(result.error);
         }
         vscode.window.showInformationMessage(`${label} renamed to ${newStackName}`);
+        trackEvent('stack.renamed', { success: true });
       } catch (error: any) {
         console.error('Failed to rename stack:', error);
         vscode.window.showErrorMessage(`Failed to rename stack: ${error}`);
@@ -95,6 +101,7 @@ const copyStack = async (node: StackTreeItem) => {
           throw new Error(result.error);
         }
         vscode.window.showInformationMessage(`${node.label} copied to ${newStackName}`);
+        trackEvent('stack.copied', { success: true });
         await refreshStackView();
       } catch (error: any) {
         console.error('Failed to copy stack:', error);
@@ -128,6 +135,7 @@ const setActiveStack = async (node: StackTreeItem): Promise<void> => {
           statusBar.refreshActiveStack({ id, name });
 
           vscode.window.showInformationMessage(`Active stack set to: ${name}`);
+          trackEvent('stack.set_active', { success: true });
         }
       } catch (error) {
         console.log(error);
@@ -149,10 +157,13 @@ const goToStackUrl = (node: StackTreeItem): void => {
     try {
       const parsedUrl = vscode.Uri.parse(url);
       vscode.env.openExternal(parsedUrl);
+      trackEvent('stack.open_dashboard', { hasUrl: true });
     } catch (error) {
       console.log(error);
       vscode.window.showErrorMessage(`Failed to open stack URL: ${error}`);
     }
+  } else {
+    trackEvent('stack.open_dashboard', { hasUrl: false });
   }
 };
 
@@ -172,12 +183,11 @@ const updateStack = async (node: StackTreeItem) => {
   const { id, label: name } = node;
   const components: { [type: string]: string } = {};
 
-  node.children?.forEach(child => {
-    if (child instanceof StackComponentTreeItem) {
-      const { type, id } = (child as StackComponentTreeItem).component;
-      components[type] = id;
-    }
-  });
+  // Use originalComponents instead of children - children contains wrapped TreeItems
+  // for display purposes, not the actual StackComponentTreeItem objects
+  for (const item of node.getOriginalComponents()) {
+    components[item.component.type] = item.component.id;
+  }
 
   StackForm.getInstance().updateForm(id, name, components);
 };
@@ -217,6 +227,7 @@ const deleteStack = async (node: StackTreeItem) => {
 
         vscode.window.showInformationMessage(`${node.label} deleted`);
         traceInfo(`${node.label} deleted`);
+        trackEvent('stack.deleted', { success: true });
       } catch (e) {
         vscode.window.showErrorMessage(`Failed to delete stack: ${e}`);
         traceError(e);

@@ -194,12 +194,21 @@ export default class ComponentForm extends WebviewBase {
   ): Promise<boolean> {
     const lsClient = LSClient.getInstance();
     try {
-      const resp = await lsClient.sendLsClientRequest('registerComponent', [
-        type,
-        flavor,
-        name,
-        data,
-      ]);
+      const resp = await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: 'Registering component...',
+          cancellable: false,
+        },
+        async () => {
+          return await lsClient.sendLsClientRequest('registerComponent', [
+            type,
+            flavor,
+            name,
+            data,
+          ]);
+        }
+      );
 
       if ('error' in resp) {
         vscode.window.showErrorMessage(`Unable to register component: "${resp.error}"`);
@@ -227,7 +236,16 @@ export default class ComponentForm extends WebviewBase {
   ): Promise<boolean> {
     const lsClient = LSClient.getInstance();
     try {
-      const resp = await lsClient.sendLsClientRequest('updateComponent', [id, type, name, data]);
+      const resp = await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: 'Updating component...',
+          cancellable: false,
+        },
+        async () => {
+          return await lsClient.sendLsClientRequest('updateComponent', [id, type, name, data]);
+        }
+      );
 
       if ('error' in resp) {
         vscode.window.showErrorMessage(`Unable to update component: "${resp.error}"`);
@@ -395,15 +413,15 @@ export default class ComponentForm extends WebviewBase {
                   type="number"
                   name="{{key}}"
                   id="{{key}}"
-                  value="{{default_value}}"
+                  value="{{defaultValue}}"
                   class="input {{#if is_optional}}hidden{{/if}}"
                   {{#if is_required}}required{{/if}}
                 >
               {{/if}}
 
               {{#if is_json_object}}
-                <textarea 
-                  id={{key}}
+                <textarea
+                  id="{{key}}"
                   name="{{key}}"
                   class="input {{#if is_optional}}hidden{{/if}}"
                   {{#if is_array}}data-array="array"{{/if}}

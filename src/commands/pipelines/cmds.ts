@@ -12,11 +12,17 @@
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
 import DagRenderer from '../../dag/renderer/DagRenderer';
+import { EventBus } from '../../services/EventBus';
 import { LSClient } from '../../services/LSClient';
+import { ANALYTICS_TRACK } from '../../utils/constants';
 import { PipelineTreeItem } from '../../views/activityBar';
 import { createCommandErrorItem } from '../../views/activityBar/common/ErrorTreeItem';
 import { PipelineDataProvider } from '../../views/activityBar/pipelineView/PipelineDataProvider';
 import { getPipelineRunDashboardUrl } from './utils';
+
+const trackEvent = (event: string, properties?: Record<string, unknown>) => {
+  EventBus.getInstance().emit(ANALYTICS_TRACK, { event, properties });
+};
 
 /**
  * Triggers a refresh of the pipeline view within the UI components.
@@ -63,10 +69,12 @@ const deletePipelineRun = async (node: PipelineTreeItem): Promise<void> => {
             throw new Error(result.error);
           }
           vscode.window.showInformationMessage('Pipeline run deleted successfully');
+          trackEvent('pipeline_run.deleted', { success: true });
           await refreshPipelineView();
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error(`Error deleting pipeline run: ${error}`);
-          vscode.window.showErrorMessage(`Failed to delete pipeline run: ${error.message}`);
+          const message = error instanceof Error ? error.message : String(error);
+          vscode.window.showErrorMessage(`Failed to delete pipeline run: ${message}`);
         }
       }
     );
@@ -84,8 +92,8 @@ const goToPipelineUrl = (node: PipelineTreeItem): void => {
   if (url) {
     try {
       const parsedUrl = vscode.Uri.parse(url);
-
       vscode.env.openExternal(parsedUrl);
+      trackEvent('pipeline_run.open_dashboard', { hasUrl: true });
     } catch (error) {
       console.log(error);
       const pipelineProvider = PipelineDataProvider.getInstance();
@@ -93,6 +101,8 @@ const goToPipelineUrl = (node: PipelineTreeItem): void => {
         createCommandErrorItem('open pipeline URL', `Failed to open pipeline run URL: ${error}`)
       );
     }
+  } else {
+    trackEvent('pipeline_run.open_dashboard', { hasUrl: false });
   }
 };
 
@@ -103,6 +113,7 @@ const goToPipelineUrl = (node: PipelineTreeItem): void => {
  */
 const renderDag = (node: PipelineTreeItem): void => {
   DagRenderer.getInstance()?.createView(node);
+  trackEvent('pipeline_run.render_dag');
 };
 
 export const pipelineCommands = {

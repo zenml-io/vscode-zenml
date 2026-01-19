@@ -66,6 +66,27 @@ export class StackTreeItem extends vscode.TreeItem implements TreeItemWithChildr
   }
 
   /**
+   * Updates the active state of this stack item.
+   * This mirrors the ProjectTreeItem.setActive pattern for consistency.
+   *
+   * @param {boolean} isActive Whether the stack is now active.
+   */
+  public setActive(isActive: boolean): void {
+    this.isActive = isActive;
+    this.iconPath = isActive ? TREE_ICONS.ACTIVE_STACK : TREE_ICONS.STACK;
+    this.description = isActive ? 'Active' : '';
+    this.contextValue = isActive ? CONTEXT_VALUES.ACTIVE_STACK : CONTEXT_VALUES.STACK;
+
+    // Regenerate children with updated active state (affects component icons)
+    this.children = this.groupComponentsByType(this.originalComponents, isActive);
+
+    // Update tooltip to reflect new active state
+    this.tooltip = new vscode.MarkdownString(
+      `**Stack: ${this.label}**\n\nID: ${this.id}\n\nActive: ${isActive ? 'Yes' : 'No'}`
+    );
+  }
+
+  /**
    * Group components by their type and create component category items
    */
   public groupComponentsByType(

@@ -38,6 +38,11 @@ nox --session tests         # Run Python LSP server tests (pytest)
 ./scripts/lint.sh
 ```
 
+### Git Workflow
+- **Base branch for PRs**: `develop` (not `main`)
+- Feature branches should be created from and merged back to `develop`
+- `main` is only updated via releases from `develop`
+
 ### Commit & PR Messages
 Use plain, human-readable messages without conventional commit prefixes:
 - ✅ `Add concurrency rules to CI workflows`
@@ -114,6 +119,46 @@ eventBus.on('LSP_ZENML_STACK_CHANGED', () => refreshUI());
 ### Context-Based Command Visibility
 Commands use VS Code context (`setContext`) to control when they appear in menus. Check `package.json` `when` clauses.
 
+### Tree View Data Providers
+Data providers in `src/views/activityBar/` follow specific patterns:
+
+**PaginatedDataProvider inheritance**: Most providers extend `PaginatedDataProvider` which handles pagination commands (Next/Previous Page). Don't override `getChildren()` in ways that bypass the parent's `addPaginationCommands()` logic.
+
+**Visibility-aware providers**: Some providers (e.g., `ComponentDataProvider`) implement `setViewVisible()` to manage their own loading lifecycle. `ZenExtension.attachLazyLoadOnVisibility()` detects these and skips the generic refresh to avoid double-loading.
+
+**LSP result handling**: Always check for null/undefined before using the `'in'` operator:
+```typescript
+// ❌ Bad: 'in' throws TypeError if result is undefined
+if (!result || 'error' in result) {
+  if ('clientVersion' in result) { ... }  // Crashes when result is undefined
+}
+
+// ✅ Good: Separate null check
+if (!result) {
+  return createErrorItem({ message: 'Empty response' });
+}
+if ('error' in result) {
+  // Safe to use 'in' now
+}
+```
+
+**Active item state**: When the active stack/project changes to one outside the current page, update provider state, clear the old active item's visual state, and fire the tree change event—even without fetching new data.
+
+### Error Handling
+Use `error: unknown` instead of `error: any` in catch blocks, then narrow the type:
+```typescript
+catch (error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  vscode.window.showErrorMessage(`Failed: ${message}`);
+}
+```
+
+### HTML Templates (Handlebars)
+Templates embedded in TypeScript (e.g., `StackForm.ts`, `ComponentsForm.ts`) have common pitfalls:
+- Always quote attribute values: `id="{{key}}"` not `id={{key}}`
+- The `required` attribute goes on `<input>`, not `<label>`
+- Match variable names exactly: `{{defaultValue}}` not `{{default_value}}`
+
 ## Important Files
 
 - **package.json**: Extension manifest, commands, views, configuration schema, activation events
@@ -133,4 +178,39 @@ Extension settings use `zenml.` and `zenml-python.` prefixes:
 - `zenml.serverUrl` - ZenML server URL
 - `zenml.accessToken` - Authentication token
 - `zenml.activeStackId` - Current active stack
+- `zenml.analyticsEnabled` - Enable/disable extension analytics
 - `zenml-python.interpreter` - Python interpreter path
+
+## Analytics
+
+The extension sends anonymous usage analytics to `https://analytics.zenml.io/batch` via the ZenML Analytics Server. See `src/services/AnalyticsService.ts`.
+
+### Local Testing
+Use the **"Run Extension (Analytics Debug)"** launch configuration in `.vscode/launch.json`. This sets:
+- `ZENML_ANALYTICS_VERBOSE=1` - Detailed console logging
+- `ZENML_ANALYTICS_DEBUG=1` - Routes events to dev Segment (not production)
+
+### Verifying Events in Cloud Run Logs
+The analytics server runs in a **separate GCP project** (`zenml-analytics-server`), not `zenml-core`:
+
+```bash
+# Query VS Code analytics events
+gcloud logging read 'resource.type="cloud_run_revision" AND textPayload=~"vscode"' \
+  --limit=10 \
+  --project=zenml-analytics-server \
+  --format="json"
+
+# List all recent analytics requests
+gcloud logging read 'resource.type="cloud_run_revision"' \
+  --limit=20 \
+  --project=zenml-analytics-server \
+  --format="table(timestamp,textPayload)"
+```
+
+### Event Flow
+```
+VS Code Extension → POST analytics.zenml.io/batch (Source-Context: vscode)
+                  → Cloud Run (zenml-analytics-server project)
+                  → Segment (debug=true → dev, debug=false → prod)
+                  → Mixpanel
+```

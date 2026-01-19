@@ -56,6 +56,35 @@ this extension and your Python version needs to be 3.8 or greater.
 - **ZenML Version**: This extension is compatible with ZenML versions 0.83.x. For older ZenML versions, see our [version compatibility guide](VERSIONS.md) to install the appropriate extension version.
 - **Python Version**: Python 3.8 or greater is required for the operation of the LSP server, which is a part of this extension.
 
+## Privacy & Analytics
+
+This extension collects anonymous usage analytics to help improve the product. Analytics are **only sent when both conditions are met**:
+
+1. VS Code telemetry is enabled (respects your VS Code telemetry settings)
+2. The `zenml.analyticsEnabled` setting is `true` (default)
+
+### What We Collect
+
+- **Extension events**: Activation, server connections/disconnections
+- **Feature usage**: Stack operations (create, update, delete, set active), pipeline run operations (delete, render DAG, open dashboard)
+- **Metadata**: Extension version, VS Code version, platform (e.g., `darwin`, `win32`, `linux`)
+- **Anonymous user ID**: A randomly generated UUID stored locally to track usage patterns without identifying you
+
+### What We Do NOT Collect
+
+- No code, file paths, or file contents
+- No server URLs, API keys, or tokens
+- No stack names, component names, or pipeline names
+- No personally identifiable information (PII)
+
+### How to Opt Out
+
+You can disable analytics in any of these ways:
+
+1. **VS Code Settings**: Set `zenml.analyticsEnabled` to `false`
+2. **Command Palette**: Run `ZenML: Toggle Analytics`
+3. **VS Code Telemetry**: Disable VS Code's global telemetry setting (this also disables ZenML analytics)
+
 ## Feedback and Contributions
 
 Your feedback and contributions are welcome! Please refer to our [contribution

@@ -11,25 +11,21 @@
 // or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-import * as vscode from 'vscode';
-import { ModelDataProvider } from '../../views/activityBar/modelView/ModelDataProvider';
+import { ExtensionContext } from 'vscode';
+import { registerCommand } from '../../common/vscodeapi';
+import { ZenExtension } from '../../services/ZenExtension';
+import { analyticsCommands } from './cmds';
 
 /**
- * Refreshes the Models view.
+ * Register analytics-related commands.
  */
-async function refreshModelView(): Promise<void> {
-  await vscode.window.withProgress(
-    {
-      location: vscode.ProgressLocation.Window,
-      title: 'Refreshing models...',
-    },
-    async () => {
-      const modelProvider = ModelDataProvider.getInstance();
-      await modelProvider.refresh();
-    }
-  );
-}
+export const registerAnalyticsCommands = (context: ExtensionContext) => {
+  const registeredCommands = [
+    registerCommand('zenml.toggleAnalytics', async () => analyticsCommands.toggleAnalytics()),
+  ];
 
-export const modelCommands = {
-  refreshModelView,
+  registeredCommands.forEach(cmd => {
+    context.subscriptions.push(cmd);
+    ZenExtension.commandDisposables.push(cmd);
+  });
 };

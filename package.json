@@ -142,6 +142,11 @@
           "type": "string",
           "default": "",
           "description": "Active project name for the ZenML server"
+        },
+        "zenml.analyticsEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable ZenML extension analytics. Analytics are only sent if VS Code telemetry is also enabled. See README for details on what data is collected."
         }
       }
     },
@@ -333,6 +338,12 @@
         "title": "Restart LSP Server",
         "icon": "$(debug-restart)",
         "category": "ZenML Environment"
+      },
+      {
+        "command": "zenml.toggleAnalytics",
+        "title": "Toggle Analytics",
+        "icon": "$(pulse)",
+        "category": "ZenML"
       }
     ],
     "viewsContainers": {

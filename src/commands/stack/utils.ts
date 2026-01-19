@@ -43,9 +43,10 @@ export const switchActiveStack = async (
     }
 
     return { id, name };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Error setting active stack: ${error}`);
-    showErrorMessage(`Failed to set active stack: ${error.message}`);
+    const message = error instanceof Error ? error.message : String(error);
+    showErrorMessage(`Failed to set active stack: ${message}`);
   }
 };
 
