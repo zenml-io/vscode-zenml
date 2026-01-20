@@ -10,16 +10,14 @@ updates:
     schedule:
       interval: weekly
     groups:
-      dependencies:
+      all-dependencies:
         patterns:
-          - '*'  # This will group all dependencies together
-        update-types: [minor, patch]
+          - '*'  # Groups ALL dependency updates into a single PR
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
     groups:
-      actions:
+      all-actions:
         patterns:
-          - '*'
-        update-types: [minor, patch]
+          - '*'  # Groups ALL GitHub Actions updates into a single PR
