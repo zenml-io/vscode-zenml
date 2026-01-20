@@ -33,10 +33,12 @@ nox --session tests         # Run Python LSP server tests (pytest)
 ```
 
 ### Pre-Commit Checklist
-**IMPORTANT**: Always run linting before committing:
+**CRITICAL**: Always run the full lint script before committing AND pushing:
 ```bash
 ./scripts/lint.sh
 ```
+
+This runs ruff, mypy, eslint, prettier, and yamlfix. CI will fail if any of these checks fail, so **always run this locally first** to catch issues before pushing. The script will auto-fix many issues (like YAML formatting), so run it, review the changes, then commit.
 
 ### Git Workflow
 - **Base branch for PRs**: `develop` (not `main`)
