@@ -3,12 +3,16 @@ name: Publish VSCode Extension
 on:
   release:
     types: [created]
+permissions:
+  contents: write
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
       - name: Get Extension Version
         id: get_version
         run: echo "version=$(jq -r .version package.json)" >> $GITHUB_OUTPUT

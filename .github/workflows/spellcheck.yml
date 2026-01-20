@@ -1,6 +1,8 @@
 ---
 name: Spellcheck
 on: [pull_request]
+permissions:
+  contents: read
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
@@ -10,5 +12,7 @@ jobs:
     steps:
       - name: Checkout Actions Repository
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
       - name: Spell Check Repo
         uses: crate-ci/typos@v1

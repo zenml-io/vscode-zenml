@@ -2,12 +2,16 @@
 name: Test VSCode Extension Release
 on:
   workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   test-release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
       - name: Get Extension Version
         id: get_version
         run: echo "version=$(jq -r .version package.json)" >> $GITHUB_OUTPUT

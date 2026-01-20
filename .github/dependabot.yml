@@ -13,6 +13,8 @@ updates:
       all-dependencies:
         patterns:
           - '*'  # Groups ALL dependency updates into a single PR
+    cooldown:
+      default-days: 7
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -21,3 +23,5 @@ updates:
       all-actions:
         patterns:
           - '*'  # Groups ALL GitHub Actions updates into a single PR
+    cooldown:
+      default-days: 7

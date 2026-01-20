@@ -1,0 +1,18 @@
+# Zizmor GitHub Actions security linter configuration
+# https://docs.zizmor.sh/configuration/
+
+rules:
+  # Version tags (@v6) are acceptable for trusted actions in this repo.
+  # SHA pinning adds maintenance overhead without proportional security benefit
+  # for a VS Code extension project using well-known actions.
+  unpinned-uses:
+    disable: true
+
+  # These template injections use internal step outputs derived from package.json,
+  # not user-controlled input, so they're false positives for this codebase.
+  template-injection:
+    ignore:
+      - release.yml:58        # VERSION from steps.get_version.outputs.version
+      - release.yml:74        # VERSION from steps.get_version.outputs.version
+      - test-publish.yml:51   # version from steps.get_version.outputs.version
+      - test-publish.yml:70   # VERSION from steps.get_version.outputs.version
