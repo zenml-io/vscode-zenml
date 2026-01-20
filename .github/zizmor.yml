@@ -2,12 +2,6 @@
 # https://docs.zizmor.sh/configuration/
 
 rules:
-  # Version tags (@v6) are acceptable for trusted actions in this repo.
-  # SHA pinning adds maintenance overhead without proportional security benefit
-  # for a VS Code extension project using well-known actions.
-  unpinned-uses:
-    disable: true
-
   # These template injections use internal step outputs derived from package.json,
   # not user-controlled input, so they're false positives for this codebase.
   template-injection:
