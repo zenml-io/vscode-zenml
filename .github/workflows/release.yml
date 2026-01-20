@@ -10,21 +10,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6
         with:
           persist-credentials: false
       - name: Get Extension Version
         id: get_version
         run: echo "version=$(jq -r .version package.json)" >> $GITHUB_OUTPUT
       - name: Install Node.js
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238  # v6
         with:
           node-version: 20.x
           cache: npm
       - name: Install dependencies
         run: npm ci
       - name: Run headless tests
-        uses: coactions/setup-xvfb@b6b4fcfb9f5a895edadc3bc76318fae0ac17c8b3 # v1
+        uses: coactions/setup-xvfb@b6b4fcfb9f5a895edadc3bc76318fae0ac17c8b3  # v1
         with:
           run: npm test
       - name: Build Extension
@@ -74,7 +74,7 @@ jobs:
           echo "${{ steps.get_version.outputs.version }}" > VERSION
       - name: Update GitHub Release
         if: success() && startsWith(github.ref, 'refs/tags/')
-        uses: ncipollo/release-action@b7eabc95ff50cbeeedec83973935c8f306dfcd0b # v1
+        uses: ncipollo/release-action@b7eabc95ff50cbeeedec83973935c8f306dfcd0b  # v1
         with:
           artifacts: zenml.vsix,VERSION
           bodyFile: RELEASE_NOTES.md
