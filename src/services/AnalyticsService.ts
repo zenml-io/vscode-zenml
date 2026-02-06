@@ -19,9 +19,15 @@ import {
   ANALYTICS_ENDPOINT,
   ANALYTICS_SOURCE_CONTEXT,
   ANALYTICS_TRACK,
+  ENVIRONMENT_INFO_UPDATED,
+  SERVER_DISCONNECT_REQUESTED,
   SERVER_STATUS_UPDATED,
 } from '../utils/constants';
-import { categorizeServerUrl, getZenMLAnalyticsEnabled } from '../utils/global';
+import {
+  categorizeServerUrl,
+  getZenMLAnalyticsEnabled,
+  ServerConnectionType,
+} from '../utils/global';
 import { EventBus } from './EventBus';
 
 /**
@@ -72,6 +78,22 @@ export class AnalyticsService {
   private lastServerConnected?: boolean;
   private telemetryChangeDisposable?: vscode.Disposable;
 
+  // Session tracking (Gap #6)
+  private sessionId?: string;
+  private sessionStartMs?: number;
+
+  // Environment info cache (Gap #5)
+  private environmentInfo: {
+    pythonVersion?: string;
+    zenmlVersion?: string;
+    zenmlInstalled?: boolean;
+  } = {};
+
+  // Disconnect classification (Gap #3)
+  private lastConnectedType?: ServerConnectionType;
+  private lastDisconnectRequestedAtMs?: number;
+  private readonly DISCONNECT_INTENT_WINDOW_MS = 10_000;
+
   // Configuration
   private readonly MAX_QUEUE_SIZE = 200;
   private readonly MAX_BATCH_SIZE = 20;
@@ -110,6 +132,14 @@ export class AnalyticsService {
   public initialize(context: vscode.ExtensionContext): void {
     this.context = context;
 
+    // Start session tracking
+    try {
+      this.sessionId = crypto.randomUUID();
+    } catch {
+      this.sessionId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+    this.sessionStartMs = Date.now();
+
     // Subscribe to VS Code telemetry changes if available
     if (vscode.env.onDidChangeTelemetryEnabled) {
       this.telemetryChangeDisposable = vscode.env.onDidChangeTelemetryEnabled(() => {
@@ -135,6 +165,40 @@ export class AnalyticsService {
   }
 
   /**
+   * Get the session start time (ms since epoch).
+   */
+  public getSessionStartMs(): number | undefined {
+    return this.sessionStartMs;
+  }
+
+  /**
+   * Get the current session ID.
+   */
+  public getSessionId(): string | undefined {
+    return this.sessionId;
+  }
+
+  /**
+   * Update cached environment info (python/zenml version).
+   * Only defined fields are merged; undefined fields are left unchanged.
+   */
+  public setEnvironmentInfo(info: {
+    pythonVersion?: string;
+    zenmlVersion?: string;
+    zenmlInstalled?: boolean;
+  }): void {
+    if (info.pythonVersion !== undefined) {
+      this.environmentInfo.pythonVersion = info.pythonVersion;
+    }
+    if (info.zenmlVersion !== undefined) {
+      this.environmentInfo.zenmlVersion = info.zenmlVersion;
+    }
+    if (info.zenmlInstalled !== undefined) {
+      this.environmentInfo.zenmlInstalled = info.zenmlInstalled;
+    }
+  }
+
+  /**
    * Register the EventBus for event-driven tracking.
    * Subscribes to relevant events.
    */
@@ -150,6 +214,19 @@ export class AnalyticsService {
     // Note: ServerDataProvider emits 'serverUrl', not 'url'
     eventBus.on(SERVER_STATUS_UPDATED, (status: { isConnected: boolean; serverUrl?: string }) => {
       this.handleServerStatusChange(status);
+    });
+
+    // Subscribe to environment info updates (python/zenml version)
+    eventBus.on(
+      ENVIRONMENT_INFO_UPDATED,
+      (info: { pythonVersion?: string; zenmlVersion?: string; zenmlInstalled?: boolean }) => {
+        this.setEnvironmentInfo(info);
+      }
+    );
+
+    // Subscribe to disconnect intent signals for disconnect reason classification
+    eventBus.on(SERVER_DISCONNECT_REQUESTED, (payload: { atMs: number }) => {
+      this.lastDisconnectRequestedAtMs = payload.atMs;
     });
   }
 
@@ -187,6 +264,16 @@ export class AnalyticsService {
           vscodeVersion: vscode.version,
           platform: process.platform,
           timestamp: new Date().toISOString(),
+          sessionId: this.sessionId,
+          ...(this.environmentInfo.pythonVersion
+            ? { pythonVersion: this.environmentInfo.pythonVersion }
+            : {}),
+          ...(this.environmentInfo.zenmlVersion
+            ? { zenmlVersion: this.environmentInfo.zenmlVersion }
+            : {}),
+          ...(this.environmentInfo.zenmlInstalled !== undefined
+            ? { zenmlInstalled: this.environmentInfo.zenmlInstalled }
+            : {}),
         },
         debug: this.DEBUG_MODE,
       };
@@ -388,13 +475,28 @@ export class AnalyticsService {
 
     this.lastServerConnected = isConnected;
 
-    // Determine connection type without exposing the actual URL
-    const connectionType = categorizeServerUrl(serverUrl);
-
     if (isConnected) {
+      // Store the connection type so we can use it on disconnect
+      // (at disconnect time, the URL may have already reverted to sqlite)
+      const connectionType = categorizeServerUrl(serverUrl);
+      this.lastConnectedType = connectionType;
       this.track('server.connected', { connectionType });
     } else {
-      this.track('server.disconnected', { connectionType });
+      // Use stored type from connect time; fall back to categorizing current URL
+      const currentType = categorizeServerUrl(serverUrl);
+      const connectionType =
+        currentType !== 'unknown' ? currentType : (this.lastConnectedType ?? 'unknown');
+
+      // Classify disconnect reason using intent signal
+      const now = Date.now();
+      const disconnectReason =
+        this.lastDisconnectRequestedAtMs &&
+        now - this.lastDisconnectRequestedAtMs < this.DISCONNECT_INTENT_WINDOW_MS
+          ? 'user_initiated'
+          : 'unexpected';
+      this.lastDisconnectRequestedAtMs = undefined;
+
+      this.track('server.disconnected', { connectionType, disconnectReason });
     }
   }
 }

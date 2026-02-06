@@ -16,6 +16,7 @@ import * as vscode from 'vscode';
 import { traceError, traceInfo } from '../../common/log/logging';
 import Panels from '../../common/panels';
 import WebviewBase from '../../common/WebviewBase';
+import { EventBus } from '../../services/EventBus';
 import { LSClient } from '../../services/LSClient';
 import { JsonValue } from '../../types/JsonTypes';
 import {
@@ -24,7 +25,13 @@ import {
   FlavorConfigProperty,
   FlavorConfigSchema,
 } from '../../types/StackTypes';
+import { sanitizeErrorForAnalytics } from '../../utils/analytics';
+import { ANALYTICS_TRACK } from '../../utils/constants';
 import { ComponentDataProvider } from '../../views/activityBar/componentView/ComponentDataProvider';
+
+const trackEvent = (event: string, properties?: Record<string, unknown>) => {
+  EventBus.getInstance().emit(ANALYTICS_TRACK, { event, properties });
+};
 
 const ROOT_PATH = ['resources', 'components-form'];
 const CSS_FILE = 'components.css';
@@ -169,9 +176,19 @@ export default class ComponentForm extends WebviewBase {
         switch (message.command) {
           case 'register':
             success = await this.registerComponent(name, type, flavor, data);
+            trackEvent('component.registered', {
+              componentType: type,
+              flavor,
+              success,
+            });
             break;
           case 'update':
             success = await this.updateComponent(id, name, type, data);
+            trackEvent('component.updated', {
+              componentType: type,
+              flavor,
+              success,
+            });
             break;
         }
 

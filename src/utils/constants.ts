@@ -44,7 +44,12 @@ export const ITEMS_PER_PAGE_OPTIONS = ['5', '10', '15', '20', '25', '30', '35', 
 export const ANALYTICS_ENDPOINT = 'https://analytics.zenml.io/batch';
 export const ANALYTICS_SOURCE_CONTEXT = 'vscode';
 export const ANALYTICS_ANONYMOUS_ID_KEY = 'zenml.analyticsAnonymousId';
+export const ANALYTICS_FIRST_ACTIVATED_KEY = 'zenml.analyticsFirstActivatedAt';
 export const ANALYTICS_TRACK = 'analyticsTrack';
+
+// Analytics-related EventBus events (internal plumbing, not Segment event names)
+export const ENVIRONMENT_INFO_UPDATED = 'environmentInfoUpdated';
+export const SERVER_DISCONNECT_REQUESTED = 'serverDisconnectRequested';
 
 export const INITIAL_ZENML_SERVER_STATUS: ServerStatus = {
   isConnected: false,
