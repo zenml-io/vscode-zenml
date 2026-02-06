@@ -218,8 +218,8 @@ Command modules → trackEvent() → EventBus.emit(ANALYTICS_TRACK) → Analytic
 | `error.occurred` | LSClient | operation, phase, errorKind, errorSource, messageHash |
 | `stack.*` events | stack/cmds | Various (see code) |
 | `pipeline.*` events | pipelines/cmds | Various (see code) |
-| `component.registered` | ComponentsForm | componentType, flavor, success |
-| `component.updated` | ComponentsForm | componentType, flavor, success |
+| `component.registered` | ComponentsForm | componentType, flavor, success, (error taxonomy on failure) |
+| `component.updated` | ComponentsForm | componentType, flavor, success, (error taxonomy on failure) |
 | `component.deleted` | components/cmds | componentType, flavor, success, (error taxonomy on failure) |
 
 ### Common Properties (on every event)

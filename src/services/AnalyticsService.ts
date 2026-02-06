@@ -473,7 +473,16 @@ export class AnalyticsService {
       return;
     }
 
-    this.lastServerConnected = isConnected;
+    // First observation: record state but only emit if initially connected.
+    // An initial disconnected state is normal (no server yet) — not an "unexpected disconnect".
+    if (this.lastServerConnected === undefined) {
+      this.lastServerConnected = isConnected;
+      if (!isConnected) {
+        return;
+      }
+    } else {
+      this.lastServerConnected = isConnected;
+    }
 
     if (isConnected) {
       // Store the connection type so we can use it on disconnect

@@ -49,6 +49,7 @@ export class LSClient {
   private errorDedupe = new Map<string, number>();
   private readonly ERROR_DEDUPE_WINDOW_MS = 60_000;
   private emittedNotReadyThisSession = false;
+  private lastDedupePruneAt = 0;
 
   public restartLSPServerDebounced = debounce(async () => {
     await commands.executeCommand(`${PYTOOL_MODULE}.restart`);
@@ -261,6 +262,16 @@ export class LSClient {
       // Dedupe identical errors within the window
       const dedupeKey = `${operation}:${phase}:${sanitized.errorKind}:${sanitized.messageHash}`;
       const now = Date.now();
+
+      // Opportunistic prune: remove stale entries at most once per window interval
+      if (now - this.lastDedupePruneAt >= this.ERROR_DEDUPE_WINDOW_MS) {
+        this.lastDedupePruneAt = now;
+        for (const [key, ts] of this.errorDedupe) {
+          if (now - ts > this.ERROR_DEDUPE_WINDOW_MS) {
+            this.errorDedupe.delete(key);
+          }
+        }
+      }
       const lastEmitted = this.errorDedupe.get(dedupeKey);
       if (lastEmitted && now - lastEmitted < this.ERROR_DEDUPE_WINDOW_MS) {
         return;
