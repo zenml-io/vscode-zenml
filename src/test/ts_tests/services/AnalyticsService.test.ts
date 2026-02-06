@@ -12,14 +12,18 @@
 // permissions and limitations under the License.
 
 import * as assert from 'assert';
+import * as sinon from 'sinon';
 import { categorizeServerUrl, ServerConnectionType } from '../../../utils/global';
 import {
   ANALYTICS_ENDPOINT,
   ANALYTICS_SOURCE_CONTEXT,
   ANALYTICS_ANONYMOUS_ID_KEY,
   ANALYTICS_TRACK,
+  SERVER_STATUS_UPDATED,
+  SERVER_DISCONNECT_REQUESTED,
 } from '../../../utils/constants';
 import { AnalyticsService } from '../../../services/AnalyticsService';
+import { EventBus } from '../../../services/EventBus';
 
 /**
  * Tests for the categorizeServerUrl utility function.
@@ -254,5 +258,172 @@ suite('ServerConnectionType', () => {
       const result: ServerConnectionType = categorizeServerUrl(input);
       assert.strictEqual(result, expected);
     });
+  });
+});
+
+/**
+ * Tests for AnalyticsService server status tracking behavior.
+ * These test the handleServerStatusChange logic via the EventBus integration path.
+ *
+ * Strategy: We create a fresh AnalyticsService instance per test, register a real EventBus,
+ * and spy on the track() method. Since track() has an enablement check, we stub isEnabled
+ * to return true via the private field access pattern.
+ */
+suite('AnalyticsService server status tracking', () => {
+  let sandbox: sinon.SinonSandbox;
+  let service: AnalyticsService;
+  let eventBus: EventBus;
+  let trackSpy: sinon.SinonSpy;
+  let clock: sinon.SinonFakeTimers;
+
+  setup(() => {
+    sandbox = sinon.createSandbox();
+    clock = sinon.useFakeTimers({ now: 1000000 });
+
+    // Reset singleton to get a fresh instance
+    (AnalyticsService as any).instance = undefined;
+    service = AnalyticsService.getInstance();
+
+    // Stub isEnabled to return true (bypass telemetry/settings checks)
+    sandbox.stub(service as any, 'isEnabled').returns(true);
+    // Stub getOrCreateAnonymousId to return a fixed ID
+    sandbox.stub(service as any, 'getOrCreateAnonymousId').returns('test-user-id');
+
+    // Spy on track to capture analytics emissions
+    trackSpy = sandbox.spy(service, 'track');
+
+    // Create and register a real EventBus
+    eventBus = new EventBus();
+    service.registerEventBus(eventBus);
+  });
+
+  teardown(() => {
+    clock.restore();
+    sandbox.restore();
+    // Reset singleton
+    (AnalyticsService as any).instance = undefined;
+  });
+
+  test('initial disconnected state does NOT emit server.disconnected', () => {
+    // First status update arrives with isConnected: false (normal on startup)
+    eventBus.emit(SERVER_STATUS_UPDATED, { isConnected: false, serverUrl: '' });
+
+    // track() may be called, but not with 'server.disconnected'
+    const disconnectedCalls = trackSpy
+      .getCalls()
+      .filter(call => call.args[0] === 'server.disconnected');
+    assert.strictEqual(
+      disconnectedCalls.length,
+      0,
+      'Should not emit server.disconnected on initial disconnected state'
+    );
+  });
+
+  test('initial connected state DOES emit server.connected', () => {
+    eventBus.emit(SERVER_STATUS_UPDATED, {
+      isConnected: true,
+      serverUrl: 'http://localhost:8237',
+    });
+
+    const connectedCalls = trackSpy.getCalls().filter(call => call.args[0] === 'server.connected');
+    assert.strictEqual(connectedCalls.length, 1, 'Should emit server.connected on initial connect');
+    assert.strictEqual(connectedCalls[0].args[1].connectionType, 'local');
+  });
+
+  test('disconnect within 10s of intent signal → user_initiated', () => {
+    // Connect first (so disconnect is a real transition)
+    eventBus.emit(SERVER_STATUS_UPDATED, {
+      isConnected: true,
+      serverUrl: 'http://localhost:8237',
+    });
+
+    // User initiates disconnect
+    eventBus.emit(SERVER_DISCONNECT_REQUESTED, { atMs: Date.now() });
+
+    // Advance clock by 5 seconds (within 10s window)
+    clock.tick(5000);
+
+    // Disconnect arrives
+    eventBus.emit(SERVER_STATUS_UPDATED, { isConnected: false, serverUrl: '' });
+
+    const disconnectedCalls = trackSpy
+      .getCalls()
+      .filter(call => call.args[0] === 'server.disconnected');
+    assert.strictEqual(disconnectedCalls.length, 1);
+    assert.strictEqual(disconnectedCalls[0].args[1].disconnectReason, 'user_initiated');
+  });
+
+  test('disconnect outside 10s of intent signal → unexpected', () => {
+    // Connect first
+    eventBus.emit(SERVER_STATUS_UPDATED, {
+      isConnected: true,
+      serverUrl: 'http://localhost:8237',
+    });
+
+    // User initiates disconnect
+    eventBus.emit(SERVER_DISCONNECT_REQUESTED, { atMs: Date.now() });
+
+    // Advance clock by 15 seconds (outside 10s window)
+    clock.tick(15000);
+
+    // Disconnect arrives
+    eventBus.emit(SERVER_STATUS_UPDATED, { isConnected: false, serverUrl: '' });
+
+    const disconnectedCalls = trackSpy
+      .getCalls()
+      .filter(call => call.args[0] === 'server.disconnected');
+    assert.strictEqual(disconnectedCalls.length, 1);
+    assert.strictEqual(disconnectedCalls[0].args[1].disconnectReason, 'unexpected');
+  });
+
+  test('disconnect without any intent signal → unexpected', () => {
+    // Connect first
+    eventBus.emit(SERVER_STATUS_UPDATED, {
+      isConnected: true,
+      serverUrl: 'https://api.zenml.io',
+    });
+
+    // Disconnect without any disconnect request signal
+    eventBus.emit(SERVER_STATUS_UPDATED, { isConnected: false, serverUrl: '' });
+
+    const disconnectedCalls = trackSpy
+      .getCalls()
+      .filter(call => call.args[0] === 'server.disconnected');
+    assert.strictEqual(disconnectedCalls.length, 1);
+    assert.strictEqual(disconnectedCalls[0].args[1].disconnectReason, 'unexpected');
+    assert.strictEqual(disconnectedCalls[0].args[1].connectionType, 'cloud');
+  });
+
+  test('duplicate status updates are deduplicated', () => {
+    eventBus.emit(SERVER_STATUS_UPDATED, {
+      isConnected: true,
+      serverUrl: 'http://localhost:8237',
+    });
+    eventBus.emit(SERVER_STATUS_UPDATED, {
+      isConnected: true,
+      serverUrl: 'http://localhost:8237',
+    });
+
+    const connectedCalls = trackSpy.getCalls().filter(call => call.args[0] === 'server.connected');
+    assert.strictEqual(connectedCalls.length, 1, 'Should deduplicate duplicate status updates');
+  });
+
+  test('connection type is preserved from connect time for disconnect', () => {
+    // Connect to cloud server
+    eventBus.emit(SERVER_STATUS_UPDATED, {
+      isConnected: true,
+      serverUrl: 'https://api.zenml.io',
+    });
+
+    // Disconnect — URL may have reverted to unknown at this point
+    eventBus.emit(SERVER_DISCONNECT_REQUESTED, { atMs: Date.now() });
+    eventBus.emit(SERVER_STATUS_UPDATED, { isConnected: false, serverUrl: '' });
+
+    const disconnectedCalls = trackSpy
+      .getCalls()
+      .filter(call => call.args[0] === 'server.disconnected');
+    assert.strictEqual(disconnectedCalls.length, 1);
+    // Should use the stored connection type from connect time, not the current empty URL
+    assert.strictEqual(disconnectedCalls[0].args[1].connectionType, 'cloud');
   });
 });

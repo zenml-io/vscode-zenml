@@ -43,7 +43,10 @@ export type ServerStatusInfoResponse =
   | ZenServerDetails
   | VersionMismatchError
   | ErrorMessageResponse;
-export type ConnectServerResponse = RestServerConnectionResponse | ErrorMessageResponse;
+export type ConnectServerResponse =
+  | RestServerConnectionResponse
+  | SuccessMessageResponse
+  | ErrorMessageResponse;
 
 /***** Stack Response Types *****/
 export interface ActiveStackResponse {

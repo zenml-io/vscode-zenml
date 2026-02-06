@@ -16,6 +16,7 @@ import * as vscode from 'vscode';
 import { traceError, traceInfo } from '../../common/log/logging';
 import Panels from '../../common/panels';
 import WebviewBase from '../../common/WebviewBase';
+import { EventBus } from '../../services/EventBus';
 import { LSClient } from '../../services/LSClient';
 import { JsonValue } from '../../types/JsonTypes';
 import {
@@ -24,7 +25,17 @@ import {
   FlavorConfigProperty,
   FlavorConfigSchema,
 } from '../../types/StackTypes';
+import { SanitizedAnalyticsError, sanitizeErrorForAnalytics } from '../../utils/analytics';
+import { ANALYTICS_TRACK } from '../../utils/constants';
 import { ComponentDataProvider } from '../../views/activityBar/componentView/ComponentDataProvider';
+
+const trackEvent = (event: string, properties?: Record<string, unknown>) => {
+  EventBus.getInstance().emit(ANALYTICS_TRACK, { event, properties });
+};
+
+type ComponentOperationResult =
+  | { success: true }
+  | { success: false; errorTaxonomy: SanitizedAnalyticsError };
 
 const ROOT_PATH = ['resources', 'components-form'];
 const CSS_FILE = 'components.css';
@@ -158,7 +169,10 @@ export default class ComponentForm extends WebviewBase {
   private attachListener(panel: vscode.WebviewPanel) {
     panel.webview.onDidReceiveMessage(
       async (message: { command: string; data: { [key: string]: string } }) => {
-        let success = false;
+        let result: ComponentOperationResult = {
+          success: false,
+          errorTaxonomy: {} as SanitizedAnalyticsError,
+        };
         const data = message.data;
         const { name, flavor, type, id } = data;
         delete data.name;
@@ -168,14 +182,26 @@ export default class ComponentForm extends WebviewBase {
 
         switch (message.command) {
           case 'register':
-            success = await this.registerComponent(name, type, flavor, data);
+            result = await this.registerComponent(name, type, flavor, data);
+            trackEvent('component.registered', {
+              componentType: type,
+              flavor,
+              success: result.success,
+              ...(!result.success ? result.errorTaxonomy : {}),
+            });
             break;
           case 'update':
-            success = await this.updateComponent(id, name, type, data);
+            result = await this.updateComponent(id, name, type, data);
+            trackEvent('component.updated', {
+              componentType: type,
+              flavor,
+              success: result.success,
+              ...(!result.success ? result.errorTaxonomy : {}),
+            });
             break;
         }
 
-        if (!success) {
+        if (!result.success) {
           panel.webview.postMessage({ command: 'fail' });
           return;
         }
@@ -191,7 +217,7 @@ export default class ComponentForm extends WebviewBase {
     type: string,
     flavor: string,
     data: object
-  ): Promise<boolean> {
+  ): Promise<ComponentOperationResult> {
     const lsClient = LSClient.getInstance();
     try {
       const resp = await vscode.window.withProgress(
@@ -214,7 +240,14 @@ export default class ComponentForm extends WebviewBase {
         vscode.window.showErrorMessage(`Unable to register component: "${resp.error}"`);
         console.error(resp.error);
         traceError(resp.error);
-        return false;
+        return {
+          success: false,
+          errorTaxonomy: sanitizeErrorForAnalytics(resp.error, {
+            operation: 'registerComponent',
+            phase: 'response',
+            isResponseError: true,
+          }),
+        };
       }
 
       traceInfo(resp.message);
@@ -222,10 +255,16 @@ export default class ComponentForm extends WebviewBase {
       vscode.window.showErrorMessage(`Unable to register component: "${e}"`);
       console.error(e);
       traceError(e);
-      return false;
+      return {
+        success: false,
+        errorTaxonomy: sanitizeErrorForAnalytics(e, {
+          operation: 'registerComponent',
+          phase: 'request',
+        }),
+      };
     }
 
-    return true;
+    return { success: true };
   }
 
   private async updateComponent(
@@ -233,7 +272,7 @@ export default class ComponentForm extends WebviewBase {
     name: string,
     type: string,
     data: object
-  ): Promise<boolean> {
+  ): Promise<ComponentOperationResult> {
     const lsClient = LSClient.getInstance();
     try {
       const resp = await vscode.window.withProgress(
@@ -251,7 +290,14 @@ export default class ComponentForm extends WebviewBase {
         vscode.window.showErrorMessage(`Unable to update component: "${resp.error}"`);
         console.error(resp.error);
         traceError(resp.error);
-        return false;
+        return {
+          success: false,
+          errorTaxonomy: sanitizeErrorForAnalytics(resp.error, {
+            operation: 'updateComponent',
+            phase: 'response',
+            isResponseError: true,
+          }),
+        };
       }
 
       traceInfo(resp.message);
@@ -259,10 +305,16 @@ export default class ComponentForm extends WebviewBase {
       vscode.window.showErrorMessage(`Unable to update component: "${e}"`);
       console.error(e);
       traceError(e);
-      return false;
+      return {
+        success: false,
+        errorTaxonomy: sanitizeErrorForAnalytics(e, {
+          operation: 'updateComponent',
+          phase: 'request',
+        }),
+      };
     }
 
-    return true;
+    return { success: true };
   }
 
   private toFormFields(configSchema?: FlavorConfigSchema) {

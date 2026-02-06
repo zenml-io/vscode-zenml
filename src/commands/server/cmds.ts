@@ -18,8 +18,9 @@ import {
   GenericLSClientResponse,
   RestServerConnectionResponse,
 } from '../../types/LSClientResponseTypes';
-import { ANALYTICS_TRACK } from '../../utils/constants';
-import { updateServerUrlAndToken } from '../../utils/global';
+import { sanitizeErrorForAnalytics } from '../../utils/analytics';
+import { ANALYTICS_TRACK, SERVER_DISCONNECT_REQUESTED } from '../../utils/constants';
+import { categorizeServerUrl, updateServerUrlAndToken } from '../../utils/global';
 import { refreshUtils } from '../../utils/refresh';
 import { ServerDataProvider } from '../../views/activityBar';
 import { promptAndStoreServerUrl } from './utils';
@@ -116,7 +117,7 @@ const connectServer = async (): Promise<boolean> => {
     return false;
   }
 
-  let url: string;
+  let url: string | undefined;
   let connectionType: string;
   let options: object = {};
 
@@ -150,12 +151,17 @@ const connectServer = async (): Promise<boolean> => {
       async () => {
         try {
           const lsClient = LSClient.getInstance();
-          const result = await lsClient.sendLsClientRequest<ConnectServerResponse>('connect', [
-            connectionType,
-            url,
-            options,
-            true, // verify_ssl
-          ]);
+
+          // Build connect args: local sends [type, options], remote sends [type, url, options, verifySsl]
+          const connectArgs =
+            connectionType === 'local'
+              ? [connectionType, options]
+              : [connectionType, url, options, true];
+
+          const result = await lsClient.sendLsClientRequest<ConnectServerResponse>(
+            'connect',
+            connectArgs
+          );
 
           if (result && 'error' in result) {
             throw new Error(result.error);
@@ -176,12 +182,31 @@ const connectServer = async (): Promise<boolean> => {
           vscode.window.showInformationMessage('Connected to server');
           trackEvent('server.connect_command', { connectionType, success: true });
           resolve(true);
-        } catch (error) {
+        } catch (error: unknown) {
           console.error('Failed to connect to ZenML server:', error);
           trackEvent('server.connect_command', { connectionType, success: false });
 
+          // Emit dedicated connection failure event with error taxonomy
+          const serverUrlCategory =
+            connectionType === 'remote' ? categorizeServerUrl(url) : 'local';
+          trackEvent('server.connection_failed', {
+            connectionType,
+            serverUrlCategory,
+            docker:
+              connectionType === 'local'
+                ? Boolean((options as Record<string, unknown>).docker)
+                : undefined,
+            portProvided:
+              connectionType === 'local'
+                ? (options as Record<string, unknown>).port !== null &&
+                  (options as Record<string, unknown>).port !== undefined
+                : undefined,
+            ...sanitizeErrorForAnalytics(error, { operation: 'connect', phase: 'request' }),
+          });
+
           // Show error in tree view instead of notification
-          vscode.window.showErrorMessage(`Failed to connect to ZenML server: ${error}`);
+          const message = error instanceof Error ? error.message : String(error);
+          vscode.window.showErrorMessage(`Failed to connect to ZenML server: ${message}`);
           resolve(false);
         }
       }
@@ -195,6 +220,9 @@ const connectServer = async (): Promise<boolean> => {
  * @returns {Promise<void>} Resolves after successfully disconnecting from the server.
  */
 const disconnectServer = async (): Promise<void> => {
+  // Signal disconnect intent so AnalyticsService can classify the disconnect reason
+  EventBus.getInstance().emit(SERVER_DISCONNECT_REQUESTED, { atMs: Date.now() });
+
   await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
