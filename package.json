@@ -580,7 +580,7 @@
     "sinon": "^21.0.1",
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3",
+    "typescript": "^6.0.2",
     "typescript-eslint": "^8.54.0",
     "webpack": "^5.99.9",
     "webpack-cli": "^6.0.1"
