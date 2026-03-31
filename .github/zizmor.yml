@@ -10,3 +10,16 @@ rules:
       - release.yml:74        # VERSION from steps.get_version.outputs.version
       - test-publish.yml:51   # version from steps.get_version.outputs.version
       - test-publish.yml:70   # VERSION from steps.get_version.outputs.version
+
+  # VSCE_PAT is a repo-level secret used only in the release workflow, which
+  # already runs only on release events. Adding a GitHub Environment is a
+  # worthwhile hardening step but tracked separately.
+  secrets-outside-env:
+    ignore:
+      - release.yml:53        # VSCE_PAT used in publish step
+
+  # ncipollo/release-action handles artifact upload + body update atomically;
+  # replacing with gh release is a nice cleanup but not a security issue.
+  superfluous-actions:
+    ignore:
+      - release.yml:77        # ncipollo/release-action for GitHub Release
