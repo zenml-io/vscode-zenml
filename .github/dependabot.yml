@@ -6,13 +6,16 @@
 version: 2
 updates:
   - package-ecosystem: npm
-    directory: /  # Location of package manifests
+    directory: /
     schedule:
       interval: weekly
     groups:
-      all-dependencies:
+      minor-and-patch:
         patterns:
-          - '*'  # Groups ALL dependency updates into a single PR
+          - '*'
+        update-types:
+          - minor
+          - patch
     cooldown:
       default-days: 7
   - package-ecosystem: github-actions
@@ -22,6 +25,6 @@ updates:
     groups:
       all-actions:
         patterns:
-          - '*'  # Groups ALL GitHub Actions updates into a single PR
+          - '*'
     cooldown:
       default-days: 7
