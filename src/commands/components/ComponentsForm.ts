@@ -16,7 +16,6 @@ import * as vscode from 'vscode';
 import { traceError, traceInfo } from '../../common/log/logging';
 import Panels from '../../common/panels';
 import WebviewBase from '../../common/WebviewBase';
-import { EventBus } from '../../services/EventBus';
 import { LSClient } from '../../services/LSClient';
 import { JsonValue } from '../../types/JsonTypes';
 import {
@@ -25,13 +24,13 @@ import {
   FlavorConfigProperty,
   FlavorConfigSchema,
 } from '../../types/StackTypes';
-import { SanitizedAnalyticsError, sanitizeErrorForAnalytics } from '../../utils/analytics';
-import { ANALYTICS_TRACK } from '../../utils/constants';
+import {
+  isErrorLikeResponse,
+  SanitizedAnalyticsError,
+  sanitizeErrorForAnalytics,
+  trackEvent,
+} from '../../utils/analytics';
 import { ComponentDataProvider } from '../../views/activityBar/componentView/ComponentDataProvider';
-
-const trackEvent = (event: string, properties?: Record<string, unknown>) => {
-  EventBus.getInstance().emit(ANALYTICS_TRACK, { event, properties });
-};
 
 type ComponentOperationResult =
   | { success: true }
@@ -169,10 +168,7 @@ export default class ComponentForm extends WebviewBase {
   private attachListener(panel: vscode.WebviewPanel) {
     panel.webview.onDidReceiveMessage(
       async (message: { command: string; data: { [key: string]: string } }) => {
-        let result: ComponentOperationResult = {
-          success: false,
-          errorTaxonomy: {} as SanitizedAnalyticsError,
-        };
+        let result: ComponentOperationResult | undefined;
         const data = message.data;
         const { name, flavor, type, id } = data;
         delete data.name;
@@ -201,7 +197,7 @@ export default class ComponentForm extends WebviewBase {
             break;
         }
 
-        if (!result.success) {
+        if (!result || !result.success) {
           panel.webview.postMessage({ command: 'fail' });
           return;
         }
@@ -218,53 +214,12 @@ export default class ComponentForm extends WebviewBase {
     flavor: string,
     data: object
   ): Promise<ComponentOperationResult> {
-    const lsClient = LSClient.getInstance();
-    try {
-      const resp = await vscode.window.withProgress(
-        {
-          location: vscode.ProgressLocation.Notification,
-          title: 'Registering component...',
-          cancellable: false,
-        },
-        async () => {
-          return await lsClient.sendLsClientRequest('registerComponent', [
-            type,
-            flavor,
-            name,
-            data,
-          ]);
-        }
-      );
-
-      if ('error' in resp) {
-        vscode.window.showErrorMessage(`Unable to register component: "${resp.error}"`);
-        console.error(resp.error);
-        traceError(resp.error);
-        return {
-          success: false,
-          errorTaxonomy: sanitizeErrorForAnalytics(resp.error, {
-            operation: 'registerComponent',
-            phase: 'response',
-            isResponseError: true,
-          }),
-        };
-      }
-
-      traceInfo(resp.message);
-    } catch (e) {
-      vscode.window.showErrorMessage(`Unable to register component: "${e}"`);
-      console.error(e);
-      traceError(e);
-      return {
-        success: false,
-        errorTaxonomy: sanitizeErrorForAnalytics(e, {
-          operation: 'registerComponent',
-          phase: 'request',
-        }),
-      };
-    }
-
-    return { success: true };
+    return this.executeComponentOperation('registerComponent', 'Registering', [
+      type,
+      flavor,
+      name,
+      data,
+    ]);
   }
 
   private async updateComponent(
@@ -273,42 +228,50 @@ export default class ComponentForm extends WebviewBase {
     type: string,
     data: object
   ): Promise<ComponentOperationResult> {
+    return this.executeComponentOperation('updateComponent', 'Updating', [id, type, name, data]);
+  }
+
+  private async executeComponentOperation(
+    command: string,
+    actionLabel: string,
+    args: unknown[]
+  ): Promise<ComponentOperationResult> {
     const lsClient = LSClient.getInstance();
     try {
       const resp = await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
-          title: 'Updating component...',
+          title: `${actionLabel} component...`,
           cancellable: false,
         },
-        async () => {
-          return await lsClient.sendLsClientRequest('updateComponent', [id, type, name, data]);
-        }
+        async () => lsClient.sendLsClientRequest(command, args)
       );
 
-      if ('error' in resp) {
-        vscode.window.showErrorMessage(`Unable to update component: "${resp.error}"`);
+      if (isErrorLikeResponse(resp) && resp.error) {
+        vscode.window.showErrorMessage(
+          `Unable to ${actionLabel.toLowerCase()} component: "${resp.error}"`
+        );
         console.error(resp.error);
         traceError(resp.error);
         return {
           success: false,
           errorTaxonomy: sanitizeErrorForAnalytics(resp.error, {
-            operation: 'updateComponent',
+            operation: command,
             phase: 'response',
             isResponseError: true,
           }),
         };
       }
 
-      traceInfo(resp.message);
+      traceInfo((resp as { message?: string }).message);
     } catch (e) {
-      vscode.window.showErrorMessage(`Unable to update component: "${e}"`);
+      vscode.window.showErrorMessage(`Unable to ${actionLabel.toLowerCase()} component: "${e}"`);
       console.error(e);
       traceError(e);
       return {
         success: false,
         errorTaxonomy: sanitizeErrorForAnalytics(e, {
-          operation: 'updateComponent',
+          operation: command,
           phase: 'request',
         }),
       };

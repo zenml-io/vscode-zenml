@@ -241,9 +241,9 @@ When adding new error tracking, always use `sanitizeErrorForAnalytics()`.
 
 ### Adding New Analytics Events
 
-1. Import `EventBus` and `ANALYTICS_TRACK` from constants
-2. Create a `trackEvent` helper (see `server/cmds.ts` for pattern)
-3. Emit with `trackEvent('domain.action', { ...properties })`
+1. Import `trackEvent` from `src/utils/analytics.ts`
+2. Call `trackEvent('domain.action', { ...properties })` at appropriate points
+3. For error properties, use `sanitizeErrorForAnalytics()` (also from `src/utils/analytics.ts`)
 4. Never include raw URLs, paths, names, or error messages — use `categorizeServerUrl()` and `sanitizeErrorForAnalytics()` for privacy
 
 ### Local Testing

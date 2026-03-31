@@ -84,8 +84,7 @@ export async function deactivate(): Promise<void> {
   const sessionStart = analytics.getSessionStartMs();
   const sessionDurationMs = sessionStart ? Date.now() - sessionStart : undefined;
   analytics.track('extension.deactivated', { sessionDurationMs });
-  await analytics.flush('deactivate');
-  await analytics.dispose();
+  await analytics.dispose(); // dispose() flushes remaining events
 
   const lsClient = LSClient.getInstance().getLanguageClient();
 

@@ -18,16 +18,12 @@ import {
   GenericLSClientResponse,
   RestServerConnectionResponse,
 } from '../../types/LSClientResponseTypes';
-import { sanitizeErrorForAnalytics } from '../../utils/analytics';
-import { ANALYTICS_TRACK, SERVER_DISCONNECT_REQUESTED } from '../../utils/constants';
+import { extractErrorMessage, sanitizeErrorForAnalytics, trackEvent } from '../../utils/analytics';
+import { SERVER_DISCONNECT_REQUESTED } from '../../utils/constants';
 import { categorizeServerUrl, updateServerUrlAndToken } from '../../utils/global';
 import { refreshUtils } from '../../utils/refresh';
 import { ServerDataProvider } from '../../views/activityBar';
 import { promptAndStoreServerUrl } from './utils';
-
-const trackEvent = (event: string, properties?: Record<string, unknown>) => {
-  EventBus.getInstance().emit(ANALYTICS_TRACK, { event, properties });
-};
 
 /**
  * Shows a quick pick to select the type of ZenML server connection.
@@ -189,17 +185,14 @@ const connectServer = async (): Promise<boolean> => {
           // Emit dedicated connection failure event with error taxonomy
           const serverUrlCategory =
             connectionType === 'remote' ? categorizeServerUrl(url) : 'local';
+          const opts = options as Record<string, unknown>;
           trackEvent('server.connection_failed', {
             connectionType,
             serverUrlCategory,
-            docker:
-              connectionType === 'local'
-                ? Boolean((options as Record<string, unknown>).docker)
-                : undefined,
+            docker: connectionType === 'local' ? Boolean(opts.docker) : undefined,
             portProvided:
               connectionType === 'local'
-                ? (options as Record<string, unknown>).port !== null &&
-                  (options as Record<string, unknown>).port !== undefined
+                ? opts.port !== null && opts.port !== undefined
                 : undefined,
             ...sanitizeErrorForAnalytics(error, { operation: 'connect', phase: 'request' }),
           });
@@ -240,12 +233,12 @@ const disconnectServer = async (): Promise<void> => {
         // Show success message in tree view
         vscode.window.showInformationMessage('Disconnected from server');
         trackEvent('server.disconnect_command', { success: true });
-      } catch (error: any) {
-        console.error('Failed to disconnect from ZenML server:', error);
+      } catch (error: unknown) {
+        const message = extractErrorMessage(error);
+        console.error('Failed to disconnect from ZenML server:', message);
         trackEvent('server.disconnect_command', { success: false });
 
-        // Show error in tree view instead of notification
-        vscode.window.showErrorMessage(`Failed to disconnect from ZenML server: ${error}`);
+        vscode.window.showErrorMessage(`Failed to disconnect from ZenML server: ${message}`);
       }
     }
   );

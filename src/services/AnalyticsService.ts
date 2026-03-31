@@ -78,21 +78,32 @@ export class AnalyticsService {
   private lastServerConnected?: boolean;
   private telemetryChangeDisposable?: vscode.Disposable;
 
-  // Session tracking (Gap #6)
+  // Session tracking
   private sessionId?: string;
   private sessionStartMs?: number;
 
-  // Environment info cache (Gap #5)
+  // Environment info included as common properties on every event
   private environmentInfo: {
     pythonVersion?: string;
     zenmlVersion?: string;
     zenmlInstalled?: boolean;
   } = {};
 
-  // Disconnect classification (Gap #3)
+  // Disconnect reason classification: stores connection type from connect time
+  // and uses an intent signal to distinguish user-initiated vs unexpected disconnects
   private lastConnectedType?: ServerConnectionType;
   private lastDisconnectRequestedAtMs?: number;
   private readonly DISCONNECT_INTENT_WINDOW_MS = 10_000;
+
+  // Stored listener references for cleanup in dispose()
+  private trackListener?: (payload: AnalyticsTrackPayload) => void;
+  private serverStatusListener?: (status: { isConnected: boolean; serverUrl?: string }) => void;
+  private envInfoListener?: (info: {
+    pythonVersion?: string;
+    zenmlVersion?: string;
+    zenmlInstalled?: boolean;
+  }) => void;
+  private disconnectRequestListener?: (payload: { atMs: number }) => void;
 
   // Configuration
   private readonly MAX_QUEUE_SIZE = 200;
@@ -187,15 +198,10 @@ export class AnalyticsService {
     zenmlVersion?: string;
     zenmlInstalled?: boolean;
   }): void {
-    if (info.pythonVersion !== undefined) {
-      this.environmentInfo.pythonVersion = info.pythonVersion;
-    }
-    if (info.zenmlVersion !== undefined) {
-      this.environmentInfo.zenmlVersion = info.zenmlVersion;
-    }
-    if (info.zenmlInstalled !== undefined) {
-      this.environmentInfo.zenmlInstalled = info.zenmlInstalled;
-    }
+    Object.assign(
+      this.environmentInfo,
+      Object.fromEntries(Object.entries(info).filter(([, v]) => v !== undefined))
+    );
   }
 
   /**
@@ -205,29 +211,30 @@ export class AnalyticsService {
   public registerEventBus(eventBus: EventBus): void {
     this.eventBus = eventBus;
 
-    // Subscribe to generic analytics track events
-    eventBus.on(ANALYTICS_TRACK, (payload: AnalyticsTrackPayload) => {
+    this.trackListener = (payload: AnalyticsTrackPayload) => {
       this.track(payload.event, payload.properties);
-    });
+    };
+    eventBus.on(ANALYTICS_TRACK, this.trackListener);
 
-    // Subscribe to server status changes for connection tracking
     // Note: ServerDataProvider emits 'serverUrl', not 'url'
-    eventBus.on(SERVER_STATUS_UPDATED, (status: { isConnected: boolean; serverUrl?: string }) => {
+    this.serverStatusListener = (status: { isConnected: boolean; serverUrl?: string }) => {
       this.handleServerStatusChange(status);
-    });
+    };
+    eventBus.on(SERVER_STATUS_UPDATED, this.serverStatusListener);
 
-    // Subscribe to environment info updates (python/zenml version)
-    eventBus.on(
-      ENVIRONMENT_INFO_UPDATED,
-      (info: { pythonVersion?: string; zenmlVersion?: string; zenmlInstalled?: boolean }) => {
-        this.setEnvironmentInfo(info);
-      }
-    );
+    this.envInfoListener = (info: {
+      pythonVersion?: string;
+      zenmlVersion?: string;
+      zenmlInstalled?: boolean;
+    }) => {
+      this.setEnvironmentInfo(info);
+    };
+    eventBus.on(ENVIRONMENT_INFO_UPDATED, this.envInfoListener);
 
-    // Subscribe to disconnect intent signals for disconnect reason classification
-    eventBus.on(SERVER_DISCONNECT_REQUESTED, (payload: { atMs: number }) => {
+    this.disconnectRequestListener = (payload: { atMs: number }) => {
       this.lastDisconnectRequestedAtMs = payload.atMs;
-    });
+    };
+    eventBus.on(SERVER_DISCONNECT_REQUESTED, this.disconnectRequestListener);
   }
 
   /**
@@ -265,15 +272,9 @@ export class AnalyticsService {
           platform: process.platform,
           timestamp: new Date().toISOString(),
           sessionId: this.sessionId,
-          ...(this.environmentInfo.pythonVersion
-            ? { pythonVersion: this.environmentInfo.pythonVersion }
-            : {}),
-          ...(this.environmentInfo.zenmlVersion
-            ? { zenmlVersion: this.environmentInfo.zenmlVersion }
-            : {}),
-          ...(this.environmentInfo.zenmlInstalled !== undefined
-            ? { zenmlInstalled: this.environmentInfo.zenmlInstalled }
-            : {}),
+          ...Object.fromEntries(
+            Object.entries(this.environmentInfo).filter(([, v]) => v !== undefined)
+          ),
         },
         debug: this.DEBUG_MODE,
       };
@@ -289,8 +290,9 @@ export class AnalyticsService {
       if (this.queue.length >= this.MAX_BATCH_SIZE) {
         this.flush('threshold').catch(() => {});
       }
-    } catch {
+    } catch (e) {
       // Best effort - never throw
+      console.debug('[Analytics] track() failed:', e);
     }
   }
 
@@ -355,6 +357,26 @@ export class AnalyticsService {
 
     // Final flush attempt
     await this.flush('dispose');
+
+    // Unsubscribe event listeners
+    if (this.eventBus) {
+      if (this.trackListener) {
+        this.eventBus.off(ANALYTICS_TRACK, this.trackListener);
+        this.trackListener = undefined;
+      }
+      if (this.serverStatusListener) {
+        this.eventBus.off(SERVER_STATUS_UPDATED, this.serverStatusListener);
+        this.serverStatusListener = undefined;
+      }
+      if (this.envInfoListener) {
+        this.eventBus.off(ENVIRONMENT_INFO_UPDATED, this.envInfoListener);
+        this.envInfoListener = undefined;
+      }
+      if (this.disconnectRequestListener) {
+        this.eventBus.off(SERVER_DISCONNECT_REQUESTED, this.disconnectRequestListener);
+        this.disconnectRequestListener = undefined;
+      }
+    }
 
     // Clear state
     this.queue = [];
@@ -431,7 +453,7 @@ export class AnalyticsService {
       // Persist it (async, but we don't wait)
       this.context.globalState.update(ANALYTICS_ANONYMOUS_ID_KEY, id).then(
         () => {},
-        () => {}
+        err => console.debug('[Analytics] Failed to persist anonymous ID:', err)
       );
     }
 

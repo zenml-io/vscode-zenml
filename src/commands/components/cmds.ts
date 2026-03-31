@@ -14,18 +14,12 @@ import * as vscode from 'vscode';
 
 import { getFlavor, getFlavorsOfType } from '../../common/api';
 import { traceError, traceInfo } from '../../common/log/logging';
-import { EventBus } from '../../services/EventBus';
 import { LSClient } from '../../services/LSClient';
 import { ComponentTypesResponse, Flavor } from '../../types/StackTypes';
-import { sanitizeErrorForAnalytics } from '../../utils/analytics';
-import { ANALYTICS_TRACK } from '../../utils/constants';
+import { sanitizeErrorForAnalytics, trackEvent } from '../../utils/analytics';
 import { ComponentDataProvider } from '../../views/activityBar/componentView/ComponentDataProvider';
 import { StackComponentTreeItem } from '../../views/activityBar/componentView/ComponentTreeItems';
 import ComponentForm from './ComponentsForm';
-
-const trackEvent = (event: string, properties?: Record<string, unknown>) => {
-  EventBus.getInstance().emit(ANALYTICS_TRACK, { event, properties });
-};
 
 /**
  * Refreshes the stack component view.

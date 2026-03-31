@@ -18,6 +18,11 @@ import { GenericLSClientResponse, VersionMismatchError } from '../types/LSClient
 import { LSNotificationIsZenMLInstalled } from '../types/LSNotificationTypes';
 import { ConfigUpdateDetails } from '../types/ServerInfoTypes';
 import {
+  extractErrorMessage,
+  isErrorLikeResponse,
+  sanitizeErrorForAnalytics,
+} from '../utils/analytics';
+import {
   ANALYTICS_TRACK,
   ENVIRONMENT_INFO_UPDATED,
   LSCLIENT_READY,
@@ -29,7 +34,6 @@ import {
   PYTOOL_MODULE,
   REFRESH_ENVIRONMENT_VIEW,
 } from '../utils/constants';
-import { isErrorLikeResponse, sanitizeErrorForAnalytics } from '../utils/analytics';
 import { getZenMLServerUrl, updateServerUrlAndToken } from '../utils/global';
 import { debounce } from '../utils/refresh';
 import { EventBus } from './EventBus';
@@ -220,17 +224,17 @@ export class LSClient {
       });
 
       // Track error responses from the Python backend
-      if (isErrorLikeResponse(result)) {
+      if (isErrorLikeResponse(result) && result.error) {
         this.emitErrorOccurred(command, 'response', result.error);
       }
 
       return result as T;
-    } catch (error: any) {
-      const errorMessage = error.message;
-      console.error(`Failed to execute command ${command}:`, errorMessage || error);
+    } catch (error: unknown) {
+      const errorMessage = extractErrorMessage(error);
+      console.error(`Failed to execute command ${command}:`, errorMessage);
       this.emitErrorOccurred(command, 'request', error);
       if (errorMessage.includes('ValidationError') || errorMessage.includes('RuntimeError')) {
-        return this.handleKnownErrors(error);
+        return this.handleKnownErrors(errorMessage);
       }
       return { error: errorMessage } as T;
     }
@@ -286,16 +290,16 @@ export class LSClient {
           ...sanitized,
         },
       });
-    } catch {
+    } catch (e) {
       // Best effort — never break the LSP flow for analytics
+      console.debug('[Analytics] emitErrorOccurred failed:', e);
     }
   }
 
-  private handleKnownErrors<T = VersionMismatchError>(error: any): T {
+  private handleKnownErrors<T = VersionMismatchError>(errorMessage: string): T {
     let errorType = 'Error';
     let serverVersion = 'N/A';
     let newErrorMessage = '';
-    const errorMessage = error.message;
     const versionRegex = /\b\d+\.\d+\.\d+\b/;
 
     if (errorMessage.includes('ValidationError')) {

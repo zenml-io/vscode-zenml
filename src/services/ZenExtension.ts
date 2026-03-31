@@ -157,7 +157,7 @@ export class ZenExtension {
         const now = new Date().toISOString();
         this.context.globalState.update(ANALYTICS_FIRST_ACTIVATED_KEY, now).then(
           () => {},
-          () => {}
+          err => console.debug('[Analytics] Failed to persist first-activated flag:', err)
         );
         analytics.track('extension.first_activated', { firstActivatedAt: now });
       }

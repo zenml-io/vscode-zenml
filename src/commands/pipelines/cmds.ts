@@ -12,17 +12,12 @@
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
 import DagRenderer from '../../dag/renderer/DagRenderer';
-import { EventBus } from '../../services/EventBus';
 import { LSClient } from '../../services/LSClient';
-import { ANALYTICS_TRACK } from '../../utils/constants';
+import { trackEvent } from '../../utils/analytics';
 import { PipelineTreeItem } from '../../views/activityBar';
 import { createCommandErrorItem } from '../../views/activityBar/common/ErrorTreeItem';
 import { PipelineDataProvider } from '../../views/activityBar/pipelineView/PipelineDataProvider';
 import { getPipelineRunDashboardUrl } from './utils';
-
-const trackEvent = (event: string, properties?: Record<string, unknown>) => {
-  EventBus.getInstance().emit(ANALYTICS_TRACK, { event, properties });
-};
 
 /**
  * Triggers a refresh of the pipeline view within the UI components.

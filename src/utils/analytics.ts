@@ -12,6 +12,16 @@
 // permissions and limitations under the License.
 
 import * as crypto from 'crypto';
+import { EventBus } from '../services/EventBus';
+import { ANALYTICS_TRACK } from './constants';
+
+/**
+ * Emit an analytics event via the EventBus.
+ * Shared helper used by command modules to avoid duplicating the same 3-line pattern.
+ */
+export function trackEvent(event: string, properties?: Record<string, unknown>): void {
+  EventBus.getInstance().emit(ANALYTICS_TRACK, { event, properties });
+}
 
 export type ErrorKind =
   | 'lsp_not_ready'
@@ -24,12 +34,7 @@ export type ErrorKind =
   | 'timeout'
   | 'unknown';
 
-export type ErrorSource =
-  | 'extension'
-  | 'lsp_transport'
-  | 'lsp_response'
-  | 'python_backend'
-  | 'unknown';
+export type ErrorSource = 'extension' | 'lsp_transport' | 'lsp_response' | 'unknown';
 
 export type ErrorPhase = 'preflight' | 'request' | 'response';
 
@@ -40,7 +45,7 @@ export interface SanitizedAnalyticsError {
 }
 
 /**
- * Compute a SHA-256 hex hash of a string.
+ * Compute a truncated SHA-256 hex hash of a string (first 16 hex characters).
  */
 export function sha256Hex(input: string): string {
   return crypto.createHash('sha256').update(input).digest('hex').slice(0, 16);
@@ -92,7 +97,7 @@ export function sanitizeErrorForAnalytics(
   };
 }
 
-function extractErrorMessage(err: unknown): string {
+export function extractErrorMessage(err: unknown): string {
   if (err instanceof Error) {
     return err.message;
   }
