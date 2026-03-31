@@ -176,6 +176,14 @@ Templates embedded in TypeScript (e.g., `StackForm.ts`, `ComponentsForm.ts`) hav
 - **Formatting**: Prettier (100 char width, single quotes, trailing commas)
 - **Python**: ruff (linting + formatting), mypy (type checking)
 
+## Supply Chain Security
+
+- **npm cooldown**: `.npmrc` sets `min-release-age=7` — npm will refuse packages published less than 7 days ago when resolving new versions. This does not affect `npm ci` (lockfile installs).
+- **Dependabot cooldowns**: `.github/dependabot.yml` uses granular cooldown tiers: major=14 days, minor=7 days, patch=3 days. Security updates bypass the cooldown automatically.
+- **npm audit**: CI runs `npm audit --audit-level=high` to catch known vulnerabilities.
+- **GitHub Actions pinning**: All third-party actions are pinned to full-length commit SHAs with version comments. Use `pinact run` to update pins when bumping action versions.
+- **Python deps**: `pip-compile --generate-hashes` is used to pin Python dependencies with hash verification.
+
 ## Settings Namespace
 
 Extension settings use `zenml.` and `zenml-python.` prefixes:

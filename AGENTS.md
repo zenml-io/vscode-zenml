@@ -39,6 +39,13 @@ Use 'bd' CLI for task tracking.
 - Create branches from `develop` and open PRs against `zenml-io/vscode-zenml`.
 - PRs should include a concise change description and testing notes; link related issues when available.
 
+## Supply Chain Security
+- `.npmrc` enforces a 7-day `min-release-age` cooldown on npm package resolution.
+- Dependabot cooldowns use granular tiers: major=14d, minor=7d, patch=3d (security updates bypass).
+- CI runs `npm audit --audit-level=high` to flag known vulnerabilities.
+- All GitHub Actions must be pinned to full-length commit SHAs with version comments.
+- Python dependencies use `pip-compile --generate-hashes` for hash verification.
+
 ## Configuration Notes
 - Extension settings live in VS Code settings (`zenml.serverUrl`, `zenml.accessToken`, `zenml-python.*`).
 - Avoid committing secrets or environment-specific configuration.
