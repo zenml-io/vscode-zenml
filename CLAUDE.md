@@ -40,6 +40,8 @@ nox --session tests         # Run Python LSP server tests (pytest)
 
 This runs ruff, mypy, eslint, prettier, and yamlfix. CI will fail if any of these checks fail, so **always run this locally first** to catch issues before pushing. The script will auto-fix many issues (like YAML formatting), so run it, review the changes, then commit.
 
+IMPORTANT: **Before opening a PR or making a large commit**, always run `/simplify` to review changed code for reuse opportunities, quality issues, and efficiency improvements. Fix any issues it finds before committing.
+
 ### Git Workflow
 - **Base branch for PRs**: `develop` (not `main`)
 - Feature branches should be created from and merged back to `develop`
