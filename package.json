@@ -594,6 +594,6 @@
     "hbs": "^4.2.1",
     "svg-pan-zoom": "github:bumbu/svg-pan-zoom",
     "svgdom": "^0.1.23",
-    "vscode-languageclient": "^9.0.1"
+    "vscode-languageclient": "^10.0.1"
   }
 }
