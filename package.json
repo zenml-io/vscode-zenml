@@ -573,7 +573,7 @@
     "@vscode/test-cli": "^0.0.15",
     "@vscode/test-electron": "^3.0.0",
     "@vscode/vsce": "^3.9.2",
-    "eslint": "^9.27.0",
+    "eslint": "^10.6.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.5.6",
     "prettier": "^3.8.5",
