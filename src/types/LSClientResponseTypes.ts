@@ -40,9 +40,7 @@ export interface RestServerConnectionResponse {
 }
 
 export type ServerStatusInfoResponse =
-  | ZenServerDetails
-  | VersionMismatchError
-  | ErrorMessageResponse;
+  ZenServerDetails | VersionMismatchError | ErrorMessageResponse;
 export type ConnectServerResponse = RestServerConnectionResponse | ErrorMessageResponse;
 
 /***** Stack Response Types *****/

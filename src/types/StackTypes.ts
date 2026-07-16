@@ -22,13 +22,7 @@ import { JsonObject, JsonValue } from './JsonTypes';
 type ComponentConfig = JsonObject;
 
 type FlavorConfigSchemaType =
-  | 'string'
-  | 'integer'
-  | 'boolean'
-  | 'object'
-  | 'array'
-  | 'number'
-  | 'null';
+  'string' | 'integer' | 'boolean' | 'object' | 'array' | 'number' | 'null';
 
 interface FlavorConfigProperty {
   title?: string;
@@ -83,9 +77,7 @@ interface ComponentsListData {
 }
 
 export type ComponentsListResponse =
-  | ComponentsListData
-  | ErrorMessageResponse
-  | VersionMismatchError;
+  ComponentsListData | ErrorMessageResponse | VersionMismatchError;
 
 interface Flavor {
   id: string;
