@@ -6,8 +6,8 @@ rules:
   # not user-controlled input, so they're false positives for this codebase.
   template-injection:
     ignore:
-      - release.yml:58        # VERSION from steps.get_version.outputs.version
-      - release.yml:74        # VERSION from steps.get_version.outputs.version
+      - release.yml:61        # VERSION from steps.get_version.outputs.version
+      - release.yml:77        # VERSION from steps.get_version.outputs.version
       - test-publish.yml:51   # version from steps.get_version.outputs.version
       - test-publish.yml:70   # VERSION from steps.get_version.outputs.version
 
@@ -16,10 +16,10 @@ rules:
   # worthwhile hardening step but tracked separately.
   secrets-outside-env:
     ignore:
-      - release.yml:53        # VSCE_PAT used in publish step
+      - release.yml:56        # VSCE_PAT used in publish step
 
   # ncipollo/release-action handles artifact upload + body update atomically;
   # replacing with gh release is a nice cleanup but not a security issue.
   superfluous-actions:
     ignore:
-      - release.yml:77        # ncipollo/release-action for GitHub Release
+      - release.yml:80        # ncipollo/release-action for GitHub Release
