@@ -13,7 +13,8 @@ Use 'bd' CLI for task tracking.
 - `scripts/` provides helper scripts like `clear_and_compile.sh`, `format.sh`, and `lint.sh`.
 
 ## Build, Test, and Development Commands
-- `npm install` installs Node dependencies.
+- `npm install` installs Node dependencies. Use npm 11.15 or a newer npm 11
+  release. npm 10 does not enforce `min-release-age` and is unsupported.
 - `npm run compile` bundles the extension into `dist/` via webpack.
 - `npm run watch` rebuilds on file changes for local development.
 - `npm run test` runs extension tests (pretest compiles and lints first).
@@ -40,9 +41,9 @@ Use 'bd' CLI for task tracking.
 - PRs should include a concise change description and testing notes; link related issues when available.
 
 ## Supply Chain Security
-- `.npmrc` enforces a 7-day `min-release-age` cooldown on npm package resolution.
+- `.npmrc` enforces a 7-day `min-release-age` cooldown on npm package resolution. `packageManager` pins CI to npm 11.15.0, while `devEngines` accepts npm 11.15 or newer within the npm 11 release line. npm 10 is unsupported because it ignores both controls and the cooldown itself.
 - Dependabot cooldowns use granular tiers: major=14d, minor=7d, patch=3d (security updates bypass).
-- CI runs `npm audit --audit-level=high` to flag known vulnerabilities.
+- CI runs `npm audit --audit-level=high` to flag known vulnerabilities without blocking unrelated checks while known findings remain.
 - All GitHub Actions must be pinned to full-length commit SHAs with version comments.
 - Python dependencies use `pip-compile --generate-hashes` for hash verification.
 

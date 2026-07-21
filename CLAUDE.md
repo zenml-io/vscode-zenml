@@ -12,7 +12,7 @@ ZenML Studio is a VS Code extension that integrates the ZenML MLOps framework in
 
 ### Development
 ```bash
-npm install                 # Install Node dependencies
+npm install                 # Install dependencies (requires npm >=11.15 <12)
 nox --session setup         # Setup dev environment + Python deps
 npm run compile             # Compile TypeScript (webpack)
 npm run watch               # Watch mode compilation
@@ -178,9 +178,9 @@ Templates embedded in TypeScript (e.g., `StackForm.ts`, `ComponentsForm.ts`) hav
 
 ## Supply Chain Security
 
-- **npm cooldown**: `.npmrc` sets `min-release-age=7` — npm will refuse packages published less than 7 days ago when resolving new versions. This does not affect `npm ci` (lockfile installs).
+- **npm cooldown**: `.npmrc` sets `min-release-age=7` — npm will refuse packages published less than 7 days ago when resolving new versions. `packageManager` pins CI to npm 11.15.0, while `devEngines` accepts npm 11.15 or newer within the npm 11 release line. npm 10 is unsupported because it ignores both controls and the cooldown itself. This does not affect `npm ci` (lockfile installs).
 - **Dependabot cooldowns**: `.github/dependabot.yml` uses granular cooldown tiers: major=14 days, minor=7 days, patch=3 days. Security updates bypass the cooldown automatically.
-- **npm audit**: CI runs `npm audit --audit-level=high` to catch known vulnerabilities.
+- **npm audit**: CI runs `npm audit --audit-level=high` to catch known vulnerabilities. The audit step is allowed to fail while known findings remain, but installation and workflow errors still fail the job.
 - **GitHub Actions pinning**: All third-party actions are pinned to full-length commit SHAs with version comments. Use `pinact run` to update pins when bumping action versions.
 - **Python deps**: `pip-compile --generate-hashes` is used to pin Python dependencies with hash verification.
 
