@@ -15,6 +15,14 @@
     "type": "git",
     "url": "https://github.com/zenml-io/vscode-zenml"
   },
+  "packageManager": "npm@11.15.0",
+  "devEngines": {
+    "packageManager": {
+      "name": "npm",
+      "version": ">=11.15.0 <12",
+      "onFail": "error"
+    }
+  },
   "keywords": [
     "zenml",
     "ml",
