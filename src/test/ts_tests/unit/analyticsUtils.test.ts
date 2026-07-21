@@ -13,10 +13,11 @@
 
 import * as assert from 'assert';
 import {
-  sanitizeErrorForAnalytics,
-  normalizeForHash,
-  sha256Hex,
+  extractErrorMessage,
   isErrorLikeResponse,
+  normalizeForHash,
+  sanitizeErrorForAnalytics,
+  sha256Hex,
 } from '../../../utils/analytics';
 
 /**
@@ -172,6 +173,13 @@ suite('sanitizeErrorForAnalytics', () => {
     test('handles object with message property', () => {
       const result = sanitizeErrorForAnalytics({ message: 'msg error' }, { phase: 'response' });
       assert.strictEqual(typeof result.messageHash, 'string');
+    });
+
+    test('uses message when an error response has an empty error string', () => {
+      assert.strictEqual(
+        extractErrorMessage({ error: '', message: 'Detailed response error' }),
+        'Detailed response error'
+      );
     });
 
     test('handles null/undefined gracefully', () => {

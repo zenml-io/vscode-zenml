@@ -135,7 +135,7 @@ export class ZenExtension {
     this.serverId = serverDefaults.module;
 
     this.setupLoggingAndTrace();
-    this.initializeAnalytics();
+    await this.initializeAnalytics();
     this.subscribeToCoreEvents();
     this.deferredInitialize();
   }
@@ -143,7 +143,7 @@ export class ZenExtension {
   /**
    * Initializes the analytics service and tracks activation.
    */
-  private static initializeAnalytics(): void {
+  private static async initializeAnalytics(): Promise<void> {
     try {
       const analytics = AnalyticsService.getInstance();
       analytics.initialize(this.context);
@@ -155,11 +155,12 @@ export class ZenExtension {
 
       if (isFirstActivation) {
         const now = new Date().toISOString();
-        this.context.globalState.update(ANALYTICS_FIRST_ACTIVATED_KEY, now).then(
-          () => {},
-          err => console.debug('[Analytics] Failed to persist first-activated flag:', err)
-        );
-        analytics.track('extension.first_activated', { firstActivatedAt: now });
+        try {
+          await this.context.globalState.update(ANALYTICS_FIRST_ACTIVATED_KEY, now);
+          analytics.track('extension.first_activated', { firstActivatedAt: now });
+        } catch (err) {
+          console.debug('[Analytics] Failed to persist first-activated flag:', err);
+        }
       }
 
       // Track extension activation (every time)

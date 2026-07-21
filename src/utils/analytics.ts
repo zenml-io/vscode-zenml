@@ -44,6 +44,17 @@ export interface SanitizedAnalyticsError {
   messageHash: string;
 }
 
+export type AnalyticsErrorProperties = Omit<SanitizedAnalyticsError, 'messageHash'>;
+
+export function toAnalyticsErrorProperties(
+  error: SanitizedAnalyticsError
+): AnalyticsErrorProperties {
+  return {
+    errorKind: error.errorKind,
+    errorSource: error.errorSource,
+  };
+}
+
 /**
  * Compute a truncated SHA-256 hex hash of a string (first 16 hex characters).
  */
@@ -106,10 +117,10 @@ export function extractErrorMessage(err: unknown): string {
   }
   if (typeof err === 'object' && err !== null) {
     const obj = err as Record<string, unknown>;
-    if (typeof obj.error === 'string') {
+    if (typeof obj.error === 'string' && obj.error) {
       return obj.error;
     }
-    if (typeof obj.message === 'string') {
+    if (typeof obj.message === 'string' && obj.message) {
       return obj.message;
     }
   }

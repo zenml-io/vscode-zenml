@@ -16,7 +16,11 @@ import { getFlavor, getFlavorsOfType } from '../../common/api';
 import { traceError, traceInfo } from '../../common/log/logging';
 import { LSClient } from '../../services/LSClient';
 import { ComponentTypesResponse, Flavor } from '../../types/StackTypes';
-import { sanitizeErrorForAnalytics, trackEvent } from '../../utils/analytics';
+import {
+  sanitizeErrorForAnalytics,
+  toAnalyticsErrorProperties,
+  trackEvent,
+} from '../../utils/analytics';
 import { ComponentDataProvider } from '../../views/activityBar/componentView/ComponentDataProvider';
 import { StackComponentTreeItem } from '../../views/activityBar/componentView/ComponentTreeItems';
 import ComponentForm from './ComponentsForm';
@@ -149,7 +153,9 @@ const deleteComponent = async (node: StackComponentTreeItem) => {
           componentType: node.component.type,
           flavor: node.component.flavor?.name,
           success: false,
-          ...sanitizeErrorForAnalytics(e, { operation: 'deleteComponent', phase: 'request' }),
+          ...toAnalyticsErrorProperties(
+            sanitizeErrorForAnalytics(e, { operation: 'deleteComponent', phase: 'request' })
+          ),
         });
       }
     }

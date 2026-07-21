@@ -114,10 +114,30 @@ suite('Server Commands Tests', () => {
       .stub(mockLSClient, 'sendLsClientRequest')
       .withArgs('disconnect')
       .resolves({ message: 'Disconnected successfully' });
+    const emitSpy = sandbox.spy(mockEventBus, 'emit');
 
     await serverCommands.disconnectServer();
 
     sinon.assert.calledOnce(refreshUIComponentsStub);
+    assert.strictEqual(
+      emitSpy.getCalls().filter(call => call.args[0] === 'serverDisconnectRequested').length,
+      1
+    );
+  });
+
+  test('failed disconnect does not emit disconnect intent', async () => {
+    sandbox.stub(mockLSClient, 'sendLsClientRequest').withArgs('disconnect').resolves({
+      error: 'Disconnect failed',
+      message: 'Disconnect failed',
+    });
+    const emitSpy = sandbox.spy(mockEventBus, 'emit');
+
+    await serverCommands.disconnectServer();
+
+    assert.strictEqual(
+      emitSpy.getCalls().some(call => call.args[0] === 'serverDisconnectRequested'),
+      false
+    );
   });
 
   test('connectServer fails with incorrect URL', async () => {
@@ -135,6 +155,27 @@ suite('Server Commands Tests', () => {
     const result = await serverCommands.connectServer();
     assert.strictEqual(result, false, 'Should fail to connect to the server with incorrect URL');
     sinon.assert.calledOnce(showErrorMessageStub);
+  });
+
+  test('connect response errors retain response taxonomy without emitting a hash', async () => {
+    showInputBoxStub.resolves(MOCK_REST_SERVER_URL);
+    sandbox.stub(mockLSClient, 'sendLsClientRequest').resolves({
+      error: 'Backend rejected connection',
+      message: 'Backend rejected connection',
+    });
+    const emitSpy = sandbox.spy(mockEventBus, 'emit');
+
+    const result = await serverCommands.connectServer();
+
+    assert.strictEqual(result, false);
+    const failureEvent = emitSpy
+      .getCalls()
+      .find(
+        call =>
+          call.args[0] === 'analyticsTrack' && call.args[1].event === 'server.connection_failed'
+      );
+    assert.strictEqual(failureEvent?.args[1].properties.errorSource, 'lsp_response');
+    assert.strictEqual(failureEvent?.args[1].properties.messageHash, undefined);
   });
 
   test('refreshServerStatus refreshes the server status', async () => {

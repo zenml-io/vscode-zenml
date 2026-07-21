@@ -209,7 +209,7 @@ Command modules → trackEvent() → EventBus.emit(ANALYTICS_TRACK) → Analytic
 
 **Key files:**
 - `src/services/AnalyticsService.ts` — Core service: queuing, batching, common properties, connection tracking
-- `src/utils/analytics.ts` — Error classification utility (privacy-safe taxonomy + hashing)
+- `src/utils/analytics.ts` — Error classification utility (privacy-safe taxonomy plus local-only hashing for deduplication)
 - `src/utils/constants.ts` — Event bus constants and analytics keys
 - Command modules (`src/commands/*/cmds.ts`) — Emit domain-specific events via `trackEvent()` helper
 
@@ -224,8 +224,8 @@ Command modules → trackEvent() → EventBus.emit(ANALYTICS_TRACK) → Analytic
 | `server.disconnected` | AnalyticsService | connectionType, disconnectReason (user_initiated/unexpected) |
 | `server.connect_command` | server/cmds | connectionType, success |
 | `server.disconnect_command` | server/cmds | success |
-| `server.connection_failed` | server/cmds | connectionType, serverUrlCategory, docker, portProvided, errorKind, errorSource, messageHash |
-| `error.occurred` | LSClient | operation, phase, errorKind, errorSource, messageHash |
+| `server.connection_failed` | server/cmds | connectionType, serverUrlCategory, docker, portProvided, errorKind, errorSource |
+| `error.occurred` | LSClient | operation, phase, errorKind, errorSource |
 | `stack.*` events | stack/cmds | Various (see code) |
 | `pipeline.*` events | pipelines/cmds | Various (see code) |
 | `component.registered` | ComponentsForm | componentType, flavor, success, (error taxonomy on failure) |
@@ -242,7 +242,7 @@ extensionVersion, vscodeVersion, platform, timestamp, sessionId, pythonVersion*,
 
 Error analytics use `src/utils/analytics.ts` which:
 - Classifies errors into an `ErrorKind` taxonomy (never raw messages)
-- Produces a `messageHash` (SHA-256 of normalized message, stripped of URLs/paths/UUIDs)
+- Produces a local-only `messageHash` for in-session deduplication; hashes are never emitted
 - Never emits raw URLs, file paths, error messages, or PII
 
 When adding new error tracking, always use `sanitizeErrorForAnalytics()`.

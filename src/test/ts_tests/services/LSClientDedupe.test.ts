@@ -121,14 +121,13 @@ suite('LSClient error analytics dedupe', () => {
     assert.strictEqual(emissions.length, 1, 'Preflight errors should emit only once per session');
   });
 
-  test('error.occurred properties include errorKind and messageHash', () => {
+  test('error.occurred properties exclude the local dedupe hash', () => {
     callEmitErrorOccurred('connect', 'request', new Error('ECONNREFUSED'));
 
     const emissions = getAnalyticsEmissions();
     const props = emissions[0].args[1].properties;
     assert.strictEqual(typeof props.errorKind, 'string');
     assert.strictEqual(typeof props.errorSource, 'string');
-    assert.strictEqual(typeof props.messageHash, 'string');
-    assert.strictEqual(props.messageHash.length, 16, 'messageHash should be 16 hex chars');
+    assert.strictEqual(props.messageHash, undefined);
   });
 });

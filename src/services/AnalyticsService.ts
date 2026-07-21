@@ -73,7 +73,7 @@ export class AnalyticsService {
   private anonymousId?: string;
   private queue: ZenAnalyticsTrackEvent[] = [];
   private flushInterval?: NodeJS.Timeout;
-  private isFlushing = false;
+  private activeFlush?: Promise<void>;
   private httpClient: AxiosInstance;
   private lastServerConnected?: boolean;
   private telemetryChangeDisposable?: vscode.Disposable;
@@ -110,6 +110,7 @@ export class AnalyticsService {
   private readonly MAX_BATCH_SIZE = 20;
   private readonly FLUSH_INTERVAL_MS = 30000; // 30 seconds
   private readonly HTTP_TIMEOUT_MS = 3000;
+  private readonly DISPOSE_TIMEOUT_MS = this.HTTP_TIMEOUT_MS * 2;
   // Debug mode routes events to dev Segment. Enable via ZENML_ANALYTICS_DEBUG=1
   private readonly DEBUG_MODE = process.env.ZENML_ANALYTICS_DEBUG === '1';
   // Verbose logging for local testing. Enable via ZENML_ANALYTICS_VERBOSE=1
@@ -301,12 +302,25 @@ export class AnalyticsService {
    * Best-effort, never throws.
    */
   public async flush(reason?: string): Promise<void> {
-    if (this.isFlushing || this.queue.length === 0 || !this.isEnabled()) {
+    if (this.activeFlush) {
+      return this.activeFlush;
+    }
+    if (this.queue.length === 0 || !this.isEnabled()) {
       return;
     }
 
-    this.isFlushing = true;
+    const flush = this.flushBatch(reason);
+    this.activeFlush = flush;
+    try {
+      await flush;
+    } finally {
+      if (this.activeFlush === flush) {
+        this.activeFlush = undefined;
+      }
+    }
+  }
 
+  private async flushBatch(reason?: string): Promise<void> {
     try {
       // Take events from queue
       const eventsToSend = this.queue.splice(0, this.MAX_BATCH_SIZE);
@@ -340,9 +354,26 @@ export class AnalyticsService {
       } else {
         console.debug('[Analytics] Flush failed:', error);
       }
-    } finally {
-      this.isFlushing = false;
     }
+  }
+
+  private async flushBeforeDeadline(deadline: number): Promise<boolean> {
+    const remainingMs = deadline - Date.now();
+    if (remainingMs <= 0) {
+      return false;
+    }
+
+    let timeout: NodeJS.Timeout | undefined;
+    const completed = await Promise.race([
+      this.flush('dispose').then(() => true),
+      new Promise<boolean>(resolve => {
+        timeout = setTimeout(() => resolve(false), remainingMs);
+      }),
+    ]);
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+    return completed;
   }
 
   /**
@@ -355,8 +386,13 @@ export class AnalyticsService {
       this.flushInterval = undefined;
     }
 
-    // Final flush attempt
-    await this.flush('dispose');
+    const deadline = Date.now() + this.DISPOSE_TIMEOUT_MS;
+    while (
+      (this.activeFlush || this.queue.length > 0) &&
+      (await this.flushBeforeDeadline(deadline))
+    ) {
+      // Continue while queued batches complete within the shutdown deadline.
+    }
 
     // Unsubscribe event listeners
     if (this.eventBus) {
@@ -513,10 +549,7 @@ export class AnalyticsService {
       this.lastConnectedType = connectionType;
       this.track('server.connected', { connectionType });
     } else {
-      // Use stored type from connect time; fall back to categorizing current URL
-      const currentType = categorizeServerUrl(serverUrl);
-      const connectionType =
-        currentType !== 'unknown' ? currentType : (this.lastConnectedType ?? 'unknown');
+      const connectionType = this.lastConnectedType ?? categorizeServerUrl(serverUrl);
 
       // Classify disconnect reason using intent signal
       const now = Date.now();

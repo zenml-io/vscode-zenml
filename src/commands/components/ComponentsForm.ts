@@ -25,9 +25,11 @@ import {
   FlavorConfigSchema,
 } from '../../types/StackTypes';
 import {
+  extractErrorMessage,
   isErrorLikeResponse,
   SanitizedAnalyticsError,
   sanitizeErrorForAnalytics,
+  toAnalyticsErrorProperties,
   trackEvent,
 } from '../../utils/analytics';
 import { ComponentDataProvider } from '../../views/activityBar/componentView/ComponentDataProvider';
@@ -182,7 +184,7 @@ export default class ComponentForm extends WebviewBase {
               componentType: type,
               flavor,
               success: result.success,
-              ...(!result.success ? result.errorTaxonomy : {}),
+              ...(!result.success ? toAnalyticsErrorProperties(result.errorTaxonomy) : {}),
             });
             break;
           case 'update':
@@ -191,7 +193,7 @@ export default class ComponentForm extends WebviewBase {
               componentType: type,
               flavor,
               success: result.success,
-              ...(!result.success ? result.errorTaxonomy : {}),
+              ...(!result.success ? toAnalyticsErrorProperties(result.errorTaxonomy) : {}),
             });
             break;
         }
@@ -246,15 +248,16 @@ export default class ComponentForm extends WebviewBase {
         async () => lsClient.sendLsClientRequest(command, args)
       );
 
-      if (isErrorLikeResponse(resp) && resp.error) {
+      if (isErrorLikeResponse(resp)) {
+        const errorMessage = extractErrorMessage(resp) || 'Unknown error';
         vscode.window.showErrorMessage(
-          `Unable to ${actionLabel.toLowerCase()} component: "${resp.error}"`
+          `Unable to ${actionLabel.toLowerCase()} component: "${errorMessage}"`
         );
-        console.error(resp.error);
-        traceError(resp.error);
+        console.error(errorMessage);
+        traceError(errorMessage);
         return {
           success: false,
-          errorTaxonomy: sanitizeErrorForAnalytics(resp.error, {
+          errorTaxonomy: sanitizeErrorForAnalytics(errorMessage, {
             operation: command,
             phase: 'response',
             isResponseError: true,

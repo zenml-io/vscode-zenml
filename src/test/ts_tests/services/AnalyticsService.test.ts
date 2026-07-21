@@ -223,6 +223,39 @@ suite('AnalyticsService', () => {
         await service.dispose();
       });
     });
+
+    test('dispose waits for an active flush and sends newly queued events', async () => {
+      (AnalyticsService as any).instance = undefined;
+      const service = AnalyticsService.getInstance();
+      const isEnabledStub = sinon.stub(service as any, 'isEnabled').returns(true);
+      const anonymousIdStub = sinon
+        .stub(service as any, 'getOrCreateAnonymousId')
+        .returns('test-user-id');
+
+      let finishFirstPost: (() => void) | undefined;
+      const firstPost = new Promise<void>(resolve => {
+        finishFirstPost = resolve;
+      });
+      const postStub = sinon.stub((service as any).httpClient, 'post');
+      postStub.onFirstCall().returns(firstPost);
+      postStub.onSecondCall().resolves();
+
+      service.track('first.event');
+      const activeFlush = service.flush('test');
+      service.track('extension.deactivated');
+
+      const disposePromise = service.dispose();
+      finishFirstPost?.();
+      await activeFlush;
+      await disposePromise;
+
+      sinon.assert.calledTwice(postStub);
+      assert.strictEqual(postStub.secondCall.args[1][0].event, 'extension.deactivated');
+      postStub.restore();
+      anonymousIdStub.restore();
+      isEnabledStub.restore();
+      (AnalyticsService as any).instance = undefined;
+    });
   });
 
   suite('refreshEnablement() robustness', () => {
@@ -424,6 +457,22 @@ suite('AnalyticsService server status tracking', () => {
       .filter(call => call.args[0] === 'server.disconnected');
     assert.strictEqual(disconnectedCalls.length, 1);
     // Should use the stored connection type from connect time, not the current empty URL
+    assert.strictEqual(disconnectedCalls[0].args[1].connectionType, 'cloud');
+  });
+
+  test('replacement SQLite URL does not overwrite the connected server type', () => {
+    eventBus.emit(SERVER_STATUS_UPDATED, {
+      isConnected: true,
+      serverUrl: 'https://api.zenml.io',
+    });
+    eventBus.emit(SERVER_STATUS_UPDATED, {
+      isConnected: false,
+      serverUrl: 'sqlite:////tmp/zenml.db',
+    });
+
+    const disconnectedCalls = trackSpy
+      .getCalls()
+      .filter(call => call.args[0] === 'server.disconnected');
     assert.strictEqual(disconnectedCalls[0].args[1].connectionType, 'cloud');
   });
 });

@@ -21,6 +21,7 @@ import {
   extractErrorMessage,
   isErrorLikeResponse,
   sanitizeErrorForAnalytics,
+  toAnalyticsErrorProperties,
 } from '../utils/analytics';
 import {
   ANALYTICS_TRACK,
@@ -287,7 +288,7 @@ export class LSClient {
         properties: {
           operation,
           phase,
-          ...sanitized,
+          ...toAnalyticsErrorProperties(sanitized),
         },
       });
     } catch (e) {

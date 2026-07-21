@@ -68,7 +68,7 @@ This extension collects anonymous usage analytics to help improve the product. A
 - **Extension lifecycle events**: Activation, deactivation (with session duration), first-run detection
 - **Server events**: Connections, disconnections (with reason classification), connection failures (with error taxonomy)
 - **Feature usage**: Stack operations (create, update, delete, set active), pipeline run operations (delete, render DAG, open dashboard), component operations (register, update, delete)
-- **Error tracking**: Privacy-safe error classification (error kind and hashed message, never raw error text)
+- **Error tracking**: Privacy-safe error classification (error kind and source, never raw error text or message hashes)
 - **Metadata**: Extension version, VS Code version, platform (e.g., `darwin`, `win32`, `linux`), Python version, ZenML version, session ID
 - **Anonymous user ID**: A randomly generated UUID stored locally to track usage patterns without identifying you
 

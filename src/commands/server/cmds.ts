@@ -18,7 +18,13 @@ import {
   GenericLSClientResponse,
   RestServerConnectionResponse,
 } from '../../types/LSClientResponseTypes';
-import { extractErrorMessage, sanitizeErrorForAnalytics, trackEvent } from '../../utils/analytics';
+import {
+  ErrorPhase,
+  extractErrorMessage,
+  sanitizeErrorForAnalytics,
+  toAnalyticsErrorProperties,
+  trackEvent,
+} from '../../utils/analytics';
 import { SERVER_DISCONNECT_REQUESTED } from '../../utils/constants';
 import { categorizeServerUrl, updateServerUrlAndToken } from '../../utils/global';
 import { refreshUtils } from '../../utils/refresh';
@@ -145,6 +151,7 @@ const connectServer = async (): Promise<boolean> => {
         cancellable: true,
       },
       async () => {
+        let failurePhase: ErrorPhase = 'request';
         try {
           const lsClient = LSClient.getInstance();
 
@@ -160,7 +167,8 @@ const connectServer = async (): Promise<boolean> => {
           );
 
           if (result && 'error' in result) {
-            throw new Error(result.error);
+            failurePhase = 'response';
+            throw result;
           }
 
           // If we have an access token (standard connection), update it
@@ -194,7 +202,13 @@ const connectServer = async (): Promise<boolean> => {
               connectionType === 'local'
                 ? opts.port !== null && opts.port !== undefined
                 : undefined,
-            ...sanitizeErrorForAnalytics(error, { operation: 'connect', phase: 'request' }),
+            ...toAnalyticsErrorProperties(
+              sanitizeErrorForAnalytics(error, {
+                operation: 'connect',
+                phase: failurePhase,
+                isResponseError: failurePhase === 'response',
+              })
+            ),
           });
 
           // Show error in tree view instead of notification
@@ -213,9 +227,6 @@ const connectServer = async (): Promise<boolean> => {
  * @returns {Promise<void>} Resolves after successfully disconnecting from the server.
  */
 const disconnectServer = async (): Promise<void> => {
-  // Signal disconnect intent so AnalyticsService can classify the disconnect reason
-  EventBus.getInstance().emit(SERVER_DISCONNECT_REQUESTED, { atMs: Date.now() });
-
   await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
@@ -228,6 +239,7 @@ const disconnectServer = async (): Promise<void> => {
         if (result && 'error' in result) {
           throw result;
         }
+        EventBus.getInstance().emit(SERVER_DISCONNECT_REQUESTED, { atMs: Date.now() });
         await refreshUtils.refreshUIComponents();
 
         // Show success message in tree view
