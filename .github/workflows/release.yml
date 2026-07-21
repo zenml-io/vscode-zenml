@@ -10,21 +10,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
         with:
           persist-credentials: false
       - name: Get Extension Version
         id: get_version
         run: echo "version=$(jq -r .version package.json)" >> $GITHUB_OUTPUT
       - name: Install Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f  # v6
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
         with:
           node-version: 20.x
-          cache: npm
+          # Explicitly disable auto-caching: setup-node v6+ caches by default when
+          # package.json declares a packageManager, which would restore a shared
+          # (poisonable) Actions cache in the publishing job.
+          package-manager-cache: false
       - name: Install dependencies
         run: npm ci
       - name: Run headless tests
-        uses: coactions/setup-xvfb@b6b4fcfb9f5a895edadc3bc76318fae0ac17c8b3  # v1
+        uses: coactions/setup-xvfb@b6b4fcfb9f5a895edadc3bc76318fae0ac17c8b3  # v1.0.1
         with:
           run: npm test
       - name: Build Extension
@@ -74,7 +77,7 @@ jobs:
           echo "${{ steps.get_version.outputs.version }}" > VERSION
       - name: Update GitHub Release
         if: success() && startsWith(github.ref, 'refs/tags/')
-        uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd  # v1
+        uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd  # v1.21.0
         with:
           artifacts: zenml.vsix,VERSION
           bodyFile: RELEASE_NOTES.md

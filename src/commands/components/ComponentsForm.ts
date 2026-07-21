@@ -33,8 +33,7 @@ import {
 import { ComponentDataProvider } from '../../views/activityBar/componentView/ComponentDataProvider';
 
 type ComponentOperationResult =
-  | { success: true }
-  | { success: false; errorTaxonomy: SanitizedAnalyticsError };
+  { success: true } | { success: false; errorTaxonomy: SanitizedAnalyticsError };
 
 const ROOT_PATH = ['resources', 'components-form'];
 const CSS_FILE = 'components.css';
