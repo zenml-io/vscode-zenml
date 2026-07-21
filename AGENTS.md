@@ -41,7 +41,7 @@ Use 'bd' CLI for task tracking.
 - PRs should include a concise change description and testing notes; link related issues when available.
 
 ## Supply Chain Security
-- `.npmrc` enforces a 7-day `min-release-age` cooldown on npm package resolution. `packageManager` pins CI to npm 11.15.0, while `devEngines` accepts npm 11.15 or newer within the npm 11 release line. npm 10 is unsupported because it ignores both controls and the cooldown itself.
+- `.npmrc` enforces a 7-day `min-release-age` cooldown on npm package resolution. `packageManager` records npm 11.15.0 as the development baseline, while `devEngines` accepts npm 11.15 or newer within the npm 11 release line. The dependency-audit job verifies that it uses this supported npm range. npm 10 is unsupported for dependency resolution because it ignores both controls and the cooldown itself; existing lockfile installs can still use `npm ci` under Node 20.
 - Dependabot cooldowns use granular tiers: major=14d, minor=7d, patch=3d (security updates bypass).
 - CI runs `npm audit --audit-level=high` to flag known vulnerabilities without blocking unrelated checks while known findings remain.
 - All GitHub Actions must be pinned to full-length commit SHAs with version comments.
