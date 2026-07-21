@@ -574,7 +574,7 @@
     "@types/hbs": "^4.0.4",
     "@types/mocha": "^10.0.10",
     "@types/node": "^26.1.1",
-    "@types/sinon": "^21.0.0",
+    "@types/sinon": "^22.0.0",
     "@types/svgdom": "^0.1.2",
     "@types/vscode": "^1.125.0",
     "@types/webpack": "^5.28.5",
