@@ -29,7 +29,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install uv
-        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v7
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
       - name: Run zizmor
         run: uvx zizmor --format=github .
   audit:
@@ -62,7 +62,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v6
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
         with:
           node-version: 20.x
           cache: npm
@@ -72,6 +72,6 @@ jobs:
       - name: Compile TS tests
         run: npm run pretest
       - name: Run headless test
-        uses: coactions/setup-xvfb@b6b4fcfb9f5a895edadc3bc76318fae0ac17c8b3  # v1
+        uses: coactions/setup-xvfb@b6b4fcfb9f5a895edadc3bc76318fae0ac17c8b3  # v1.0.1
         with:
           run: npm test
