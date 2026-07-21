@@ -79,8 +79,12 @@ export async function activate(context: vscode.ExtensionContext) {
  * @returns {Promise<void>} A promise that resolves to void.
  */
 export async function deactivate(): Promise<void> {
-  // Dispose analytics first to flush any pending events
-  await AnalyticsService.getInstance().dispose();
+  // Track deactivation with session duration before disposing
+  const analytics = AnalyticsService.getInstance();
+  const sessionStart = analytics.getSessionStartMs();
+  const sessionDurationMs = sessionStart ? Date.now() - sessionStart : undefined;
+  analytics.track('extension.deactivated', { sessionDurationMs });
+  await analytics.dispose(); // dispose() flushes remaining events
 
   const lsClient = LSClient.getInstance().getLanguageClient();
 

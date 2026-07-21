@@ -461,22 +461,30 @@ class ZenServerWrapper:
 
         # Handle local connection which only needs connection_type and options
         if connection_type == "local":
-            options = rest[0] if rest else {}
+            # Support both corrected shape ['local', options_dict] and
+            # legacy shape ['local', url_placeholder, options_dict, verify_ssl]
+            if rest and isinstance(rest[0], dict):
+                options = rest[0]
+            elif len(rest) > 1 and isinstance(rest[1], dict):
+                options = rest[1]
+            else:
+                options = {}
         # Handle remote connections which need url and optional parameters
         else:
             try:
                 url, *rest2 = rest
             except ValueError:
                 return {"error": "Server URL is required for remote connections."}
-            options = rest2[0] if rest2 else {}
-            verify_ssl = rest2[1] if rest2 else True
+            options = rest2[0] if rest2 and isinstance(rest2[0], dict) else {}
+            verify_ssl = rest2[1] if len(rest2) > 1 else True
 
         try:
             if connection_type == "local":
                 start_local_server = self.lazy_import("zenml.cli.login", "start_local_server")
 
-                docker = getattr(options, "docker", False)
-                port = getattr(options, "port", None)
+                # Use dict .get() — options is always a dict from the extension
+                docker = options.get("docker", False) if isinstance(options, dict) else False
+                port = options.get("port", None) if isinstance(options, dict) else None
 
                 start_local_server(
                     docker=docker,

@@ -15,6 +15,7 @@ import * as assert from 'assert';
 import * as sinon from 'sinon';
 import * as vscode from 'vscode';
 import { EventBus } from '../../../services/EventBus';
+import { AnalyticsService } from '../../../services/AnalyticsService';
 import { LSClient } from '../../../services/LSClient';
 import { ZenExtension } from '../../../services/ZenExtension';
 import { MockEventBus } from '../__mocks__/MockEventBus';
@@ -122,5 +123,20 @@ suite('ZenExtension Test Suite', () => {
     // Should have static properties
     assert.ok(Array.isArray(ZenExtension.commandDisposables));
     assert.ok(Array.isArray(ZenExtension.viewDisposables));
+  });
+
+  test('emits first activation only after its marker is persisted', async () => {
+    (ZenExtension as any).context = mockContext;
+    (mockContext.globalState.get as sinon.SinonStub).returns(undefined);
+    (mockContext.globalState.update as sinon.SinonStub).rejects(new Error('storage failed'));
+    const analytics = AnalyticsService.getInstance();
+    sandbox.stub(analytics, 'initialize');
+    sandbox.stub(analytics, 'registerEventBus');
+    const trackStub = sandbox.stub(analytics, 'track');
+
+    await (ZenExtension as any).initializeAnalytics();
+
+    sinon.assert.neverCalledWith(trackStub, 'extension.first_activated');
+    sinon.assert.calledWithMatch(trackStub, 'extension.activated', { isFirstActivation: true });
   });
 });

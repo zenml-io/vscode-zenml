@@ -40,6 +40,7 @@ import {
   onDidChangeConfiguration,
   registerCommand,
 } from '../common/vscodeapi';
+import { ANALYTICS_FIRST_ACTIVATED_KEY, ENVIRONMENT_INFO_UPDATED } from '../utils/constants';
 import { toggleCommands } from '../utils/global';
 import { refreshUIComponents } from '../utils/refresh';
 import {
@@ -134,7 +135,7 @@ export class ZenExtension {
     this.serverId = serverDefaults.module;
 
     this.setupLoggingAndTrace();
-    this.initializeAnalytics();
+    await this.initializeAnalytics();
     this.subscribeToCoreEvents();
     this.deferredInitialize();
   }
@@ -142,15 +143,30 @@ export class ZenExtension {
   /**
    * Initializes the analytics service and tracks activation.
    */
-  private static initializeAnalytics(): void {
+  private static async initializeAnalytics(): Promise<void> {
     try {
       const analytics = AnalyticsService.getInstance();
       analytics.initialize(this.context);
       analytics.registerEventBus(EventBus.getInstance());
 
-      // Track extension activation
+      // First-run detection: emit extension.first_activated exactly once per install
+      const firstActivatedAt = this.context.globalState.get<string>(ANALYTICS_FIRST_ACTIVATED_KEY);
+      const isFirstActivation = !firstActivatedAt;
+
+      if (isFirstActivation) {
+        const now = new Date().toISOString();
+        try {
+          await this.context.globalState.update(ANALYTICS_FIRST_ACTIVATED_KEY, now);
+          analytics.track('extension.first_activated', { firstActivatedAt: now });
+        } catch (err) {
+          console.debug('[Analytics] Failed to persist first-activated flag:', err);
+        }
+      }
+
+      // Track extension activation (every time)
       analytics.track('extension.activated', {
         extensionVersion: this.context.extension?.packageJSON?.version,
+        isFirstActivation,
       });
     } catch {
       // Analytics initialization should never break the extension
@@ -275,6 +291,18 @@ export class ZenExtension {
               vscode.window.showErrorMessage(`Interpreter not supported: ${message}`);
               return;
             }
+
+            // Propagate Python version to analytics common properties
+            if (resolvedEnv?.version) {
+              const v = resolvedEnv.version;
+              const pythonVersion = [v.major, v.minor, v.micro]
+                .filter(n => n !== undefined)
+                .join('.');
+              if (pythonVersion) {
+                EventBus.getInstance().emit(ENVIRONMENT_INFO_UPDATED, { pythonVersion });
+              }
+            }
+
             await runServer();
             if (!this.lsClient.isZenMLReady) {
               console.log('ZenML Client is not initialized yet.');

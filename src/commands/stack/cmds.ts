@@ -12,18 +12,13 @@
 // permissions and limitations under the License.
 import * as vscode from 'vscode';
 import { traceError, traceInfo } from '../../common/log/logging';
-import { EventBus } from '../../services/EventBus';
 import { LSClient } from '../../services/LSClient';
-import { ANALYTICS_TRACK } from '../../utils/constants';
+import { trackEvent } from '../../utils/analytics';
 import { StackDataProvider } from '../../views/activityBar/stackView/StackDataProvider';
 import { StackTreeItem } from '../../views/activityBar/stackView/StackTreeItems';
 import ZenMLStatusBar from '../../views/statusBar';
 import StackForm from './StackForm';
 import { getStackDashboardUrl, switchActiveStack } from './utils';
-
-const trackEvent = (event: string, properties?: Record<string, unknown>) => {
-  EventBus.getInstance().emit(ANALYTICS_TRACK, { event, properties });
-};
 
 /**
  * Refreshes the stack view.

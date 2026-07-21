@@ -197,6 +197,63 @@ Extension settings use `zenml.` and `zenml-python.` prefixes:
 
 The extension sends anonymous usage analytics to `https://analytics.zenml.io/batch` via the ZenML Analytics Server. See `src/services/AnalyticsService.ts`.
 
+### Analytics Architecture
+
+```
+Command modules → trackEvent() → EventBus.emit(ANALYTICS_TRACK) → AnalyticsService.track() → queued batch POST
+                                                                         ↑
+                                  EventBus.emit(SERVER_STATUS_UPDATED) → handleServerStatusChange()
+                                  EventBus.emit(ENVIRONMENT_INFO_UPDATED) → cached env info
+                                  EventBus.emit(SERVER_DISCONNECT_REQUESTED) → disconnect intent
+```
+
+**Key files:**
+- `src/services/AnalyticsService.ts` — Core service: queuing, batching, common properties, connection tracking
+- `src/utils/analytics.ts` — Error classification utility (privacy-safe taxonomy plus local-only hashing for deduplication)
+- `src/utils/constants.ts` — Event bus constants and analytics keys
+- Command modules (`src/commands/*/cmds.ts`) — Emit domain-specific events via `trackEvent()` helper
+
+### Tracked Events
+
+| Event | Source | Properties |
+|-------|--------|------------|
+| `extension.activated` | ZenExtension | extensionVersion, isFirstActivation |
+| `extension.first_activated` | ZenExtension | firstActivatedAt (once per install) |
+| `extension.deactivated` | extension.ts | sessionDurationMs |
+| `server.connected` | AnalyticsService | connectionType (local/cloud/remote/unknown) |
+| `server.disconnected` | AnalyticsService | connectionType, disconnectReason (user_initiated/unexpected) |
+| `server.connect_command` | server/cmds | connectionType, success |
+| `server.disconnect_command` | server/cmds | success |
+| `server.connection_failed` | server/cmds | connectionType, serverUrlCategory, docker, portProvided, errorKind, errorSource |
+| `error.occurred` | LSClient | operation, phase, errorKind, errorSource |
+| `stack.*` events | stack/cmds | Various (see code) |
+| `pipeline.*` events | pipelines/cmds | Various (see code) |
+| `component.registered` | ComponentsForm | componentType, flavor, success, (error taxonomy on failure) |
+| `component.updated` | ComponentsForm | componentType, flavor, success, (error taxonomy on failure) |
+| `component.deleted` | components/cmds | componentType, flavor, success, (error taxonomy on failure) |
+
+### Common Properties (on every event)
+
+extensionVersion, vscodeVersion, platform, timestamp, sessionId, pythonVersion*, zenmlVersion*, zenmlInstalled*
+
+(*Available after LSP/interpreter initialization)
+
+### Privacy-Safe Error Tracking
+
+Error analytics use `src/utils/analytics.ts` which:
+- Classifies errors into an `ErrorKind` taxonomy (never raw messages)
+- Produces a local-only `messageHash` for in-session deduplication; hashes are never emitted
+- Never emits raw URLs, file paths, error messages, or PII
+
+When adding new error tracking, always use `sanitizeErrorForAnalytics()`.
+
+### Adding New Analytics Events
+
+1. Import `trackEvent` from `src/utils/analytics.ts`
+2. Call `trackEvent('domain.action', { ...properties })` at appropriate points
+3. For error properties, use `sanitizeErrorForAnalytics()` (also from `src/utils/analytics.ts`)
+4. Never include raw URLs, paths, names, or error messages — use `categorizeServerUrl()` and `sanitizeErrorForAnalytics()` for privacy
+
 ### Local Testing
 Use the **"Run Extension (Analytics Debug)"** launch configuration in `.vscode/launch.json`. This sets:
 - `ZENML_ANALYTICS_VERBOSE=1` - Detailed console logging

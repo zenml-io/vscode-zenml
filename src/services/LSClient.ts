@@ -18,6 +18,14 @@ import { GenericLSClientResponse, VersionMismatchError } from '../types/LSClient
 import { LSNotificationIsZenMLInstalled } from '../types/LSNotificationTypes';
 import { ConfigUpdateDetails } from '../types/ServerInfoTypes';
 import {
+  extractErrorMessage,
+  isErrorLikeResponse,
+  sanitizeErrorForAnalytics,
+  toAnalyticsErrorProperties,
+} from '../utils/analytics';
+import {
+  ANALYTICS_TRACK,
+  ENVIRONMENT_INFO_UPDATED,
   LSCLIENT_READY,
   LSP_IS_ZENML_INSTALLED,
   LSP_ZENML_CLIENT_INITIALIZED,
@@ -41,6 +49,12 @@ export class LSClient {
     is_installed: false,
     version: '',
   };
+
+  // Error analytics dedupe state
+  private errorDedupe = new Map<string, number>();
+  private readonly ERROR_DEDUPE_WINDOW_MS = 60_000;
+  private emittedNotReadyThisSession = false;
+  private lastDedupePruneAt = 0;
 
   public restartLSPServerDebounced = debounce(async () => {
     await commands.executeCommand(`${PYTOOL_MODULE}.restart`);
@@ -93,6 +107,12 @@ export class LSClient {
     };
     this.eventBus.emit(LSP_IS_ZENML_INSTALLED, this.localZenML);
     this.eventBus.emit(REFRESH_ENVIRONMENT_VIEW);
+
+    // Propagate ZenML version info to analytics common properties
+    this.eventBus.emit(ENVIRONMENT_INFO_UPDATED, {
+      zenmlInstalled: params.is_installed,
+      zenmlVersion: params.version || '',
+    });
   };
 
   /**
@@ -195,6 +215,7 @@ export class LSClient {
   ): Promise<T> {
     if (!this.client || !this.clientReady) {
       console.error(`${command}: LSClient is not ready yet.`);
+      this.emitErrorOccurred(command, 'preflight', 'LSClient is not ready');
       return { error: 'LSClient is not ready yet.' } as T;
     }
     try {
@@ -202,22 +223,84 @@ export class LSClient {
         command: `${PYTOOL_MODULE}.${command}`,
         arguments: args,
       });
+
+      // Track error responses from the Python backend
+      if (isErrorLikeResponse(result) && result.error) {
+        this.emitErrorOccurred(command, 'response', result.error);
+      }
+
       return result as T;
-    } catch (error: any) {
-      const errorMessage = error.message;
-      console.error(`Failed to execute command ${command}:`, errorMessage || error);
+    } catch (error: unknown) {
+      const errorMessage = extractErrorMessage(error);
+      console.error(`Failed to execute command ${command}:`, errorMessage);
+      this.emitErrorOccurred(command, 'request', error);
       if (errorMessage.includes('ValidationError') || errorMessage.includes('RuntimeError')) {
-        return this.handleKnownErrors(error);
+        return this.handleKnownErrors(errorMessage);
       }
       return { error: errorMessage } as T;
     }
   }
 
-  private handleKnownErrors<T = VersionMismatchError>(error: any): T {
+  /**
+   * Emit a privacy-safe error.occurred analytics event with dedupe.
+   */
+  private emitErrorOccurred(
+    operation: string,
+    phase: 'preflight' | 'request' | 'response',
+    err: unknown
+  ): void {
+    try {
+      // Hard-dedupe lsp_not_ready to once per session
+      if (phase === 'preflight') {
+        if (this.emittedNotReadyThisSession) {
+          return;
+        }
+        this.emittedNotReadyThisSession = true;
+      }
+
+      const sanitized = sanitizeErrorForAnalytics(err, {
+        operation,
+        phase,
+        isResponseError: phase === 'response',
+      });
+
+      // Dedupe identical errors within the window
+      const dedupeKey = `${operation}:${phase}:${sanitized.errorKind}:${sanitized.messageHash}`;
+      const now = Date.now();
+
+      // Opportunistic prune: remove stale entries at most once per window interval
+      if (now - this.lastDedupePruneAt >= this.ERROR_DEDUPE_WINDOW_MS) {
+        this.lastDedupePruneAt = now;
+        for (const [key, ts] of this.errorDedupe) {
+          if (now - ts > this.ERROR_DEDUPE_WINDOW_MS) {
+            this.errorDedupe.delete(key);
+          }
+        }
+      }
+      const lastEmitted = this.errorDedupe.get(dedupeKey);
+      if (lastEmitted && now - lastEmitted < this.ERROR_DEDUPE_WINDOW_MS) {
+        return;
+      }
+      this.errorDedupe.set(dedupeKey, now);
+
+      this.eventBus.emit(ANALYTICS_TRACK, {
+        event: 'error.occurred',
+        properties: {
+          operation,
+          phase,
+          ...toAnalyticsErrorProperties(sanitized),
+        },
+      });
+    } catch (e) {
+      // Best effort — never break the LSP flow for analytics
+      console.debug('[Analytics] emitErrorOccurred failed:', e);
+    }
+  }
+
+  private handleKnownErrors<T = VersionMismatchError>(errorMessage: string): T {
     let errorType = 'Error';
     let serverVersion = 'N/A';
     let newErrorMessage = '';
-    const errorMessage = error.message;
     const versionRegex = /\b\d+\.\d+\.\d+\b/;
 
     if (errorMessage.includes('ValidationError')) {

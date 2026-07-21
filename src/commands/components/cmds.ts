@@ -16,6 +16,11 @@ import { getFlavor, getFlavorsOfType } from '../../common/api';
 import { traceError, traceInfo } from '../../common/log/logging';
 import { LSClient } from '../../services/LSClient';
 import { ComponentTypesResponse, Flavor } from '../../types/StackTypes';
+import {
+  sanitizeErrorForAnalytics,
+  toAnalyticsErrorProperties,
+  trackEvent,
+} from '../../utils/analytics';
 import { ComponentDataProvider } from '../../views/activityBar/componentView/ComponentDataProvider';
 import { StackComponentTreeItem } from '../../views/activityBar/componentView/ComponentTreeItems';
 import ComponentForm from './ComponentsForm';
@@ -134,11 +139,24 @@ const deleteComponent = async (node: StackComponentTreeItem) => {
           throw resp.error;
         }
         traceInfo(`${node.component.name} deleted`);
+        trackEvent('component.deleted', {
+          componentType: node.component.type,
+          flavor: node.component.flavor?.name,
+          success: true,
+        });
         await refreshComponentView();
       } catch (e) {
         vscode.window.showErrorMessage(`Failed to delete component: ${e}`);
         traceError(e);
         console.error(e);
+        trackEvent('component.deleted', {
+          componentType: node.component.type,
+          flavor: node.component.flavor?.name,
+          success: false,
+          ...toAnalyticsErrorProperties(
+            sanitizeErrorForAnalytics(e, { operation: 'deleteComponent', phase: 'request' })
+          ),
+        });
       }
     }
   );
