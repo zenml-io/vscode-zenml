@@ -51,3 +51,6 @@ design/
 .bv/
 .claude/
 .zen/
+
+# Git worktrees
+.worktrees/
