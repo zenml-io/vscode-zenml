@@ -30,6 +30,7 @@ export function createLSClientItem(lsClientStatus: State): EnvironmentItem {
     [State.Running]: { description: 'Running', icon: 'globe' },
     [State.Starting]: { description: 'Starting...', icon: 'sync~spin' },
     [State.Stopped]: { description: 'Stopped', icon: 'close' },
+    [State.StartFailed]: { description: 'Start Failed', icon: 'error' },
   };
 
   const { description, icon } = statusMappings[lsClientStatus];
